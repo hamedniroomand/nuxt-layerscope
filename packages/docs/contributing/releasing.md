@@ -77,8 +77,9 @@ keeps working, and a leaked token can no longer publish.
 
 ## Every later release
 
-1. Update `version` in `packages/layerscope/package.json` and add a `## <version>` section to
-   `packages/layerscope/CHANGELOG.md`.
+1. Update `version` in `packages/layerscope/package.json` and rename the `## Unreleased` section
+   of `packages/layerscope/CHANGELOG.md` to `## <version>`. Changes merged between releases add
+   their line under `## Unreleased`.
 2. Commit and merge to `main`.
 3. Tag and push:
 

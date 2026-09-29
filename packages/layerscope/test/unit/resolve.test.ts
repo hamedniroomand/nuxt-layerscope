@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
 import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
@@ -54,6 +57,39 @@ describe('resolveSpecifier under node_modules', () => {
     const resolution = resolveSpecifier('#app', from, aliases, buildDir);
     expect(resolution).toMatchObject({ kind: 'file', module: 'nuxt' });
     expect(resolution.kind === 'file' && resolution.file).toContain('/node_modules/');
+  });
+});
+
+describe('resolveSpecifier with hoisted packages', () => {
+  /** Nuxt's `typescript.hoist` aliases `ofetch` to a package dir whose entry is in package.json. */
+  function hoisted(withManifest: boolean): [string, string][] {
+    const dir = join(realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-hoist-'))), 'ofetch');
+    mkdirSync(dir, { recursive: true });
+    if (withManifest) {
+      writeFileSync(
+        join(dir, 'package.json'),
+        '{"name":"ofetch","exports":{".":"./dist/index.mjs"}}',
+      );
+    }
+    return [['ofetch', dir]];
+  }
+
+  it('treats an aliased package directory as an external module', () => {
+    const map = hoisted(true);
+    expect(resolveSpecifier('ofetch', from, map, buildDir)).toEqual({
+      kind: 'external',
+      module: 'ofetch',
+    });
+    expect(resolveSpecifier('ofetch/node', from, map, buildDir)).toEqual({
+      kind: 'external',
+      module: 'ofetch',
+    });
+  });
+
+  it('still reports an alias whose target is neither a file nor a package', () => {
+    expect(resolveSpecifier('ofetch', from, hoisted(false), buildDir)).toEqual({
+      kind: 'missing',
+    });
   });
 });
 

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Packages that Nuxt hoists into the generated tsconfig `paths` (`ofetch`, `consola`, `h3`, `defu`,
+  `nitropack`) are no longer reported as unresolved imports.
+
 ## 0.1.3
 
 - Notes and the `--verbose` line are printed after the report, in every command, so they are the
