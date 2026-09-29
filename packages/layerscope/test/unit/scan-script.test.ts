@@ -31,6 +31,37 @@ describe('scanModule', () => {
   });
 });
 
+describe('scanModule type syntax', () => {
+  it('ignores labels of tuple members', () => {
+    const code = `
+      export type Emits = { close: [value: boolean]; navigate: [id: string, height: number] };
+      export const tags: [attribute: string, key: string][] = [];
+    `;
+    expect(freeNames(code)).toEqual([]);
+  });
+
+  it('ignores parameter names in function and signature types', () => {
+    const code = `
+      export type Push = (...next: string[]) => void;
+      export interface Api { on(event: string, handler: (index: number) => void): void }
+      export type Ctor = new (item: string) => object;
+    `;
+    expect(freeNames(code)).toEqual([]);
+  });
+
+  it('ignores typeof queries in type positions', () => {
+    const code = `
+      import type { h as createElement } from 'vue';
+      export type Render = typeof createElement;
+    `;
+    expect(freeNames(code)).toEqual([]);
+  });
+
+  it('still reports references next to types', () => {
+    expect(freeNames('export const a: [id: string] = [useId()];')).toEqual(['useId']);
+  });
+});
+
 describe('scanModule imports and components', () => {
   it('collects static, re-exported and dynamic imports', () => {
     const scan = scanModule(

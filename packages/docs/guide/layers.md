@@ -27,6 +27,8 @@ export default defineNuxtConfig({
 Or name it from the consuming project with `path`, relative to the project root:
 
 ```ts [layerscope.config.ts]
+import { defineConfig } from 'nuxt-layerscope';
+
 export default defineConfig({
   layers: {
     ui: { path: 'node_modules/@acme/ui-layer', allow: [] },
@@ -37,6 +39,8 @@ export default defineConfig({
 A remote layer is easiest to name by the same string you wrote in `extends`:
 
 ```ts [layerscope.config.ts]
+import { defineConfig } from 'nuxt-layerscope';
+
 export default defineConfig({
   layers: {
     console: { source: 'github:acme/console' },

@@ -42,6 +42,8 @@ Some Nuxt modules register components at runtime instead of through Nuxt's regis
 reach `components.d.ts`:
 
 ```ts [layerscope.config.ts]
+import { defineConfig } from 'nuxt-layerscope';
+
 export default defineConfig({
   globals: ['VDropdown', 'VTooltip', 'VMenu'],
 });
