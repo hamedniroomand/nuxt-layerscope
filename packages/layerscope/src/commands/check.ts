@@ -5,6 +5,7 @@ import { BASELINE_FILE, createBaseline, writeBaseline } from '#src/baseline/inde
 import { LayerscopeError } from '#src/errors.ts';
 import { formatResult, isOutputFormat, OUTPUT_FORMATS } from '#src/report/index.ts';
 import { plural } from '#src/utils/strings.ts';
+import { paintFor } from '#src/utils/style.ts';
 
 import type { Cli, CommonFlags } from './shared.ts';
 import { EXIT_CLEAN, EXIT_VIOLATIONS, toSource, withCommonOptions, writeNotes } from './shared.ts';
@@ -21,11 +22,11 @@ async function updateBaseline(rootDir: string, flags: CheckFlags): Promise<numbe
     prepare: flags.prepare,
     source: toSource(flags.source),
   });
-  writeNotes(result, flags.verbose === true);
   const file = resolve(rootDir, flags.baseline);
   writeBaseline(file, createBaseline(result.findings, rootDir));
   const count = plural(result.findings.length, 'finding');
   process.stdout.write(`✔ Wrote ${count} to ${relative(process.cwd(), file)}\n`);
+  writeNotes(result, flags.verbose === true);
   return EXIT_CLEAN;
 }
 
@@ -45,8 +46,8 @@ export async function check(root: string | undefined, flags: CheckFlags): Promis
     source: toSource(flags.source),
     baseline: flags.baseline,
   });
+  process.stdout.write(formatResult(result, format, process.cwd(), paintFor(process.stdout)));
   writeNotes(result, flags.verbose === true);
-  process.stdout.write(formatResult(result, format));
   // Only findings missing from the baseline fail the check.
   return result.findings.some(finding => finding.severity === 'error')
     ? EXIT_VIOLATIONS

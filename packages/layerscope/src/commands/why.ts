@@ -24,12 +24,13 @@ export async function why(
     prepare: flags.prepare,
     source: toSource(flags.source),
   });
-  writeNotes(result, flags.verbose === true);
   const targets = findUses(result, symbol, result.config);
   if (targets.length === 0) {
+    writeNotes(result, flags.verbose === true);
     throw new LayerscopeError(`No uses of "${symbol}" found.`);
   }
   process.stdout.write(formatWhy(symbol, targets, format));
+  writeNotes(result, flags.verbose === true);
   return EXIT_CLEAN;
 }
 

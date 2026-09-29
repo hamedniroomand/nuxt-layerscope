@@ -34,8 +34,8 @@ export async function graph(root: string | undefined, flags: GraphFlags): Promis
     prepare: flags.prepare,
     source: toSource(flags.source),
   });
-  writeNotes(result, flags.verbose === true);
   process.stdout.write(formatGraph(buildGraph(result, result.config, level), format));
+  writeNotes(result, flags.verbose === true);
   return EXIT_CLEAN;
 }
 

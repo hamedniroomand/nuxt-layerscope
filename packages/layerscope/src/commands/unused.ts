@@ -19,8 +19,8 @@ export async function unused(root: string | undefined, flags: CommonFlags): Prom
     prepare: flags.prepare,
     source: toSource(flags.source),
   });
-  writeNotes(result, flags.verbose === true);
   process.stdout.write(formatUnused(findUnused(result), format));
+  writeNotes(result, flags.verbose === true);
   return EXIT_CLEAN;
 }
 
