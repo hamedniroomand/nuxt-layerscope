@@ -26,6 +26,6 @@ body:
     id: versions
     attributes:
       label: Versions
-      placeholder: nuxt-layerscope 1.0.0, Nuxt 4.1.0, Node 24
+      placeholder: nuxt-layerscope 0.1.0, Nuxt 4.1.0, Node 24
     validations:
       required: true
