@@ -28,7 +28,7 @@ jobs:
       # Proves to npm that this workflow is the trusted publisher.
       id-token: write
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: voidzero-dev/setup-vp@v1.21.1
