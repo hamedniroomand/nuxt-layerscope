@@ -5,8 +5,16 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns: ['*']
 
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
+    exclude-paths:
+      - packages/layerscope/test/fixtures/**
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]

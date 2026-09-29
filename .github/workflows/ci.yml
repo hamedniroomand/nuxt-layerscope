@@ -8,19 +8,28 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ready:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: voidzero-dev/setup-vp@v1.21.1
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version: '24'
           cache: true
           run-install: true
       - run: vp run ready
+      - name: Check the package (publint, are-the-types-wrong)
+        working-directory: packages/layerscope
+        run: |
+          npx --yes publint --pack npm --strict .
+          npx --yes @arethetypeswrong/cli --pack . --profile esm-only
 
   nuxt-versions:
     name: Fixture matrix (Nuxt ${{ matrix.nuxt }})
@@ -31,10 +40,10 @@ jobs:
         # Latest 3.x, 4.0 and latest 4.x. Every fixture must match its expected-findings snapshot.
         nuxt: ['^3', '~4.0.0', '^4']
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: voidzero-dev/setup-vp@v1.21.1
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
         with:
           node-version: '24'
           cache: true
