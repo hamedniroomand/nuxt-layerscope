@@ -67,6 +67,21 @@ describe('layerscope check --source and --verbose', () => {
     expect(output.stdout()).toContain('✖ 7 problems (5 errors, 2 warnings)');
   });
 
+  it('prints notes after the report, so they are the last thing on screen', async () => {
+    const order: string[] = [];
+    vi.spyOn(process.stdout, 'write').mockImplementation(() => {
+      order.push('stdout');
+      return true;
+    });
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => {
+      order.push('stderr');
+      return true;
+    });
+    await run(checkArgv('--source', 'types', '--verbose'));
+    expect(order.at(-1)).toBe('stderr');
+    expect(order.indexOf('stderr')).toBeGreaterThan(order.lastIndexOf('stdout'));
+  });
+
   it('exits 2 on an unknown source', async () => {
     const output = captureOutput();
     expect(await run(checkArgv('--source', 'guess'))).toBe(EXIT_ERROR);

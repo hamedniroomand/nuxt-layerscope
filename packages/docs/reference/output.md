@@ -7,16 +7,23 @@ Choose a format with `--format`. Paths are relative to the current directory.
 The default. Findings grouped by file, with where each symbol resolves to:
 
 ```text
+layers/web/app/composables/useCart.ts
+  2:3     warn   "trackEvent" is not a local binding, a known global or an auto-import in the app context  unresolved-reference
+
 layers/admin/app/components/AdminPanel.vue
   2:14    error  Auto-import "useCart" crosses from layer "admin" into "web"  layer-boundary
                  useCart → layers/web/app/composables/useCart.ts
                  allowed for "admin": shared, auth
 
-layers/web/app/composables/useCart.ts
-  2:3     warn   "trackEvent" is not a local binding, a known global or an auto-import in the app context  unresolved-reference
-
 ✖ 2 problems (1 error, 1 warning)
 ```
+
+Files with only warnings come first and files with errors last, next to the summary, so the errors
+are what stays on screen when a long report scrolls. Inside a file, findings follow the source
+order.
+
+Severities, rules and the summary are colored when stdout is a terminal. `NO_COLOR` turns colors
+off and `FORCE_COLOR` turns them on, for example in a CI log that renders them.
 
 Without findings: `✔ No problems in 20 files across 6 layers`. With a baseline the summary adds
 how many findings it accepted, and fixed entries are listed before it.

@@ -3,6 +3,7 @@ import { relative } from 'pathe';
 
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult, SourceOption } from '#src/types.ts';
+import { paintFor } from '#src/utils/style.ts';
 
 export const SOURCE_OPTIONS: readonly SourceOption[] = ['auto', 'registry', 'types'];
 
@@ -40,16 +41,22 @@ export function toSource(value: string): SourceOption {
   return source;
 }
 
-/** Diagnostics go to stderr, so stdout stays machine-readable in every format. */
+/**
+ * Diagnostics go to stderr, so stdout stays machine-readable in every format. Call it after the
+ * report is written: notes at the end are the ones a reader still sees when the report scrolled.
+ */
 export function writeNotes(result: AnalyzeResult, verbose: boolean): void {
-  const lines = result.notes.map(note => `layerscope: note: ${note}`);
+  const paint = paintFor(process.stderr);
+  const lines = result.notes.map(
+    note => `${paint(['yellow', 'bold'], 'layerscope: note:')} ${note}`,
+  );
   if (verbose) {
     const kind = result.source === 'registry' ? 'the registry' : 'the generated .d.ts files';
-    lines.unshift(
-      `layerscope: symbols from ${kind} (${relative(process.cwd(), result.sourceFile)})`,
-    );
+    const source = relative(process.cwd(), result.sourceFile);
+    lines.unshift(paint('dim', `layerscope: symbols from ${kind} (${source})`));
   }
   if (lines.length > 0) {
-    process.stderr.write(`${lines.join('\n')}\n`);
+    // A blank line sets the notes apart from the summary above them in a terminal.
+    process.stderr.write(`${process.stdout.isTTY ? '\n' : ''}${lines.join('\n')}\n`);
   }
 }

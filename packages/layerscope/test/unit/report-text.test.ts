@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test';
 
 import { formatText } from '#src/report/text.ts';
+import type { Paint } from '#src/utils/style.ts';
 import { makeFinding, makeResult } from '#test/factories.ts';
 
 const CWD = '/app';
@@ -27,9 +28,44 @@ describe('formatText', () => {
     expect(output.endsWith('✖ 2 problems (1 error, 1 warning)\n')).toBe(true);
   });
 
+  it('lists files with errors last, keeping the order within each group', () => {
+    const result = makeResult({
+      findings: [
+        makeFinding({ file: '/app/a.vue' }),
+        makeFinding({ file: '/app/b.vue', severity: 'warn' }),
+        makeFinding({ file: '/app/c.vue' }),
+        makeFinding({ file: '/app/d.vue', severity: 'warn' }),
+      ],
+    });
+    const files = formatText(result, CWD).match(/^[a-d]\.vue$/gmu);
+    expect(files).toEqual(['b.vue', 'd.vue', 'a.vue', 'c.vue']);
+  });
+
   it('says when a layer may use no other layer', () => {
     const output = formatText(makeResult({ findings: [makeFinding({ allowed: [] })] }), CWD);
     expect(output).toContain('allowed for "web": no other layers');
+  });
+});
+
+describe('formatText with colors', () => {
+  const tag: Paint = (format, text) => `<${String(format)}>${text}</>`;
+
+  it('colors severities, the rule and the summary', () => {
+    const result = makeResult({
+      findings: [makeFinding(), makeFinding({ severity: 'warn', line: 9 })],
+    });
+    const output = formatText(result, CWD, tag);
+    expect(output).toContain('<red>error</>  Auto-import');
+    expect(output).toContain('<yellow>warn</>   Auto-import');
+    expect(output).toContain('<dim>layer-boundary</>');
+    expect(output).toContain('<underline>pages/index.vue</>');
+    expect(output).toContain('<bold,red>✖ 2 problems (1 error, 1 warning)</>');
+  });
+
+  it('colors a summary of warnings only in yellow and a clean run in green', () => {
+    const warnings = makeResult({ findings: [makeFinding({ severity: 'warn' })] });
+    expect(formatText(warnings, CWD, tag)).toContain('<bold,yellow>✖ 1 problem');
+    expect(formatText(makeResult(), CWD, tag)).toContain('<green,bold>✔ No problems');
   });
 });
 
