@@ -26,7 +26,7 @@ const lastLint = new Map<string, { project: Project; source: string; lint: FileL
  * too; the saved file is read instead.
  */
 function fullSource(file: string, text: string): string {
-  const isPartialSfc = file.endsWith('.vue') && !/<(?:script|template)[\s>]/u.test(text);
+  const isPartialSfc = file.endsWith('.vue') && !/<(?:script|template)[\s>]/iu.test(text);
   return isPartialSfc ? readFileSync(file, 'utf8') : text;
 }
 
