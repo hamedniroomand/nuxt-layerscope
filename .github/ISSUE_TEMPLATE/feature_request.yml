@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest a new check, option or command.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do, and why is it hard today?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What you'd like
+      description: How you picture it working. Config or CLI examples help.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Workarounds you use now, or other tools you've tried.

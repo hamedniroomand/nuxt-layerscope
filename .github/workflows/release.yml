@@ -1,0 +1,74 @@
+name: Release
+
+# Publishes nuxt-layerscope to npm when a `v*` tag is pushed. It uses npm trusted publishing
+# (OIDC), so no npm token is stored in the repository, and npm adds provenance on its own once
+# the repository is public. npm only accepts it after the package exists and this workflow is
+# registered as its trusted publisher: publish the first version by hand, see
+# packages/docs/contributing/releasing.md.
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    # Must match the environment set on the npm trusted publisher; add protection rules here.
+    environment: npm
+    permissions:
+      # Creates the GitHub release.
+      contents: write
+      # Proves to npm that this workflow is the trusted publisher.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: '24'
+          cache: true
+          run-install: true
+      - name: Check the tag matches the package version
+        working-directory: packages/layerscope
+        run: |
+          version="$(node -p 'require("./package.json").version')"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package version $version"
+            exit 1
+          fi
+      - run: vp run ready
+      # pnpm pack replaces `catalog:` specifiers; npm pack would publish them as they are.
+      - name: Pack
+        working-directory: packages/layerscope
+        run: vp pm pack --pack-destination "$RUNNER_TEMP/package"
+      # Trusted publishing needs npm 11.5.1 or later.
+      - name: Update npm
+        run: npm install --global npm@^11.5.1
+      - name: Publish
+        run: |
+          tag=latest
+          case "$GITHUB_REF_NAME" in *-*) tag=next ;; esac
+          npm publish "$RUNNER_TEMP"/package/nuxt-layerscope-*.tgz --access public --tag "$tag"
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          # The changelog section of this version, without its heading.
+          awk -v heading="## $version" '
+            $0 == heading { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' packages/layerscope/CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          prerelease=()
+          case "$GITHUB_REF_NAME" in *-*) prerelease=(--prerelease) ;; esac
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" "${prerelease[@]}"

@@ -1,0 +1,31 @@
+name: Bug report
+description: Something doesn't work the way the docs say it should.
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened
+      description: What you ran, what you expected and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: A link to a small repo, or the layer setup and config needed to see the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Output
+      description: The output of `npx layerscope check --json`, trimmed to the relevant part.
+      render: json
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      placeholder: nuxt-layerscope 1.0.0, Nuxt 4.1.0, Node 24
+    validations:
+      required: true

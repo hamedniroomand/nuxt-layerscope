@@ -1,0 +1,47 @@
+name: nuxt-layerscope
+description: Check Nuxt layer boundaries, including auto-imports, and annotate the pull request.
+author: Hamed Niroomand
+branding:
+  icon: layers
+  color: green
+
+inputs:
+  root:
+    description: Nuxt project root, relative to the repository.
+    default: .
+  config:
+    description: Path to layerscope.config.ts. Defaults to the one in the root.
+    default: ''
+  prepare:
+    description: Run "nuxi prepare" before checking. Needs the project's dependencies installed.
+    default: 'false'
+  baseline:
+    description: Baseline file, relative to the root.
+    default: layerscope-baseline.json
+  version:
+    description: nuxt-layerscope version to run when the project does not install it.
+    default: latest
+
+runs:
+  using: composite
+  steps:
+    - name: Check layer boundaries
+      shell: bash
+      env:
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_PREPARE: ${{ inputs.prepare }}
+        INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_VERSION: ${{ inputs.version }}
+      run: |
+        args=(check "$INPUT_ROOT" --format github --baseline "$INPUT_BASELINE")
+        if [ -n "$INPUT_CONFIG" ]; then args+=(--config "$INPUT_CONFIG"); fi
+        if [ "$INPUT_PREPARE" = "true" ]; then args+=(--prepare); fi
+        # Prefer the version the project installs, so CI and local runs agree.
+        if [ -x "$INPUT_ROOT/node_modules/.bin/layerscope" ]; then
+          "$INPUT_ROOT/node_modules/.bin/layerscope" "${args[@]}"
+        elif [ -x node_modules/.bin/layerscope ]; then
+          node_modules/.bin/layerscope "${args[@]}"
+        else
+          npx --yes "nuxt-layerscope@$INPUT_VERSION" "${args[@]}"
+        fi

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://hamedniroomand.github.io/nuxt-layerscope/
+    about: Setup, config and troubleshooting.
+  - name: Security issue
+    url: https://github.com/hamedniroomand/nuxt-layerscope/security/advisories/new
+    about: Report vulnerabilities privately, not as an issue.

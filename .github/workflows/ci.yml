@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  ready:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: '24'
+          cache: true
+          run-install: true
+      - run: vp run ready
+
+  nuxt-versions:
+    name: Fixture matrix (Nuxt ${{ matrix.nuxt }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Latest 3.x, 4.0 and latest 4.x. Every fixture must match its expected-findings snapshot.
+        nuxt: ['^3', '~4.0.0', '^4']
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: '24'
+          cache: true
+          run-install: true
+      - name: Use Nuxt ${{ matrix.nuxt }} in the matrix fixture
+        working-directory: packages/layerscope/test/fixtures/matrix
+        env:
+          NUXT_RANGE: ${{ matrix.nuxt }}
+        run: npm pkg set "dependencies.nuxt=$NUXT_RANGE"
+      - run: vp install --no-frozen-lockfile
+      - run: vp test

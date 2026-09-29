@@ -1,0 +1,49 @@
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - packages/docs/**
+      - pnpm-lock.yaml
+      - .github/workflows/docs.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; a newer push replaces a deploy that has not started.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          # lastUpdated reads each page's commit date.
+          fetch-depth: 0
+      - uses: voidzero-dev/setup-vp@v1.21.1
+        with:
+          node-version: '24'
+          cache: true
+          run-install: true
+      - run: vp run docs:build
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: packages/docs/.vitepress/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
