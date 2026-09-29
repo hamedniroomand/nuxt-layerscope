@@ -1,0 +1,158 @@
+<!doctype html>
+<!--
+  Source of public/og-image.png (1200x630). After a brand change, render it with any Chrome:
+  chrome --headless=new --hide-scrollbars --window-size=1200,630 \
+    --screenshot=packages/docs/public/og-image.png packages/docs/scripts/og-image.html
+-->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+      body {
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        font-family: Inter, system-ui, sans-serif;
+        color: #f4f4f5;
+        background:
+          radial-gradient(circle at 88% 12%, rgb(34 211 238 / 0.22), transparent 420px),
+          radial-gradient(circle at 12% 0%, rgb(0 220 130 / 0.24), transparent 480px), #0b0e10;
+        position: relative;
+      }
+      .pattern {
+        position: absolute;
+        inset: 0;
+        color: #00dc82;
+        opacity: 0.12;
+      }
+      .content {
+        position: relative;
+        padding: 84px 88px;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .brand img {
+        width: 76px;
+        height: 76px;
+      }
+      .brand span {
+        font-size: 40px;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+      }
+      h1 {
+        margin-top: 56px;
+        max-width: 900px;
+        font-size: 66px;
+        line-height: 1.05;
+        letter-spacing: -0.045em;
+        font-weight: 700;
+      }
+      h1 em {
+        font-style: normal;
+        background: linear-gradient(110deg, #00dc82, #22d3ee);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .foot {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .cmd {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 24px;
+        padding: 14px 22px;
+        border: 1px solid #262c30;
+        border-radius: 12px;
+        background: rgb(23 27 30 / 0.85);
+        color: #d0d3d6;
+      }
+      .cmd b {
+        color: #34e8a0;
+        font-weight: 500;
+      }
+      .tags {
+        font-size: 22px;
+        color: #979ca3;
+      }
+    </style>
+  </head>
+  <body>
+    <svg
+      class="pattern"
+      width="1200"
+      height="630"
+      aria-hidden="true"
+    >
+      <defs>
+        <pattern
+          id="p"
+          width="240"
+          height="140"
+          patternUnits="userSpaceOnUse"
+        >
+          <g
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.2"
+            stroke-linejoin="round"
+          >
+            <path d="M60 20 100 40 60 60 20 40Z" />
+            <path
+              d="M20 52 60 72 100 52"
+              opacity="0.6"
+            />
+            <path
+              d="M20 64 60 84 100 64"
+              opacity="0.3"
+            />
+            <path
+              d="M180 90 220 110 180 130 140 110Z"
+              opacity="0.5"
+            />
+          </g>
+        </pattern>
+      </defs>
+      <rect
+        width="100%"
+        height="100%"
+        fill="url(#p)"
+      />
+    </svg>
+    <div class="content">
+      <div class="brand">
+        <img
+          src="../public/logo.svg"
+          alt=""
+        />
+        <span>layerscope</span>
+      </div>
+      <h1>Layer boundaries for Nuxt, <em>auto-imports included.</em></h1>
+      <div class="foot">
+        <div class="cmd"><b>$</b> npx layerscope check</div>
+        <div class="tags">Nuxt 3 · Nuxt 4 · CI · ESLint · DevTools</div>
+      </div>
+    </div>
+  </body>
+</html>
