@@ -114,8 +114,9 @@ Also takes `--config`, `--prepare`, `--source` and `--verbose`. Exits `0`.
 ## Output streams
 
 The report goes to stdout. Everything else goes to stderr, prefixed with `layerscope:`: errors,
-notes (such as a rule that could not run) and the `--verbose` line. Redirecting stdout therefore
-always gives a clean report:
+notes (such as a rule that could not run or a `nuxt.config` newer than the registry) and the
+`--verbose` line. Notes are printed after the report, so they are the last thing on screen.
+Redirecting stdout always gives a clean report:
 
 ```bash
 layerscope check --format json > report.json
