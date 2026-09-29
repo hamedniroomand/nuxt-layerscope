@@ -12,6 +12,9 @@ The tab shows:
 
 Click a file name to open it in your editor at the reported line.
 
+The tab reads `layerscope-baseline.json`, so findings you accepted with a [baseline](./baseline) are
+left out and counted as "in baseline" in the summary, the same as `layerscope check`.
+
 ## When it updates
 
 The tab runs the same analysis as `layerscope check` every time you open it or press **Re-run**.
@@ -27,6 +30,22 @@ server:
 ```bash
 curl -s http://localhost:3000/__layerscope?format=json
 ```
+
+## JSON API
+
+The same server answers a few JSON endpoints under `/__layerscope/api`:
+
+| Request           | Response                                                    |
+| ----------------- | ----------------------------------------------------------- |
+| `GET /api/state`  | Revision, when the last analysis ran and how long it took.  |
+| `GET /api/report` | The state plus the `layerscope check --format json` report. |
+| `POST /api/rerun` | Analyzes again and returns the same body as `/api/report`.  |
+
+Responses carry the revision as an `ETag`, so a request with a matching `If-None-Match` gets a
+`304`. The revision only changes when the findings, layers or notes change.
+
+Analysis is lazy and cached per file: nothing runs until the tab is opened, and a re-run only reads
+files that changed since the last one.
 
 ## Turning it off
 

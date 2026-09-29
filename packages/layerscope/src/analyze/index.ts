@@ -6,8 +6,9 @@ import { compareByPosition } from '#src/rules/compare.ts';
 import { runRules } from '#src/rules/index.ts';
 import type { AnalyzeResult, LayerscopeConfig, SourceOption } from '#src/types.ts';
 
+import { analyzeFiles } from './cache.ts';
+import type { AnalysisCache } from './cache.ts';
 import { loadEnvironment } from './environment.ts';
-import { analyzeFile } from './file-analysis.ts';
 import { collectFiles } from './files.ts';
 import { prepareNuxt } from './prepare.ts';
 
@@ -27,6 +28,10 @@ export interface AnalyzeOptions {
    * Ignored when the file does not exist.
    */
   baseline?: string;
+  /** Reuses per-file analyses across runs. Used by the DevTools tab; the CLI passes none. */
+  cache?: AnalysisCache;
+  /** Changes when the symbol table or config changes, which flushes `cache`. */
+  envKey?: string;
 }
 
 export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResult> {
@@ -44,7 +49,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
   });
   const { layers, env, registry, config } = environment;
   const files = await collectFiles(layers, env.ownerOf, config.ignore ?? []);
-  const analyses = [...files].map(([file, layer]) => analyzeFile(file, layer, env));
+  const analyses = analyzeFiles(files, env, options.cache, options.envKey);
   const edges = analyses.flatMap(analysis => analysis.edges).toSorted(compareByPosition);
   const { findings, notes } = runRules({
     edges,

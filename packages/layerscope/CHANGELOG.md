@@ -4,6 +4,11 @@
 
 - Packages that Nuxt hoists into the generated tsconfig `paths` (`ofetch`, `consola`, `h3`, `defu`,
   `nitropack`) are no longer reported as unresolved imports.
+- The DevTools tab serves JSON endpoints under `/__layerscope/api` (`state`, `report`, `rerun`),
+  with an `ETag` revision that only changes when the findings, layers or notes change.
+- The DevTools tab re-analyzes only files that changed since the last run.
+- The DevTools tab reads `layerscope-baseline.json`, so accepted findings are left out and counted
+  as "in baseline", like `layerscope check`.
 
 ## 0.1.3
 

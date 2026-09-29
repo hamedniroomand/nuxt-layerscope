@@ -49,7 +49,9 @@ function findingsList(input: PageInput): string {
 function summaryLine(result: AnalyzeResult): string {
   const { errors, warnings } = summarize(result.findings);
   const source = result.source === 'registry' ? 'module registry' : 'generated .d.ts files';
-  return `${plural(result.files.length, 'file')} in ${plural(result.layers.length, 'layer')} · ${plural(errors, 'error')}, ${plural(warnings, 'warning')} · symbols from the ${source}`;
+  const suppressed = result.baseline?.suppressed.length ?? 0;
+  const baseline = suppressed === 0 ? '' : ` · ${suppressed} in baseline`;
+  return `${plural(result.files.length, 'file')} in ${plural(result.layers.length, 'layer')} · ${plural(errors, 'error')}, ${plural(warnings, 'warning')}${baseline} · symbols from the ${source}`;
 }
 
 function document(body: string): string {
