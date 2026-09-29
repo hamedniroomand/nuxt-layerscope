@@ -1,4 +1,5 @@
 import { LayerscopeError } from '#src/errors.ts';
+import { LayerConfigError } from '#src/layer-config-error.ts';
 import type { Layer, LayerscopeConfig } from '#src/types.ts';
 
 function assertUniqueNames(layers: Layer[]): Set<string> {
@@ -20,11 +21,11 @@ export function validateLayers(layers: Layer[], config: LayerscopeConfig): void 
   for (const [name, rule] of Object.entries(config.layers ?? {})) {
     if (!names.has(name)) {
       const known = [...names].toSorted().join(', ');
-      throw new LayerscopeError(`Unknown layer "${name}" in config. Known layers: ${known}`);
+      throw new LayerConfigError(`Unknown layer "${name}" in config. Known layers: ${known}`);
     }
     const unknown = rule.allow?.find(allowed => !names.has(allowed));
     if (unknown !== undefined) {
-      throw new LayerscopeError(`layers.${name}.allow: unknown layer "${unknown}"`);
+      throw new LayerConfigError(`layers.${name}.allow: unknown layer "${unknown}"`);
     }
   }
 }

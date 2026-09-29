@@ -1,4 +1,5 @@
 import { LayerscopeError } from '#src/errors.ts';
+import { LayerConfigError } from '#src/layer-config-error.ts';
 import type { LayerscopeConfig } from '#src/types.ts';
 
 import { validateConfig } from './validate.ts';
@@ -11,7 +12,7 @@ export const PROJECT_CONFIG_KEYS = ['layers', 'rules', 'ignore', 'globals'] as c
 
 export type ProjectConfig = Pick<LayerscopeConfig, (typeof PROJECT_CONFIG_KEYS)[number]>;
 
-function hasProjectConfig(config: ProjectConfig): boolean {
+export function hasProjectConfig(config: ProjectConfig): boolean {
   return PROJECT_CONFIG_KEYS.some(key => config[key] !== undefined);
 }
 
@@ -39,4 +40,12 @@ export function effectiveConfig(
   }
   validateConfig(recorded, NUXT_CONFIG_LABEL);
   return { ...fileConfig, ...recorded };
+}
+
+/** Names the `nuxt.config` key in a layer error, when the settings that caused it came from there. */
+export function labelConfigError(error: unknown, recorded?: ProjectConfig): unknown {
+  if (error instanceof LayerConfigError && recorded !== undefined && hasProjectConfig(recorded)) {
+    return new LayerscopeError(`${NUXT_CONFIG_LABEL}: ${error.message}`);
+  }
+  return error;
 }
