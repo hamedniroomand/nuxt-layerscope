@@ -1,0 +1,13 @@
+{
+  "name": "fixture-nuxt4",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare:nuxt": "nuxi prepare"
+  },
+  "dependencies": {
+    "fixture-layer-ui": "workspace:*",
+    "nuxt": "^4.4.1",
+    "vue": "^3.5.0"
+  }
+}

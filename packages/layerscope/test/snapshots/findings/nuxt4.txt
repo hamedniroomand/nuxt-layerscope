@@ -1,0 +1,7 @@
+error layer-boundary admin:app/components/AdminPanel.vue:2:14 useCart (admin) → web:app/composables/useCart.ts
+error layer-boundary admin:app/components/AdminPanel.vue:8:5 CartSummary (admin) → web:app/components/CartSummary.vue
+error layer-boundary admin:app/composables/useAdminTheme.ts:3:10 useTheme (admin) → ui:src/composables/useTheme.ts
+error layer-boundary admin:app/utils/exportCsv.ts:1:25 #layers/web/app/composables/useCart (admin) → web:app/composables/useCart.ts
+error layer-boundary admin:server/api/stats.get.ts:3:10 getCartStore (admin) → web:server/utils/cartStore.ts
+warn unresolved-reference web:app/components/CartSummary.vue:10:5 <component :is> (web)
+warn unresolved-reference web:app/composables/useCart.ts:2:3 trackEvent (web)

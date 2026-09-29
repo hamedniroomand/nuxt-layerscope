@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "level": "layer",
+  "nodes": [
+    {
+      "id": "root",
+      "layer": "root"
+    },
+    {
+      "id": "web",
+      "layer": "web"
+    },
+    {
+      "id": "shared",
+      "layer": "shared"
+    },
+    {
+      "id": "auth",
+      "layer": "auth"
+    },
+    {
+      "id": "admin",
+      "layer": "admin"
+    },
+    {
+      "id": "ui",
+      "layer": "ui"
+    }
+  ],
+  "edges": [
+    {
+      "from": "admin",
+      "to": "auth",
+      "count": 1,
+      "status": "allowed"
+    },
+    {
+      "from": "admin",
+      "to": "shared",
+      "count": 3,
+      "status": "allowed"
+    },
+    {
+      "from": "admin",
+      "to": "ui",
+      "count": 1,
+      "status": "not-allowed"
+    },
+    {
+      "from": "admin",
+      "to": "web",
+      "count": 4,
+      "status": "not-allowed"
+    },
+    {
+      "from": "auth",
+      "to": "shared",
+      "count": 2,
+      "status": "allowed"
+    },
+    {
+      "from": "root",
+      "to": "admin",
+      "count": 1,
+      "status": "unrestricted"
+    },
+    {
+      "from": "root",
+      "to": "web",
+      "count": 1,
+      "status": "unrestricted"
+    },
+    {
+      "from": "web",
+      "to": "shared",
+      "count": 3,
+      "status": "allowed"
+    },
+    {
+      "from": "web",
+      "to": "ui",
+      "count": 2,
+      "status": "allowed"
+    }
+  ]
+}

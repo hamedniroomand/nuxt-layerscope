@@ -1,0 +1,16 @@
+{
+  "name": "fixture-matrix",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@vueuse/nuxt": "^15.0.0",
+    "fixture-npm-layer": "file:../npm-layer",
+    "nuxt": "^4.4.1",
+    "vue": "^3.5.0"
+  },
+  "dependenciesMeta": {
+    "fixture-npm-layer": {
+      "injected": true
+    }
+  }
+}

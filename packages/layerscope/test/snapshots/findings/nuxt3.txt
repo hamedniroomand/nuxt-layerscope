@@ -1,0 +1,2 @@
+error layer-boundary backoffice:components/OrdersTable.vue:2:39 ../../checkout/composables/useBasket (backoffice) → checkout:composables/useBasket.ts
+error layer-boundary backoffice:components/OrdersTable.vue:6:11 LazyBasketList (backoffice) → checkout:components/BasketList.vue

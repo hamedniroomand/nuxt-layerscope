@@ -1,0 +1,17 @@
+flowchart LR
+  n0["root"]
+  n1["web"]
+  n2["shared"]
+  n3["auth"]
+  n4["admin"]
+  n5["ui"]
+  n4 --> n3
+  n4 -- 3 --> n2
+  n4 --> n5
+  n4 -- 4 --> n1
+  n3 -- 2 --> n2
+  n0 --> n4
+  n0 --> n1
+  n1 -- 3 --> n2
+  n1 -- 2 --> n5
+  linkStyle 2,3 stroke:#d73a49,stroke-width:2px

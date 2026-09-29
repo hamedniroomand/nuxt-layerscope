@@ -1,0 +1,6 @@
+warn shadowed-component npm:app/components/BaseCard.vue:1:1 BaseCard (npm) → theme:app/components/BaseCard.vue
+error layer-boundary shop:app/components/ShopPanel.vue:3:15 usePrice (shop) → npm:app/composables/usePrice.ts
+error layer-boundary shop:app/components/ShopPanel.vue:4:14 useRemoteFlag (shop) → remote:app/composables/useRemoteFlag.ts
+error layer-boundary shop:app/components/ShopPanel.vue:8:3 BaseCard (shop) → theme:app/components/BaseCard.vue
+error layer-boundary shop:app/components/ShopPanel.vue:11:5 Clock (shop) → theme:app/components/Clock.server.vue
+error layer-boundary shop:app/components/ShopPanel.vue:12:5 NpmBadge (shop) → npm:app/components/NpmBadge.vue

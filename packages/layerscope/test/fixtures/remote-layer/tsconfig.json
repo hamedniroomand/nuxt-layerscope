@@ -1,0 +1,5 @@
+{
+  "extends": "../matrix/.nuxt/tsconfig.app.json",
+  "include": ["./**/*", "../matrix/.nuxt/nuxt.d.ts", "../matrix/.nuxt/nuxt.node.d.ts"],
+  "exclude": ["./node_modules"]
+}

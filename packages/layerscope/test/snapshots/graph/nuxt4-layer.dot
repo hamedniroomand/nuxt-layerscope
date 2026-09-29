@@ -1,0 +1,18 @@
+digraph layerscope {
+  rankdir=LR;
+  "root";
+  "web";
+  "shared";
+  "auth";
+  "admin";
+  "ui";
+  "admin" -> "auth";
+  "admin" -> "shared" [label=3];
+  "admin" -> "ui" [color=red, fontcolor=red];
+  "admin" -> "web" [label=4, color=red, fontcolor=red];
+  "auth" -> "shared" [label=2];
+  "root" -> "admin";
+  "root" -> "web";
+  "web" -> "shared" [label=3];
+  "web" -> "ui" [label=2];
+}
