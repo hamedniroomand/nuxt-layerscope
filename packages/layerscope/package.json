@@ -1,0 +1,93 @@
+{
+  "name": "nuxt-layerscope",
+  "version": "1.0.0",
+  "description": "Layer boundary checks for Nuxt apps that see auto-imports",
+  "keywords": [
+    "architecture",
+    "auto-imports",
+    "boundaries",
+    "cli",
+    "lint",
+    "nuxt",
+    "nuxt-layers",
+    "nuxt-module"
+  ],
+  "homepage": "https://github.com/hamedniroomand/nuxt-layerscope/tree/main/packages/layerscope#readme",
+  "bugs": "https://github.com/hamedniroomand/nuxt-layerscope/issues",
+  "license": "MIT",
+  "author": "Hamed Niroomand",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hamedniroomand/nuxt-layerscope.git",
+    "directory": "packages/layerscope"
+  },
+  "bin": {
+    "layerscope": "./dist/bin.mjs"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "type": "module",
+  "imports": {
+    "#src/*": "./src/*",
+    "#test/*": "./test/*"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./api": {
+      "types": "./dist/api.d.mts",
+      "default": "./dist/api.mjs"
+    },
+    "./eslint": {
+      "types": "./dist/eslint.d.mts",
+      "default": "./dist/eslint.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "test": "vp test",
+    "tarball": "vp run build && vp pm pack --pack-destination ../../.release"
+  },
+  "dependencies": {
+    "@nuxt/kit": "^4.5.2",
+    "@nuxt/schema": "^4.5.2",
+    "@vue/compiler-sfc": "^3.5.43",
+    "cac": "^7.0.0",
+    "globals": "^17.12.0",
+    "h3": "^1.15.11",
+    "jiti": "^2.7.0",
+    "oxc-parser": "^0.151.0",
+    "oxc-walker": "^1.1.1",
+    "pathe": "^2.0.3",
+    "tinyglobby": "^0.2.17"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "eslint": "^10.11.0",
+    "typescript-eslint": "^8.70.1",
+    "vite-plus": "catalog:",
+    "vue-eslint-parser": "^10.4.1"
+  },
+  "peerDependencies": {
+    "eslint": ">=9.0.0",
+    "nuxt": "^3.12.0 || ^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "nuxt": {
+      "optional": true
+    },
+    "eslint": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}
