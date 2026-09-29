@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "fixture-layer-ui": "workspace:*",
-    "nuxt": "^4.5.2",
+    "nuxt": "^4.4.1",
     "vue": "^3.5.0"
   }
 }
