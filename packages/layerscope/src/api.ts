@@ -1,0 +1,16 @@
+export { analyze } from './analyze/index.ts';
+export type { AnalyzeOptions } from './analyze/index.ts';
+export { BASELINE_FILE, BASELINE_VERSION, createBaseline } from './baseline/index.ts';
+export type { Baseline } from './baseline/index.ts';
+export { defineConfig } from './config/define.ts';
+export { LayerscopeError } from './errors.ts';
+export { buildGraph } from './graph/index.ts';
+export type { Graph, GraphEdge, GraphLevel, GraphNode } from './graph/index.ts';
+export { REGISTRY_FILE, REGISTRY_VERSION } from './registry/schema.ts';
+export type { Registry } from './registry/schema.ts';
+export { formatResult, OUTPUT_FORMATS } from './report/index.ts';
+export type { OutputFormat } from './report/index.ts';
+export { JSON_REPORT_VERSION } from './report/json.ts';
+export { findUnused } from './unused/index.ts';
+export type { UnusedSymbol } from './unused/index.ts';
+export type * from './types.ts';
