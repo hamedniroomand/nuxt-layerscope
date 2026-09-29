@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- A note appears when `nuxt.config` is newer than the registry, because changes to its
+  `layerscope` key only apply after `nuxi prepare`, `dev` or `build`.
+- Layer errors caused by the `layerscope` key of `nuxt.config` name it as their source.
+
 ## 0.1.1
 
 - Names inside type syntax are no longer reported as unresolved references: labeled tuple members
