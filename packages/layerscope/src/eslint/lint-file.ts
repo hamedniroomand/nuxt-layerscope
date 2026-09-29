@@ -15,8 +15,11 @@ export interface FileLint {
   unresolved: Finding[];
 }
 
-/** Both rules lint the same text, so the last result per file is reused. */
-const lastLint = new Map<string, { source: string; lint: FileLint }>();
+/**
+ * Both rules lint the same text, so the last result per file is reused. A reloaded project
+ * (registry or config changed) is another object, so results from before it are not reused.
+ */
+const lastLint = new Map<string, { project: Project; source: string; lint: FileLint }>();
 
 /**
  * oxlint passes only the `<script>` of a `.vue` file to JS plugins, while the template matters
@@ -31,7 +34,7 @@ function fullSource(file: string, text: string): string {
 export function lintFile(file: string, text: string, project: Project): FileLint {
   const source = fullSource(file, text);
   const cached = lastLint.get(file);
-  if (cached?.source === source) {
+  if (cached?.project === project && cached.source === source) {
     return cached.lint;
   }
   const layer = project.env.ownerOf(file);
@@ -44,6 +47,6 @@ export function lintFile(file: string, text: string, project: Project): FileLint
       unresolved: analysis.unresolved,
     };
   }
-  lastLint.set(file, { source, lint });
+  lastLint.set(file, { project, source, lint });
   return lint;
 }

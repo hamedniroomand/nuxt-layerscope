@@ -30,6 +30,21 @@ With `@nuxt/eslint`, add `layerscope.configs.recommended` to the configs you pas
 Severities come from the ESLint config; the `rules` section of `layerscope.config.ts` does not
 apply here. Layers, `allow` lists, `ignore` and `globals` do.
 
+### Caching
+
+`eslint --cache` keys a cached result on the file and the ESLint config, but layerscope's findings
+also depend on the registry and the layer config. `layerscope.configs.recommended` therefore carries
+a digest of both, computed when `eslint.config.js` loads, so changing either makes ESLint discard
+its cached results.
+
+- Run `nuxi prepare` before linting, or keep `nuxi dev` running, so the registry is current:
+  `"lint": "nuxi prepare && eslint . --cache"`.
+- The digest looks for the project from the directory ESLint runs in. With a `root` option, or with
+  the rules set up by hand instead of `configs.recommended`, delete the cache after changing layers
+  or config.
+- A cached file is not re-linted when only the files it imports change on disk, for example one is
+  moved and the registry stays the same. Lint without `--cache` in CI.
+
 ### Finding the project
 
 By default the project is the nearest directory above the linted file that contains

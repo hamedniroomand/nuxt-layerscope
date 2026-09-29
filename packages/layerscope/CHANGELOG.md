@@ -6,6 +6,10 @@
   `nitropack`) are no longer reported as unresolved imports.
 - The DevTools tab serves JSON endpoints under `/__layerscope/api` (`state`, `report`, `rerun`),
   with an `ETag` revision that only changes when the findings, layers or notes change.
+- `eslint --cache` no longer keeps stale results: `configs.recommended` carries a digest of the
+  registry and the layer config, so ESLint discards cached results when either changes.
+- The ESLint plugin no longer reuses a file's last result after the registry or config changed,
+  which showed stale findings in editors until the file's text changed.
 - The DevTools tab re-analyzes only files that changed since the last run.
 - The DevTools tab reads `layerscope-baseline.json`, so accepted findings are left out and counted
   as "in baseline", like `layerscope check`.

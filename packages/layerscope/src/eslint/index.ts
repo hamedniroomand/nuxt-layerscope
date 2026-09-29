@@ -2,6 +2,7 @@ import type { ESLint, Linter } from 'eslint';
 
 import { packageVersion } from '#src/version.ts';
 
+import { createRecommended } from './recommended.ts';
 import { rules } from './rules.ts';
 
 const plugin: ESLint.Plugin & { configs: Record<string, Linter.Config> } = {
@@ -10,13 +11,6 @@ const plugin: ESLint.Plugin & { configs: Record<string, Linter.Config> } = {
   configs: {},
 };
 
-plugin.configs.recommended = {
-  name: 'nuxt-layerscope/recommended',
-  plugins: { layerscope: plugin },
-  rules: {
-    'layerscope/layer-boundary': 'error',
-    'layerscope/unresolved-reference': 'warn',
-  },
-};
+plugin.configs.recommended = createRecommended(plugin);
 
 export default plugin;
