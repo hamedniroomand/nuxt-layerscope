@@ -11,5 +11,5 @@ Please don't open a public issue. Report it privately through
 or email [dev.hamedniroomand@gmail.com](mailto:dev.hamedniroomand@gmail.com).
 
 Include the version, what an attacker can do, and steps to reproduce. You'll get a reply within a
-week. Once a fix is released, the advisory is published with credit to you unless you'd rather
-stay anonymous.
+week. Confirmed issues are fixed or publicly disclosed within 90 days of the report. Once a fix is
+released, the advisory is published with credit to you unless you'd rather stay anonymous.
