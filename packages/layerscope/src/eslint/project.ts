@@ -8,13 +8,14 @@ import { REGISTRY_FILE } from '#src/registry/schema.ts';
 import type { ProjectLoad } from './load-project.ts';
 import { loadProject } from './load-project.ts';
 
-const DEFAULT_REGISTRY = join('.nuxt', REGISTRY_FILE);
+export const DEFAULT_REGISTRY = join('.nuxt', REGISTRY_FILE);
 
 /** Editors keep the linter running, so a project is reloaded when its inputs change. */
 const cache = new Map<string, { stamp: string; load: ProjectLoad }>();
 
-function findRoot(file: string): string | null {
-  for (let dir = dirname(file); ; dir = dirname(dir)) {
+/** The nearest directory from `startDir` up that holds a registry. */
+export function findProjectRoot(startDir: string): string | null {
+  for (let dir = startDir; ; dir = dirname(dir)) {
     if (existsSync(join(dir, DEFAULT_REGISTRY))) {
       return dir;
     }
@@ -38,7 +39,7 @@ function tryLoadProject(rootDir: string): ProjectLoad {
 
 /** The Nuxt project a linted file belongs to, from its registry; Nuxt itself is never loaded. */
 export function projectFor(file: string, root: string | undefined): ProjectLoad {
-  const rootDir = root === undefined ? findRoot(file) : resolve(root);
+  const rootDir = root === undefined ? findProjectRoot(dirname(file)) : resolve(root);
   if (rootDir === null) {
     return {
       ok: false,
