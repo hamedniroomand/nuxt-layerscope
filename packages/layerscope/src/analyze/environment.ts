@@ -1,10 +1,11 @@
-import { effectiveConfig } from '#src/config/effective.ts';
+import { effectiveConfig, labelConfigError } from '#src/config/effective.ts';
 import type { ProjectConfig } from '#src/config/effective.ts';
 import { readRegistry } from '#src/registry/read.ts';
 import type { Registry } from '#src/registry/schema.ts';
 import type { Layer, LayerscopeConfig, ResolutionSource, SourceOption } from '#src/types.ts';
 
 import { createAnalysisEnv } from './analysis-env.ts';
+import { staleConfigNote } from './config-freshness.ts';
 import type { AnalysisEnv } from './file-analysis.ts';
 import { assertFresh, assertRegistryFresh } from './freshness.ts';
 import { loadLayers } from './layers.ts';
@@ -42,13 +43,19 @@ function recordedConfig(buildDir: string, registry: Registry | null): ProjectCon
 export async function loadEnvironment(options: EnvironmentOptions): Promise<Environment> {
   const { rootDir, buildDir } = options;
   const { registry, table, ...symbols } = loadSymbols(buildDir, options.source);
-  const config = effectiveConfig(options.config, recordedConfig(buildDir, registry));
-  const { layers, ownerOf, notes } = await loadLayers(rootDir, config, registry?.layers);
+  const recorded = recordedConfig(buildDir, registry);
+  const config = effectiveConfig(options.config, recorded);
+  const { layers, ownerOf, notes } = await loadLayers(rootDir, config, registry?.layers).catch(
+    (error: unknown) => {
+      throw labelConfigError(error, recorded);
+    },
+  );
+  const stale = registry === null ? null : staleConfigNote(rootDir, symbols.sourceFile);
   await (registry === null ? assertFresh(table, layers) : assertRegistryFresh(table, registry));
   return {
     ...symbols,
     config,
-    notes: [...symbols.notes, ...notes],
+    notes: [...symbols.notes, ...notes, ...(stale === null ? [] : [stale])],
     registry,
     layers,
     env: createAnalysisEnv(table, ownerOf, buildDir, config),
