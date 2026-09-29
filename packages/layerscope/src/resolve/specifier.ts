@@ -1,7 +1,7 @@
-import { dirname, isAbsolute, resolve } from 'pathe';
+import { dirname, isAbsolute, join, resolve } from 'pathe';
 
 import type { AliasMap } from '#src/nuxt/aliases.ts';
-import { realPath } from '#src/utils/fs.ts';
+import { isFile, readJson, realPath } from '#src/utils/fs.ts';
 
 import { resolveFile } from './file.ts';
 import { packageName } from './package-name.ts';
@@ -36,9 +36,18 @@ function resolveAlias(specifier: string, aliases: AliasMap, buildDir: string): R
   }
   const [alias, target] = match;
   const path = target + specifier.slice(alias.length);
-  return isAbsolute(target)
-    ? resolvePath(path, buildDir)
-    : { kind: 'external', module: packageName(path) };
+  if (!isAbsolute(target)) {
+    return { kind: 'external', module: packageName(path) };
+  }
+  const resolution = resolvePath(path, buildDir);
+  // Nuxt's `typescript.hoist` aliases `ofetch`, `consola`, `h3` and others to their package dir,
+  // whose entry point comes from package.json, so no file matches it.
+  const manifest = join(target, 'package.json');
+  if (resolution.kind !== 'missing' || !isFile(manifest)) {
+    return resolution;
+  }
+  const { name } = readJson(manifest) as { name?: string };
+  return { kind: 'external', module: name ?? packageName(target) };
 }
 
 export function resolveSpecifier(
