@@ -50,7 +50,8 @@ export default defineNuxtConfig({
 The module records them in the registry on `nuxi prepare`, `dev` and `build`, so the CLI, the ESLint
 plugin and the DevTools tab read them without loading Nuxt, and values computed from environment
 variables are resolved as Nuxt resolved them. After changing them, run `nuxi prepare` again (or
-restart `nuxi dev`). Setting `layers`, `rules`, `ignore` or `globals` both there and in
+restart `nuxi dev`); until then layerscope prints a note that `nuxt.config` is newer than the
+registry. Setting `layers`, `rules`, `ignore` or `globals` both there and in
 `layerscope.config.ts` is an error; `buildDir` only works in the file.
 
 ## `layers`

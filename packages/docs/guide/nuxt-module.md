@@ -64,6 +64,10 @@ export default defineNuxtConfig({
 `layers`, `rules`, `ignore` and `globals` work here exactly as in
 [`layerscope.config.ts`](../reference/config#in-nuxt-config); use one place or the other.
 
+The module records them in the registry on `nuxi prepare`, `dev` and `build`. After editing
+`nuxt.config`, run `nuxi prepare` again; until then the CLI still uses the old values and prints a
+note that `nuxt.config` is newer than the registry.
+
 ## DevTools tab
 
 While `nuxi dev` runs, the module also adds a Layerscope tab to Nuxt DevTools. See
