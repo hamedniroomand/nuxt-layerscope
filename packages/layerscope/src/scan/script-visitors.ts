@@ -68,6 +68,14 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
   },
   TSModuleDeclaration: skip,
   TSImportType: skip,
+  // Type-only syntax has no runtime references: `typeof x`, `[id: string]`, `(...next: T[]) => void`.
+  TSTypeQuery: skip,
+  TSNamedTupleMember: skip,
+  TSFunctionType: skip,
+  TSConstructorType: skip,
+  TSMethodSignature: skip,
+  TSCallSignatureDeclaration: skip,
+  TSConstructSignatureDeclaration: skip,
   CallExpression(node, _parent, { scan, mapOffset }) {
     if (node.type !== 'CallExpression' || node.callee.type !== 'Identifier') {
       return;
