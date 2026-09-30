@@ -12,5 +12,8 @@ export function findingDetails(finding: Finding, cwd: string): string[] {
     const allowed = finding.allowed.length > 0 ? finding.allowed.join(', ') : 'no other layers';
     details.push(`allowed for "${finding.fromLayer}": ${allowed}`);
   }
+  if (finding.suggestion !== undefined) {
+    details.push(`suggestion: ${finding.suggestion.message}`);
+  }
   return details;
 }

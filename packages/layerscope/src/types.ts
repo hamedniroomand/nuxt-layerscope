@@ -37,6 +37,29 @@ export interface Edge extends Reference {
   external: string | null;
 }
 
+export type SuggestionAction = 'move' | 'allow' | 'leave';
+
+/** What a suggestion changes, in counts that `check` can confirm. */
+export interface SuggestionImpact {
+  /** Boundary findings cleared. */
+  fixes: number;
+  /** move: files that use the moved file. */
+  files?: number;
+  /** move: explicit imports that need a new specifier. */
+  imports?: number;
+  /** allow: edges added to the `allow` map. */
+  edges?: number;
+}
+
+export interface Suggestion {
+  action: SuggestionAction;
+  message: string;
+  /** move: the layer to move the file to, and where it lands. */
+  layer?: string;
+  file?: string;
+  impact: SuggestionImpact;
+}
+
 export interface Finding {
   rule: RuleName;
   severity: Exclude<Severity, 'off'>;
@@ -51,6 +74,8 @@ export interface Finding {
   /** Layers `fromLayer` may depend on, for `layer-boundary` findings. */
   allowed?: string[];
   message: string;
+  /** Set on `layer-boundary` findings. */
+  suggestion?: Suggestion;
 }
 
 export interface LayerRule {

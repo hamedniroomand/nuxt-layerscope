@@ -57,6 +57,8 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     registry,
     ownerOf: env.ownerOf,
     config,
+    layers,
+    rootDir,
   });
   const result: AnalyzeResult = {
     rootDir,

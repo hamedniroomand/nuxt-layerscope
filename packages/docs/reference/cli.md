@@ -7,13 +7,14 @@ The package installs a `layerscope` command. Without installing, run it as
 layerscope <command> [options]
 ```
 
-| Command                                  | Description                                          |
-| ---------------------------------------- | ---------------------------------------------------- |
-| [`init [root]`](#layerscope-init)        | Write a starter config from today's dependencies     |
-| [`check [root]`](#layerscope-check)      | Check layer boundaries, including auto-imports       |
-| [`why <symbol> [root]`](#layerscope-why) | List every use of a symbol and the layers it crosses |
-| [`graph [root]`](#layerscope-graph)      | Print the dependency graph between layers or files   |
-| [`unused [root]`](#layerscope-unused)    | List components and auto-imports nothing references  |
+| Command                                  | Description                                           |
+| ---------------------------------------- | ----------------------------------------------------- |
+| [`init [root]`](#layerscope-init)        | Write a starter config from today's dependencies      |
+| [`fix [root]`](#layerscope-fix)          | Print the file moves that would fix boundary findings |
+| [`check [root]`](#layerscope-check)      | Check layer boundaries, including auto-imports        |
+| [`why <symbol> [root]`](#layerscope-why) | List every use of a symbol and the layers it crosses  |
+| [`graph [root]`](#layerscope-graph)      | Print the dependency graph between layers or files    |
+| [`unused [root]`](#layerscope-unused)    | List components and auto-imports nothing references   |
 
 `root` is the Nuxt project root and defaults to the current directory. `layerscope --help` and
 `layerscope <command> --help` print the options.
@@ -62,6 +63,18 @@ layerscope check apps/shop --format github        # another root, GitHub annotat
 layerscope check --prepare --source registry      # regenerate, and require the module
 layerscope check --update-baseline                # accept the current findings
 ```
+
+## `layerscope fix`
+
+```bash
+layerscope fix [root] --dry-run
+```
+
+Prints the file moves asked for by the [suggestions](./rules#suggestions) on boundary findings, and
+the explicit imports each move breaks with their new specifier. Auto-imports and components need
+no update. Only relative specifiers are rewritten; aliases are listed as "update by hand".
+`--dry-run` is required: nothing is moved. Also takes `--config`, `--prepare`, `--source` and
+`--verbose`.
 
 ## `layerscope why`
 

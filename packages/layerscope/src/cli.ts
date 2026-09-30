@@ -1,6 +1,7 @@
 import { cac } from 'cac';
 
 import { registerCheck } from '#src/commands/check.ts';
+import { registerFix } from '#src/commands/fix.ts';
 import { registerGraph } from '#src/commands/graph.ts';
 import { registerInit } from '#src/commands/init.ts';
 import { EXIT_CLEAN, EXIT_ERROR } from '#src/commands/shared.ts';
@@ -13,6 +14,7 @@ function createCli(): ReturnType<typeof cac> {
   const cli = cac('layerscope');
   registerInit(cli);
   registerCheck(cli);
+  registerFix(cli);
   registerWhy(cli);
   registerGraph(cli);
   registerUnused(cli);
