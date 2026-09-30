@@ -9,6 +9,7 @@ layerscope <command> [options]
 
 | Command                                  | Description                                          |
 | ---------------------------------------- | ---------------------------------------------------- |
+| [`init [root]`](#layerscope-init)        | Write a starter config from today's dependencies     |
 | [`check [root]`](#layerscope-check)      | Check layer boundaries, including auto-imports       |
 | [`why <symbol> [root]`](#layerscope-why) | List every use of a symbol and the layers it crosses |
 | [`graph [root]`](#layerscope-graph)      | Print the dependency graph between layers or files   |
@@ -16,6 +17,28 @@ layerscope <command> [options]
 
 `root` is the Nuxt project root and defaults to the current directory. `layerscope --help` and
 `layerscope <command> --help` print the options.
+
+## `layerscope init`
+
+```bash
+layerscope init [root] [options]
+```
+
+Writes `layerscope.config.ts` with every layer and the smallest `allow` map under which the project
+passes. It prints the layers, every allowed edge and a readiness report: how many references could
+not be resolved and where they cluster. Project code is never changed. See
+[Getting started](../guide/getting-started#generate-a-starting-config).
+
+| Option            | Default                | Description                                                  |
+| ----------------- | ---------------------- | ------------------------------------------------------------ |
+| `--config <file>` | `layerscope.config.ts` | Where to write the config, relative to the current directory |
+| `--baseline`      |                        | Also write a baseline of the findings still reported         |
+| `--force`         |                        | Replace an existing config or baseline                       |
+| `--dry-run`       |                        | Print the proposal and write nothing                         |
+
+Also takes `--prepare`, `--source` and `--verbose`. Without `--force`, `init` exits `2` when a
+config already exists, or a baseline with `--baseline`. It does not merge: use `--dry-run` and copy
+the edges you want.
 
 ## `layerscope check`
 
