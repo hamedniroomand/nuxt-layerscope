@@ -4,9 +4,12 @@ import { relative, resolve } from 'pathe';
 
 import { analyze } from '#src/analyze/index.ts';
 import { BASELINE_FILE, createBaseline, writeBaseline } from '#src/baseline/index.ts';
-import { findConfigFile } from '#src/config/load.ts';
-import { LayerscopeError } from '#src/errors.ts';
-import { assertNoNuxtConfigLayers, propose, renderConfig } from '#src/init/index.ts';
+import {
+  assertNoNuxtConfigLayers,
+  assertWritable,
+  propose,
+  renderConfig,
+} from '#src/init/index.ts';
 import { formatInit } from '#src/report/init.ts';
 import { paintFor } from '#src/utils/style.ts';
 
@@ -21,38 +24,17 @@ export interface InitFlags extends Omit<CommonFlags, 'format'> {
 
 const CONFIG_NAME = 'layerscope.config.ts';
 
-function exists(file: string): LayerscopeError {
-  return new LayerscopeError(
-    `${relative(process.cwd(), file)} already exists. Use --force to replace it, or --dry-run and copy what you need.`,
-  );
-}
-
-/** Refuses before analyzing, so nothing is touched. */
-function assertWritable(rootDir: string, configFile: string, flags: InitFlags): void {
-  // Without --config, any config the loader would pick up counts, not only the file to write.
-  const current = flags.config === undefined ? findConfigFile(rootDir) : configFile;
-  if (current !== null && existsSync(current)) {
-    throw exists(current);
-  }
-  const baselineFile = resolve(rootDir, BASELINE_FILE);
-  if (flags.baseline === true && existsSync(baselineFile)) {
-    throw exists(baselineFile);
-  }
-}
-
 export async function init(root: string | undefined, flags: InitFlags): Promise<number> {
   const rootDir = resolve(root ?? process.cwd());
-  const configFile = resolve(
-    flags.config === undefined ? rootDir : process.cwd(),
-    flags.config ?? CONFIG_NAME,
-  );
+  const customConfig = flags.config === undefined ? undefined : resolve(flags.config);
+  const configFile = customConfig ?? resolve(rootDir, CONFIG_NAME);
   const baselineFile = resolve(rootDir, BASELINE_FILE);
   const write = flags.dryRun !== true;
   if (write && flags.force !== true) {
-    assertWritable(rootDir, configFile, flags);
+    assertWritable(rootDir, customConfig, flags.baseline === true);
   }
 
-  // No config here: without an `allow` map every layer is unrestricted and the edges are the truth.
+  // Without an `allow` map every layer is unrestricted, so the edges are what exists today.
   const result = await analyze({
     rootDir,
     config: {},

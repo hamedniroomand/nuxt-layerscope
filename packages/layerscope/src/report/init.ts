@@ -7,11 +7,9 @@ import type { Paint } from '#src/utils/style.ts';
 import { plain } from '#src/utils/style.ts';
 
 export interface InitReportOptions {
-  /** The rendered config, printed in full when nothing was written. */
   source: string;
   written: boolean;
   configFile: string;
-  /** `null` when no baseline was requested. */
   baselineFile: string | null;
   paint?: Paint;
 }
