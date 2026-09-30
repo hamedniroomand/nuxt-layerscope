@@ -63,6 +63,9 @@ Everything else lives at **[layerscope.kitdev.space](https://layerscope.kitdev.s
 [CI](https://layerscope.kitdev.space/guide/ci) and
 [troubleshooting](https://layerscope.kitdev.space/guide/troubleshooting).
 
+Using a coding assistant? See [Coding assistants](https://layerscope.kitdev.space/guide/coding-tools)
+and [`llms.txt`](https://layerscope.kitdev.space/llms.txt).
+
 ## Contributing
 
 Bug reports and pull requests are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) to get set up.

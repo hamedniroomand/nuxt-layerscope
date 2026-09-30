@@ -44,7 +44,10 @@ Run it from the repository root so the paths match the diff; the
 
 ## `json`
 
-A versioned, deterministic report: the same input produces the same bytes.
+A versioned, deterministic report: the same input produces the same bytes. It is described by a
+[JSON Schema](https://layerscope.kitdev.space/schema/report-1.json), also shipped as
+`nuxt-layerscope/schema/report-1.json`, and covered by tests. `version` is raised only on breaking
+changes; new fields can be added without it, so ignore fields you do not know.
 
 ```json
 {

@@ -153,11 +153,14 @@ Also takes `--config`, `--prepare`, `--source` and `--verbose`. Exits `0`.
 
 ## Exit codes
 
-| Code | Meaning                                                                                                      |
-| ---- | ------------------------------------------------------------------------------------------------------------ |
-| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `graph`/`unused` ran    |
-| `1`  | `check` found at least one error that is not in the baseline                                                 |
-| `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, `why` found no use |
+Every command works with flags only and never prompts, so it is safe in scripts, CI and for
+[coding assistants](../guide/coding-tools).
+
+| Code | Meaning                                                                                                                        |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran |
+| `1`  | `check` found at least one error that is not in the baseline                                                                   |
+| `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, `why` found no use                   |
 
 ## Output streams
 
