@@ -29,6 +29,19 @@ Every kind of dependency is checked:
 To fix a finding, either move the symbol to a layer both may use (often `shared`), or allow the
 dependency if it is intended.
 
+### Suggestions
+
+Each `layer-boundary` finding carries one suggestion, in every output format:
+
+- **move** the file to a layer that every layer using it may depend on, when two or more other
+  layers use it or allowing it would create a cycle. If several layers qualify, the one with the
+  shortest `allow` list wins. Only local layers are targets.
+- **allow** the dependency, when that creates no cycle.
+- **leave** it, when allowing would create a cycle and no layer can hold the file.
+
+Each suggestion shows what it changes: findings cleared, files and imports affected for a move,
+edges added for an allow. [`layerscope fix --dry-run`](./cli#layerscope-fix) prints the moves.
+
 ## `unresolved-reference`
 
 - Default: `warn`

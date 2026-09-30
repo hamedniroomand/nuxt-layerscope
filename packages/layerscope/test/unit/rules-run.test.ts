@@ -38,6 +38,8 @@ describe('runRules', () => {
       edges: [makeEdge({ line: 2 })],
       unresolved: [unresolved],
       registry: null,
+      layers: [],
+      rootDir: '/',
       ownerOf: noOwner,
       config: { ...config, rules: { 'shadowed-component': 'off' } },
     });
@@ -45,7 +47,15 @@ describe('runRules', () => {
   });
 
   it('notes that shadowed-component could not run without a registry', () => {
-    const input = { edges: [], unresolved: [], registry: null, ownerOf: noOwner, config };
+    const input = {
+      edges: [],
+      unresolved: [],
+      registry: null,
+      layers: [],
+      rootDir: '/',
+      ownerOf: noOwner,
+      config,
+    };
     expect(runRules(input).notes).toEqual([SHADOWED_NEEDS_REGISTRY]);
     const off = { ...config, rules: { 'shadowed-component': 'off' as const } };
     expect(runRules({ ...input, config: off }).notes).toEqual([]);

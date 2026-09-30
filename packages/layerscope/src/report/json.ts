@@ -1,17 +1,24 @@
 import { relative } from 'pathe';
 
-import type { AnalyzeResult, BaselineResult, Finding } from '#src/types.ts';
+import type { AnalyzeResult, BaselineResult, Finding, Suggestion } from '#src/types.ts';
 
 import { summarize } from './summary.ts';
 
 /** Bumped on breaking changes to the JSON report shape. */
 export const JSON_REPORT_VERSION = 1;
 
+function relativeSuggestion(suggestion: Suggestion, cwd: string): Suggestion {
+  return suggestion.file === undefined
+    ? suggestion
+    : { ...suggestion, file: relative(cwd, suggestion.file) };
+}
+
 function relativeFinding(finding: Finding, cwd: string): Finding {
   return {
     ...finding,
     file: relative(cwd, finding.file),
     target: finding.target === null ? null : relative(cwd, finding.target),
+    ...(finding.suggestion && { suggestion: relativeSuggestion(finding.suggestion, cwd) }),
   };
 }
 

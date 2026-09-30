@@ -14,6 +14,7 @@ layers/admin/app/components/AdminPanel.vue
   2:14    error  Auto-import "useCart" crosses from layer "admin" into "web"  layer-boundary
                  useCart → layers/web/app/composables/useCart.ts
                  allowed for "admin": shared, auth
+                 suggestion: allow "admin" to use "web" (adds 1 edge, clears 4 findings)
 
 ✖ 2 problems (1 error, 1 warning)
 ```
@@ -35,7 +36,7 @@ that GitHub shows inline on the pull request diff: `::error` for errors, `::warn
 warnings, and `::notice` for fixed baseline entries.
 
 ```text
-::error file=layers/admin/app/components/AdminPanel.vue,line=2,col=14,title=layerscope layer-boundary::Auto-import "useCart" crosses from layer "admin" into "web"%0AuseCart → layers/web/app/composables/useCart.ts%0Aallowed for "admin": shared, auth
+::error file=layers/admin/app/components/AdminPanel.vue,line=2,col=14,title=layerscope layer-boundary::Auto-import "useCart" crosses from layer "admin" into "web"%0AuseCart → layers/web/app/composables/useCart.ts%0Aallowed for "admin": shared, auth%0Asuggestion: allow "admin" to use "web" (adds 1 edge%2C clears 4 findings)
 ```
 
 Run it from the repository root so the paths match the diff; the
@@ -68,6 +69,11 @@ A versioned, deterministic report: the same input produces the same bytes.
       "toLayer": "web",
       "target": "layers/web/app/composables/useCart.ts",
       "allowed": ["shared", "auth"],
+      "suggestion": {
+        "action": "allow",
+        "message": "allow \"admin\" to use \"web\" (adds 1 edge, clears 4 findings)",
+        "impact": { "fixes": 4, "edges": 1 }
+      },
       "message": "Auto-import \"useCart\" crosses from layer \"admin\" into \"web\""
     }
   ]
@@ -86,17 +92,18 @@ A versioned, deterministic report: the same input produces the same bytes.
 
 Finding fields:
 
-| Field                    | Description                                                                    |
-| ------------------------ | ------------------------------------------------------------------------------ |
-| `rule`                   | `layer-boundary`, `unresolved-reference` or `shadowed-component`               |
-| `severity`               | `error` or `warn`                                                              |
-| `file`, `line`, `column` | Where the reference is; 1-based                                                |
-| `symbol`                 | Identifier, component name or import specifier                                 |
-| `fromLayer`              | Layer of the file                                                              |
-| `toLayer`                | Layer the symbol resolves to, or `null` for packages and unresolved references |
-| `target`                 | File the symbol resolves to, when known                                        |
-| `allowed`                | For `layer-boundary`: the layers `fromLayer` may use                           |
-| `message`                | Human-readable description                                                     |
+| Field                    | Description                                                                                                    |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `rule`                   | `layer-boundary`, `unresolved-reference` or `shadowed-component`                                               |
+| `severity`               | `error` or `warn`                                                                                              |
+| `file`, `line`, `column` | Where the reference is; 1-based                                                                                |
+| `symbol`                 | Identifier, component name or import specifier                                                                 |
+| `fromLayer`              | Layer of the file                                                                                              |
+| `toLayer`                | Layer the symbol resolves to, or `null` for packages and unresolved references                                 |
+| `target`                 | File the symbol resolves to, when known                                                                        |
+| `allowed`                | For `layer-boundary`: the layers `fromLayer` may use                                                           |
+| `suggestion`             | For `layer-boundary`: `action` (`move`, `allow`, `leave`), `message`, `impact`; `move` adds `layer` and `file` |
+| `message`                | Human-readable description                                                                                     |
 
 ## `why` output
 
