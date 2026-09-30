@@ -6,6 +6,7 @@ import type { Edge, Finding, Layer, LayerscopeConfig } from '#src/types.ts';
 
 import { compareByPosition } from './compare.ts';
 import { boundaryFindings } from './layer-boundary.ts';
+import { cycleFindings } from './layer-cycle.ts';
 import { SHADOWED_NEEDS_REGISTRY, shadowedFindings } from './shadowed-component.ts';
 
 export interface RuleInput {
@@ -29,6 +30,7 @@ export function runRules(input: RuleInput): { findings: Finding[]; notes: string
   const found = [
     ...input.unresolved,
     ...boundaryFindings(input.edges, config),
+    ...cycleFindings(input.edges, config),
     ...(registry === null ? [] : shadowedFindings(registry, input.ownerOf, config)),
   ].toSorted(compareByPosition);
   const findings = addSuggestions(found, input.edges, input.layers, config, input.rootDir);

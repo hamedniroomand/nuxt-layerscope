@@ -2,6 +2,7 @@ import type { LayerscopeConfig, RuleName, Severity } from '#src/types.ts';
 
 export const DEFAULT_SEVERITY: Record<RuleName, Severity> = {
   'layer-boundary': 'error',
+  'layer-cycle': 'off',
   'unresolved-reference': 'warn',
   'shadowed-component': 'warn',
 };

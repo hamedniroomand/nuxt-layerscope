@@ -10,6 +10,7 @@ layerscope <command> [options]
 | Command                                  | Description                                           |
 | ---------------------------------------- | ----------------------------------------------------- |
 | [`init [root]`](#layerscope-init)        | Write a starter config from today's dependencies      |
+| [`drift [root]`](#layerscope-drift)      | Say how many violations the code adds and fixes       |
 | [`fix [root]`](#layerscope-fix)          | Print the file moves that would fix boundary findings |
 | [`check [root]`](#layerscope-check)      | Check layer boundaries, including auto-imports        |
 | [`why <symbol> [root]`](#layerscope-why) | List every use of a symbol and the layers it crosses  |
@@ -63,6 +64,17 @@ layerscope check apps/shop --format github        # another root, GitHub annotat
 layerscope check --prepare --source registry      # regenerate, and require the module
 layerscope check --update-baseline                # accept the current findings
 ```
+
+## `layerscope drift`
+
+```bash
+layerscope drift [root] [--base origin/main] [--format text|markdown|json]
+```
+
+Compares the violations the code has now with the [baseline](../guide/baseline) committed on the
+base ref, and prints `adds 3, fixes 5`, the entries behind both, and the baseline size on the base
+and now. A base without a baseline file counts as empty. Also takes `--baseline`, `--config`,
+`--prepare` and `--source`. Exits `0`, and `2` for an unknown ref.
 
 ## `layerscope fix`
 
