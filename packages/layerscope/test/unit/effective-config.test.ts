@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vite-plus/test';
 
-import { effectiveConfig, labelConfigError } from '#src/config/effective.ts';
+import {
+  effectiveConfig,
+  hasProjectConfig,
+  labelConfigError,
+  pickProjectConfig,
+} from '#src/config/effective.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { LayerConfigError } from '#src/layer-config-error.ts';
 import type { LayerscopeConfig } from '#src/types.ts';
@@ -28,6 +33,24 @@ describe('effectiveConfig', () => {
   it('validates nuxt.config options like a config file', () => {
     const invalid = { rules: { 'no-such-rule': 'error' } } as unknown as LayerscopeConfig;
     expect(() => effectiveConfig({}, invalid)).toThrow('nuxt.config (layerscope): unknown rule');
+  });
+});
+
+describe('pickProjectConfig', () => {
+  it('keeps only project keys that are set', () => {
+    expect(
+      pickProjectConfig({
+        buildDir: '.nuxt',
+        preset: 'stacked',
+        rules: { 'layer-boundary': 'warn' },
+      }),
+    ).toEqual({ preset: 'stacked', rules: { 'layer-boundary': 'warn' } });
+  });
+
+  it('returns an empty object when nothing project-related is set', () => {
+    expect(pickProjectConfig({ buildDir: '.nuxt' })).toEqual({});
+    expect(hasProjectConfig({})).toBe(false);
+    expect(hasProjectConfig(recorded)).toBe(true);
   });
 });
 

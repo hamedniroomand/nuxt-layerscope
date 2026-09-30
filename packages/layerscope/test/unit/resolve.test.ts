@@ -52,6 +52,24 @@ describe('resolveSpecifier', () => {
   });
 });
 
+describe('resolveSpecifier absolute and build paths', () => {
+  it('resolves absolute paths the same as relatives', () => {
+    const file = join(NUXT4_ROOT, 'layers/web/app/composables/useCart.ts');
+    expect(resolveSpecifier(file, from, aliases, buildDir)).toEqual({
+      kind: 'file',
+      file,
+      module: null,
+    });
+  });
+
+  it('treats the build dir itself as the #build virtual module', () => {
+    expect(resolveSpecifier(buildDir, from, aliases, buildDir)).toEqual({
+      kind: 'external',
+      module: '#build',
+    });
+  });
+});
+
 describe('resolveSpecifier under node_modules', () => {
   it('keeps the real file and the package, so a layer installed from npm can own it', () => {
     const resolution = resolveSpecifier('#app', from, aliases, buildDir);

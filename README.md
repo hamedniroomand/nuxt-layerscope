@@ -11,6 +11,7 @@
 <p align="center">
   <a href="https://www.npmjs.com/package/nuxt-layerscope"><img src="https://img.shields.io/npm/v/nuxt-layerscope?color=00dc82&label=npm" alt="npm version"></a>
   <a href="https://github.com/hamedniroomand/nuxt-layerscope/actions/workflows/ci.yml"><img src="https://github.com/hamedniroomand/nuxt-layerscope/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://codecov.io/gh/hamedniroomand/nuxt-layerscope"><img src="https://codecov.io/gh/hamedniroomand/nuxt-layerscope/graph/badge.svg" alt="coverage"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/hamedniroomand/nuxt-layerscope?color=22d3ee" alt="MIT license"></a>
   <a href="https://layerscope.kitdev.space/"><img src="https://img.shields.io/badge/docs-layerscope-00dc82" alt="Documentation"></a>
 </p>

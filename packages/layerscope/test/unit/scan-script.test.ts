@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 
-import { scanModule } from '#src/scan/script.ts';
+import { collectTopLevelNames, scanModule } from '#src/scan/script.ts';
 
 function freeNames(code: string): string[] {
   return scanModule(code, 'file.ts').free.map(ref => ref.name);
@@ -95,5 +95,14 @@ describe('scanModule imports and components', () => {
 
   it('reports parse errors instead of throwing', () => {
     expect(scanModule('const = ;', 'file.ts').error).not.toBeNull();
+  });
+});
+
+describe('collectTopLevelNames', () => {
+  it('maps top-level identifiers for template fallback bindings', () => {
+    expect(collectTopLevelNames('const cart = 1;\nfunction useLocal() {}\n', 'ts')).toEqual({
+      cart: 'setup-maybe-ref',
+      useLocal: 'setup-maybe-ref',
+    });
   });
 });

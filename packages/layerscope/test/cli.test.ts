@@ -189,3 +189,15 @@ describe('layerscope graph and unused', () => {
     expect(output.stdout()).toContain('4 unused symbols in 2 layers');
   });
 });
+
+describe('layerscope help', () => {
+  it('exits 0 for --help without a command', async () => {
+    captureOutput();
+    expect(await run(['node', 'layerscope', '--help'])).toBe(EXIT_CLEAN);
+  });
+
+  it('prints help and exits 2 when no command is given', async () => {
+    captureOutput();
+    expect(await run(['node', 'layerscope'])).toBe(EXIT_ERROR);
+  });
+});
