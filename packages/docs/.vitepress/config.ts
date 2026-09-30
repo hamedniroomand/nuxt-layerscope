@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress';
 import { icon } from './icons.ts';
 
 const REPOSITORY = 'https://github.com/hamedniroomand/nuxt-layerscope';
-const SITE = 'https://hamedniroomand.github.io/nuxt-layerscope/';
+const SITE = 'https://layerscope.kitdev.space';
 const BASE = '/';
 const TITLE = 'layerscope';
 const DESCRIPTION =
@@ -48,6 +48,15 @@ export default defineConfig({
     ['meta', { name: 'twitter:title', content: 'layerscope · Layer boundaries for Nuxt' }],
     ['meta', { name: 'twitter:description', content: DESCRIPTION }],
     ['meta', { name: 'twitter:image', content: `${SITE}og-image.png` }],
+    [
+      'script',
+      {
+        defer: '',
+        src: 'https://umami.niroomand.dev/script.js',
+        'data-website-id': '70cf5b0a-7367-42aa-9855-302f736063ce',
+        'data-domains': new URL(SITE).hostname,
+      },
+    ],
   ],
 
   markdown: {
