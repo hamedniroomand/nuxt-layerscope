@@ -4,7 +4,7 @@ import { icon } from './icons.ts';
 
 const REPOSITORY = 'https://github.com/hamedniroomand/nuxt-layerscope';
 const SITE = 'https://hamedniroomand.github.io/nuxt-layerscope/';
-const BASE = '/nuxt-layerscope/';
+const BASE = '/';
 const TITLE = 'layerscope';
 const DESCRIPTION =
   'Layer boundary checks for Nuxt 3 and 4. layerscope resolves auto-imports, components and server utils the way Nuxt does, and fails CI when a layer uses one it is not allowed to.';
