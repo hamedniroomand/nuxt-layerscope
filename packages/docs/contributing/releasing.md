@@ -3,57 +3,61 @@
 `nuxt-layerscope` is published to npm by `.github/workflows/release.yml` when a `v*` tag is
 pushed. The workflow uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers):
 GitHub Actions proves its identity to npm with OIDC, so no npm token is stored anywhere, and npm
-adds [provenance](https://docs.npmjs.com/generating-provenance-statements) when the repository is
-public.
+adds [provenance](https://docs.npmjs.com/generating-provenance-statements).
 
-A trusted publisher can only be configured for a package that exists, so the **first version is
-published by hand**.
+## Release
 
-## First release (by hand)
+1. Update `version` in `packages/layerscope/package.json` and rename the `## Unreleased` section
+   of `packages/layerscope/CHANGELOG.md` to `## <version>`. Changes merged between releases add
+   their line under `## Unreleased`.
+2. Merge that to `main`.
+3. Tag `main` and push the tag:
 
-### 1. Prepare
+   ```bash
+   git switch main && git pull && git tag v0.2.0 && git push origin v0.2.0
+   ```
 
-Keep the release workflow disabled for now (**Actions → Release → ⋯ → Disable workflow**), so the
-tag pushed below does not try to publish a second time.
+The workflow then:
 
-```bash
-git switch main && git pull
-vp install
-vp run ready
-```
+1. checks that the tag matches the package version,
+2. runs `vp run ready` (format, lint, type check, tests, build),
+3. packs the package with pnpm, which replaces the workspace's `catalog:` specifiers, and
+   publishes it with npm 11.5.1 or later through trusted publishing,
+4. creates the GitHub release from the changelog section.
 
-Check the version in `packages/layerscope/package.json` and that `CHANGELOG.md` has a section for
-it.
+A tag with a pre-release suffix, such as `v0.3.0-beta.1`, is published under the `next` dist-tag
+and marked as a pre-release on GitHub.
 
-### 2. Publish
+The GitHub Action is referenced by tag (`hamedniroomand/nuxt-layerscope@v0.2.0`), so every
+release needs its tag.
 
-Pack with pnpm, which replaces the workspace's `catalog:` specifiers, then publish the tarball with
-npm, exactly as the workflow does:
+## Try a change before it is released
 
-```bash
-cd packages/layerscope
-vp pm pack --pack-destination ../../.release
-npm login
-npm publish ../../.release/nuxt-layerscope-0.1.0.tgz --access public
-rm -r ../../.release
-```
+Nothing here publishes to npm.
 
-npm asks for a second factor. Check the result with `npm view nuxt-layerscope`.
-
-### 3. Tag and release on GitHub
-
-The action is referenced by tag (`hamedniroomand/nuxt-layerscope@v0.1.0`), so the tag is needed
-even though the workflow did not publish:
+**Preview build.** `.github/workflows/preview.yml` publishes every pull request and every push to
+`main` with [pkg.pr.new](https://pkg.pr.new). Install one in any project:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
-gh release create v0.1.0 --title v0.1.0 --notes "See CHANGELOG.md"
+npx https://pkg.pr.new/nuxt-layerscope@<pr-number-or-sha>
+pnpm add -D https://pkg.pr.new/nuxt-layerscope@<pr-number-or-sha>
 ```
 
-### 4. Connect the repository to npm
+**Local tarball.** To test a change that is not pushed yet, `vp run tarball` builds the package
+and packs it into `.release/`, which is git-ignored:
 
-On [npmjs.com](https://www.npmjs.com/package/nuxt-layerscope), open **Settings → Trusted
+```bash
+pnpm add -D /path/to/nuxt-layerscope/.release/nuxt-layerscope-<version>.tgz
+```
+
+## One-time setup
+
+Already done for this repository; kept for reference, or for a fork.
+
+A trusted publisher can only be configured for a package that exists, so the first version has to
+be published by hand (`vp pm pack`, then `npm publish --access public` on the tarball, with the
+Release workflow disabled). After that, on
+[npmjs.com](https://www.npmjs.com/package/nuxt-layerscope), open **Settings → Trusted
 publishing**, choose **GitHub Actions** and enter:
 
 | Field                | Value             |
@@ -64,37 +68,10 @@ publishing**, choose **GitHub Actions** and enter:
 | Environment name     | `npm`             |
 
 The environment must match `environment: npm` in the workflow. Create it on GitHub under
-**Settings → Environments**; protection rules there (required reviewers, only `v*` tags) then
-apply to every publish.
+**Settings → Environments**; protection rules there (required reviewers, only `v*` tags) apply to
+every publish. Then restrict publishing on npm under **Settings → Publishing access → Require
+two-factor authentication and disallow tokens**: trusted publishing keeps working, and a leaked
+token can no longer publish.
 
-Once a release has gone through the workflow, restrict publishing on npm under **Settings →
-Publishing access → Require two-factor authentication and disallow tokens**. Trusted publishing
-keeps working, and a leaked token can no longer publish.
-
-### 5. Enable the workflow
-
-**Actions → Release → Enable workflow.**
-
-## Every later release
-
-1. Update `version` in `packages/layerscope/package.json` and rename the `## Unreleased` section
-   of `packages/layerscope/CHANGELOG.md` to `## <version>`. Changes merged between releases add
-   their line under `## Unreleased`.
-2. Commit and merge to `main`.
-3. Tag and push:
-
-   ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
-   ```
-
-The workflow then:
-
-1. checks that the tag matches the package version,
-2. runs `vp run ready` (format, lint, type check, tests, build),
-3. packs the package with pnpm and publishes it with npm 11.5.1 or later through trusted
-   publishing,
-4. creates the GitHub release from the changelog section.
-
-A tag with a pre-release suffix, such as `v0.2.0-beta.1`, is published under the `next`
-dist-tag and marked as a pre-release on GitHub.
+The preview workflow needs the [pkg.pr.new GitHub App](https://github.com/apps/pkg-pr-new)
+installed on the repository.

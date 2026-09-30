@@ -20,7 +20,6 @@ vp run ready      # format, lint, type check, test and build everything
 | `packages/layerscope/test/fixtures` | Nuxt projects the tests run against                     |
 | `packages/docs`                     | This site (VitePress)                                   |
 | `action.yml`                        | The GitHub Action                                       |
-| `docs/specs`                        | The roadmap                                             |
 
 ## Commands
 
@@ -35,7 +34,7 @@ vp run ready      # format, lint, type check, test and build everything
 | `vp run docs:build` | Build this site                                            |
 
 `vp run tarball` gives you a `.tgz` you can install in another project to try a change before it
-is released: `pnpm add -D /path/to/nuxt-layerscope-0.1.0.tgz`.
+is released. Pull requests also get a preview build; see [Releasing](./releasing).
 
 ## Fixtures
 

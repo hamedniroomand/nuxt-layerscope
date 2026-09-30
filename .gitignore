@@ -39,8 +39,5 @@ dist-ssr
 # VitePress
 .vitepress/cache
 
-# Tarballs packed for a manual release
-.release
-
 # Local package tarballs (vp run tarball)
 .release
