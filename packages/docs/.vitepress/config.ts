@@ -1,4 +1,7 @@
+import { copyFileSync, mkdirSync } from 'node:fs';
+
 import { defineConfig } from 'vitepress';
+import llmstxt from 'vitepress-plugin-llms';
 
 import { icon } from './icons.ts';
 
@@ -22,6 +25,23 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
   sitemap: { hostname: SITE },
+
+  buildEnd({ outDir }) {
+    const schema = new URL('../../layerscope/schema/report-1.json', import.meta.url);
+    mkdirSync(`${outDir}/schema`, { recursive: true });
+    copyFileSync(schema, `${outDir}/schema/report-1.json`);
+  },
+
+  vite: {
+    // The plugin is typed against a different copy of Vite than VitePress uses.
+    plugins: [
+      llmstxt({
+        domain: SITE.replace(/\/$/u, ''),
+        title: TITLE,
+        description: DESCRIPTION,
+      }) as never,
+    ],
+  },
 
   head: [
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
@@ -141,6 +161,7 @@ export default defineConfig({
             link('workflow', 'How it works', '/guide/how-it-works'),
             link('life-buoy', 'Troubleshooting', '/guide/troubleshooting'),
             link('scale', 'Compared with other tools', '/guide/comparison'),
+            link('terminal', 'Coding assistants', '/guide/coding-tools'),
           ],
         },
       ],

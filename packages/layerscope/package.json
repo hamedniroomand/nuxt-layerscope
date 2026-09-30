@@ -26,6 +26,7 @@
   },
   "files": [
     "dist",
+    "schema",
     "CHANGELOG.md"
   ],
   "type": "module",
@@ -45,7 +46,8 @@
     "./eslint": {
       "types": "./dist/eslint.d.mts",
       "default": "./dist/eslint.mjs"
-    }
+    },
+    "./schema/report-1.json": "./schema/report-1.json"
   },
   "publishConfig": {
     "access": "public"
@@ -70,6 +72,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
+    "ajv": "^8.20.0",
     "eslint": "^10.11.0",
     "typescript-eslint": "^8.70.1",
     "vite-plus": "catalog:",

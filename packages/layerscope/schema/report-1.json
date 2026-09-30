@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layerscope.kitdev.space/schema/report-1.json",
+  "title": "layerscope check --format json, version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "source", "notes", "layers", "summary", "findings"],
+  "properties": {
+    "version": { "const": 1, "description": "Raised only on breaking changes to the shape." },
+    "source": { "enum": ["registry", "types"], "description": "Where symbols were read from." },
+    "notes": { "type": "array", "items": { "type": "string" } },
+    "layers": {
+      "type": "array",
+      "description": "Every layer in priority order.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "root"],
+        "properties": {
+          "name": { "type": "string" },
+          "root": { "type": "string", "description": "Relative to the working directory." }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["files", "errors", "warnings"],
+      "properties": {
+        "files": { "type": "integer", "minimum": 0 },
+        "errors": { "type": "integer", "minimum": 0 },
+        "warnings": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Sorted by file, line, column, rule and symbol.",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "baseline": {
+      "type": "object",
+      "description": "Only when a baseline file exists.",
+      "additionalProperties": false,
+      "required": ["file", "suppressed", "removable"],
+      "properties": {
+        "file": { "type": "string" },
+        "suppressed": {
+          "type": "array",
+          "description": "Findings the baseline accepts.",
+          "items": { "$ref": "#/$defs/finding" }
+        },
+        "removable": {
+          "type": "array",
+          "description": "Entries that no longer occur.",
+          "items": { "$ref": "#/$defs/baselineEntry" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule",
+        "severity",
+        "file",
+        "line",
+        "column",
+        "symbol",
+        "fromLayer",
+        "toLayer",
+        "target",
+        "message"
+      ],
+      "properties": {
+        "rule": {
+          "enum": ["layer-boundary", "layer-cycle", "unresolved-reference", "shadowed-component"]
+        },
+        "severity": { "enum": ["error", "warn"] },
+        "file": { "type": "string", "description": "Relative to the working directory." },
+        "line": { "type": "integer", "minimum": 1 },
+        "column": { "type": "integer", "minimum": 1 },
+        "symbol": {
+          "type": "string",
+          "description": "Identifier, component name, import specifier, or a layer-cycle chain."
+        },
+        "fromLayer": { "type": "string", "description": "The layer the file belongs to." },
+        "toLayer": {
+          "type": ["string", "null"],
+          "description": "The layer the symbol resolves to; null for packages and unresolved references."
+        },
+        "target": {
+          "type": ["string", "null"],
+          "description": "File the symbol resolves to, when known."
+        },
+        "allowed": {
+          "type": "array",
+          "description": "layer-boundary only: the layers fromLayer may use.",
+          "items": { "type": "string" }
+        },
+        "suggestion": { "$ref": "#/$defs/suggestion" },
+        "message": { "type": "string" }
+      }
+    },
+    "suggestion": {
+      "type": "object",
+      "description": "layer-boundary only.",
+      "additionalProperties": false,
+      "required": ["action", "message", "impact"],
+      "properties": {
+        "action": { "enum": ["move", "allow", "leave"] },
+        "message": { "type": "string" },
+        "layer": { "type": "string", "description": "move: the layer to move the file to." },
+        "file": {
+          "type": "string",
+          "description": "move: where the file lands, relative to the working directory."
+        },
+        "impact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fixes"],
+          "properties": {
+            "fixes": { "type": "integer", "minimum": 0 },
+            "files": { "type": "integer", "minimum": 0 },
+            "imports": { "type": "integer", "minimum": 0 },
+            "edges": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "baselineEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule", "file", "symbol", "toLayer"],
+      "properties": {
+        "rule": {
+          "enum": ["layer-boundary", "layer-cycle", "unresolved-reference", "shadowed-component"]
+        },
+        "file": { "type": "string" },
+        "symbol": { "type": "string" },
+        "toLayer": { "type": ["string", "null"] },
+        "count": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
