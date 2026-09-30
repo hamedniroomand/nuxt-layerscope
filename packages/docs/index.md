@@ -105,6 +105,13 @@ Accept the violations you have today. Only new ones fail the build.
 
 </Card>
 
+<Card title="A starting point" icon="rocket" to="/guide/getting-started#generate-a-starting-config">
+
+`layerscope init` reads your layers and writes a config that passes today, and every finding comes
+with a suggested fix.
+
+</Card>
+
 <Card title="Configured in nuxt.config" icon="settings" to="/reference/config">
 
 Layers and rules sit next to the rest of your Nuxt config.

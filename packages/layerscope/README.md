@@ -13,6 +13,7 @@ layers/admin/app/components/AdminPanel.vue
   2:14    error  Auto-import "useCart" crosses from layer "admin" into "web"  layer-boundary
                  useCart → layers/web/app/composables/useCart.ts
                  allowed for "admin": shared, auth
+                 suggestion: allow "admin" to use "web" (adds 1 edge, clears 4 findings)
 ```
 
 ## Usage
@@ -55,7 +56,24 @@ could not run, go to stderr so stdout stays machine-readable.
 
 `--format github` prints workflow commands, so findings show up inline on the pull request diff.
 JSON findings carry `target` (the file the symbol resolves to) and, for `layer-boundary`,
-`allowed`.
+`allowed` and a `suggestion`. The report has a [JSON Schema](https://layerscope.kitdev.space/schema/report-1.json).
+
+### `layerscope init [root]`
+
+Writes `layerscope.config.ts` with every layer and the smallest `allow` map the project passes
+with, and prints each allowed edge plus how many references could not be resolved. `--baseline`
+also accepts the remaining findings, `--dry-run` writes nothing and `--force` replaces an existing
+config. Delete the edges you consider mistakes, then run `check`.
+
+### `layerscope fix --dry-run [root]`
+
+Prints the file moves that the suggestions on boundary findings ask for, and the relative imports
+each move breaks. Nothing is applied.
+
+### `layerscope drift [root]`
+
+Prints how many violations the code adds and fixes against the baseline committed on `--base`
+(default `origin/main`), and the baseline size before and after. `--format text|markdown|json`.
 
 ### Baseline
 
@@ -89,9 +107,11 @@ jobs:
       - uses: hamedniroomand/nuxt-layerscope@main
 ```
 
-It runs `layerscope check --format github`, so findings show up inline on the pull request. Inputs:
+It runs `layerscope check --format github`, so findings show up inline on the pull request, then
+writes the drift report to the job summary. Inputs:
 `root` (default `.`), `config`, `prepare` (`true` runs `nuxi prepare` instead of the separate
-step), `baseline` (default `layerscope-baseline.json`) and `version` (used through `npx` when the
+step), `baseline` (default `layerscope-baseline.json`), `comment` (`true` posts the drift report on
+the pull request) and `version` (used through `npx` when the
 project does not install `nuxt-layerscope`).
 
 ### `layerscope why <symbol> [root]`
@@ -176,6 +196,7 @@ also served as JSON at `/__layerscope?format=json`. Turn it off with `layerscope
 import { defineConfig } from 'nuxt-layerscope';
 
 export default defineConfig({
+  preset: 'layered', // optional: fills `allow` for layers that do not set it
   layers: {
     shared: { allow: [] },
     auth: { allow: ['shared'] },
@@ -184,6 +205,7 @@ export default defineConfig({
   },
   rules: {
     'layer-boundary': 'error',
+    'layer-cycle': 'error', // off by default
     'unresolved-reference': 'warn',
     'shadowed-component': 'warn',
   },
@@ -205,6 +227,8 @@ module records them on `nuxi prepare`, `dev` and `build`; use one place or the o
 - `layer-boundary`: a file depends on a layer its own layer does not `allow`. This covers
   auto-imported composables and utils, components (including `Lazy*`), Nitro server utils and
   explicit imports (`#layers/...`, `~/...` and relative paths).
+- `layer-cycle` (off by default): layers depend on each other in a loop. The finding names the
+  whole chain. Turn it on once a baseline holds the cycles you have today.
 - `unresolved-reference`: something could not be resolved, so layerscope will not call it safe.
   Examples are an identifier that is neither a local binding, a known global nor an auto-import;
   a component missing from `components.d.ts`; an import path that does not exist; or
@@ -246,12 +270,13 @@ bytes.
 
 ## Package entry points
 
-| Import                   | Contents                                                                                       |
-| ------------------------ | ---------------------------------------------------------------------------------------------- |
-| `nuxt-layerscope`        | The Nuxt module (default export), `defineConfig` and the types. Light enough for Nuxt startup. |
-| `nuxt-layerscope/api`    | `analyze`, `formatResult`, `createBaseline` and the report and registry constants.             |
-| `nuxt-layerscope/eslint` | ESLint and oxlint plugin with `layer-boundary` and `unresolved-reference` rules.               |
-| `layerscope` (bin)       | The CLI.                                                                                       |
+| Import                                 | Contents                                                                                       |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `nuxt-layerscope`                      | The Nuxt module (default export), `defineConfig` and the types. Light enough for Nuxt startup. |
+| `nuxt-layerscope/api`                  | `analyze`, `formatResult`, `createBaseline` and the report and registry constants.             |
+| `nuxt-layerscope/eslint`               | ESLint and oxlint plugin with `layer-boundary` and `unresolved-reference` rules.               |
+| `nuxt-layerscope/schema/report-1.json` | JSON Schema of the `--format json` report.                                                     |
+| `layerscope` (bin)                     | The CLI.                                                                                       |
 
 ```ts
 import { analyze, formatResult } from 'nuxt-layerscope/api';
