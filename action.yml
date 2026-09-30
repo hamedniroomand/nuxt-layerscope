@@ -18,6 +18,9 @@ inputs:
   baseline:
     description: Baseline file, relative to the root.
     default: layerscope-baseline.json
+  comment:
+    description: Post the drift report as a pull request comment. Needs `pull-requests` write permission.
+    default: 'false'
   version:
     description: nuxt-layerscope version to run when the project does not install it.
     default: latest
@@ -37,11 +40,19 @@ runs:
         args=(check "$INPUT_ROOT" --format github --baseline "$INPUT_BASELINE")
         if [ -n "$INPUT_CONFIG" ]; then args+=(--config "$INPUT_CONFIG"); fi
         if [ "$INPUT_PREPARE" = "true" ]; then args+=(--prepare); fi
-        # Prefer the version the project installs, so CI and local runs agree.
-        if [ -x "$INPUT_ROOT/node_modules/.bin/layerscope" ]; then
-          "$INPUT_ROOT/node_modules/.bin/layerscope" "${args[@]}"
-        elif [ -x node_modules/.bin/layerscope ]; then
-          node_modules/.bin/layerscope "${args[@]}"
-        else
-          npx --yes "nuxt-layerscope@$INPUT_VERSION" "${args[@]}"
-        fi
+        "$GITHUB_ACTION_PATH/scripts/layerscope.sh" "${args[@]}"
+
+    - name: Report drift
+      if: ${{ always() }}
+      shell: bash
+      continue-on-error: true
+      env:
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_CONFIG: ${{ inputs.config }}
+        INPUT_PREPARE: ${{ inputs.prepare }}
+        INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_COMMENT: ${{ inputs.comment }}
+        INPUT_VERSION: ${{ inputs.version }}
+        GH_TOKEN: ${{ github.token }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: '"$GITHUB_ACTION_PATH/scripts/drift.sh"'

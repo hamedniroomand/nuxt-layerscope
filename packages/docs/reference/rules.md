@@ -42,6 +42,23 @@ Each `layer-boundary` finding carries one suggestion, in every output format:
 Each suggestion shows what it changes: findings cleared, files and imports affected for a move,
 edges added for an allow. [`layerscope fix --dry-run`](./cli#layerscope-fix) prints the moves.
 
+## `layer-cycle`
+
+- Default: `off`
+
+Layers depend on each other in a loop. The finding names the whole chain and sits on the first
+reference from the chain's first layer to its second:
+
+```text
+layers/a/app/pages/a.vue
+  1:1     error  Layers form a cycle: a → b → c → a  layer-cycle
+```
+
+It looks at every dependency that exists, not at `allow`, so it also catches cycles between
+unrestricted layers. One cycle is reported per lowest layer in it, and fixing it can reveal
+another. The rule is opt-in because most existing projects have a cycle somewhere. Turn it on with
+`rules: { 'layer-cycle': 'error' }` and accept today's cycles in a [baseline](../guide/baseline).
+
 ## `unresolved-reference`
 
 - Default: `warn`

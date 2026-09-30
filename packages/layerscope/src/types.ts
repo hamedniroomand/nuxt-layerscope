@@ -2,7 +2,13 @@ import type { SymbolTable } from './nuxt/symbols.ts';
 
 export type Severity = 'off' | 'warn' | 'error';
 
-export type RuleName = 'layer-boundary' | 'unresolved-reference' | 'shadowed-component';
+export type RuleName =
+  | 'layer-boundary'
+  | 'layer-cycle'
+  | 'unresolved-reference'
+  | 'shadowed-component';
+
+export type PresetName = 'layered' | 'stacked';
 
 /** The Nuxt auto-import context a source file runs in. */
 export type Context = 'app' | 'server' | 'shared';
@@ -88,6 +94,8 @@ export interface LayerRule {
 }
 
 export interface LayerscopeConfig {
+  /** Fills `allow` for layers that do not set it. */
+  preset?: PresetName;
   layers?: Record<string, LayerRule>;
   rules?: Partial<Record<RuleName | 'unused-symbol', Severity>>;
   /** Globs relative to each scanned dir. */

@@ -90,6 +90,27 @@ The `extends` source of a remote layer, exactly as written in `nuxt.config`, suc
 `'github:acme/console'`. The layer c12 cloned from it gets the key as its name. The match ignores
 the ref, so `github:acme/console#v2` names the same layer. A layer sets either `path` or `source`.
 
+## `preset`
+
+- Type: `'layered' | 'stacked'`
+
+Fills `allow` for every layer that does not set it. `root` is left unrestricted, and a layer's own
+`allow` always wins over the preset.
+
+| Preset    | Shape                                                                                     | Fits                                         |
+| --------- | ----------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `layered` | `shared` uses nothing; every other layer may use only `shared`, never each other          | Independent feature layers on a common base  |
+| `stacked` | Each layer may use only the layers below it in Nuxt's priority order, as `extends` stacks | Layers that build on each other, base to app |
+
+```ts [layerscope.config.ts]
+export default defineConfig({
+  preset: 'layered',
+  layers: { admin: { allow: ['auth'] } }, // one exception
+});
+```
+
+`layered` expects a layer named `shared`; without one, layers may use nothing.
+
 ## `rules`
 
 - Type: `Record<string, 'off' | 'warn' | 'error'>`
@@ -97,6 +118,7 @@ the ref, so `github:acme/console#v2` names the same layer. A layer sets either `
 | Rule                                                   | Default |
 | ------------------------------------------------------ | ------- |
 | [`layer-boundary`](./rules#layer-boundary)             | `error` |
+| [`layer-cycle`](./rules#layer-cycle)                   | `off`   |
 | [`unresolved-reference`](./rules#unresolved-reference) | `warn`  |
 | [`shadowed-component`](./rules#shadowed-component)     | `warn`  |
 

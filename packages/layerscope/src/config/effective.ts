@@ -8,7 +8,7 @@ import { validateConfig } from './validate.ts';
 const NUXT_CONFIG_LABEL = 'nuxt.config (layerscope)';
 
 /** The keys that describe the project; `buildDir` only says where to look. */
-export const PROJECT_CONFIG_KEYS = ['layers', 'rules', 'ignore', 'globals'] as const;
+export const PROJECT_CONFIG_KEYS = ['preset', 'layers', 'rules', 'ignore', 'globals'] as const;
 
 export type ProjectConfig = Pick<LayerscopeConfig, (typeof PROJECT_CONFIG_KEYS)[number]>;
 
@@ -49,3 +49,5 @@ export function labelConfigError(error: unknown, recorded?: ProjectConfig): unkn
   }
   return error;
 }
+
+export { applyPreset } from './presets.ts';

@@ -58,6 +58,11 @@ export function createBaseline(findings: Finding[], rootDir: string): Baseline {
   return { version: BASELINE_VERSION, entries: [...entries.values()].toSorted(compareEntries) };
 }
 
+interface Diff {
+  added: BaselineEntry[];
+  fixed: BaselineEntry[];
+}
+
 export function writeBaseline(file: string, baseline: Baseline): void {
   writeFileSync(file, `${JSON.stringify(baseline, null, 2)}\n`);
 }
@@ -75,11 +80,8 @@ function isEntry(value: unknown): value is BaselineEntry {
   );
 }
 
-export function readBaseline(file: string): Baseline | null {
-  if (!existsSync(file)) {
-    return null;
-  }
-  const baseline = readJson(file) as Partial<Baseline> | null;
+export function parseBaseline(value: unknown, file: string): Baseline {
+  const baseline = value as Partial<Baseline> | null;
   if (baseline?.version !== BASELINE_VERSION || !Array.isArray(baseline.entries)) {
     throw new LayerscopeError(
       `${file} is not a layerscope baseline (version ${BASELINE_VERSION}). Recreate it with --update-baseline.`,
@@ -90,6 +92,30 @@ export function readBaseline(file: string): Baseline | null {
     throw new LayerscopeError(`${file}: entry ${invalid} is not a valid baseline entry`);
   }
   return { version: BASELINE_VERSION, entries: baseline.entries };
+}
+
+export function readBaseline(file: string): Baseline | null {
+  return existsSync(file) ? parseBaseline(readJson(file), file) : null;
+}
+
+export function baselineSize(entries: BaselineEntry[]): number {
+  return entries.reduce((sum, entry) => sum + (entry.count ?? 1), 0);
+}
+
+function surplus(entries: BaselineEntry[], other: BaselineEntry[]): BaselineEntry[] {
+  const known = new Map(other.map(entry => [keyOf(entry), entry.count ?? 1]));
+  return entries.flatMap(entry => {
+    const extra = (entry.count ?? 1) - (known.get(keyOf(entry)) ?? 0);
+    return extra > 0 ? [{ ...entry, count: extra }] : [];
+  });
+}
+
+/** `added` is what `current` has beyond `base`, `fixed` the other way round. */
+export function diffBaselines(base: Baseline, current: Baseline): Diff {
+  return {
+    added: surplus(current.entries, base.entries),
+    fixed: surplus(base.entries, current.entries),
+  };
 }
 
 /** Findings missing from the baseline stay; the rest are suppressed, up to each entry's count. */

@@ -94,7 +94,7 @@ Finding fields:
 
 | Field                    | Description                                                                                                    |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `rule`                   | `layer-boundary`, `unresolved-reference` or `shadowed-component`                                               |
+| `rule`                   | `layer-boundary`, `layer-cycle`, `unresolved-reference` or `shadowed-component`                                |
 | `severity`               | `error` or `warn`                                                                                              |
 | `file`, `line`, `column` | Where the reference is; 1-based                                                                                |
 | `symbol`                 | Identifier, component name or import specifier                                                                 |

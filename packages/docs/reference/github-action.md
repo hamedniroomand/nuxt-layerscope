@@ -15,13 +15,22 @@ first, then either run `npx nuxi prepare` or set `prepare: true`. See
 
 ## Inputs
 
-| Input      | Default                    | Description                                                                         |
-| ---------- | -------------------------- | ----------------------------------------------------------------------------------- |
-| `root`     | `.`                        | Nuxt project root, relative to the repository                                       |
-| `config`   |                            | Config file; defaults to `layerscope.config.*` in the root                          |
-| `prepare`  | `false`                    | `true` runs `nuxi prepare` first; needs the project's dependencies installed        |
-| `baseline` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                            |
-| `version`  | `latest`                   | `nuxt-layerscope` version to run through `npx` when the project does not install it |
+| Input      | Default                    | Description                                                                           |
+| ---------- | -------------------------- | ------------------------------------------------------------------------------------- |
+| `root`     | `.`                        | Nuxt project root, relative to the repository                                         |
+| `config`   |                            | Config file; defaults to `layerscope.config.*` in the root                            |
+| `prepare`  | `false`                    | `true` runs `nuxi prepare` first; needs the project's dependencies installed          |
+| `baseline` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                              |
+| `comment`  | `false`                    | `true` posts the drift report as a pull request comment; needs `pull-requests: write` |
+| `version`  | `latest`                   | `nuxt-layerscope` version to run through `npx` when the project does not install it   |
+
+## Drift summary
+
+After the check, the action runs [`layerscope drift`](./cli#layerscope-drift) against the pull
+request's base branch and writes the result to the job summary: how many violations the pull
+request adds and fixes, and how the baseline size changed. On pushes it compares with the previous
+commit. The step never fails the job. With `comment: true` the report is also posted as a single
+pull request comment that later runs update.
 
 ## Which layerscope runs
 

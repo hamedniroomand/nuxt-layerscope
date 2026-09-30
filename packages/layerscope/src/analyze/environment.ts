@@ -1,4 +1,4 @@
-import { effectiveConfig, labelConfigError } from '#src/config/effective.ts';
+import { applyPreset, effectiveConfig, labelConfigError } from '#src/config/effective.ts';
 import type { ProjectConfig } from '#src/config/effective.ts';
 import { readRegistry } from '#src/registry/read.ts';
 import type { Registry } from '#src/registry/schema.ts';
@@ -44,12 +44,13 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
   const { rootDir, buildDir } = options;
   const { registry, table, ...symbols } = loadSymbols(buildDir, options.source);
   const recorded = recordedConfig(buildDir, registry);
-  const config = effectiveConfig(options.config, recorded);
-  const { layers, ownerOf, notes } = await loadLayers(rootDir, config, registry?.layers).catch(
+  const effective = effectiveConfig(options.config, recorded);
+  const { layers, ownerOf, notes } = await loadLayers(rootDir, effective, registry?.layers).catch(
     (error: unknown) => {
       throw labelConfigError(error, recorded);
     },
   );
+  const config = applyPreset(effective, layers);
   const stale = registry === null ? null : staleConfigNote(rootDir, symbols.sourceFile);
   await (registry === null ? assertFresh(table, layers) : assertRegistryFresh(table, registry));
   return {

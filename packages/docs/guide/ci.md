@@ -36,6 +36,13 @@ jobs:
 Pin the action to a release tag. It runs the `nuxt-layerscope` your project installs, or the
 action's `version` input through `npx` when the project does not install it.
 
+### Drift and baseline size
+
+The action adds a summary to each run, such as `adds 3, fixes 5` and `Baseline: 47 → 42 (−5)`, so
+a team can watch the baseline shrink. Set `comment: true` (with `pull-requests: write`) to post it
+on the pull request. Without the action, run
+`layerscope drift --base origin/main --format markdown`.
+
 ### Without the action
 
 The action is a thin wrapper; the command alone does the same:
@@ -90,6 +97,8 @@ the same bytes, so it can be diffed and cached.
 
 - **Commit a baseline** if the codebase has violations, so the check can be required from day
   one. See [Baseline](./baseline).
+- **Turn on the cycle rule** with `rules: { 'layer-cycle': 'error' }` once the baseline holds the
+  cycles you have today, and pick a [`preset`](../reference/config#preset) if your layers fit one.
 - **Require the registry** once the [Nuxt module](./nuxt-module) is installed, so a broken setup
   fails loudly instead of falling back: `layerscope check --source registry`.
 - **Keep `nuxi prepare` fresh.** layerscope refuses to run on generated files that are out of date
