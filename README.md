@@ -12,7 +12,7 @@
   <a href="https://www.npmjs.com/package/nuxt-layerscope"><img src="https://img.shields.io/npm/v/nuxt-layerscope?color=00dc82&label=npm" alt="npm version"></a>
   <a href="https://github.com/hamedniroomand/nuxt-layerscope/actions/workflows/ci.yml"><img src="https://github.com/hamedniroomand/nuxt-layerscope/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/github/license/hamedniroomand/nuxt-layerscope?color=22d3ee" alt="MIT license"></a>
-  <a href="https://hamedniroomand.github.io/nuxt-layerscope/"><img src="https://img.shields.io/badge/docs-layerscope-00dc82" alt="Documentation"></a>
+  <a href="https://layerscope.kitdev.space/"><img src="https://img.shields.io/badge/docs-layerscope-00dc82" alt="Documentation"></a>
 </p>
 
 ---
@@ -51,17 +51,17 @@ export default defineNuxtConfig({
 npx layerscope check --prepare
 ```
 
-Read the [getting started guide](https://hamedniroomand.github.io/nuxt-layerscope/guide/getting-started)
+Read the [getting started guide](https://layerscope.kitdev.space/guide/getting-started)
 for the full setup.
 
 ## Documentation
 
-Everything else lives at **[hamedniroomand.github.io/nuxt-layerscope](https://hamedniroomand.github.io/nuxt-layerscope/)**:
-[CLI](https://hamedniroomand.github.io/nuxt-layerscope/reference/cli),
-[config](https://hamedniroomand.github.io/nuxt-layerscope/reference/config),
-[rules](https://hamedniroomand.github.io/nuxt-layerscope/reference/rules),
-[CI](https://hamedniroomand.github.io/nuxt-layerscope/guide/ci) and
-[troubleshooting](https://hamedniroomand.github.io/nuxt-layerscope/guide/troubleshooting).
+Everything else lives at **[layerscope.kitdev.space](https://layerscope.kitdev.space/)**:
+[CLI](https://layerscope.kitdev.space/reference/cli),
+[config](https://layerscope.kitdev.space/reference/config),
+[rules](https://layerscope.kitdev.space/reference/rules),
+[CI](https://layerscope.kitdev.space/guide/ci) and
+[troubleshooting](https://layerscope.kitdev.space/guide/troubleshooting).
 
 ## Contributing
 

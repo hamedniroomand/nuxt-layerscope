@@ -3,7 +3,7 @@ import { defineConfig } from 'vitepress';
 import { icon } from './icons.ts';
 
 const REPOSITORY = 'https://github.com/hamedniroomand/nuxt-layerscope';
-const SITE = 'https://layerscope.kitdev.space';
+const SITE = 'https://layerscope.kitdev.space/';
 const BASE = '/';
 const TITLE = 'layerscope';
 const DESCRIPTION =
