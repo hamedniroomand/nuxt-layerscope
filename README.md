@@ -24,7 +24,9 @@ layer uses something it isn't allowed to.
 
 - Works with Nuxt 3 and 4, local, npm and remote layers
 - Checks the app, `server/` and `shared/`
-- Baselines for existing projects, SARIF and a GitHub Action for CI
+- `init` writes a starter config, and each finding comes with a suggested fix
+- Cycle detection, presets and a drift report that shows what a pull request adds and fixes
+- Baselines for existing projects and a GitHub Action for CI
 - `why`, `graph` and `unused` commands, an ESLint plugin and a DevTools tab
 
 ## Quick start

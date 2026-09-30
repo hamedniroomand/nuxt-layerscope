@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.0
+
+- `layerscope init` writes a starter `layerscope.config.ts` with the smallest `allow` map the
+  project passes with, prints every allowed edge and how many references could not be resolved,
+  and with `--baseline` accepts what is left. It never replaces a config without `--force`.
+- Each `layer-boundary` finding carries a suggestion (`move`, `allow` or `leave`) with its impact,
+  in the text, JSON and GitHub outputs. `layerscope fix --dry-run` prints the planned file
+  moves and the imports they break.
+- New `layer-cycle` rule (off by default) reports cycles between layers with the full chain.
+- New `preset` option (`layered`, `stacked`) fills `allow` for layers that do not set it.
+- `layerscope drift` says how many violations the code adds and fixes against the baseline on a
+  base ref. The GitHub Action writes it, with the baseline size, to the job summary, and posts it
+  on the pull request with `comment: true`.
+- The JSON report has a JSON Schema, shipped as `nuxt-layerscope/schema/report-1.json`.
+- The docs publish `/llms.txt` and `/llms-full.txt` and have a guide for coding assistants.
+
 ## 0.1.4
 
 - Packages that Nuxt hoists into the generated tsconfig `paths` (`ofetch`, `consola`, `h3`, `defu`,
