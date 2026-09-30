@@ -111,6 +111,22 @@ export default defineConfig({
   },
   test: {
     projects: ['packages/*'],
+    coverage: {
+      include: ['packages/layerscope/src/**/*.ts'],
+      exclude: [
+        // CLI process.exitCode entry; no logic beyond run().
+        'packages/layerscope/src/bin.ts',
+        // Spawns `nuxi prepare`; integration glue, not unit-testable cheaply.
+        'packages/layerscope/src/analyze/prepare.ts',
+        // Nuxt module + kit hooks; covered by fixture runs, brittle to unit-mock.
+        'packages/layerscope/src/module/**',
+        // DevTools Nuxt registration; handler/page/analyzer stay covered.
+        'packages/layerscope/src/devtools/index.ts',
+        // Static CSS for the DevTools page.
+        'packages/layerscope/src/devtools/page-assets.ts',
+      ],
+      reporter: ['text', 'html', 'clover', 'json', 'lcov'],
+    },
   },
   run: {
     cache: true,

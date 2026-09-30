@@ -41,3 +41,5 @@ dist-ssr
 
 # Local package tarballs (vp run tarball)
 .release
+
+coverage

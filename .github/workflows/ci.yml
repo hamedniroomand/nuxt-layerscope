@@ -24,12 +24,20 @@ jobs:
           node-version: '24'
           cache: true
           run-install: true
-      - run: vp run ready
+      - run: vp check
+      - run: vp test --coverage
+      - run: vp run -r build
       - name: Check the package (publint, are-the-types-wrong)
         working-directory: packages/layerscope
         run: |
           npx --yes publint --pack npm --strict .
           npx --yes @arethetypeswrong/cli --pack . --profile esm-only
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@0fb7174895f61a3b6b78fc075e0cd60383518dac # v5.5.5
+        with:
+          files: coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   nuxt-versions:
     name: Fixture matrix (Nuxt ${{ matrix.nuxt }})

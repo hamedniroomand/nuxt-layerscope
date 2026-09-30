@@ -30,4 +30,25 @@ describe('config', () => {
       validateConfig(config, 'c.ts');
     }).toThrow(LayerscopeError);
   });
+
+  it('rejects an unknown preset', () => {
+    const config = { preset: 'flat' } as unknown as LayerscopeConfig;
+    expect(() => {
+      validateConfig(config, 'c.ts');
+    }).toThrow('unknown preset "flat"');
+  });
+
+  it('rejects an unknown rule', () => {
+    const config = { rules: { 'no-such-rule': 'error' } } as unknown as LayerscopeConfig;
+    expect(() => {
+      validateConfig(config, 'c.ts');
+    }).toThrow('unknown rule "no-such-rule"');
+  });
+
+  it('rejects a non-array allow list', () => {
+    const config = { layers: { web: { allow: 'shared' } } } as unknown as LayerscopeConfig;
+    expect(() => {
+      validateConfig(config, 'c.ts');
+    }).toThrow('layers.web.allow must be an array');
+  });
 });
