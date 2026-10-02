@@ -8,7 +8,7 @@ import { isLocal, mayUse } from './context.ts';
 
 function moveTargets(context: Context, file: string, owner: Layer, uses: Edge[]): Layer[] {
   const users = new Set(uses.map(edge => edge.fromLayer));
-  const dependencies = context.edges.filter(edge => edge.file === file);
+  const dependencies = context.edgesFrom.get(file) ?? [];
   return context.layers.filter(
     layer =>
       layer.name !== owner.name &&
@@ -42,7 +42,7 @@ export function moveSuggestion(
   uses: Edge[],
 ): Suggestion {
   const impact: SuggestionImpact = {
-    fixes: context.findings.filter(finding => finding.target === file).length,
+    fixes: context.findingsAt.get(file) ?? 0,
     files: new Set(uses.map(edge => edge.file)).size,
     imports: uses.filter(edge => edge.kind === 'import').length,
   };
