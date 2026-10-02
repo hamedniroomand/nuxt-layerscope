@@ -4,6 +4,8 @@ import { AnalysisCache } from '#src/analyze/cache.ts';
 import type { AnalyzeOptions } from '#src/analyze/index.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 
+import { layerStats } from './stats.ts';
+
 export interface Snapshot {
   /** Identifies this analyzer, so a revision from before a restart never matches. */
   id: string;
@@ -22,12 +24,16 @@ export interface AnalyzerOptions {
   run?: (options: AnalyzeOptions) => Promise<AnalyzeResult>;
 }
 
-/** The output the revision tracks; the symbol table and edges are large and derived from it. */
+/**
+ * The output the revision tracks: what the tab shows. The symbol table and the edges are large,
+ * so the per-layer statistics stand in for the edges.
+ */
 function fingerprint(result: AnalyzeResult): string {
   return JSON.stringify([
     result.findings,
     result.baseline?.suppressed,
-    result.layers.map(layer => layer.name),
+    result.config.layers,
+    layerStats(result),
     result.files.length,
     result.notes,
   ]);

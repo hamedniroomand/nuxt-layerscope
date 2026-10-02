@@ -104,6 +104,19 @@ export default defineConfig({
         },
       },
       {
+        files: ['packages/layerscope/src/devtools/client/**', 'packages/layerscope/test/client/**'],
+        env: { browser: true },
+        globals: { defineProps: 'readonly', defineEmits: 'readonly' },
+        rules: { 'vue/max-props': 'off' },
+      },
+      {
+        files: [
+          'packages/layerscope/src/devtools/client/**/*.vue',
+          'packages/layerscope/src/devtools/client/shims.d.ts',
+        ],
+        rules: { 'import/unambiguous': 'off' },
+      },
+      {
         files: ['packages/docs/.vitepress/config.ts'],
         rules: { 'import/no-default-export': 'off' },
       },
@@ -122,8 +135,9 @@ export default defineConfig({
         'packages/layerscope/src/module/**',
         // DevTools Nuxt registration; handler/page/analyzer stay covered.
         'packages/layerscope/src/devtools/index.ts',
-        // Static CSS for the DevTools page.
-        'packages/layerscope/src/devtools/page-assets.ts',
+        // Browser entry of the DevTools client; it only mounts the app.
+        'packages/layerscope/src/devtools/client/main.ts',
+        'packages/layerscope/src/devtools/client/shims.d.ts',
       ],
       reporter: ['text', 'html', 'clover', 'json', 'lcov'],
     },

@@ -5,7 +5,9 @@ import { Analyzer } from '#src/devtools/analyzer.ts';
 import { createDevtoolsHandler } from '#src/devtools/handler.ts';
 import { DEVTOOLS_ROUTE } from '#src/devtools/index.ts';
 import type { AnalyzeResult } from '#src/types.ts';
-import { makeResult } from '#test/factories.ts';
+import { packageVersion } from '#src/version.ts';
+import { fakeAssets } from '#test/devtools-assets.ts';
+import { makeFinding, makeResult } from '#test/factories.ts';
 
 type Run = (options: unknown) => Promise<AnalyzeResult>;
 
@@ -24,7 +26,11 @@ function server(run: Run = vi.fn<Run>().mockResolvedValue(makeResult())): Server
   const app = createApp();
   app.use(
     DEVTOOLS_ROUTE,
-    createDevtoolsHandler({ analyzer, openInEditor: '/_nuxt/__open-in-editor' }),
+    createDevtoolsHandler({
+      analyzer,
+      openInEditor: '/_nuxt/__open-in-editor',
+      assetsDir: fakeAssets(),
+    }),
   );
   const handle = toWebHandler(app);
   return {
@@ -37,12 +43,39 @@ function server(run: Run = vi.fn<Run>().mockResolvedValue(makeResult())): Server
 }
 
 describe('devtools handler pages', () => {
-  it('serves the page and re-analyzes on every load', async () => {
+  it('serves the client shell without analyzing', async () => {
     const { fetch, run } = server();
-    await fetch('/');
     const response = await fetch('/');
     expect(response.headers.get('content-type')).toContain('text/html');
-    expect(run).toHaveBeenCalledTimes(2);
+    const html = await response.text();
+    expect(html).toContain('<template id="config">');
+    expect(html).toContain('"openInEditor":"/_nuxt/__open-in-editor"');
+    expect(html).toContain('<div id="app">');
+    expect(html).toMatch(/client\.js\?v=[\d.]+-\d+"/u);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('serves the built assets with a version etag', async () => {
+    const { fetch } = server();
+    const response = await fetch('/assets/client.js');
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toContain('text/javascript');
+    expect(response.headers.get('cache-control')).toBe('max-age=31536000, immutable');
+    expect(await response.text()).toBe('console.log(1)');
+    const etag = response.headers.get('etag') ?? '';
+    // The package version plus the build time of client.js, so a rebuild busts the cache.
+    expect(etag.startsWith(`"${packageVersion()}-`)).toBe(true);
+    expect(etag).toMatch(/^"[\d.]+-\d+"$/u);
+    const cached = await fetch('/assets/client.css', { headers: { 'if-none-match': etag } });
+    expect(cached.status).toBe(304);
+  });
+
+  it('answers 404 for missing assets and for paths outside the assets dir', async () => {
+    const { fetch } = server();
+    expect((await fetch('/assets/nope.js')).status).toBe(404);
+    expect((await fetch('/assets/..%2Fsecret.js')).status).toBe(404);
+    expect((await fetch('/assets/../secret.js')).status).toBe(404);
+    expect((await fetch('/assets/sub/client.js')).status).toBe(404);
   });
 
   it('keeps ?format=json returning the check report', async () => {
@@ -62,6 +95,26 @@ describe('devtools handler api', () => {
     expect(report.headers.get('cache-control')).toBe('no-cache');
     expect(await report.json()).toHaveProperty('report.findings');
   });
+});
+
+describe('devtools handler report', () => {
+  it('adds absolute paths, hot files and layer stats to the report', async () => {
+    const finding = makeFinding({ file: '/app/pages/index.vue' });
+    const { fetch } = server(vi.fn<Run>().mockResolvedValue(makeResult({ findings: [finding] })));
+    const body = (await (await fetch('/api/report')).json()) as {
+      report: Record<string, unknown> & { findings: Record<string, unknown>[] };
+    };
+    expect(body.report.absRoot).toBe('/app');
+    expect(body.report.findings[0]).toMatchObject({
+      file: 'pages/index.vue',
+      absFile: '/app/pages/index.vue',
+      absTarget: '/app/layers/shop/composables/useCart.ts',
+    });
+    expect(body.report.hotFiles).toEqual([
+      { file: 'pages/index.vue', absFile: '/app/pages/index.vue', errors: 1, warnings: 0 },
+    ]);
+    expect(body.report.layerStats).toHaveLength(2);
+  });
 
   it('answers 304 when the etag matches', async () => {
     const { fetch } = server();
@@ -70,7 +123,9 @@ describe('devtools handler api', () => {
     expect(response.status).toBe(304);
     expect(await response.text()).toBe('');
   });
+});
 
+describe('devtools handler runs', () => {
   it('only re-runs on POST', async () => {
     const { fetch, run } = server();
     expect((await fetch('/api/rerun')).status).toBe(405);

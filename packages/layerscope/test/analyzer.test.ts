@@ -44,7 +44,9 @@ describe('Analyzer', () => {
       expect.objectContaining({ rootDir: '/app', baseline: 'b.json', envKey: 'k' }),
     );
   });
+});
 
+describe('Analyzer revisions', () => {
   it('bumps the revision only when the output changes', async () => {
     const run = vi
       .fn<Run>()
@@ -56,6 +58,17 @@ describe('Analyzer', () => {
     const same = await analyzer.refresh();
     const changed = await analyzer.refresh();
     expect(same.rev).toBe(first.rev);
+    expect(changed.rev).toBe(first.rev + 1);
+  });
+
+  it('bumps the revision when only the layer config changes', async () => {
+    const run = vi
+      .fn<Run>()
+      .mockResolvedValueOnce(makeResult({ config: { layers: { web: { allow: [] } } } }))
+      .mockResolvedValueOnce(makeResult({ config: { layers: { web: { allow: ['shop'] } } } }));
+    const { analyzer } = setup(run);
+    const first = await analyzer.get();
+    const changed = await analyzer.refresh();
     expect(changed.rev).toBe(first.rev + 1);
   });
 

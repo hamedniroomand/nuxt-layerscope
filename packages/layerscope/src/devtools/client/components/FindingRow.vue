@@ -1,0 +1,118 @@
+<script setup lang="ts">
+  import { location } from '#src/devtools/client/lib/format.ts';
+  import type { TabFinding } from '#src/devtools/protocol.ts';
+
+  import SeverityGlyph from './SeverityGlyph.vue';
+
+  defineProps<{ finding: TabFinding; selected: boolean }>();
+  defineEmits<{ select: []; open: [file: string, line: number, column: number] }>();
+</script>
+
+<template>
+  <li
+    class="row"
+    :class="{ selected }"
+    :aria-selected="selected"
+    role="option"
+    tabindex="-1"
+    @click="$emit('select')"
+  >
+    <div class="line">
+      <SeverityGlyph :severity="finding.severity" />
+      <span
+        v-if="finding.toLayer && finding.toLayer !== finding.fromLayer"
+        class="pair"
+      >
+        <b>{{ finding.fromLayer }}</b> → <b>{{ finding.toLayer }}</b>
+      </span>
+      <span class="message">{{ finding.message }}</span>
+      <span class="sr-only">{{ finding.severity === 'error' ? 'error' : 'warning' }}</span>
+    </div>
+    <div class="line muted">
+      <a
+        class="mono"
+        href="#"
+        @click.prevent.stop="$emit('open', finding.absFile, finding.line, finding.column)"
+      >
+        {{ location(finding.file, finding.line, finding.column) }}
+      </a>
+      <span
+        v-if="finding.target"
+        class="mono"
+      >
+        → {{ finding.target }}
+      </span>
+      <span class="rule">{{ finding.rule }}</span>
+    </div>
+    <div class="actions">
+      <slot name="actions" />
+      <button
+        type="button"
+        aria-keyshortcuts="o"
+        @click.stop="$emit('open', finding.absFile, finding.line, finding.column)"
+      >
+        Open
+      </button>
+    </div>
+  </li>
+</template>
+
+<style scoped>
+  .row {
+    display: grid;
+    gap: 2px;
+    padding: 6px 14px 6px 12px;
+    border-left: 2px solid transparent;
+    border-bottom: 1px solid var(--line);
+    list-style: none;
+    cursor: default;
+  }
+
+  .row.selected {
+    border-left-color: var(--accent);
+    background: var(--tint-selected);
+  }
+
+  .line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .line a {
+    color: var(--fg-muted);
+    text-decoration: none;
+  }
+
+  .line a:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .pair {
+    color: var(--fg-muted);
+  }
+
+  .pair b {
+    color: var(--fg);
+    font-weight: 500;
+  }
+
+  .rule {
+    margin-left: auto;
+  }
+
+  .actions {
+    display: none;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .row:hover .actions,
+  .row:focus-within .actions,
+  .row.selected .actions {
+    display: flex;
+  }
+</style>

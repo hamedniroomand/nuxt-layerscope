@@ -35,6 +35,7 @@ export function setupDevtools(nuxt: Nuxt): void {
         return analyzer;
       },
       openInEditor,
+      base: DEVTOOLS_ROUTE,
     }),
   });
   onDevtoolsCustomTabs(nuxt, tabs => {

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp test && vp run -r build",
+    "ready": "vp check && vp run nuxt-layerscope#check:client && vp test && vp run -r build",
     "dev": "vp run docs#dev",
     "build": "vp run nuxt-layerscope#build",
     "tarball": "vp run nuxt-layerscope#tarball",

@@ -2,31 +2,28 @@ import type { EventHandler, H3Event } from 'h3';
 import { defineEventHandler, getHeader, getQuery, setResponseHeader, setResponseStatus } from 'h3';
 
 import type { Analyzer, Snapshot } from './analyzer.ts';
-import { renderError, renderPage } from './page.ts';
+import { assetVersion, defaultAssetsDir, readAsset } from './assets.ts';
+import type { ReportResponse, SnapshotMeta } from './protocol.ts';
+import { tabReport } from './report.ts';
+import { renderShell } from './shell.ts';
 
 export interface HandlerInput {
   /** Read on each request, so the analyzer can be created on first use. */
   readonly analyzer: Analyzer;
   /** Vite's open-in-editor endpoint, such as `/_nuxt/__open-in-editor`. */
   openInEditor: string;
+  /** Route the handler is mounted at. Defaults to `/__layerscope`. */
+  base?: string;
+  /** Directory of the built client. Defaults to `dist/devtools` of this package. */
+  assetsDir?: string;
 }
 
 const JSON_TYPE = 'application/json';
 const HTML_TYPE = 'text/html; charset=utf-8';
+const ASSET_PREFIX = '/assets/';
 
-function meta({
-  rev,
-  analyzedAt,
-  durationMs,
-}: Snapshot): Pick<Snapshot, 'analyzedAt' | 'durationMs' | 'rev'> {
-  return { rev, analyzedAt, durationMs };
-}
-
-async function reportOf(snapshot: Snapshot): Promise<unknown> {
-  // Loaded on request, so the report code stays out of Nuxt's startup.
-  const { formatResult } = await import('#src/report/index.ts');
-  const { rootDir } = snapshot.result;
-  return JSON.parse(formatResult(snapshot.result, 'json', rootDir));
+function meta({ id, rev, analyzedAt, durationMs }: Snapshot): SnapshotMeta {
+  return { id, rev, analyzedAt, durationMs };
 }
 
 function json(event: H3Event, status: number, body: unknown): string {
@@ -35,18 +32,47 @@ function json(event: H3Event, status: number, body: unknown): string {
   return JSON.stringify(body);
 }
 
-async function page(event: H3Event, input: HandlerInput): Promise<string> {
-  const snapshot = await input.analyzer.refresh();
-  if (getQuery(event).format === 'json') {
-    setResponseHeader(event, 'content-type', JSON_TYPE);
-    return JSON.stringify(await reportOf(snapshot));
+/** Sets the ETag and answers `true` when the client already has this version. */
+function notModified(event: H3Event, etag: string): boolean {
+  setResponseHeader(event, 'etag', etag);
+  if (getHeader(event, 'if-none-match') !== etag) {
+    return false;
   }
-  setResponseHeader(event, 'content-type', HTML_TYPE);
-  return renderPage({ result: snapshot.result, openInEditor: input.openInEditor });
+  setResponseStatus(event, 304);
+  return true;
 }
 
-async function withReport(snapshot: Snapshot): Promise<unknown> {
-  return { ...meta(snapshot), report: await reportOf(snapshot) };
+async function page(event: H3Event, _path: string, input: HandlerInput): Promise<string> {
+  if (getQuery(event).format === 'json') {
+    const snapshot = await input.analyzer.refresh();
+    const { formatResult } = await import('#src/report/index.ts');
+    setResponseHeader(event, 'content-type', JSON_TYPE);
+    return formatResult(snapshot.result, 'json', snapshot.result.rootDir);
+  }
+  setResponseHeader(event, 'content-type', HTML_TYPE);
+  setResponseHeader(event, 'cache-control', 'no-cache');
+  return renderShell(
+    { base: input.base ?? '/__layerscope', openInEditor: input.openInEditor },
+    assetVersion(input.assetsDir ?? defaultAssetsDir()),
+  );
+}
+
+async function asset(event: H3Event, path: string, input: HandlerInput): Promise<string> {
+  const dir = input.assetsDir ?? defaultAssetsDir();
+  const file = await readAsset(dir, path.slice(ASSET_PREFIX.length));
+  if (file === null) {
+    return json(event, 404, { error: `Not found: ${path}` });
+  }
+  setResponseHeader(event, 'cache-control', 'max-age=31536000, immutable');
+  if (notModified(event, `"${assetVersion(dir)}"`)) {
+    return '';
+  }
+  setResponseHeader(event, 'content-type', file.type);
+  return file.body;
+}
+
+async function withReport(snapshot: Snapshot): Promise<ReportResponse> {
+  return { ...meta(snapshot), report: await tabReport(snapshot.result) };
 }
 
 async function api(event: H3Event, path: string, input: HandlerInput): Promise<string> {
@@ -62,11 +88,8 @@ async function api(event: H3Event, path: string, input: HandlerInput): Promise<s
     return json(event, 405, { error: 'Use GET' });
   }
   const snapshot = await input.analyzer.get();
-  const etag = `"${snapshot.id}-${snapshot.rev}"`;
-  setResponseHeader(event, 'etag', etag);
   setResponseHeader(event, 'cache-control', 'no-cache');
-  if (getHeader(event, 'if-none-match') === etag) {
-    setResponseStatus(event, 304);
+  if (notModified(event, `"${snapshot.id}-${snapshot.rev}"`)) {
     return '';
   }
   return json(
@@ -76,20 +99,23 @@ async function api(event: H3Event, path: string, input: HandlerInput): Promise<s
   );
 }
 
-/** The DevTools tab, mounted at `/__layerscope`: the page, its JSON report and `/api/*`. */
+type Route = (event: H3Event, path: string, input: HandlerInput) => Promise<string>;
+
+function route(path: string): Route {
+  if (path === '/' || path === '') {
+    return page;
+  }
+  return path.startsWith(ASSET_PREFIX) ? asset : api;
+}
+
+/** The DevTools tab, mounted at `/__layerscope`: the client shell, its assets and `/api/*`. */
 export function createDevtoolsHandler(input: HandlerInput): EventHandler {
   return defineEventHandler(async event => {
     const path = event.path.split('?')[0] ?? '/';
-    const isPage = path === '/' || path === '';
     try {
-      return isPage ? await page(event, input) : await api(event, path, input);
+      return await route(path)(event, path, input);
     } catch (error) {
-      const message = (error as Error).message;
-      if (isPage) {
-        setResponseHeader(event, 'content-type', HTML_TYPE);
-        return renderError(message);
-      }
-      return json(event, 500, { error: message });
+      return json(event, 500, { error: (error as Error).message });
     }
   });
 }

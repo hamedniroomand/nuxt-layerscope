@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- The DevTools tab is a prebuilt Vue client with Overview, Findings and Layers views. Its theme
+  follows Nuxt DevTools, and it follows the OS theme when you open `/__layerscope` directly.
+  Findings filter by severity, rule, layer pair, file and text, with the filters kept in the URL
+  hash. Keyboard: `1` to `3`, `/`, `r`, `j`, `k`, `o` and `Esc`.
+- `/__layerscope/api/report` adds absolute paths (`absRoot`, `absFile`, `absTarget`), `hotFiles`
+  and per-layer `layerStats`.
+- The server-rendered DevTools page is removed. `/__layerscope?format=json` still returns the
+  check report.
+
 ## 0.2.0
 
 - `layerscope init` writes a starter `layerscope.config.ts` with the smallest `allow` map the
