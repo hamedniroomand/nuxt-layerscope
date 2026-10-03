@@ -49,14 +49,18 @@ function freeze(value: unknown): unknown {
 }
 
 async function rewrite(route: Route): Promise<void> {
-  const response = await route.fetch();
-  const type = response.headers()['content-type'] ?? '';
-  if (!type.includes('json')) {
-    await route.fulfill({ response });
-    return;
+  try {
+    const response = await route.fetch();
+    const type = response.headers()['content-type'] ?? '';
+    if (!type.includes('json')) {
+      await route.fulfill({ response });
+      return;
+    }
+    const body = freeze(await response.json());
+    await route.fulfill({ response, json: body });
+  } catch {
+    // The page or its context closed while the request was open; nobody waits for the answer.
   }
-  const body = freeze(await response.json());
-  await route.fulfill({ response, json: body });
 }
 
 /** A browser context as DevTools gives the tab: the theme class is set before the first paint. */

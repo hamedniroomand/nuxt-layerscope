@@ -63,6 +63,8 @@ export async function startFixture(root: string): Promise<Fixture> {
       process.kill(-child.pid, 'SIGTERM');
     }
   };
+  // Also on a crash: a server left running holds the Nuxt dev lock of the fixture.
+  process.once('exit', stop);
   try {
     await ready(base, child, () => errors);
   } catch (error) {

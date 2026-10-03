@@ -4,12 +4,13 @@
  * See `scripts/README.md`.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import type { Browser } from 'playwright-core';
 import { chromium } from 'playwright-core';
 
+import { acceptWarnings } from './screenshots/baseline.ts';
 import { captureHero, captureOg } from './screenshots/hero.ts';
 import { compressPng, isBlank, MAX_PNG_BYTES, toWebp } from './screenshots/image.ts';
 import type { Theme } from './screenshots/pages.ts';
@@ -20,6 +21,8 @@ const path = (relative: string): string => fileURLToPath(new URL(relative, impor
 const PACKAGE = path('../../layerscope/');
 const FIXTURE = path('../../layerscope/test/fixtures/nuxt4/');
 const OUT = path('../public/devtools/');
+/** The capture of the Baseline view writes this file; the script removes it again. */
+const BASELINE = `${FIXTURE}layerscope-baseline.json`;
 const THEMES: Theme[] = ['light', 'dark'];
 const HERO_WIDTH = 1600;
 /** Software rendering, sRGB and no font hinting: two runs give the same pixels. */
@@ -54,22 +57,30 @@ async function launch(): Promise<Browser> {
   }
 }
 
-async function captureAll(browser: Browser, base: string): Promise<void> {
+async function captureThemes(browser: Browser, base: string, names: string[]): Promise<void> {
   for (const theme of THEMES) {
     const context = await themedContext(browser, theme);
-    for (const capture of CAPTURES) {
-      await save(
-        `${capture.name}-${theme}.png`,
-        await compressPng(await captureView(context, base, capture)),
-      );
+    for (const capture of CAPTURES.filter(item => names.includes(item.name))) {
+      const image = await captureView(context, base, capture);
+      await save(`${capture.name}-${theme}.png`, await compressPng(image));
     }
     await context.close();
+  }
+}
+
+async function captureAll(browser: Browser, base: string): Promise<void> {
+  const views = CAPTURES.map(capture => capture.name).filter(name => name !== 'baseline');
+  await captureThemes(browser, base, views);
+  for (const theme of THEMES) {
     await save(
       `hero-${theme}.webp`,
       await toWebp(await captureHero(browser, base, theme), HERO_WIDTH),
     );
   }
   await save('og-image.png', await compressPng(await captureOg(browser, path('og-image.html'))));
+  // Last, because accepted findings change the counts in every other view.
+  await acceptWarnings(browser, base);
+  await captureThemes(browser, base, ['baseline']);
 }
 
 function writeManifest(): void {
@@ -89,6 +100,10 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   mkdirSync(OUT, { recursive: true });
+  if (existsSync(BASELINE)) {
+    console.error(`Remove ${BASELINE} first: the captures need the fixture without a baseline.`);
+    process.exit(1);
+  }
   const browser = await launch();
   const fixture = await startFixture(FIXTURE);
   try {
@@ -97,6 +112,7 @@ async function main(): Promise<void> {
   } finally {
     fixture.stop();
     await browser.close();
+    rmSync(BASELINE, { force: true });
   }
 }
 
