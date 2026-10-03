@@ -7,17 +7,18 @@
   const { api, demo } = useTab();
 </script>
 
-<!-- Opens the file in the editor; in a snapshot there is no editor, so it is plain text. -->
+<!-- Opens the file in the editor; in a snapshot there is no editor, so it is plain text. Parents
+     style it by the `file` class, which both elements have. -->
 <template>
   <span
     v-if="demo"
-    class="mono"
+    class="file mono"
   >
     <slot />
   </span>
   <a
     v-else
-    class="mono"
+    class="file mono"
     href="#"
     @click.prevent.stop="api.openInEditor(file, line, column)"
   >

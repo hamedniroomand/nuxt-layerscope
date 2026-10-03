@@ -147,7 +147,8 @@
     height: var(--row);
   }
 
-  .uses a {
+  .uses a,
+  .uses .file {
     text-decoration: none;
   }
 

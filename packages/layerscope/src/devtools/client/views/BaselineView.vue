@@ -222,7 +222,8 @@
     white-space: nowrap;
   }
 
-  .rows a {
+  .rows a,
+  .rows .file {
     text-decoration: none;
   }
 </style>

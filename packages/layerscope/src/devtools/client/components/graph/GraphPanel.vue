@@ -252,11 +252,18 @@
     align-items: center;
   }
 
-  .list a {
+  .list a,
+  .list .file {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     text-decoration: none;
+  }
+
+  /* Counts keep their width; the path before them is what gets cut. */
+  .list .num {
+    flex-shrink: 0;
+    white-space: nowrap;
   }
 
   .list a:hover {

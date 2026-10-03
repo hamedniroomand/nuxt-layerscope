@@ -143,7 +143,8 @@
     min-width: 0;
   }
 
-  .line a {
+  .line a,
+  .line .file {
     color: var(--fg-muted);
     text-decoration: none;
   }

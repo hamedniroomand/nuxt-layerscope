@@ -138,7 +138,8 @@
     min-height: var(--row);
   }
 
-  .rows a {
+  .rows a,
+  .rows .file {
     margin-left: auto;
     text-decoration: none;
   }
