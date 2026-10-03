@@ -117,7 +117,17 @@
     color: var(--accent);
   }
 
+  .summary {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 2px 12px;
+  }
+
   .summary a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     text-decoration: none;
   }
 
