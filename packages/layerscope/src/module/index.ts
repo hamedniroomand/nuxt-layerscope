@@ -5,7 +5,7 @@ import { dirname, join } from 'pathe';
 
 import type { ProjectConfig } from '#src/config/effective.ts';
 import { pickProjectConfig } from '#src/config/effective.ts';
-import { setupDevtools } from '#src/devtools/index.ts';
+import { setupDevtools, setupStaticDevtools } from '#src/devtools/index.ts';
 import { REGISTRY_FILE } from '#src/registry/schema.ts';
 import { packageVersion } from '#src/version.ts';
 
@@ -14,8 +14,12 @@ import { RegistryCollector } from './collect.ts';
 export interface ModuleOptions extends ProjectConfig {
   /** Write `.nuxt/layerscope/registry.json`. Defaults to `true`. */
   enabled: boolean;
-  /** Add a Layerscope tab to Nuxt DevTools while `nuxi dev` runs. Defaults to `true`. */
-  devtools: boolean;
+  /**
+   * Add a Layerscope tab to Nuxt DevTools while `nuxi dev` runs. Defaults to `true`. With
+   * `{ static: true }`, `nuxi build` and `nuxi generate` also write a read-only snapshot of the tab
+   * to `/__layerscope/` in the public output.
+   */
+  devtools: boolean | { static?: boolean };
 }
 
 async function writeRegistry(collector: RegistryCollector, buildDir: string): Promise<void> {
@@ -50,9 +54,11 @@ export const layerscopeModule = defineNuxtModule<ModuleOptions>({
     if (nuxt.options.dev) {
       // Components and imports are rescanned while `nuxi dev` runs.
       nuxt.hook('app:templatesGenerated', write);
-      if (options.devtools) {
+      if (options.devtools !== false) {
         setupDevtools(nuxt);
       }
+    } else if (typeof options.devtools === 'object' && options.devtools.static === true) {
+      setupStaticDevtools(nuxt);
     }
   },
 });

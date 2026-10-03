@@ -1,53 +1,281 @@
 # DevTools
 
 While `nuxi dev` runs, the [Nuxt module](./nuxt-module) adds a **Layerscope** tab to
-[Nuxt DevTools](https://devtools.nuxt.com). Open DevTools with <kbd>Shift</kbd> + <kbd>Alt</kbd> +
-<kbd>D</kbd>, or the Nuxt icon at the bottom of the page, and pick the tab.
+[Nuxt DevTools](https://devtools.nuxt.com). The tab shows the layer architecture of the app and
+updates while you edit code.
 
-The tab shows:
+## Open the tab
 
-- every layer, its root, and the layers it may depend on,
-- the current findings, with the rule, the message and where the symbol resolves to,
-- a note when something looks off, such as a layer whose `srcDir` does not exist.
+Open DevTools with <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>D</kbd>, or click the Nuxt icon at the
+bottom of the page. Then select **Layerscope** in the sidebar.
 
-Click a file name to open it in your editor at the reported line.
+In a small window, DevTools puts tabs that are not pinned in the sidebar menu (<kbd>⋮</kbd>). Pin
+the Layerscope tab there to keep it in the sidebar. You can also open the tab without DevTools, at
+`/__layerscope` on the dev server.
 
-The tab reads `layerscope-baseline.json`, so findings you accepted with a [baseline](./baseline) are
-left out and counted as "in baseline" in the summary, the same as `layerscope check`.
+## The views
 
-## When it updates
+The bar at the top shows the file and layer counts, the errors and warnings, the findings that the
+[baseline](./baseline) accepts, and when the last analysis ran. **Re-run** analyzes again.
 
-The tab runs the same analysis as `layerscope check` every time you open it or press **Re-run**.
-The layers and symbols it reads are rewritten by Nuxt when components or auto-imports are added
-or removed, so a new file shows up without restarting the dev server.
+| View         | Key | What it shows                                                                            |
+| ------------ | --- | ---------------------------------------------------------------------------------------- |
+| **Overview** | `1` | The counts, a small layer graph, the files with the most findings, and notes.            |
+| **Findings** | `2` | Every finding, with filters for severity, rule, layer pair, file and text, and grouping. |
+| **Trace**    | `3` | Every use of a component or auto-import, grouped by layer, as `layerscope why` shows it. |
+| **Unused**   | `4` | Components and auto-imports that nothing uses, as `layerscope unused` shows them.        |
+| **Graph**    | `5` | The layers and their dependencies. Violations are dashed lines with an `!N` badge.       |
+| **Baseline** | `6` | The findings that the baseline accepts, and entries that no longer match a finding.      |
 
-## The report as JSON
+Every count is a link. For example, click **2 errors** to see only the errors in **Findings**.
+Click a file name to open the file in your editor at that line. The pictures below show the
+[playground](https://github.com/hamedniroomand/nuxt-layerscope/tree/main/packages/playground) app of this repository.
 
-The tab is served from `/__layerscope`. Add `?format=json` to get the same JSON report as
-`layerscope check --format json`, which is handy for a quick script against a running dev
-server:
+### Overview
 
-```bash
-curl -s http://localhost:3000/__layerscope?format=json
-```
+The counts, a small copy of the graph, and the files with the most findings. Press <kbd>1</kbd>.
+
+<Screenshot
+  name="overview"
+  alt="The Overview view: 21 files in 5 layers, 2 errors, 3 warnings and 1 finding in the baseline, a small layer graph, and the five files that have findings."
+/>
+
+### Findings
+
+Every finding, grouped by rule, file or layer pair. Filter by severity, rule, layer pair, file or
+text; the filters stay in the URL. Press <kbd>2</kbd>, then <kbd>/</kbd> to filter.
+
+<Screenshot
+  name="findings"
+  alt="The Findings view: 5 findings in three groups: layer-boundary with 2 errors, unresolved-reference with 2 warnings and shadowed-component with 1 warning."
+/>
+
+Select a finding with <kbd>j</kbd> and <kbd>k</kbd>. The selected finding shows a suggestion from
+the analysis: move the file, allow the layer, or leave the reference. For an "allow" suggestion, the
+tab shows the config change to copy and how many findings it removes. The tab does not change your
+config. <kbd>o</kbd> opens the file, <kbd>t</kbd> traces the symbol, and <kbd>i</kbd> accepts the
+finding into the baseline.
+
+<Screenshot
+  name="findings-selected"
+  alt="The first finding selected: shop uses useOrders from admin. The suggestion moves it to the base layer, which clears 1 finding, with the Ignore, Trace and Open buttons."
+/>
+
+### Trace
+
+Every use of a component or auto-import, grouped by layer, as `layerscope why` shows it. Press
+<kbd>3</kbd>, or <kbd>t</kbd> on a finding.
+
+<Screenshot
+  name="trace"
+  alt="The Trace view for useCart: 3 uses in 3 layers, not allowed from ui, allowed from admin, and in the same layer from shop."
+/>
+
+### Unused
+
+Components and auto-imports that nothing uses, as `layerscope unused` shows them. Press
+<kbd>4</kbd>.
+
+<Screenshot
+  name="unused"
+  alt="The Unused view: 2 unused symbols in 2 layers, the AppBadge component in ui and the formatDate auto-import in base, with a note about components chosen at runtime."
+/>
+
+### Graph
+
+The graph reads from left to right: a layer depends on the layers to its right. A line is thicker
+when it carries more references. Violations are dashed lines with an `!N` badge. Click a layer to
+see its files and the layers it uses. Click a line to see the symbols and files behind it. Press
+<kbd>5</kbd>, and <kbd>e</kbd> to go through the lines of the selected layer.
+
+<Screenshot
+  name="graph"
+  alt="The Graph view: five layers from root to base, three violations that run back from right to left, and the ui to shop edge selected with useCart in the side panel."
+/>
+
+**Table** shows the same data as a matrix: rows use the layers in the columns. Above 15 layers, the
+view opens on the table, and the graph is one click away.
+
+### Baseline
+
+The findings that the [baseline](./baseline) accepts, and entries that no longer match a finding.
+Press <kbd>6</kbd>.
+
+<Screenshot
+  name="baseline"
+  alt="The Baseline view: 1 error accepted into layerscope-baseline.json, base using useToast from ui, with a Remove from baseline button."
+/>
+
+## Live updates
+
+When the tab is open, it analyzes again 200 ms after you save a file. A message at the bottom says
+what changed, for example "+2 violations, -1 fixed". Findings that are new since you opened the tab
+have a `NEW` mark. **New only** shows only those findings, and <kbd>n</kbd> goes to the next one.
+**Reset marker** makes the current findings the new starting point.
+
+**Pause** (<kbd>p</kbd>) stops the live updates. While the tab is closed, hidden behind another
+DevTools tab, or paused, a saved file causes no analysis.
+
+## Accept findings into the baseline
+
+You can add findings to `layerscope-baseline.json` from the tab:
+
+- one finding: select it and press <kbd>i</kbd>, or click **Ignore**,
+- some findings: pick them with the check boxes (or <kbd>x</kbd>, and shift-click for a range),
+  then click **Ignore picked**,
+- a group: click **Ignore all N** next to the group name.
+
+The tab asks first, inline, and says how many entries, findings and files the change adds. Click
+**Undo** within 10 seconds to restore the file. The **Baseline** view keeps an **Undo** button
+until the next change, and can remove entries.
+
+The file that the tab writes is the same file that `layerscope check --update-baseline` writes for
+those findings. Commit it to share it with your team.
+
+### Why this is safe
+
+The baseline write is the only change the tab makes to your files. The dev server accepts it only
+when all of these are true:
+
+- the request comes from the same origin as the tab,
+- the request carries a random token that only the tab has, created each time the dev server
+  starts,
+- the request names findings by their key, and the server finds them in its own last analysis,
+- the findings did not change since the tab loaded them. If they did, the server refuses with
+  `409`, and the tab loads the new findings.
+
+The server writes one change at a time, and always to `layerscope-baseline.json` in the project
+root. The tab cannot read or use the `--baseline` path of the CLI.
+
+## Keyboard shortcuts
+
+| Key                          | Action                                        |
+| ---------------------------- | --------------------------------------------- |
+| <kbd>1</kbd> to <kbd>6</kbd> | Go to a view                                  |
+| <kbd>/</kbd>                 | Filter the findings                           |
+| <kbd>r</kbd>                 | Re-run                                        |
+| <kbd>j</kbd> / <kbd>k</kbd>  | Next or previous finding                      |
+| <kbd>o</kbd>                 | Open the selected finding in your editor      |
+| <kbd>t</kbd>                 | Trace the symbol of the selected finding      |
+| <kbd>i</kbd>                 | Ignore the selected finding (asks first)      |
+| <kbd>x</kbd>                 | Pick the selected finding for a bulk action   |
+| <kbd>n</kbd>                 | Go to the next new finding                    |
+| <kbd>p</kbd>                 | Pause or resume live updates                  |
+| <kbd>e</kbd>                 | In the graph, go through the lines of a layer |
+| <kbd>Esc</kbd>               | Leave a field, or clear the selection         |
+| <kbd>?</kbd>                 | Show all shortcuts                            |
+
+Keys have no effect while you type in a field, except <kbd>Esc</kbd>.
+
+## Theme
+
+The tab uses the light or dark theme of DevTools, and changes when DevTools changes. When you open
+`/__layerscope` directly, it uses the theme of your system.
 
 ## JSON API
 
-The same server answers a few JSON endpoints under `/__layerscope/api`:
+The tab gets all of its data from JSON endpoints under `/__layerscope`. You can use them in your
+own scripts while the dev server runs.
 
-| Request           | Response                                                    |
-| ----------------- | ----------------------------------------------------------- |
-| `GET /api/state`  | Revision, when the last analysis ran and how long it took.  |
-| `GET /api/report` | The state plus the `layerscope check --format json` report. |
-| `POST /api/rerun` | Analyzes again and returns the same body as `/api/report`.  |
+| Request                                         | Response                                                                    |
+| ----------------------------------------------- | --------------------------------------------------------------------------- |
+| `GET /?format=json`                             | The same report as `layerscope check --format json`.                        |
+| `GET /api/state`                                | The revision, when the last analysis ran, and the live state.               |
+| `GET /api/report`                               | The report for the tab: findings with keys, suggestions and statistics.     |
+| `GET /api/symbols`                              | The names that Trace accepts, with their kind and layer.                    |
+| `GET /api/trace?symbol=useCart`                 | Every use of a symbol, as `layerscope why --format json` shows it.          |
+| `GET /api/unused`                               | Unused components and auto-imports.                                         |
+| `GET /api/baseline`                             | The accepted findings and the entries that no longer match.                 |
+| `GET /api/graph`                                | Layers, dependencies and the matrix. Add `?layout=1` above 15 layers.       |
+| `GET /api/edge?from=A&to=B`                     | The symbols and files behind one dependency, at most 500.                   |
+| `GET /api/node?layer=A`                         | One layer, the layers it uses and is used by, and its files, 200 at a time. |
+| `POST /api/rerun`                               | Analyzes again and returns the report.                                      |
+| `POST /api/live/pause`, `/resume`               | Stops or starts live updates.                                               |
+| `POST /api/live/marker`                         | Makes the current findings the starting point for `NEW`.                    |
+| `POST /api/baseline/ignore`, `/remove`, `/undo` | Changes the baseline file. Needs the token of the tab (see above).          |
 
-Responses carry the revision as an `ETag`, so a request with a matching `If-None-Match` gets a
-`304`. The revision only changes when the findings, layers or notes change.
+`GET` responses carry an `ETag`. A request with a matching `If-None-Match` gets `304`. Unknown
+layers get `404`. A `POST` from another origin gets `403`.
 
-Analysis is lazy and cached per file: nothing runs until the tab is opened, and a re-run only reads
-files that changed since the last one.
+### Events
 
-## Turning it off
+`GET /__layerscope/events` is a stream of server-sent events. While a stream is open, a saved file
+starts an analysis.
+
+| Event      | When                                   | Data                                                                    |
+| ---------- | -------------------------------------- | ----------------------------------------------------------------------- |
+| `state`    | On connect, pause and resume           | `{ live: { clients, paused } }`                                         |
+| `snapshot` | After each analysis or baseline change | Revision, timing, counts, `delta.added` and `delta.removed`, `newCount` |
+| `error`    | When a live analysis fails             | `{ error }`                                                             |
+| `ping`     | Every 25 seconds                       | Empty. It keeps proxies from closing the stream.                        |
+
+## Performance
+
+The tab costs nothing until you open it: no analysis runs, and production builds contain no
+layerscope code (a [static snapshot](#publish-a-static-snapshot) is files, not code). When it is
+open, the analysis gives the event loop of the dev server a turn between small batches of work, so
+HMR stays fast.
+
+Measured on 2026-10-03 on an Apple Silicon laptop. "Synthetic" is a generated project with 12
+layers, 1,980 files and 1,687 findings.
+
+| Measurement                                     | nuxt4 fixture (21 files) | Synthetic  |
+| ----------------------------------------------- | ------------------------ | ---------- |
+| First analysis                                  | 59–92 ms                 | 556–829 ms |
+| Analysis after a one-file change (median)       | 3–4 ms                   | 38–40 ms   |
+| Longest block of the event loop, after a change | 2–4 ms                   | 7–12 ms    |
+| Analysis after the symbol registry changes      | 21 ms                    | 523 ms     |
+| Memory of the analysis after 10 changes         | +3 MB                    | +14 MB     |
+| Accepting a finding into the baseline           | 2–4 ms                   |            |
+| Tab ready after its script loads                | 10–12 ms                 | 12 ms      |
+| Browser tasks over 50 ms (scroll, graph zoom)   | none                     | none       |
+
+When you add or remove a file, the analysis loads the symbol registry again. On the synthetic
+project this is one block of about 65 ms on the dev server. Edits to existing files do not cause
+it.
+
+The tab downloads 44 KB (gzip) when it opens, and 7 KB more when it first shows the graph.
+
+How it was measured: the server numbers come from a script that runs the analysis like the tab does
+and records the longest time between two event-loop turns. The browser numbers come from Chrome
+with a `PerformanceObserver` for long tasks. A test in CI checks that an analysis after a one-file
+change takes less than 500 ms on the nuxt4 fixture.
+
+## Publish a static snapshot
+
+The tab needs the dev server, so a deployed app cannot run it. To publish the layer report with
+your app, for a demo or for the team, let the build write a read-only copy of the tab:
+
+```ts [nuxt.config.ts]
+export default defineNuxtConfig({
+  modules: ['nuxt-layerscope'],
+  layerscope: { devtools: { static: true } },
+});
+```
+
+`nuxi build` and `nuxi generate` then analyze the project once and write `/__layerscope/` to the
+public output: the tab, and one JSON file for each answer it can show. The host serves files only.
+The tab in `nuxi dev` stays as it is.
+
+The snapshot is read-only. It has no live updates, no Re-run, no Ignore, Remove or Undo, and file
+names are text, not editor links. A line under the tabs says when it was taken. A button in the
+header switches between the light and dark theme.
+
+- Paths: the snapshot is public, so every path in it is relative to the project root. No path of
+  the build machine is written.
+- Size: the client is about 50 KB (gzip), plus one small trace file for each component and
+  auto-import. The [playground](https://github.com/hamedniroomand/nuxt-layerscope/tree/main/packages/playground)
+  writes 373 JSON files, 76 KB in total.
+- Prerender: `nuxi generate` does not crawl into `/__layerscope/`, so a link to it from your pages
+  is safe.
+- Base URL: the snapshot uses `app.baseURL`, so it also works when the app is not at the root of
+  the domain.
+
+The snapshot needs the built client of the module. When you load the module from a local path, as
+the playground does, build `nuxt-layerscope` first, or the build stops with "The DevTools client is
+not built".
+
+## Turn the tab off
 
 ```ts [nuxt.config.ts]
 export default defineNuxtConfig({
@@ -56,4 +284,5 @@ export default defineNuxtConfig({
 });
 ```
 
-The tab only exists in development. Production builds contain no layerscope code.
+The tab exists only in development. Production builds contain no layerscope code, unless you ask
+for a [static snapshot](#publish-a-static-snapshot).

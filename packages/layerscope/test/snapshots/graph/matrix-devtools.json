@@ -1,0 +1,146 @@
+{
+  "nodes": [
+    {
+      "id": "base",
+      "name": "base",
+      "root": "layers/base",
+      "allow": [],
+      "files": 3,
+      "refsIn": 5,
+      "refsOut": 0
+    },
+    {
+      "id": "npm",
+      "name": "npm",
+      "root": "<installed>",
+      "allow": null,
+      "files": 0,
+      "refsIn": 2,
+      "refsOut": 0
+    },
+    {
+      "id": "remote",
+      "name": "remote",
+      "root": "<installed>",
+      "allow": null,
+      "files": 0,
+      "refsIn": 1,
+      "refsOut": 0
+    },
+    {
+      "id": "root",
+      "name": "root",
+      "root": ".",
+      "allow": null,
+      "files": 1,
+      "refsIn": 0,
+      "refsOut": 1
+    },
+    {
+      "id": "shop",
+      "name": "shop",
+      "root": "layers/shop",
+      "allow": [
+        "base"
+      ],
+      "files": 3,
+      "refsIn": 1,
+      "refsOut": 10
+    },
+    {
+      "id": "theme",
+      "name": "theme",
+      "root": "layers/theme",
+      "allow": [
+        "base"
+      ],
+      "files": 4,
+      "refsIn": 2,
+      "refsOut": 0
+    }
+  ],
+  "edges": [
+    {
+      "from": "root",
+      "to": "shop",
+      "count": 1,
+      "status": "unrestricted",
+      "violations": 0,
+      "severity": null
+    },
+    {
+      "from": "shop",
+      "to": "base",
+      "count": 5,
+      "status": "allowed",
+      "violations": 0,
+      "severity": null
+    },
+    {
+      "from": "shop",
+      "to": "npm",
+      "count": 2,
+      "status": "not-allowed",
+      "violations": 2,
+      "severity": "error"
+    },
+    {
+      "from": "shop",
+      "to": "remote",
+      "count": 1,
+      "status": "not-allowed",
+      "violations": 1,
+      "severity": "error"
+    },
+    {
+      "from": "shop",
+      "to": "theme",
+      "count": 2,
+      "status": "not-allowed",
+      "violations": 2,
+      "severity": "error"
+    }
+  ],
+  "matrix": [
+    {
+      "from": "root",
+      "to": "shop",
+      "count": 1,
+      "status": "unrestricted",
+      "violations": 0
+    },
+    {
+      "from": "shop",
+      "to": "base",
+      "count": 5,
+      "status": "allowed",
+      "violations": 0
+    },
+    {
+      "from": "shop",
+      "to": "npm",
+      "count": 2,
+      "status": "not-allowed",
+      "violations": 2
+    },
+    {
+      "from": "shop",
+      "to": "remote",
+      "count": 1,
+      "status": "not-allowed",
+      "violations": 1
+    },
+    {
+      "from": "shop",
+      "to": "theme",
+      "count": 2,
+      "status": "not-allowed",
+      "violations": 2
+    }
+  ],
+  "layout": {
+    "nodes": 6,
+    "edges": 5,
+    "reversed": 0
+  }
+}

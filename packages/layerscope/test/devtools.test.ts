@@ -1,58 +1,55 @@
-import { loadNuxt } from '@nuxt/kit';
+import { execFile } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vite-plus/test';
 
 import { DEVTOOLS_ROUTE } from '#src/devtools/index.ts';
-import type { DevtoolsTab } from '#src/module/nuxt.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
 
-type CallCustomTabs = (name: 'devtools:customTabs', tabs: DevtoolsTab[]) => Promise<unknown>;
+const PROBE = fileURLToPath(new URL('devtools-nuxt.ts', import.meta.url));
 
-type CallRescan = (name: 'builder:watch', event: string, path: string) => Promise<unknown>;
+interface Registered {
+  routes: (string | undefined)[];
+  tabs: unknown[];
+  publicAssets: number;
+  prerenderIgnore: unknown[];
+}
 
-interface DevServerHandler {
-  route?: string;
+/** Loads the fixture with the module in a child process; see `devtools-nuxt.ts` for why. */
+async function registered(mode: 'dev' | 'build' | 'static'): Promise<Registered> {
+  const stdout = await new Promise<string>((resolve, reject) => {
+    execFile(process.execPath, [PROBE, NUXT4_ROOT, mode], (error, out, err) => {
+      if (error === null) {
+        resolve(out);
+      } else {
+        reject(new Error(`The Nuxt probe failed: ${err}`, { cause: error }));
+      }
+    });
+  });
+  return JSON.parse(stdout) as Registered;
 }
 
 describe('devtools tab', () => {
-  it('registers the tab and its dev route under nuxi dev', async () => {
-    const nuxt = await loadNuxt({ cwd: NUXT4_ROOT, dev: true, ready: true });
-    try {
-      const handlers = (nuxt.options as unknown as { devServerHandlers: DevServerHandler[] })
-        .devServerHandlers;
-      expect(handlers.map(handler => handler.route)).toContain(DEVTOOLS_ROUTE);
-      const tabs: DevtoolsTab[] = [];
-      await (nuxt.callHook as unknown as CallCustomTabs)('devtools:customTabs', tabs);
-      expect(tabs).toContainEqual(
-        expect.objectContaining({
-          name: 'layerscope',
-          view: { type: 'iframe', src: DEVTOOLS_ROUTE },
-        }),
-      );
-    } finally {
-      await nuxt.close();
-    }
+  it('registers the tab and its dev route under nuxi dev, and rescans without error', async () => {
+    const { routes, tabs } = await registered('dev');
+    expect(routes).toContain(DEVTOOLS_ROUTE);
+    expect(tabs).toContainEqual(
+      expect.objectContaining({
+        name: 'layerscope',
+        view: { type: 'iframe', src: DEVTOOLS_ROUTE },
+      }),
+    );
   });
 
-  it('registers no route and no tab outside nuxi dev', async () => {
-    const nuxt = await loadNuxt({ cwd: NUXT4_ROOT, dev: false, ready: true });
-    try {
-      const handlers = (nuxt.options as unknown as { devServerHandlers: DevServerHandler[] })
-        .devServerHandlers;
-      expect(handlers.map(handler => handler.route)).not.toContain(DEVTOOLS_ROUTE);
-      const tabs: DevtoolsTab[] = [];
-      await (nuxt.callHook as unknown as CallCustomTabs)('devtools:customTabs', tabs);
-      expect(tabs).toEqual([]);
-    } finally {
-      await nuxt.close();
-    }
-  });
-
-  it('rescan hooks are harmless before the tab is opened', async () => {
-    const nuxt = await loadNuxt({ cwd: NUXT4_ROOT, dev: true, ready: true });
-    try {
-      await (nuxt.callHook as unknown as CallRescan)('builder:watch', 'change', 'app/app.vue');
-    } finally {
-      await nuxt.close();
-    }
+  it('registers no route, no tab and no snapshot outside nuxi dev by default', async () => {
+    const [plain, snapshot] = await Promise.all([registered('build'), registered('static')]);
+    expect(plain.routes).not.toContain(DEVTOOLS_ROUTE);
+    expect(plain.tabs).toEqual([]);
+    // `{ static: true }` adds exactly the one hook that writes the snapshot.
+    expect(snapshot.publicAssets).toBe(plain.publicAssets + 1);
+    expect(snapshot.routes).not.toContain(DEVTOOLS_ROUTE);
+    // `nuxi generate` must not crawl into the snapshot, which it cannot serve.
+    expect(snapshot.prerenderIgnore).toContain(DEVTOOLS_ROUTE);
+    expect(plain.prerenderIgnore).not.toContain(DEVTOOLS_ROUTE);
   });
 });

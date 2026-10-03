@@ -1,8 +1,9 @@
 import type { Edge, Finding, Layer, LayerscopeConfig, Suggestion } from '#src/types.ts';
 import { plural } from '#src/utils/strings.ts';
+import { createYielder } from '#src/utils/yield.ts';
 
 import type { Context } from './context.ts';
-import { createContext, isLocal, reaches } from './context.ts';
+import { createContext, isLocal, pairKey, reaches } from './context.ts';
 import { moveSuggestion, pickTarget } from './move.ts';
 
 function leaveSuggestion(from: string, to: string): Suggestion {
@@ -14,9 +15,7 @@ function leaveSuggestion(from: string, to: string): Suggestion {
 }
 
 function allowSuggestion(context: Context, from: string, to: string): Suggestion {
-  const fixes = context.findings.filter(
-    finding => finding.fromLayer === from && finding.toLayer === to,
-  ).length;
+  const fixes = context.findingsFor.get(pairKey(from, to)) ?? 0;
   return {
     action: 'allow',
     message: `allow "${from}" to use "${to}" (adds 1 edge, clears ${plural(fixes, 'finding')})`,
@@ -29,8 +28,7 @@ function suggest(context: Context, finding: Finding): Suggestion {
   const to = finding.toLayer ?? '';
   const file = finding.target;
   const owner = context.layers.find(layer => layer.name === to);
-  // ponytail: scans every edge per finding; index edges by file if large projects feel slow.
-  const uses = context.edges.filter(edge => file !== null && edge.to === file);
+  const uses = file === null ? [] : (context.usesOf.get(file) ?? []);
   const cycle = reaches(context, to, from);
   const sharedByMany =
     new Set(uses.map(edge => edge.fromLayer).filter(name => name !== to)).size >= 2;
@@ -49,17 +47,36 @@ function suggest(context: Context, finding: Finding): Suggestion {
   return cycle ? leaveSuggestion(from, to) : allowSuggestion(context, from, to);
 }
 
-export function addSuggestions(
+const BATCH_FINDINGS = 200;
+
+/** Adds a suggestion to each boundary finding; yields to the event loop between batches. */
+export async function addSuggestions(
   findings: Finding[],
   edges: Edge[],
   layers: Layer[],
   config: LayerscopeConfig,
   rootDir: string,
-): Finding[] {
+): Promise<Finding[]> {
   const context = createContext(findings, edges, layers, config, rootDir);
-  return findings.map(finding =>
-    finding.rule === 'layer-boundary'
-      ? { ...finding, suggestion: suggest(context, finding) }
-      : finding,
-  );
+  // A suggestion reads only the layer pair and the target file, so findings that share them
+  // get the same one. Each finding gets its own copy, so no two findings share an object.
+  const memo = new Map<string, Suggestion>();
+  const suggestionFor = (finding: Finding): Suggestion => {
+    const key = JSON.stringify([finding.fromLayer, finding.toLayer, finding.target]);
+    const known = memo.get(key) ?? suggest(context, finding);
+    memo.set(key, known);
+    return { ...known, impact: { ...known.impact } };
+  };
+  const pause = createYielder({ files: BATCH_FINDINGS });
+  const result: Finding[] = [];
+  for (const finding of findings) {
+    result.push(
+      finding.rule === 'layer-boundary'
+        ? { ...finding, suggestion: suggestionFor(finding) }
+        : finding,
+    );
+    // eslint-disable-next-line no-await-in-loop -- yields between batches of findings
+    await pause();
+  }
+  return result;
 }

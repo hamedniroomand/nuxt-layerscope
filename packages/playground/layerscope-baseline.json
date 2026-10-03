@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "rule": "layer-boundary",
+      "file": "layers/base/app/composables/useTheme.ts",
+      "symbol": "useToast",
+      "toLayer": "ui"
+    }
+  ]
+}

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "ready": "vp check && vp test && vp run -r build",
+    "ready": "vp check && vp run nuxt-layerscope#check:client && vp test && vp run -r build",
     "dev": "vp run docs#dev",
     "build": "vp run nuxt-layerscope#build",
     "tarball": "vp run nuxt-layerscope#tarball",
@@ -13,12 +13,14 @@
     "lint": "vp lint",
     "format": "vp format",
     "test": "vp test",
-    "prepare": "vp config"
+    "prepare": "vp config",
+    "playground": "vp run nuxt-layerscope#build && vp run playground#dev"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "@vitest/coverage-v8": "5.0.1",
+    "playwright-core": "^1.63.0",
     "vite-plus": "catalog:"
   },
   "engines": {

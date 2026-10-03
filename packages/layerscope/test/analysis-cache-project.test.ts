@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
-import { AnalysisCache } from '#src/analyze/cache.ts';
+import { AnalysisCache, createEnvironmentCache } from '#src/analyze/cache.ts';
 import { analyze } from '#src/analyze/index.ts';
 
 const PAGE = 'layers/admin/app/pages/admin.vue';
@@ -42,5 +42,27 @@ describe('analysis cache across file changes', () => {
     expect(after.findings.map(finding => finding.message).join('\n')).not.toContain(
       'Cannot resolve',
     );
+  });
+});
+
+describe('environment cache', () => {
+  it('reuses the environment while the env key holds and reloads when it changes', async () => {
+    const root = project();
+    const cache = new AnalysisCache();
+    const environment = createEnvironmentCache();
+    const first = await analyze({ rootDir: root, cache, environment, envKey: 'k' });
+    const same = await analyze({ rootDir: root, cache, environment, envKey: 'k' });
+    expect(same.symbols).toBe(first.symbols);
+    const changed = await analyze({ rootDir: root, cache, environment, envKey: 'k2' });
+    expect(changed.symbols).not.toBe(first.symbols);
+    expect(changed.findings).toEqual(first.findings);
+  });
+
+  it('loads a fresh environment without an env key, as the CLI does', async () => {
+    const root = project();
+    const environment = createEnvironmentCache();
+    const first = await analyze({ rootDir: root, environment });
+    const second = await analyze({ rootDir: root, environment });
+    expect(second.symbols).not.toBe(first.symbols);
   });
 });

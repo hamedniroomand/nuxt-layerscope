@@ -9,7 +9,9 @@ adds [provenance](https://docs.npmjs.com/generating-provenance-statements).
 
 1. Update `version` in `packages/layerscope/package.json` and rename the `## Unreleased` section
    of `packages/layerscope/CHANGELOG.md` to `## <version>`. Changes merged between releases add
-   their line under `## Unreleased`.
+   their line under `## Unreleased`. If the DevTools tab changed, run `vp run docs#screenshots`
+   and commit the pictures; `packages/docs/public/devtools/manifest.json` shows the version they
+   were made for.
 2. Merge that to `main`.
 3. Tag `main` and push the tag:
 

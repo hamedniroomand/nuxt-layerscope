@@ -1,5 +1,44 @@
 # Changelog
 
+## Unreleased
+
+- The DevTools tab is a new prebuilt Vue client with six views: Overview, Findings, Trace,
+  Unused, Graph and Baseline. Its theme follows Nuxt DevTools, or the OS theme
+  when you open `/__layerscope` directly. The server-rendered page is removed;
+  `/__layerscope?format=json` still returns the check report.
+- Findings filter by severity, rule, layer pair, file and text, with the filters kept in the URL
+  hash. Each boundary finding shows its suggestion; an "allow" suggestion comes with a config
+  snippet to copy and the findings it resolves. The tab never writes config. Long lists render
+  a frame at a time, so a large project opens without a pause.
+- Trace lists every use of a component or auto-import, grouped by layer, as `layerscope why`
+  does. Unused and Baseline show what `layerscope unused` and the baseline file hold. Each view
+  can copy the matching CLI command.
+- The Graph view shows which layer depends on which, how much, and where the rules break, with
+  dashed edges and `!N` badges for violations. Selecting a layer or an edge shows its files and
+  symbols. A Table view shows the same numbers as a matrix and opens first above 15 layers. The
+  graph loads as a separate chunk, only when needed.
+- The tab updates while you code. An open tab re-runs the analysis 200 ms after a change and says
+  what changed ("+2 violations, -1 fixed"). New findings get a `NEW` chip, a "New only" filter
+  and the `n` key; `p` pauses. While the tab is closed or hidden, a change does no work. Events
+  come from `/__layerscope/events`; when the stream fails, the tab polls `/api/state`.
+- Findings can be accepted into `layerscope-baseline.json` from the tab: one row (`i`), a picked
+  set (`x` and shift-click) or a whole group, always after an inline confirm. Undo is one click
+  for 10 s, and the Baseline view keeps it until the next write and can remove entries. The file
+  matches what `check --update-baseline` writes. Writes need a token that only the tab knows,
+  come only from the same origin, and are refused when the findings changed in the meantime.
+- Keyboard: `1` to `6`, `/`, `r`, `j`, `k`, `o`, `t`, `i`, `x`, `n`, `p`, `e`, `Esc`, and `?`
+  for a sheet of every shortcut. The tab passes an axe audit, and every text color has a
+  contrast of 4.5:1 or more in both themes.
+- Large projects re-run much faster in the tab: suggestions are indexed, the analysis yields to
+  the event loop between batches, and the loaded symbols are kept until the registry changes.
+- `layerscope: { devtools: { static: true } }` publishes a read-only snapshot of the tab:
+  `nuxi build` and `nuxi generate` write `/__layerscope/` to the public output, with paths
+  relative to the project. The snapshot has no live updates and no writes, and works on any static
+  host.
+- New JSON endpoints under `/__layerscope/api`: `symbols`, `trace`, `unused`, `baseline`,
+  `graph`, `edge`, `node`, `live/*` and `baseline/*`. `report` adds absolute paths (`absRoot`,
+  `absFile`, `absTarget`), `hotFiles` and per-layer `layerStats`.
+
 ## 0.2.0
 
 - `layerscope init` writes a starter `layerscope.config.ts` with the smallest `allow` map the

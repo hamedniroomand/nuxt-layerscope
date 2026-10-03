@@ -1,5 +1,10 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
+import { join } from 'pathe';
 import { describe, expect, it, vi } from 'vite-plus/test';
 
+import { applyBaselineFile, createBaseline, writeBaseline } from '#src/baseline/index.ts';
 import { Analyzer } from '#src/devtools/analyzer.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { makeFinding, makeResult } from '#test/factories.ts';
@@ -44,7 +49,9 @@ describe('Analyzer', () => {
       expect.objectContaining({ rootDir: '/app', baseline: 'b.json', envKey: 'k' }),
     );
   });
+});
 
+describe('Analyzer revisions', () => {
   it('bumps the revision only when the output changes', async () => {
     const run = vi
       .fn<Run>()
@@ -56,6 +63,17 @@ describe('Analyzer', () => {
     const same = await analyzer.refresh();
     const changed = await analyzer.refresh();
     expect(same.rev).toBe(first.rev);
+    expect(changed.rev).toBe(first.rev + 1);
+  });
+
+  it('bumps the revision when only the layer config changes', async () => {
+    const run = vi
+      .fn<Run>()
+      .mockResolvedValueOnce(makeResult({ config: { layers: { web: { allow: [] } } } }))
+      .mockResolvedValueOnce(makeResult({ config: { layers: { web: { allow: ['shop'] } } } }));
+    const { analyzer } = setup(run);
+    const first = await analyzer.get();
+    const changed = await analyzer.refresh();
     expect(changed.rev).toBe(first.rev + 1);
   });
 
@@ -90,9 +108,67 @@ describe('Analyzer concurrency', () => {
     expect(snapshot.result.findings).toHaveLength(1);
   });
 
+  it('tells subscribers about each snapshot and ignores a failing one', async () => {
+    const { analyzer } = setup();
+    const seen: number[] = [];
+    analyzer.subscribe(() => {
+      throw new Error('listener bug');
+    });
+    const leave = analyzer.subscribe(snapshot => {
+      seen.push(snapshot.rev);
+    });
+    await expect(analyzer.refresh()).resolves.toBeDefined();
+    leave();
+    await analyzer.refresh();
+    expect(seen).toEqual([0]);
+  });
+
   it('gives each analyzer its own snapshot id', async () => {
     const one = await setup().analyzer.get();
     const two = await setup().analyzer.get();
     expect(one.id).not.toBe(two.id);
+  });
+});
+
+describe('Analyzer rebaseline', () => {
+  it('applies a changed baseline file to the last result without analyzing again', async () => {
+    const rootDir = mkdtempSync(join(tmpdir(), 'layerscope-rebaseline-'));
+    const findings = [makeFinding(), makeFinding({ symbol: 'useTotal', line: 9 })];
+    const run = vi.fn<Run>().mockResolvedValue(makeResult({ findings }));
+    const analyzer = new Analyzer({ rootDir, baseline: 'b.json', envKey: (): string => 'k', run });
+    const first = await analyzer.get();
+    const file = join(rootDir, 'b.json');
+    writeBaseline(file, createBaseline([findings[0] ?? makeFinding()], '/app'));
+    const next = await analyzer.rebaseline();
+    expect(run).toHaveBeenCalledOnce();
+    expect(next.cause).toBe('baseline');
+    expect(next.rev).toBe(first.rev + 1);
+    const fresh = applyBaselineFile(makeResult({ findings }), file);
+    expect(next.result.findings).toEqual(fresh.findings);
+    expect(next.result.baseline?.suppressed).toEqual(fresh.baseline?.suppressed);
+  });
+});
+
+describe('Analyzer rebaseline while analyzing', () => {
+  it('waits for the run in flight and applies the baseline to its result', async () => {
+    const gate = Promise.withResolvers<null>();
+    const run = vi.fn<Run>().mockImplementation(async () => {
+      await gate.promise;
+      return makeResult({ findings: [makeFinding()] });
+    });
+    const analyzer = new Analyzer({
+      rootDir: '/nowhere',
+      baseline: 'b.json',
+      envKey: (): string => 'k',
+      run,
+    });
+    const analyzing = analyzer.get();
+    const rebaselined = analyzer.rebaseline();
+    gate.resolve(null);
+    const first = await analyzing;
+    const next = await rebaselined;
+    expect(run).toHaveBeenCalledOnce();
+    expect(next.cause).toBe('baseline');
+    expect(next.result.findings).toEqual(first.result.findings);
   });
 });
