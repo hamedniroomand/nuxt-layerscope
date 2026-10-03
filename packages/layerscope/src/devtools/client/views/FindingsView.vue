@@ -161,7 +161,6 @@
         </h3>
         <ul
           class="rows"
-          role="listbox"
           :aria-label="group.label"
         >
           <FindingRow

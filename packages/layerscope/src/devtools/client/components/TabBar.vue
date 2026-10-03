@@ -24,27 +24,31 @@
 <template>
   <nav
     class="tabs"
-    role="tablist"
     aria-label="Views"
   >
-    <button
-      v-for="(tab, index) in tabs"
-      :key="tab.view"
-      type="button"
-      role="tab"
-      class="tab"
-      :aria-selected="nav.route.value.view === tab.view"
-      :aria-keyshortcuts="String(index + 1)"
-      @click="nav.open(tab.view)"
+    <div
+      class="list"
+      role="tablist"
     >
-      {{ tab.label }}
-      <span
-        v-if="tab.badge"
-        class="badge num"
+      <button
+        v-for="(tab, index) in tabs"
+        :key="tab.view"
+        type="button"
+        role="tab"
+        class="tab"
+        :aria-selected="nav.route.value.view === tab.view"
+        :aria-keyshortcuts="String(index + 1)"
+        @click="nav.open(tab.view)"
       >
-        {{ tab.badge }}
-      </span>
-    </button>
+        {{ tab.label }}
+        <span
+          v-if="tab.badge"
+          class="badge num"
+        >
+          {{ tab.badge }}
+        </span>
+      </button>
+    </div>
     <button
       type="button"
       class="tab help"
@@ -98,6 +102,11 @@
     padding: 0 6px;
     font-size: 11px;
     line-height: 16px;
+  }
+
+  .list {
+    display: flex;
+    align-items: center;
   }
 
   .help {

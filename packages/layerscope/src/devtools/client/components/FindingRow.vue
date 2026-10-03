@@ -26,8 +26,7 @@
   <li
     class="row"
     :class="{ selected }"
-    :aria-selected="selected"
-    role="option"
+    :aria-current="selected ? 'true' : undefined"
     :tabindex="tabStop ? 0 : -1"
     @click="$emit('select')"
     @focus="$emit('select')"
