@@ -34,7 +34,7 @@ export function toKeyed(finding: Finding, rootDir: string): Keyed {
   };
 }
 
-function compareEntries(a: Keyed, b: Keyed): number {
+export function compareEntries(a: Keyed, b: Keyed): number {
   return (
     compareStrings(a.file, b.file) ||
     compareStrings(a.rule, b.rule) ||
