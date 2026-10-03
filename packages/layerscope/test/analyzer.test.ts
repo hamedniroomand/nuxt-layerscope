@@ -148,3 +148,27 @@ describe('Analyzer rebaseline', () => {
     expect(next.result.baseline?.suppressed).toEqual(fresh.baseline?.suppressed);
   });
 });
+
+describe('Analyzer rebaseline while analyzing', () => {
+  it('waits for the run in flight and applies the baseline to its result', async () => {
+    const gate = Promise.withResolvers<null>();
+    const run = vi.fn<Run>().mockImplementation(async () => {
+      await gate.promise;
+      return makeResult({ findings: [makeFinding()] });
+    });
+    const analyzer = new Analyzer({
+      rootDir: '/nowhere',
+      baseline: 'b.json',
+      envKey: (): string => 'k',
+      run,
+    });
+    const analyzing = analyzer.get();
+    const rebaselined = analyzer.rebaseline();
+    gate.resolve(null);
+    const first = await analyzing;
+    const next = await rebaselined;
+    expect(run).toHaveBeenCalledOnce();
+    expect(next.cause).toBe('baseline');
+    expect(next.result.findings).toEqual(first.result.findings);
+  });
+});

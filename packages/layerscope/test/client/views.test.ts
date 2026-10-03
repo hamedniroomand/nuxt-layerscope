@@ -74,6 +74,21 @@ describe('findings view', () => {
     expect(wrapper.findAll('li.row')).toHaveLength(2);
   });
 
+  it('moves focus with the selection and keeps one tab stop', async () => {
+    window.location.hash = '#/findings';
+    const { wrapper } = await mountApp(withFindings());
+    mounted = wrapper;
+    expect(wrapper.findAll('li.row[tabindex="0"]')).toHaveLength(1);
+    press('j');
+    press('j');
+    await flushPromises();
+    const selected = wrapper.get('li.row.selected');
+    expect(document.activeElement).toBe(selected.element);
+    expect(selected.attributes('tabindex')).toBe('0');
+  });
+});
+
+describe('findings keyboard', () => {
   it('moves the selection with j and k and opens it with o', async () => {
     window.location.hash = '#/findings';
     const { wrapper, api } = await mountApp(withFindings());

@@ -47,6 +47,12 @@
       label: 'Clear the selection',
       inFields: true,
       run: () => {
+        // In a field, Esc only leaves the field; a second Esc clears the selection.
+        const active = document.activeElement;
+        if (active instanceof HTMLInputElement || active instanceof HTMLSelectElement) {
+          active.blur();
+          return;
+        }
         select(null);
       },
     }),

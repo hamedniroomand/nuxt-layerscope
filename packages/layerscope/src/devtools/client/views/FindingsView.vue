@@ -17,7 +17,8 @@
   const reveal = async (step: number): Promise<void> => {
     view.move(step);
     await nextTick();
-    list.value?.querySelector<HTMLElement>('.selected')?.scrollIntoView({ block: 'nearest' });
+    // Focus follows the selection, so screen readers announce the row; focus also scrolls.
+    list.value?.querySelector<HTMLElement>('.selected')?.focus();
   };
   const removers = [
     context.shortcuts.register({ key: 'j', label: 'Next finding', run: () => reveal(1) }),
@@ -170,6 +171,11 @@
             :selected="view.selected.value === view.idOf(finding)"
             :picked="ignore.multi.has(view.idOf(finding))"
             :picking="ignore.multi.count.value > 0"
+            :tab-stop="
+              view.selected.value === null
+                ? view.rows.value[0] === finding
+                : view.selected.value === view.idOf(finding)
+            "
             @select="view.select(finding)"
             @pick="ignore.multi.toggle(view.idOf(finding), $event)"
             @ignore="ignore.ask([finding])"

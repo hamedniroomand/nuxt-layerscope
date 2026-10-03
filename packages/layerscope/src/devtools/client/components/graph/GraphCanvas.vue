@@ -18,7 +18,17 @@
 
   const svg = useTemplateRef<SVGSVGElement>('svg');
   const pan = usePanZoom();
-  const focused = ref(props.view.layout.nodes[0]?.id ?? '');
+  const chosen = ref(props.view.layout.nodes[0]?.id ?? '');
+  // A new revision can drop the focused layer; then the first node takes the tab stop.
+  const focused = computed({
+    get: () =>
+      props.view.layout.nodes.some(node => node.id === chosen.value)
+        ? chosen.value
+        : (props.view.layout.nodes[0]?.id ?? ''),
+    set: (id: string) => {
+      chosen.value = id;
+    },
+  });
   const shown = computed(() => new Set(props.edges.map(edge => `${edge.from}\0${edge.to}`)));
   const laidOut = computed(() =>
     props.view.layout.edges.flatMap(path => {

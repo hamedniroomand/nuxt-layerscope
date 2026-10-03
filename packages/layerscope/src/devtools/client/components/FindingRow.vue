@@ -5,7 +5,14 @@
   import HintLine from './HintLine.vue';
   import SeverityGlyph from './SeverityGlyph.vue';
 
-  defineProps<{ finding: TabFinding; selected: boolean; picked: boolean; picking: boolean }>();
+  defineProps<{
+    finding: TabFinding;
+    selected: boolean;
+    picked: boolean;
+    picking: boolean;
+    /** The one row in the list that Tab reaches: the selected one, or the first. */
+    tabStop: boolean;
+  }>();
   defineEmits<{
     select: [];
     open: [file: string, line: number, column: number];
@@ -21,8 +28,9 @@
     :class="{ selected }"
     :aria-selected="selected"
     role="option"
-    tabindex="-1"
+    :tabindex="tabStop ? 0 : -1"
     @click="$emit('select')"
+    @focus="$emit('select')"
   >
     <div class="line">
       <input

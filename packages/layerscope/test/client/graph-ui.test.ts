@@ -87,6 +87,27 @@ describe('graph view', () => {
   });
 });
 
+describe('graph keyboard', () => {
+  it('leaves a field with the first Esc and clears the selection with the next', async () => {
+    const { wrapper } = await mountGraph();
+    await wrapper.get('.edge').trigger('click');
+    const select = wrapper.get('select').element as HTMLSelectElement;
+    select.focus();
+    press('Escape');
+    await flushPromises();
+    expect(document.activeElement).not.toBe(select);
+    expect(window.location.hash).toBe('#/graph/edge/web/shop');
+    press('Escape');
+    await flushPromises();
+    expect(window.location.hash).toBe('#/graph');
+  });
+
+  it('keeps one tab stop on the nodes', async () => {
+    const { wrapper } = await mountGraph();
+    expect(wrapper.findAll('.node[tabindex="0"]')).toHaveLength(1);
+  });
+});
+
 describe('overview mini graph', () => {
   it('draws the graph and opens the Graph view on a click', async () => {
     const { wrapper, api } = await mountApp();

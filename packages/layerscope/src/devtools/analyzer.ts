@@ -123,8 +123,13 @@ export class Analyzer {
    * analyzed again. Waits for an analysis in flight, and later requests wait for this one.
    */
   public async rebaseline(): Promise<Snapshot> {
-    await Promise.allSettled([this.inflight]);
-    const base = this.snapshot ?? (await this.get());
+    // Another run can start while this one waits, so wait until none is in flight and a
+    // snapshot exists; the check and the claim below then happen without a gap.
+    while (this.inflight !== undefined || this.snapshot === undefined) {
+      // eslint-disable-next-line no-await-in-loop -- waits for each run in turn
+      await (this.inflight === undefined ? this.get() : Promise.allSettled([this.inflight]));
+    }
+    const base = this.snapshot;
     this.inflight = this.reapply(base).finally(() => {
       this.inflight = undefined;
     });
