@@ -74,3 +74,35 @@ describe('live client', () => {
     expect(on.poll).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('live client recovery', () => {
+  it('tries the stream again every tenth poll and stops polling once it opens', () => {
+    const sources: FakeSource[] = [];
+    const on = handlers();
+    const live = connectLive({
+      url: '/e',
+      open: () => {
+        const source = new FakeSource();
+        sources.push(source);
+        return source;
+      },
+      handlers: on,
+      pollMs: 100,
+    });
+    sources[0]?.onerror?.(new Event('error'));
+    sources[0]?.onerror?.(new Event('error'));
+    vi.advanceTimersByTime(900);
+    expect(sources).toHaveLength(1);
+    vi.advanceTimersByTime(100);
+    expect(sources).toHaveLength(2);
+    sources[1]?.onerror?.(new Event('error'));
+    expect(sources[1]?.closed).toBe(true);
+    expect(live.status.value).toBe('polling');
+    vi.advanceTimersByTime(1000);
+    sources[2]?.onopen?.(new Event('open'));
+    expect(live.status.value).toBe('live');
+    const polls = on.poll.mock.calls.length;
+    vi.advanceTimersByTime(1000);
+    expect(on.poll).toHaveBeenCalledTimes(polls);
+  });
+});

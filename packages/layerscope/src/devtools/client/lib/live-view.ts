@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, Ref, ShallowRef } from 'vue';
 import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue';
 
 import type { FindingDelta } from '#src/devtools/finding-keys.ts';
@@ -8,6 +8,8 @@ import type { TabContext } from './context.ts';
 import { plural } from './format.ts';
 import type { EventSourceLike, LiveClient, LiveHandlers, LiveStatus } from './live.ts';
 import { connectLive } from './live.ts';
+import type { FrameWindow } from './visibility.ts';
+import { isVisible, watchVisibility } from './visibility.ts';
 
 export interface Toast {
   message: string;
@@ -42,6 +44,9 @@ export function describeEvent(event: LiveEvent): string | null {
   return `${parts.join(', ')}${fresh}`;
 }
 
+/** A failed reload shows in the store's own error state. */
+const ignore = (): undefined => undefined;
+
 function openSource(url: string): EventSourceLike {
   return new EventSource(url);
 }
@@ -72,16 +77,66 @@ function liveHandlers(
   };
 }
 
-/** Connects the tab to the server's live updates while the app is mounted. */
+export interface LiveOptions {
+  open?: (url: string) => EventSourceLike;
+  /** The window whose frames decide whether the tab is visible. */
+  host?: FrameWindow;
+}
+
+/**
+ * Holds the event stream open only while the tab is visible: a hidden tab drops out of the
+ * server's client count, so saves stop starting runs. Showing the tab again reconnects and
+ * reloads the report, which answers 304 when nothing changed.
+ */
+function useConnection(
+  context: TabContext,
+  handlers: LiveHandlers,
+  options: LiveOptions,
+): ShallowRef<LiveClient | null> {
+  const client = shallowRef<LiveClient | null>(null);
+  const open = options.open ?? openSource;
+  let stop: (() => void) | undefined;
+  const connect = (): void => {
+    client.value ??= connectLive({ url: context.api.events, open, handlers });
+  };
+  const disconnect = (): void => {
+    client.value?.close();
+    client.value = null;
+  };
+  onMounted(() => {
+    if (typeof EventSource === 'undefined' && options.open === undefined) {
+      return;
+    }
+    const host = options.host ?? (globalThis as unknown as FrameWindow);
+    if (isVisible(host)) {
+      connect();
+    }
+    stop = watchVisibility(host, visible => {
+      if (visible) {
+        connect();
+        context.store.load().catch(ignore);
+      } else {
+        disconnect();
+      }
+    });
+  });
+  onBeforeUnmount(() => {
+    stop?.();
+    disconnect();
+  });
+  return client;
+}
+
+/** Connects the tab to the server's live updates while the app is mounted and visible. */
 export function useLive(
   context: TabContext,
   toast: Ref<Toast | null>,
-  open: (url: string) => EventSourceLike = openSource,
+  options: LiveOptions = {},
 ): LiveView {
   const { api, shortcuts } = context;
-  const client = shallowRef<LiveClient | null>(null);
   // Set by a pause or resume from this tab, before the server's state event arrives.
   const pausedHere = shallowRef<boolean | null>(null);
+  const client = useConnection(context, liveHandlers(context, toast, pausedHere), options);
   const paused = computed(() => pausedHere.value ?? client.value?.paused.value ?? false);
   // The server's state event wins once it arrives, also when another tab paused or resumed.
   watch(
@@ -90,18 +145,6 @@ export function useLive(
       pausedHere.value = null;
     },
   );
-  const handlers = liveHandlers(context, toast, pausedHere);
-  onMounted(() => {
-    if (typeof EventSource === 'undefined' && open === openSource) {
-      return;
-    }
-    client.value = connectLive({
-      url: api.events,
-      open,
-      handlers,
-    });
-  });
-  onBeforeUnmount(() => client.value?.close());
   const togglePause = async (): Promise<void> => {
     const { live } = await api.live(paused.value ? 'resume' : 'pause');
     pausedHere.value = live.paused;

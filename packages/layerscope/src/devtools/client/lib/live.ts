@@ -44,37 +44,15 @@ function parse<T>(event: MessageEvent<string>): T {
   return JSON.parse(event.data) as T;
 }
 
-/** Follows the server's event stream; falls back to polling when the stream keeps failing. */
-export function connectLive(options: LiveClientOptions): LiveClient {
-  const status = shallowRef<LiveStatus>('connecting');
-  const paused = shallowRef(false);
-  const { handlers } = options;
-  let failures = 0;
-  let timer: ReturnType<typeof setInterval> | undefined;
-  const settle = (): void => {
-    if (status.value !== 'polling') {
-      status.value = paused.value ? 'paused' : 'live';
-    }
-  };
-  const source = options.open(options.url);
-  source.onopen = (): void => {
-    failures = 0;
-    settle();
-  };
-  source.onerror = (): void => {
-    failures += 1;
-    if (failures < 2) {
-      status.value = 'reconnecting';
-      return;
-    }
-    source.close();
-    status.value = 'polling';
-    timer = setInterval(() => {
-      handlers.poll().catch(ignore);
-    }, options.pollMs ?? POLL_MS);
-  };
+/** Wires one event source to the handlers. */
+function listen(
+  source: EventSourceLike,
+  live: LiveClient,
+  handlers: LiveHandlers,
+  settle: () => void,
+): void {
   source.addEventListener('state', event => {
-    paused.value = parse<{ live: LiveState }>(event).live.paused;
+    live.paused.value = parse<{ live: LiveState }>(event).live.paused;
     settle();
   });
   source.addEventListener('snapshot', event => {
@@ -86,12 +64,84 @@ export function connectLive(options: LiveClientOptions): LiveClient {
       handlers.error(parse<{ error: string }>(event).error);
     }
   });
-  return {
-    status,
-    paused,
-    close: (): void => {
+}
+
+interface Poller {
+  start: () => void;
+  stop: () => void;
+  readonly active: boolean;
+  /** Called every tenth poll to try the event stream again. */
+  retry: () => void;
+}
+
+/** Polls the server while the event stream is down. */
+function createPoller(poll: () => Promise<unknown>, ms: number): Poller {
+  let timer: ReturnType<typeof setInterval> | undefined;
+  let polls = 0;
+  const poller: Poller = {
+    get active(): boolean {
+      return timer !== undefined;
+    },
+    retry: ignore,
+    start: () => {
+      timer ??= setInterval(() => {
+        polls += 1;
+        poll().catch(ignore);
+        if (polls % 10 === 0) {
+          poller.retry();
+        }
+      }, ms);
+    },
+    stop: () => {
       clearInterval(timer);
-      source.close();
+      timer = undefined;
     },
   };
+  return poller;
+}
+
+/**
+ * Follows the server's event stream. After two failures in a row it polls instead, and tries the
+ * stream again every tenth poll, so a server that comes back gets live updates again.
+ */
+export function connectLive(options: LiveClientOptions): LiveClient {
+  const live: LiveClient = {
+    status: shallowRef('connecting'),
+    paused: shallowRef(false),
+    close: ignore,
+  };
+  const { handlers } = options;
+  let failures = 0;
+  let source: EventSourceLike | undefined;
+  const settle = (): void => {
+    live.status.value = live.paused.value ? 'paused' : 'live';
+  };
+  const poller = createPoller(handlers.poll, options.pollMs ?? POLL_MS);
+  const start = (): void => {
+    const current = options.open(options.url);
+    source = current;
+    current.onopen = (): void => {
+      failures = 0;
+      poller.stop();
+      settle();
+    };
+    current.onerror = (): void => {
+      failures += 1;
+      if (poller.active || failures >= 2) {
+        current.close();
+        live.status.value = 'polling';
+        poller.start();
+        return;
+      }
+      live.status.value = 'reconnecting';
+    };
+    listen(current, live, handlers, settle);
+  };
+  poller.retry = start;
+  start();
+  live.close = (): void => {
+    poller.stop();
+    source?.close();
+  };
+  return live;
 }
