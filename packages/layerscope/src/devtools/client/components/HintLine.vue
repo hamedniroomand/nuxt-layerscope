@@ -7,7 +7,8 @@
 
   const props = defineProps<{ finding: TabFinding }>();
 
-  const resolves = computed(() => {
+  /** `Allow "admin" to use "web": resolves 4 findings in 3 files, 1 already in baseline`. */
+  const allowText = computed(() => {
     const { hint } = props.finding;
     if (hint === undefined) {
       return '';
@@ -15,7 +16,7 @@
     const findings = `${hint.resolves} finding${hint.resolves === 1 ? '' : 's'}`;
     const files = `${hint.files} file${hint.files === 1 ? '' : 's'}`;
     const baselined = hint.baselined === 0 ? '' : `, ${hint.baselined} already in baseline`;
-    return `resolves ${findings} in ${files}${baselined}`;
+    return `Allow "${hint.layer}" to use "${hint.add}": resolves ${findings} in ${files}${baselined}`;
   });
 </script>
 
@@ -24,12 +25,15 @@
     v-if="finding.suggestion"
     class="hint"
   >
-    <span>
+    <span v-if="finding.hint">
+      <b>Suggestion:</b>
+      {{ allowText }}
+    </span>
+    <span v-else>
       <b>Suggestion:</b>
       {{ finding.suggestion.message }}
     </span>
     <template v-if="finding.hint">
-      <span class="muted">{{ resolves }}</span>
       <pre class="mono snippet">{{ finding.hint.snippet }}</pre>
       <CopyButton
         :text="finding.hint.snippet"

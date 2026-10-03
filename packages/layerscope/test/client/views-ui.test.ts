@@ -176,8 +176,11 @@ describe('finding hints and actions', () => {
     press('j');
     await flushPromises();
     const hint = wrapper.get('.hint');
-    expect(hint.text()).toContain('allow "web" to use "shop"');
-    expect(hint.text()).toContain('resolves 2 findings in 1 file, 1 already in baseline');
+    expect(hint.text()).toContain(
+      'Allow "web" to use "shop": resolves 2 findings in 1 file, 1 already in baseline',
+    );
+    // One sentence: the analyzer's own allow message is not repeated next to it.
+    expect(hint.text()).not.toContain('allow "web" to use "shop"');
     await hint.get('button').trigger('click');
     await flushPromises();
     expect((hint.get('input').element as HTMLInputElement).value).toContain("allow: ['shop']");

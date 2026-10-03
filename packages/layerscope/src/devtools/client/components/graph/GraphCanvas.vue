@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { computed, ref, useTemplateRef } from 'vue';
 
+  import { plural } from '#src/devtools/client/lib/format.ts';
   import type {
     Direction,
     GraphSelection,
@@ -161,7 +162,7 @@
         :transform="`translate(${node.x} ${node.y})`"
         role="button"
         :tabindex="still ? -1 : focused === node.id ? 0 : -1"
-        :aria-label="`Layer ${node.id}, ${nodeOf(node.id)?.files ?? 0} files`"
+        :aria-label="`Layer ${node.id}, ${plural(nodeOf(node.id)?.files ?? 0, 'file')}`"
         @click="emit('select', { kind: 'node', layer: node.id })"
         @keydown="onNodeKey($event, node.id)"
         @mouseenter="highlight(node.id)"
@@ -187,7 +188,7 @@
           y="31"
           text-anchor="middle"
         >
-          {{ nodeOf(node.id)?.files ?? 0 }} files
+          {{ plural(nodeOf(node.id)?.files ?? 0, 'file') }}
         </text>
       </g>
     </g>

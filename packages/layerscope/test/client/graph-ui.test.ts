@@ -48,6 +48,10 @@ describe('graph view', () => {
   it('draws the layers and marks the violating edge', async () => {
     const { wrapper } = await mountGraph();
     expect(wrapper.findAll('.node')).toHaveLength(2);
+    expect(wrapper.findAll('.node .sub').map(caption => caption.text())).toEqual([
+      '2 files',
+      '0 files',
+    ]);
     const edge = wrapper.get('.edge');
     expect(edge.classes()).toContain('viol');
     expect(edge.text()).toContain('!1');
@@ -64,7 +68,9 @@ describe('graph view', () => {
     await flushPromises();
     expect(window.location.hash).toBe('#/graph');
   });
+});
 
+describe('graph view filters and table', () => {
   it('hides edges without violations on request', async () => {
     const { wrapper } = await mountGraph();
     await wrapper.get('select').setValue('5');
