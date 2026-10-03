@@ -94,6 +94,8 @@ export interface ShellConfig {
   openInEditor: string;
   /** Sent back on requests that write the baseline. */
   token: string;
+  /** A static snapshot: the tab reads JSON files, and cannot write, re-run or update live. */
+  demo?: boolean;
 }
 
 export interface SymbolEntry {

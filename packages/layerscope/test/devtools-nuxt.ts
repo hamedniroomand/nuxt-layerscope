@@ -8,7 +8,12 @@ import { loadNuxt } from '@nuxt/kit';
 type CallHook = (name: string, ...args: unknown[]) => Promise<unknown>;
 
 const [cwd = '', mode = ''] = process.argv.slice(2);
-const nuxt = await loadNuxt({ cwd, dev: mode === 'dev', ready: true });
+const nuxt = await loadNuxt({
+  cwd,
+  dev: mode === 'dev',
+  ready: true,
+  ...(mode === 'static' && { overrides: { layerscope: { devtools: { static: true } } } }),
+});
 try {
   const handlers = (nuxt.options as unknown as { devServerHandlers: { route?: string }[] })
     .devServerHandlers;
@@ -17,7 +22,12 @@ try {
   await callHook('devtools:customTabs', tabs);
   // A rescan before the tab is opened must not throw.
   await callHook('builder:watch', 'change', 'app/app.vue');
-  process.stdout.write(JSON.stringify({ routes: handlers.map(handler => handler.route), tabs }));
+  // Handlers of the hook that writes the static snapshot, from any module.
+  const hooks = (nuxt.hooks as unknown as { _hooks: Record<string, unknown[] | undefined> })._hooks;
+  const publicAssets = hooks['nitro:build:public-assets']?.length ?? 0;
+  process.stdout.write(
+    JSON.stringify({ routes: handlers.map(handler => handler.route), tabs, publicAssets }),
+  );
 } finally {
   await nuxt.close();
 }

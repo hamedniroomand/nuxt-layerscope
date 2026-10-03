@@ -5,6 +5,7 @@ import { BASELINE_FILE } from '#src/baseline/index.ts';
 import { onDevtoolsCustomTabs } from '#src/module/nuxt.ts';
 import type { Nuxt } from '#src/module/nuxt.ts';
 
+import { defaultAssetsDir } from './assets.ts';
 import { computeEnvKey } from './env-key.ts';
 import { createDevtoolsHandler } from './handler.ts';
 import type { Session } from './session.ts';
@@ -45,6 +46,28 @@ export function setupDevtools(nuxt: Nuxt): void {
       title: 'Layerscope',
       icon: 'carbon:flow-connection',
       view: { type: 'iframe', src: DEVTOOLS_ROUTE },
+    });
+  });
+}
+
+type PublicAssetsHook = (
+  name: 'nitro:build:public-assets',
+  handler: (nitro: { options: { output: { publicDir: string } } }) => Promise<void>,
+) => unknown;
+
+/**
+ * `{ static: true }`: after Nitro copies the public assets of `nuxi build` or `nuxi generate`,
+ * write a read-only snapshot of the tab next to them.
+ */
+export function setupStaticDevtools(nuxt: Nuxt): void {
+  const { rootDir, app } = nuxt.options;
+  (nuxt.hook as unknown as PublicAssetsHook)('nitro:build:public-assets', async nitro => {
+    const { writeSnapshot } = await import('./static.ts');
+    await writeSnapshot({
+      rootDir,
+      publicDir: nitro.options.output.publicDir,
+      base: join('/', app.baseURL, DEVTOOLS_ROUTE),
+      assetsDir: defaultAssetsDir(),
     });
   });
 }

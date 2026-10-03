@@ -11,10 +11,11 @@ const PROBE = fileURLToPath(new URL('devtools-nuxt.ts', import.meta.url));
 interface Registered {
   routes: (string | undefined)[];
   tabs: unknown[];
+  publicAssets: number;
 }
 
 /** Loads the fixture with the module in a child process; see `devtools-nuxt.ts` for why. */
-async function registered(mode: 'dev' | 'build'): Promise<Registered> {
+async function registered(mode: 'dev' | 'build' | 'static'): Promise<Registered> {
   const stdout = await new Promise<string>((resolve, reject) => {
     execFile(process.execPath, [PROBE, NUXT4_ROOT, mode], (error, out, err) => {
       if (error === null) {
@@ -39,9 +40,12 @@ describe('devtools tab', () => {
     );
   });
 
-  it('registers no route and no tab outside nuxi dev', async () => {
-    const { routes, tabs } = await registered('build');
-    expect(routes).not.toContain(DEVTOOLS_ROUTE);
-    expect(tabs).toEqual([]);
+  it('registers no route, no tab and no snapshot outside nuxi dev by default', async () => {
+    const [plain, snapshot] = await Promise.all([registered('build'), registered('static')]);
+    expect(plain.routes).not.toContain(DEVTOOLS_ROUTE);
+    expect(plain.tabs).toEqual([]);
+    // `{ static: true }` adds exactly the one hook that writes the snapshot.
+    expect(snapshot.publicAssets).toBe(plain.publicAssets + 1);
+    expect(snapshot.routes).not.toContain(DEVTOOLS_ROUTE);
   });
 });
