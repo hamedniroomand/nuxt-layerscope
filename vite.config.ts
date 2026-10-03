@@ -46,6 +46,8 @@ export default defineConfig({
       '**/.output/**',
       'packages/layerscope/test/fixtures/**',
       'packages/layerscope/test/snapshots/**',
+      // Like the fixtures, the playground relies on Nuxt auto-imports that the linter cannot see.
+      'packages/playground/**',
     ],
     categories: {
       correctness: 'error',

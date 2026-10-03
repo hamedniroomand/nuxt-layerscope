@@ -1,0 +1,17 @@
+{
+  "name": "playground",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxi dev",
+    "prepare:nuxt": "nuxi prepare",
+    "check": "layerscope check"
+  },
+  "dependencies": {
+    "nuxt": "^4.4.1",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "nuxt-layerscope": "workspace:*"
+  }
+}

@@ -27,15 +27,18 @@ fixtures and snapshots.
 vp run playground
 ```
 
-This builds the tab and starts `nuxi dev` on the `nuxt4` fixture, whose layers have real
-violations. Open the printed URL, press <kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>D</kbd> and select
-**Layerscope**; in a small window it is in the <kbd>⋮</kbd> menu, where you can pin it. You can
-also open `/__layerscope` directly. Save a file under `layers/` to see a live update.
+This builds the tab and starts `nuxi dev` on [`packages/playground`](./packages/playground), a
+small app with four layers and a few findings on purpose. Open the printed URL, press
+<kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>D</kbd> and select **Layerscope**; in a small window it is
+in the <kbd>⋮</kbd> menu, where you can pin it. You can also open `/__layerscope` directly. Save a
+file under `layers/` to see a live update.
 
 - The dev server serves the built tab, so run `vp run nuxt-layerscope#build` again after you change
   the client, then reload.
 - Nuxt runs one dev server per project: stop the playground before `vp run docs#screenshots`.
-- Ignore and Undo write `layerscope-baseline.json` in the fixture. Delete it when you are done.
+- Ignore and Undo write `layerscope-baseline.json` in the playground. Restore it with
+  `git checkout` when you are done.
+- The playground's README lists the findings it has on purpose. A test pins them.
 
 ## Updating the DevTools screenshots
 
