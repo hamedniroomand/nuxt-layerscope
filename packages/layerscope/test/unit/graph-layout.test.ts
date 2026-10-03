@@ -33,6 +33,12 @@ function randomGraph(size: number, seed: number): { nodes: string[]; edges: Layo
   return { nodes, edges };
 }
 
+function timed(run: () => unknown): number {
+  const started = performance.now();
+  run();
+  return performance.now() - started;
+}
+
 describe('layer graph layout', () => {
   it('reads left to right along "depends on"', () => {
     const layout = layoutGraph(
@@ -118,11 +124,21 @@ describe('layer graph layout at scale', () => {
     expect(performance.now() - started).toBeLessThan(50);
   });
 
-  // A guard against an algorithmic blow-up, not a budget: busy CI runners are much slower.
-  it('lays out 100 nodes in under 1500 ms, as a regression guard', () => {
-    const { nodes, edges } = randomGraph(100, 3);
-    const started = performance.now();
-    layoutGraph(nodes, edges);
-    expect(performance.now() - started).toBeLessThan(1500);
+  // A guard against an algorithmic blow-up, not a budget. It compares with a small layout timed
+  // in the same process, so a slow or busy machine slows both sides.
+  it('lays out 100 nodes in under 40 times the 15-layer time, as a regression guard', () => {
+    const small = randomGraph(15, 3);
+    const large = randomGraph(100, 3);
+    layoutGraph(small.nodes, small.edges);
+    const runs = [0, 1, 2]
+      .map(() => timed(() => layoutGraph(small.nodes, small.edges)))
+      .toSorted((a, b) => a - b);
+    // A floor of 1 ms, so timer noise on a very fast run cannot make the ratio explode.
+    const smallTime = Math.max(1, runs[1] ?? 1);
+    const largeTime = timed(() => layoutGraph(large.nodes, large.edges));
+    expect(largeTime, `${largeTime.toFixed(0)} ms vs ${smallTime.toFixed(1)} ms`).toBeLessThan(
+      40 * smallTime,
+    );
+    expect(largeTime).toBeLessThan(3000);
   });
 });
