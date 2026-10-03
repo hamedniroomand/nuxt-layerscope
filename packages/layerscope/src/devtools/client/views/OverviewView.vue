@@ -1,11 +1,14 @@
 <script setup lang="ts">
-  import { computed } from 'vue';
+  import { computed, defineAsyncComponent } from 'vue';
 
-  import LayersTable from '#src/devtools/client/components/LayersTable.vue';
   import SeverityGlyph from '#src/devtools/client/components/SeverityGlyph.vue';
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import { plural } from '#src/devtools/client/lib/format.ts';
 
+  const MiniGraph = defineAsyncComponent(async () => {
+    const chunk = await import('#src/devtools/client/graph.ts');
+    return chunk.MiniGraph;
+  });
   const { store, nav } = useTab();
   const report = computed(() => store.state.data?.report);
   const suppressed = computed(() => report.value?.baseline?.suppressed.length ?? 0);
@@ -86,10 +89,7 @@
       </p>
     </div>
     <div class="graph-slot">
-      <LayersTable
-        :layers="report.layerStats"
-        compact
-      />
+      <MiniGraph />
     </div>
     <div class="lower">
       <div>

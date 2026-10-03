@@ -9,8 +9,9 @@ import type { SymbolEntry, TraceView } from '#src/devtools/protocol.ts';
 describe('trace route', () => {
   it('keeps the symbol in the path', () => {
     const route = { view: 'trace' as const, query: emptyQuery(), param: 'Base Button/x' };
-    expect(formatHash(route)).toBe('#/trace/Base%20Button%2Fx');
-    expect(parseHash('#/trace/Base%20Button%2Fx')).toEqual(route);
+    expect(formatHash(route)).toBe('#/trace/Base%20Button/x');
+    expect(parseHash('#/trace/Base%20Button/x')).toEqual(route);
+    expect(parseHash('#/graph/edge/admin/web').param).toBe('edge/admin/web');
     expect(parseHash('#/trace/%E0%A4%A')).toEqual({ view: 'trace', query: emptyQuery() });
     expect(parseHash('#/trace')).toEqual({ view: 'trace', query: emptyQuery() });
   });

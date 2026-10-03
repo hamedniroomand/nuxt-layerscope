@@ -30,8 +30,7 @@ describe('tab shell', () => {
     expect(window.location.hash).toBe('#/findings');
     press('6');
     await flushPromises();
-    expect(window.location.hash).toBe('#/layers');
-    expect(wrapper.find('table').exists()).toBe(true);
+    expect(window.location.hash).toBe('#/baseline');
   });
 
   it('shows the empty state when nothing is found', async () => {
@@ -107,16 +106,16 @@ describe('navigation', () => {
     const nav = createNavigation(window);
     const length = history.length;
     nav.open('findings', { sev: ['error'] });
-    nav.open('layers');
-    expect(window.location.hash).toBe('#/layers?sev=error');
+    nav.open('graph');
+    expect(window.location.hash).toBe('#/graph?sev=error');
     expect(history.length).toBe(length);
   });
 
   it('restores the last hash from session storage', () => {
-    sessionStorage.setItem('layerscope:hash', '#/layers');
+    sessionStorage.setItem('layerscope:hash', '#/unused');
     const nav = createNavigation(window);
-    expect(nav.route.value.view).toBe('layers');
-    expect(window.location.hash).toBe('#/layers');
+    expect(nav.route.value.view).toBe('unused');
+    expect(window.location.hash).toBe('#/unused');
   });
 });
 

@@ -1,4 +1,4 @@
-export const VIEWS = ['overview', 'findings', 'trace', 'unused', 'baseline', 'layers'] as const;
+export const VIEWS = ['overview', 'findings', 'trace', 'unused', 'graph', 'baseline'] as const;
 
 export type View = (typeof VIEWS)[number];
 
@@ -99,6 +99,11 @@ export function formatHash(route: Route): string {
   }
   const search = params.toString();
   const param =
-    route.param === undefined || route.param === '' ? '' : `/${encodeURIComponent(route.param)}`;
+    route.param === undefined || route.param === ''
+      ? ''
+      : `/${route.param
+          .split('/')
+          .map(part => encodeURIComponent(part))
+          .join('/')}`;
   return `#/${route.view}${param}${search === '' ? '' : `?${search}`}`;
 }

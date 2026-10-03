@@ -1,6 +1,9 @@
 import type { LiveState } from '#src/devtools/live.ts';
 import type {
   BaselineView,
+  EdgeView,
+  GraphView,
+  NodeView,
   ReportResponse,
   ShellConfig,
   SnapshotMeta,
@@ -51,6 +54,9 @@ export interface Api {
   trace: (symbol: string) => Promise<TraceView>;
   unused: () => Promise<UnusedView>;
   baseline: () => Promise<BaselineView>;
+  graph: () => Promise<GraphView>;
+  edge: (from: string, to: string) => Promise<EdgeView>;
+  node: (layer: string, offset?: number) => Promise<NodeView>;
   /** URL of the server's event stream. */
   events: string;
 }
@@ -58,7 +64,10 @@ export interface Api {
 type Call = <T>(path: string, init?: RequestInit) => Promise<T>;
 
 /** The calls behind the Trace, Unused and Baseline views. */
-function viewCalls(call: Call): Pick<Api, 'symbols' | 'trace' | 'unused' | 'baseline'> {
+function viewCalls(
+  call: Call,
+): Pick<Api, 'symbols' | 'trace' | 'unused' | 'baseline' | 'graph' | 'edge' | 'node'> {
+  const query = (params: Record<string, string>): string => new URLSearchParams(params).toString();
   return {
     symbols: async () => {
       const data = await call<{ symbols: SymbolEntry[] }>('/api/symbols');
@@ -74,6 +83,18 @@ function viewCalls(call: Call): Pick<Api, 'symbols' | 'trace' | 'unused' | 'base
     },
     baseline: async () => {
       const data = await call<BaselineView>('/api/baseline');
+      return data;
+    },
+    graph: async () => {
+      const data = await call<GraphView>('/api/graph');
+      return data;
+    },
+    edge: async (from, to) => {
+      const data = await call<EdgeView>(`/api/edge?${query({ from, to })}`);
+      return data;
+    },
+    node: async (layer, offset = 0) => {
+      const data = await call<NodeView>(`/api/node?${query({ layer, offset: String(offset) })}`);
       return data;
     },
   };

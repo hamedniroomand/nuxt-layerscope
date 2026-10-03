@@ -64,6 +64,24 @@ describe('layer graph layout', () => {
     expect(reversed[0]?.labelY).toBeGreaterThan(Math.max(...layout.nodes.map(node => node.y)));
     expect(layout.height).toBeGreaterThan(reversed[0]?.labelY ?? 0);
   });
+});
+
+describe('layer graph layout with cycles', () => {
+  it('staggers return curves so their labels do not overlap', () => {
+    const layout = layoutGraph(
+      ['a', 'b', 'c'],
+      [
+        { from: 'a', to: 'b' },
+        { from: 'b', to: 'a' },
+        { from: 'b', to: 'c' },
+        { from: 'c', to: 'b' },
+      ],
+    );
+    const labels = layout.edges.filter(edge => edge.reversed).map(edge => edge.labelY);
+    expect(labels).toHaveLength(2);
+    expect(new Set(labels).size).toBe(2);
+    expect(layout.height).toBeGreaterThan(Math.max(...labels));
+  });
 
   it('places disconnected nodes and a single node, and skips self and unknown edges', () => {
     const layout = layoutGraph(

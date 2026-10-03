@@ -14,6 +14,10 @@
   const { api, nav } = context;
   const symbol = computed(() => nav.route.value.param ?? '');
   const trace = useViewData(context, async () => {
+    // Nothing to trace yet: no request.
+    if (symbol.value === '') {
+      return null;
+    }
     const view = await api.trace(symbol.value);
     return view;
   });

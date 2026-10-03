@@ -106,7 +106,7 @@ export default defineConfig({
       {
         files: ['packages/layerscope/src/devtools/client/**', 'packages/layerscope/test/client/**'],
         env: { browser: true },
-        globals: { defineProps: 'readonly', defineEmits: 'readonly' },
+        globals: { defineProps: 'readonly', defineEmits: 'readonly', defineExpose: 'readonly' },
         rules: { 'vue/max-props': 'off' },
       },
       {

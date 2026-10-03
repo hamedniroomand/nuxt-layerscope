@@ -39,7 +39,7 @@ describe('router', () => {
   });
 
   it('leaves defaults out of the hash', () => {
-    expect(formatHash({ view: 'layers', query: emptyQuery() })).toBe('#/layers');
+    expect(formatHash({ view: 'graph', query: emptyQuery() })).toBe('#/graph');
   });
 });
 

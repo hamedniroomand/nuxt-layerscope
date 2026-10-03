@@ -10,7 +10,10 @@ import { beforeAll, describe, expect, it } from 'vite-plus/test';
 const KB = 1024;
 
 /** Gzipped budgets in KB: [file pattern, budget, hard fail]. */
-const BUDGETS: [RegExp, number, number][] = [[/^client\.(?:js|css)$/u, 55, 65]];
+const BUDGETS: [RegExp, number, number][] = [
+  [/^client\.(?:js|css)$/u, 55, 65],
+  [/^graph-[\w-]+\.js$/u, 25, 30],
+];
 const TOTAL: [number, number] = [80, 95];
 
 const CONFIG = fileURLToPath(new URL('../vite.client.config.ts', import.meta.url));
@@ -31,8 +34,9 @@ function sum(pattern: RegExp): number {
 }
 
 describe('client bundle size', () => {
-  it('builds the core client', () => {
+  it('builds the core client and one graph chunk', () => {
     expect([...sizes.keys()]).toEqual(expect.arrayContaining(['client.js', 'client.css']));
+    expect([...sizes.keys()].filter(name => name.startsWith('graph-'))).toHaveLength(1);
   });
 
   it.each(BUDGETS)('keeps %s within budget', (pattern, budget, hard) => {

@@ -42,6 +42,8 @@ const GAP_X = 80;
 const GAP_Y = 32;
 const MARGIN = 16;
 const RETURN_DEPTH = 28;
+/** Extra depth per reversed edge, so return curves and their labels do not overlap. */
+const RETURN_STEP = 12;
 
 type Adjacency = Map<string, string[]>;
 
@@ -152,7 +154,8 @@ function edgePath(
   from: LayoutNode,
   to: LayoutNode,
   reversed: boolean,
-  bottom: number,
+  /** For reversed edges: how far below the ranks the curve turns. */
+  low: number,
 ): Omit<LayoutEdge, 'from' | 'to' | 'reversed'> {
   if (reversed) {
     // From the bottom of `from`, under every rank, back up into the bottom of `to`.
@@ -160,7 +163,6 @@ function edgePath(
     const x2 = to.x + NODE_WIDTH / 2;
     const y1 = from.y + NODE_HEIGHT;
     const y2 = to.y + NODE_HEIGHT;
-    const low = bottom + RETURN_DEPTH;
     return {
       path: `M${x1} ${y1} C${x1} ${low} ${x2} ${low} ${x2} ${y2}`,
       labelX: (x1 + x2) / 2,
@@ -204,7 +206,11 @@ export function layoutGraph(nodeIds: string[], input: LayoutEdgeInput[]): Layout
   }
   const rows = Math.max(1, ...columns.map(column => column.length));
   const bottom = MARGIN + rows * (NODE_HEIGHT + GAP_Y) - GAP_Y;
-  const hasBack = back.size > 0;
+  let returns = 0;
+  const depthOf = (): number => {
+    returns += 1;
+    return bottom + RETURN_DEPTH + (returns - 1) * RETURN_STEP;
+  };
   const laidOut = edges.flatMap(edge => {
     const from = placed.get(edge.from);
     const to = placed.get(edge.to);
@@ -212,12 +218,13 @@ export function layoutGraph(nodeIds: string[], input: LayoutEdgeInput[]): Layout
       return [];
     }
     const reversed = isBack(edge);
-    return [{ from: edge.from, to: edge.to, reversed, ...edgePath(from, to, reversed, bottom) }];
+    const low = reversed ? depthOf() : bottom;
+    return [{ from: edge.from, to: edge.to, reversed, ...edgePath(from, to, reversed, low) }];
   });
   return {
     nodes: [...placed.values()],
     edges: laidOut,
     width: MARGIN * 2 + columns.length * (NODE_WIDTH + GAP_X) - GAP_X,
-    height: bottom + MARGIN + (hasBack ? RETURN_DEPTH : 0),
+    height: bottom + MARGIN + (returns === 0 ? 0 : RETURN_DEPTH + (returns - 1) * RETURN_STEP),
   };
 }

@@ -113,7 +113,7 @@ describe('unused view', () => {
       layers: ['ui'],
     });
     // Leave and come back, so the view mounts again and fetches.
-    press('5');
+    press('6');
     await flushPromises();
     press('4');
     await flushPromises();
@@ -139,7 +139,7 @@ describe('baseline view', () => {
     });
     press('1');
     await flushPromises();
-    press('5');
+    press('6');
     await flushPromises();
     const headings = wrapper.findAll('h3.group').map(heading => heading.text());
     expect(headings).toEqual(['Suppressed findings1', 'Removable entries1']);

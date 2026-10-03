@@ -48,6 +48,7 @@
       aria-controls="symbol-options"
       aria-keyshortcuts="/"
       :aria-expanded="open && options.length > 0"
+      :aria-activedescendant="open && options.length > 0 ? `symbol-option-${active}` : undefined"
       @focus="emit('focus')"
       @input="onInput"
       @keydown="onKey"
@@ -60,6 +61,7 @@
     >
       <li
         v-for="(option, index) in options"
+        :id="`symbol-option-${index}`"
         :key="`${option.kind}:${option.name}`"
         role="option"
         :aria-selected="index === active"

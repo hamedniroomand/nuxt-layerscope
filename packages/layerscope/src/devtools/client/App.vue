@@ -23,13 +23,13 @@
       { view: 'findings' as const, label: 'Findings', badge: report?.findings.length },
       { view: 'trace' as const, label: 'Trace' },
       { view: 'unused' as const, label: 'Unused' },
+      { view: 'graph' as const, label: 'Graph' },
       { view: 'baseline' as const, label: 'Baseline', badge: report?.baseline?.suppressed.length },
-      { view: 'layers' as const, label: 'Layers' },
     ];
   });
 
   useAppShortcuts(context, {
-    views: ['overview', 'findings', 'trace', 'unused', 'baseline', 'layers'],
+    views: ['overview', 'findings', 'trace', 'unused', 'graph', 'baseline'],
     escape: () => {
       toast.value = null;
       (document.activeElement as HTMLElement | null)?.blur();

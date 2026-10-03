@@ -2,10 +2,10 @@
 
 ## Unreleased
 
-- The DevTools tab is a prebuilt Vue client with Overview, Findings and Layers views. Its theme
+- The DevTools tab is a prebuilt Vue client with Overview and Findings views. Its theme
   follows Nuxt DevTools, and it follows the OS theme when you open `/__layerscope` directly.
   Findings filter by severity, rule, layer pair, file and text, with the filters kept in the URL
-  hash. Keyboard: `1` to `6`, `/`, `r`, `j`, `k`, `o`, `t`, `n`, `p` and `Esc`.
+  hash. Keyboard: `1` to `6`, `/`, `r`, `j`, `k`, `o`, `t`, `n`, `p`, `e` and `Esc`.
 - The DevTools tab updates while you code. An open tab re-runs the analysis 200 ms after a change
   and says what changed ("+2 violations, -1 fixed"). Findings that are new since the tab opened
   get a `NEW` chip, a "New only" filter and the `n` key. `p` pauses live updates. While the
@@ -17,6 +17,11 @@
   finding shows its suggestion; an "allow" suggestion comes with a config snippet to copy and
   the findings it resolves. Each view can copy the matching CLI command. The tab never writes
   config. The data comes from `/__layerscope/api/{symbols,trace,unused,baseline}`.
+- The DevTools tab has a Graph view of the layers: who depends on whom, how much, and where the
+  rules break, with dashed edges and `!N` badges for violations. Selecting a layer or an edge
+  shows its files and symbols; a Table view shows the same numbers as a matrix and opens first
+  above 15 layers. The Overview shows a small copy of the graph. The Layers view is folded into
+  it. The graph loads as a separate chunk, only when needed.
 - Large projects re-run much faster in the tab: suggestions are indexed, the analysis yields to
   the event loop between batches, and the loaded symbols are kept until the registry changes.
 - `/__layerscope/api/report` adds absolute paths (`absRoot`, `absFile`, `absTarget`), `hotFiles`
