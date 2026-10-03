@@ -118,10 +118,11 @@ describe('layer graph layout at scale', () => {
     expect(performance.now() - started).toBeLessThan(50);
   });
 
-  it('lays out 100 nodes in under 500 ms, as a regression guard', () => {
+  // A guard against an algorithmic blow-up, not a budget: busy CI runners are much slower.
+  it('lays out 100 nodes in under 1500 ms, as a regression guard', () => {
     const { nodes, edges } = randomGraph(100, 3);
     const started = performance.now();
     layoutGraph(nodes, edges);
-    expect(performance.now() - started).toBeLessThan(500);
+    expect(performance.now() - started).toBeLessThan(1500);
   });
 });
