@@ -50,7 +50,19 @@
           →
         </span>
       </a>
-      <span v-if="suppressed > 0">{{ suppressed }} in baseline</span>
+      <a
+        v-if="suppressed > 0"
+        href="#/baseline"
+        @click.prevent="nav.open('baseline')"
+      >
+        <span>{{ suppressed }} in baseline</span>
+        <span
+          class="muted"
+          aria-hidden="true"
+        >
+          →
+        </span>
+      </a>
       <a
         v-if="report.newCount > 0"
         href="#/findings?new=1"

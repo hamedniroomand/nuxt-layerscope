@@ -1,4 +1,4 @@
-export const VIEWS = ['overview', 'findings', 'layers'] as const;
+export const VIEWS = ['overview', 'findings', 'trace', 'unused', 'baseline', 'layers'] as const;
 
 export type View = (typeof VIEWS)[number];
 
@@ -29,6 +29,8 @@ export interface FindingsQuery {
 export interface Route {
   view: View;
   query: FindingsQuery;
+  /** The path part after the view, such as the symbol in `#/trace/useCart`. */
+  param?: string;
 }
 
 export function emptyQuery(): FindingsQuery {
@@ -43,6 +45,14 @@ export function isGroup(value: string): value is GroupBy {
   return (GROUPS as readonly string[]).includes(value);
 }
 
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return '';
+  }
+}
+
 function list(value: string | null): string[] {
   return value === null || value === '' ? [] : value.split(',');
 }
@@ -50,10 +60,13 @@ function list(value: string | null): string[] {
 /** `#/findings?sev=error&rule=layer-boundary` to a route; unknown parts fall back to defaults. */
 export function parseHash(hash: string): Route {
   const [path = '', search = ''] = hash.replace(/^#\/?/u, '').split('?');
+  const [name = '', ...rest] = path.split('/');
   const params = new URLSearchParams(search);
   const group = params.get('group') ?? 'rule';
+  const param = safeDecode(rest.join('/'));
   return {
-    view: isView(path) ? path : 'overview',
+    view: isView(name) ? name : 'overview',
+    ...(param !== '' && { param }),
     query: {
       sev: list(params.get('sev')),
       rule: list(params.get('rule')),
@@ -85,5 +98,7 @@ export function formatHash(route: Route): string {
     }
   }
   const search = params.toString();
-  return `#/${route.view}${search === '' ? '' : `?${search}`}`;
+  const param =
+    route.param === undefined || route.param === '' ? '' : `/${encodeURIComponent(route.param)}`;
+  return `#/${route.view}${param}${search === '' ? '' : `?${search}`}`;
 }

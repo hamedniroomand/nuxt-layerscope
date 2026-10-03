@@ -23,6 +23,14 @@ export function fakeApi(data: ReportResponse | Error): Api {
   }
   return {
     events: '/__layerscope/events',
+    symbols: vi.fn<Api['symbols']>().mockResolvedValue({ symbols: [] }),
+    trace: vi.fn<Api['trace']>().mockResolvedValue({ version: 1, symbol: '', targets: [] }),
+    unused: vi
+      .fn<Api['unused']>()
+      .mockResolvedValue({ unused: [], possiblyUsed: false, layers: [] }),
+    baseline: vi
+      .fn<Api['baseline']>()
+      .mockResolvedValue({ file: null, suppressed: [], removable: [] }),
     state: vi.fn<Api['state']>().mockRejectedValue(new Error('not used')),
     live: vi.fn<Api['live']>().mockResolvedValue({ live: { clients: 1, paused: true } }),
     report,

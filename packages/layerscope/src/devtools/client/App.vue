@@ -16,18 +16,20 @@
   const { store, nav } = context;
   const toast = ref<Toast | null>(null);
   const live = useLive(context, toast);
-  const tabs = computed(() => [
-    { view: 'overview' as const, label: 'Overview' },
-    {
-      view: 'findings' as const,
-      label: 'Findings',
-      badge: store.state.data?.report.findings.length,
-    },
-    { view: 'layers' as const, label: 'Layers' },
-  ]);
+  const tabs = computed(() => {
+    const report = store.state.data?.report;
+    return [
+      { view: 'overview' as const, label: 'Overview' },
+      { view: 'findings' as const, label: 'Findings', badge: report?.findings.length },
+      { view: 'trace' as const, label: 'Trace' },
+      { view: 'unused' as const, label: 'Unused' },
+      { view: 'baseline' as const, label: 'Baseline', badge: report?.baseline?.suppressed.length },
+      { view: 'layers' as const, label: 'Layers' },
+    ];
+  });
 
   useAppShortcuts(context, {
-    views: ['overview', 'findings', 'layers'],
+    views: ['overview', 'findings', 'trace', 'unused', 'baseline', 'layers'],
     escape: () => {
       toast.value = null;
       (document.activeElement as HTMLElement | null)?.blur();

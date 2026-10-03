@@ -21,6 +21,16 @@
     context.shortcuts.register({ key: 'k', label: 'Previous finding', run: () => reveal(-1) }),
     context.shortcuts.register({ key: 'o', label: 'Open in editor', run: view.openSelected }),
     context.shortcuts.register({
+      key: 't',
+      label: 'Trace the selected finding',
+      run: () => {
+        const finding = view.current();
+        if (finding !== undefined) {
+          context.nav.trace(finding.symbol);
+        }
+      },
+    }),
+    context.shortcuts.register({
       key: 'n',
       label: 'Next new finding',
       run: async () => {
@@ -121,6 +131,7 @@
             :selected="view.selected.value === view.idOf(finding)"
             @select="view.select(finding)"
             @open="view.open"
+            @trace="context.nav.trace"
           />
         </ul>
       </section>

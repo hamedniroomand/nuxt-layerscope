@@ -26,6 +26,8 @@ export interface FindingsView {
   select: (finding: TabFinding) => void;
   /** Selects the next new finding after the selection, from the top after the last. */
   nextNew: () => void;
+  /** The selected finding, when it is in the list. */
+  current: () => TabFinding | undefined;
   update: (patch: Partial<FindingsQuery>) => void;
   setGroup: (value: string) => void;
   toggleSev: (value: string) => void;

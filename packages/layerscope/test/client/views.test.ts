@@ -28,7 +28,7 @@ describe('tab shell', () => {
     expect(wrapper.text()).toContain('Hot files');
     await wrapper.findAll('[role="tab"]')[1]?.trigger('click');
     expect(window.location.hash).toBe('#/findings');
-    press('3');
+    press('6');
     await flushPromises();
     expect(window.location.hash).toBe('#/layers');
     expect(wrapper.find('table').exists()).toBe(true);

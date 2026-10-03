@@ -1,5 +1,13 @@
 import type { LiveState } from '#src/devtools/live.ts';
-import type { ReportResponse, ShellConfig, SnapshotMeta } from '#src/devtools/protocol.ts';
+import type {
+  BaselineView,
+  ReportResponse,
+  ShellConfig,
+  SnapshotMeta,
+  SymbolEntry,
+  TraceView,
+  UnusedView,
+} from '#src/devtools/protocol.ts';
 
 /** The config the shell embeds; defaults keep the client usable in tests. */
 export function readConfig(doc: Document = document): ShellConfig {
@@ -39,8 +47,36 @@ export interface Api {
   state: () => Promise<StateResponse>;
   live: (action: LiveAction) => Promise<{ live: LiveState }>;
   openInEditor: (file: string, line?: number, column?: number) => Promise<void>;
+  symbols: () => Promise<{ symbols: SymbolEntry[] }>;
+  trace: (symbol: string) => Promise<TraceView>;
+  unused: () => Promise<UnusedView>;
+  baseline: () => Promise<BaselineView>;
   /** URL of the server's event stream. */
   events: string;
+}
+
+type Call = <T>(path: string, init?: RequestInit) => Promise<T>;
+
+/** The calls behind the Trace, Unused and Baseline views. */
+function viewCalls(call: Call): Pick<Api, 'symbols' | 'trace' | 'unused' | 'baseline'> {
+  return {
+    symbols: async () => {
+      const data = await call<{ symbols: SymbolEntry[] }>('/api/symbols');
+      return data;
+    },
+    trace: async symbol => {
+      const data = await call<TraceView>(`/api/trace?symbol=${encodeURIComponent(symbol)}`);
+      return data;
+    },
+    unused: async () => {
+      const data = await call<UnusedView>('/api/unused');
+      return data;
+    },
+    baseline: async () => {
+      const data = await call<BaselineView>('/api/baseline');
+      return data;
+    },
+  };
 }
 
 export function createApi(config: ShellConfig, request: typeof fetch = fetch): Api {
@@ -69,6 +105,7 @@ export function createApi(config: ShellConfig, request: typeof fetch = fetch): A
       const data = await call<ReportResponse>('/api/rerun', { method: 'POST' });
       return data;
     },
+    ...viewCalls(call),
     state: async () => {
       const data = await call<StateResponse>('/api/state');
       return data;

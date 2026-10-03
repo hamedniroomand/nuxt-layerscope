@@ -64,12 +64,14 @@
         <SeverityGlyph severity="warn" />
         {{ plural(data.report.summary.warnings, 'warning') }}
       </a>
-      <span
+      <a
         v-if="suppressed > 0"
+        href="#/baseline"
         class="muted"
+        @click.prevent="nav.open('baseline')"
       >
         · {{ suppressed }} in baseline
-      </span>
+      </a>
     </span>
     <span class="spacer" />
     <slot name="live" />

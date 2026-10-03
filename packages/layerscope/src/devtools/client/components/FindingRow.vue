@@ -2,10 +2,15 @@
   import { location } from '#src/devtools/client/lib/format.ts';
   import type { TabFinding } from '#src/devtools/protocol.ts';
 
+  import HintLine from './HintLine.vue';
   import SeverityGlyph from './SeverityGlyph.vue';
 
   defineProps<{ finding: TabFinding; selected: boolean }>();
-  defineEmits<{ select: []; open: [file: string, line: number, column: number] }>();
+  defineEmits<{
+    select: [];
+    open: [file: string, line: number, column: number];
+    trace: [symbol: string];
+  }>();
 </script>
 
 <template>
@@ -50,8 +55,19 @@
       </span>
       <span class="rule">{{ finding.rule }}</span>
     </div>
+    <HintLine
+      v-if="selected"
+      :finding="finding"
+    />
     <div class="actions">
       <slot name="actions" />
+      <button
+        type="button"
+        aria-keyshortcuts="t"
+        @click.stop="$emit('trace', finding.symbol)"
+      >
+        Trace
+      </button>
       <button
         type="button"
         aria-keyshortcuts="o"

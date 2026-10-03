@@ -19,6 +19,8 @@ export interface Navigation {
   go: (route: Route) => void;
   /** Opens a view; the Findings query stays unless `query` replaces parts of it. */
   open: (view: View, query?: Partial<FindingsQuery>) => void;
+  /** Opens the Trace view for `symbol`; the Findings query stays. */
+  trace: (symbol: string) => void;
 }
 
 function storedHash(host: HashHost): string {
@@ -66,5 +68,8 @@ export function createNavigation(host: HashHost): Navigation {
     const base = query === undefined ? route.value.query : { ...emptyQuery(), ...query };
     go({ view, query: base });
   };
-  return { route, go, open };
+  const trace = (symbol: string): void => {
+    go({ view: 'trace', query: route.value.query, param: symbol });
+  };
+  return { route, go, open, trace };
 }
