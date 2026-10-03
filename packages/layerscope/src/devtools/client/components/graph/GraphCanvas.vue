@@ -1,14 +1,18 @@
 <script setup lang="ts">
   import { computed, ref, useTemplateRef } from 'vue';
 
-  import type { Direction, GraphSelection } from '#src/devtools/client/lib/graph-model.ts';
+  import type {
+    Direction,
+    GraphSelection,
+    LaidOutGraph,
+  } from '#src/devtools/client/lib/graph-model.ts';
   import { edgesOf, nearestNode, strokeWidth } from '#src/devtools/client/lib/graph-model.ts';
   import { usePanZoom } from '#src/devtools/client/lib/pan-zoom.ts';
   import type { GraphEdgeView, GraphView } from '#src/devtools/protocol.ts';
   import { NODE_HEIGHT, NODE_WIDTH } from '#src/graph/layout-size.ts';
 
   const props = defineProps<{
-    view: GraphView;
+    view: LaidOutGraph;
     edges: GraphEdgeView[];
     selection: GraphSelection;
     /** The Overview's copy: no pan, zoom or keyboard moves. */

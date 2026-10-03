@@ -1,6 +1,7 @@
 import { relative } from 'pathe';
 
 import { buildGraph } from '#src/graph/index.ts';
+import type { Layout } from '#src/graph/layout.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import { edgeStatus } from '#src/rules/edge-status.ts';
 import type { AnalyzeResult, Edge, Finding } from '#src/types.ts';
@@ -32,9 +33,7 @@ function violationsByPair(findings: Finding[]): Map<string, { count: number; err
   return pairs;
 }
 
-async function buildView(result: AnalyzeResult): Promise<GraphView> {
-  // dagre loads on the first graph request, so it stays out of Nuxt's startup.
-  const { layoutGraph } = await import('#src/graph/layout.ts');
+function buildView(result: AnalyzeResult): GraphView {
   const graph = buildGraph(result, result.config, 'layer');
   const pairs = violationsByPair(result.findings);
   const edges = graph.edges.map(({ from, to, count, status }) => {
@@ -65,19 +64,35 @@ async function buildView(result: AnalyzeResult): Promise<GraphView> {
     })),
     edges,
     matrix: { layers, cells },
-    layout: layoutGraph(layers, edges),
   };
 }
 
-/** One payload per analysis result: the layout costs a few ms per layer, so it runs once. */
-const views = new WeakMap<AnalyzeResult, Promise<GraphView>>();
+async function buildLayout(view: GraphView): Promise<Layout> {
+  // dagre loads on the first layout, so it stays out of Nuxt's startup.
+  const { layoutGraph } = await import('#src/graph/layout.ts');
+  return layoutGraph(view.matrix.layers, view.edges);
+}
+
+/** One payload and one layout per analysis result: the layout costs a few ms per layer. */
+const views = new WeakMap<AnalyzeResult, GraphView>();
+const layouts = new WeakMap<AnalyzeResult, Promise<Layout>>();
+
+/** Above this many layers the tab opens on the table, so the layout waits until it is asked for. */
+export const LAYOUT_LIMIT = 15;
 
 /** The layer graph with counts, the matrix built from the same edges, and the layout. */
-export async function graphView(result: AnalyzeResult): Promise<GraphView> {
-  const cached = views.get(result) ?? buildView(result);
-  views.set(result, cached);
-  const view = await cached;
-  return view;
+export async function graphView(
+  result: AnalyzeResult,
+  withLayout = result.layers.length <= LAYOUT_LIMIT,
+): Promise<GraphView> {
+  const view = views.get(result) ?? buildView(result);
+  views.set(result, view);
+  if (!withLayout) {
+    return view;
+  }
+  const layout = layouts.get(result) ?? buildLayout(view);
+  layouts.set(result, layout);
+  return { ...view, layout: await layout };
 }
 
 /** The name an edge is known by: `#imports:useCart` is `useCart`. */

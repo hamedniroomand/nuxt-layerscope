@@ -4,7 +4,7 @@ import { analyze } from '#src/analyze/index.ts';
 import { edgeView, graphView, nodeView } from '#src/devtools/graph-api.ts';
 import { buildGraph } from '#src/graph/index.ts';
 import { NODE_HEIGHT, NODE_WIDTH } from '#src/graph/layout-size.ts';
-import { makeEdge, makeFinding, makeResult } from '#test/factories.ts';
+import { makeEdge, makeFinding, makeLayer, makeResult } from '#test/factories.ts';
 import { MATRIX_ROOT, NUXT4_ROOT } from '#test/fixtures.ts';
 
 const shopFile = '/app/layers/shop/composables/useCart.ts';
@@ -52,7 +52,7 @@ describe('graph payload', () => {
         ],
       ],
     });
-    expect(view.layout.nodes.map(node => [node.id, node.rank])).toEqual([
+    expect(view.layout?.nodes.map(node => [node.id, node.rank])).toEqual([
       ['web', 0],
       ['shop', 1],
     ]);
@@ -147,12 +147,26 @@ function samples(path: string): { x: number; y: number }[] {
   return points;
 }
 
+describe('graph layout on demand', () => {
+  it('leaves the layout out above 15 layers unless asked', async () => {
+    const layers = Array.from({ length: 16 }, (_, index) =>
+      makeLayer(`l${index}`, `/app/l${index}`),
+    );
+    const big = makeResult({ layers });
+    expect((await graphView(big)).layout).toBeUndefined();
+    expect((await graphView(big, true)).layout?.nodes).toHaveLength(16);
+    expect((await graphView(makeResult())).layout).toBeDefined();
+  });
+});
+
 describe('graph layout on the nuxt4 fixture', () => {
   it('routes no edge through a node it does not connect', async () => {
     const { layout } = await graphView(await analyze({ rootDir: NUXT4_ROOT }));
     const inset = 2;
-    for (const edge of layout.edges) {
-      const others = layout.nodes.filter(node => node.id !== edge.from && node.id !== edge.to);
+    const nodes = layout?.nodes ?? [];
+    expect(nodes.length).toBeGreaterThan(0);
+    for (const edge of layout?.edges ?? []) {
+      const others = nodes.filter(node => node.id !== edge.from && node.id !== edge.to);
       const crossed = samples(edge.path).flatMap(point =>
         others.filter(
           node =>

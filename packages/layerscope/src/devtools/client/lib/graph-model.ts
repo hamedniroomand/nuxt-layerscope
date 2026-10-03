@@ -1,4 +1,12 @@
 import type { GraphEdgeView, GraphView } from '#src/devtools/protocol.ts';
+import type { Layout } from '#src/graph/layout.ts';
+
+/** A graph payload that carries its layout, as the canvas needs. */
+export type LaidOutGraph = GraphView & { layout: Layout };
+
+export function laidOut(view: GraphView | null): LaidOutGraph | null {
+  return view?.layout === undefined ? null : (view as LaidOutGraph);
+}
 
 /** Above this many layers the Graph view opens on the table; the graph stays one click away. */
 export const TABLE_DEFAULT_ABOVE = 15;

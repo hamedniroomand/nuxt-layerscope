@@ -150,7 +150,8 @@ export interface GraphView {
   edges: GraphEdgeView[];
   /** Rows are "from", columns are "to", both in layer order. */
   matrix: { layers: string[]; cells: MatrixCell[][] };
-  layout: Layout;
+  /** Left out above 15 layers unless the request asks for it with `?layout=1`. */
+  layout?: Layout;
 }
 
 export interface EdgeRow {

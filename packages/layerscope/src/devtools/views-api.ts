@@ -5,7 +5,7 @@ import type { AnalyzeResult, Context } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
 import { findingKey } from './finding-keys.ts';
-import { edgeView, graphView, nodeView } from './graph-api.ts';
+import { edgeView, graphView, LAYOUT_LIMIT, nodeView } from './graph-api.ts';
 import type { BaselineView, SymbolEntry, TraceView, UnusedView } from './protocol.ts';
 
 const CONTEXTS: Context[] = ['app', 'server', 'shared'];
@@ -100,7 +100,9 @@ export const VIEW_PATHS = [
   '/api/node',
 ];
 
-export type ViewQuery = Partial<Record<'symbol' | 'from' | 'to' | 'layer' | 'offset', string>>;
+export type ViewQuery = Partial<
+  Record<'symbol' | 'from' | 'to' | 'layer' | 'offset' | 'layout', string>
+>;
 
 async function graphBody(
   path: string,
@@ -108,7 +110,10 @@ async function graphBody(
   query: ViewQuery,
 ): Promise<object | null> {
   if (path === '/api/graph') {
-    const graph = await graphView(result);
+    const graph = await graphView(
+      result,
+      query.layout === '1' || result.layers.length <= LAYOUT_LIMIT,
+    );
     return graph;
   }
   const known = new Set(result.layers.map(layer => layer.name));

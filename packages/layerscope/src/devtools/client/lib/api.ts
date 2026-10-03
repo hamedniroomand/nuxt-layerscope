@@ -59,7 +59,8 @@ export interface Api {
   trace: (symbol: string) => Promise<TraceView>;
   unused: () => Promise<UnusedView>;
   baseline: () => Promise<BaselineView>;
-  graph: () => Promise<GraphView>;
+  /** `withLayout` asks for the layout above 15 layers, where the server leaves it out. */
+  graph: (withLayout?: boolean) => Promise<GraphView>;
   /** Writes the baseline; `rev` must be the revision the tab shows. */
   ignore: (meta: { id: string; rev: number }, keys: string[]) => Promise<WriteResponse>;
   remove: (meta: { id: string; rev: number }, keys: string[]) => Promise<WriteResponse>;
@@ -94,8 +95,8 @@ function viewCalls(
       const data = await call<BaselineView>('/api/baseline');
       return data;
     },
-    graph: async () => {
-      const data = await call<GraphView>('/api/graph');
+    graph: async (withLayout = false) => {
+      const data = await call<GraphView>(withLayout ? '/api/graph?layout=1' : '/api/graph');
       return data;
     },
     edge: async (from, to) => {

@@ -81,9 +81,16 @@ describe('graph view', () => {
     expect(window.location.hash).toBe('#/graph/edge/web/shop');
   });
 
-  it('opens on the table above 15 layers', async () => {
-    const { wrapper } = await mountGraph(16);
+  it('opens on the table above 15 layers and fetches the layout for Graph mode', async () => {
+    const { wrapper, api } = await mountGraph(16);
     expect(wrapper.find('table[role="grid"]').exists()).toBe(true);
+    expect(api.graph).toHaveBeenLastCalledWith(false);
+    vi.mocked(api.graph).mockResolvedValue(await graphView(result(16), true));
+    const graphButton = wrapper.findAll('.seg button').find(button => button.text() === 'Graph');
+    await graphButton?.trigger('click');
+    await flushPromises();
+    expect(api.graph).toHaveBeenLastCalledWith(true);
+    expect(wrapper.findAll('.node')).toHaveLength(16);
   });
 });
 

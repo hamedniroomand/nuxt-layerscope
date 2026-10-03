@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue';
+  import { computed, onBeforeUnmount, ref, useTemplateRef, watch } from 'vue';
 
   import GraphCanvas from '#src/devtools/client/components/graph/GraphCanvas.vue';
   import GraphMatrix from '#src/devtools/client/components/graph/GraphMatrix.vue';
@@ -8,6 +8,7 @@
   import type { GraphSelection } from '#src/devtools/client/lib/graph-model.ts';
   import {
     formatSelection,
+    laidOut,
     parseSelection,
     TABLE_DEFAULT_ABOVE,
     visibleEdges,
@@ -16,14 +17,21 @@
 
   const context = useTab();
   const { api, nav, shortcuts } = context;
+  const chosenMode = ref<'graph' | 'table' | null>(null);
+  // Above 15 layers the server leaves the layout out until Graph mode asks for it.
   const graph = useViewData(context, async () => {
-    const view = await api.graph();
+    const view = await api.graph(chosenMode.value === 'graph');
     return view;
   });
+  watch(chosenMode, async mode => {
+    if (mode === 'graph' && graph.data.value?.layout === undefined) {
+      await graph.reload();
+    }
+  });
+  const drawn = computed(() => laidOut(graph.data.value));
   const canvas = useTemplateRef<{ zoom: (factor: number) => void; fit: () => void }>('canvas');
   const violationsOnly = ref(false);
   const minCount = ref(1);
-  const chosenMode = ref<'graph' | 'table' | null>(null);
   const mode = computed(
     () =>
       chosenMode.value ??
@@ -153,10 +161,16 @@
     </p>
     <template v-else-if="graph.data.value">
       <div class="body">
+        <p
+          v-if="mode === 'graph' && !drawn"
+          class="muted message"
+        >
+          Laying out the graph…
+        </p>
         <GraphCanvas
-          v-if="mode === 'graph'"
+          v-else-if="mode === 'graph' && drawn"
           ref="canvas"
-          :view="graph.data.value"
+          :view="drawn"
           :edges="edges"
           :selection="selection"
           @select="select"
