@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.0
 
 - The DevTools tab is a new prebuilt Vue client with six views: Overview, Findings, Trace,
   Unused, Graph and Baseline. Its theme follows Nuxt DevTools, or the OS theme
