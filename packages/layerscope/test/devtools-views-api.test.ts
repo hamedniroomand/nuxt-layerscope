@@ -108,3 +108,18 @@ describe('view endpoints', () => {
     expect((await fetch('/api/symbols', { method: 'POST' })).status).toBe(405);
   });
 });
+
+describe('graph endpoints', () => {
+  it('serves the graph, an edge and a node, and 404 for unknown layers', async () => {
+    const { fetch } = await server();
+    const graph = (await (await fetch('/api/graph')).json()) as { matrix: { layers: string[] } };
+    expect(graph.matrix.layers).toEqual(['web', 'shop']);
+    expect((await fetch('/api/edge?from=web&to=shop')).status).toBe(200);
+    expect((await fetch('/api/edge?from=web&to=nope')).status).toBe(404);
+    expect((await fetch('/api/edge')).status).toBe(404);
+    const node = (await (await fetch('/api/node?layer=web&offset=1')).json()) as { offset: number };
+    expect(node.offset).toBe(1);
+    expect((await fetch('/api/node?layer=web&offset=-5')).status).toBe(200);
+    expect((await fetch('/api/node?layer=nope')).status).toBe(404);
+  });
+});

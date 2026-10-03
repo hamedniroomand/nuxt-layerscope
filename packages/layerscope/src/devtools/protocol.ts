@@ -1,5 +1,7 @@
+import type { Layout } from '#src/graph/layout.ts';
 import type { UnusedRow } from '#src/report/unused.ts';
 import type { WhyReport } from '#src/report/why.ts';
+import type { EdgeStatus } from '#src/rules/edge-status.ts';
 import type { BaselineEntry, Context, Finding, Suggestion } from '#src/types.ts';
 
 /** Copy-only fix for a boundary finding whose suggestion is to allow the target layer. */
@@ -111,6 +113,66 @@ export interface BaselineView {
   file: string | null;
   suppressed: TabFinding[];
   removable: BaselineEntry[];
+}
+
+export interface GraphNodeView extends LayerStat {
+  id: string;
+}
+
+export interface GraphEdgeView {
+  from: string;
+  to: string;
+  /** References behind the edge. */
+  count: number;
+  status: EdgeStatus;
+  /** Findings for this layer pair, as the Findings list counts them. */
+  violations: number;
+  /** Worst severity among them; `null` without findings. */
+  severity: 'error' | 'warn' | null;
+}
+
+export interface MatrixCell {
+  count: number;
+  /** `null` on the diagonal and where no edge exists. */
+  status: EdgeStatus | null;
+  violations: number;
+}
+
+export interface GraphView {
+  nodes: GraphNodeView[];
+  edges: GraphEdgeView[];
+  /** Rows are "from", columns are "to", both in layer order. */
+  matrix: { layers: string[]; cells: MatrixCell[][] };
+  layout: Layout;
+}
+
+export interface EdgeRow {
+  file: string;
+  absFile: string;
+  line: number;
+  column: number;
+  status: EdgeStatus;
+}
+
+export interface EdgeView {
+  from: string;
+  to: string;
+  /** Worst status of the references; `null` when there are none. */
+  status: EdgeStatus | null;
+  total: number;
+  /** References left out after the first 500. */
+  truncated: number;
+  symbols: { symbol: string; kind: string; count: number; rows: EdgeRow[] }[];
+}
+
+export interface NodeView {
+  layer: LayerStat;
+  in: { layer: string; count: number }[];
+  out: { layer: string; count: number }[];
+  /** One page of the layer's files. */
+  files: { file: string; absFile: string; refsIn: number; refsOut: number }[];
+  total: number;
+  offset: number;
 }
 
 export type { Suggestion };

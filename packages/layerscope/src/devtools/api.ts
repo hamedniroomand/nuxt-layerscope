@@ -6,6 +6,7 @@ import type { ReportResponse, SnapshotMeta } from './protocol.ts';
 import { tabReport } from './report.ts';
 import { isSameOrigin } from './same-origin.ts';
 import type { Session } from './session.ts';
+import type { ViewQuery } from './views-api.ts';
 import { VIEW_PATHS, viewBody } from './views-api.ts';
 
 const JSON_TYPE = 'application/json';
@@ -77,9 +78,11 @@ async function read(event: H3Event, path: string, session: Session): Promise<str
   if (path === '/api/report') {
     return json(event, 200, await withReport(snapshot, session));
   }
-  const symbol = getQuery(event).symbol;
-  const body = await viewBody(path, snapshot.result, typeof symbol === 'string' ? symbol : '');
-  return json(event, 200, body);
+  const query = Object.fromEntries(
+    Object.entries(getQuery(event)).filter(entry => typeof entry[1] === 'string'),
+  ) as ViewQuery;
+  const body = await viewBody(path, snapshot.result, query);
+  return body === null ? json(event, 404, { error: 'Unknown layer' }) : json(event, 200, body);
 }
 
 /** `/api/*`: GET routes read the cached snapshot; POST routes re-run or steer live mode. */

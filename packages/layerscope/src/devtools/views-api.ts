@@ -5,6 +5,7 @@ import type { AnalyzeResult, Context } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
 import { findingKey } from './finding-keys.ts';
+import { edgeView, graphView, nodeView } from './graph-api.ts';
 import type { BaselineView, SymbolEntry, TraceView, UnusedView } from './protocol.ts';
 
 const CONTEXTS: Context[] = ['app', 'server', 'shared'];
@@ -89,24 +90,50 @@ export function baselineView(result: AnalyzeResult): BaselineView {
   };
 }
 
-export const VIEW_PATHS = ['/api/symbols', '/api/trace', '/api/unused', '/api/baseline'];
+export const VIEW_PATHS = [
+  '/api/symbols',
+  '/api/trace',
+  '/api/unused',
+  '/api/baseline',
+  '/api/graph',
+  '/api/edge',
+  '/api/node',
+];
 
-/** The body of a view endpoint; all read the cached snapshot and never re-analyze. */
+export type ViewQuery = Partial<Record<'symbol' | 'from' | 'to' | 'layer' | 'offset', string>>;
+
+function graphBody(path: string, result: AnalyzeResult, query: ViewQuery): object | null {
+  if (path === '/api/graph') {
+    return graphView(result);
+  }
+  const known = new Set(result.layers.map(layer => layer.name));
+  if (path === '/api/edge') {
+    const { from = '', to = '' } = query;
+    return known.has(from) && known.has(to) ? edgeView(result, from, to) : null;
+  }
+  const offset = Math.max(0, Math.trunc(Number(query.offset ?? '0')) || 0);
+  return nodeView(result, query.layer ?? '', offset);
+}
+
+/**
+ * The body of a view endpoint, or `null` for a layer that does not exist. All read the cached
+ * snapshot and never re-analyze.
+ */
 export async function viewBody(
   path: string,
   result: AnalyzeResult,
-  symbol: string,
-): Promise<object> {
+  query: ViewQuery,
+): Promise<object | null> {
   if (path === '/api/symbols') {
     return { symbols: listSymbols(result) };
   }
   if (path === '/api/trace') {
-    const trace = await traceView(result, symbol);
+    const trace = await traceView(result, query.symbol ?? '');
     return trace;
   }
   if (path === '/api/unused') {
     const unused = await unusedView(result);
     return unused;
   }
-  return baselineView(result);
+  return path === '/api/baseline' ? baselineView(result) : graphBody(path, result, query);
 }

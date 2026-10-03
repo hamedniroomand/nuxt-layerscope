@@ -1,0 +1,398 @@
+{
+  "nodes": [
+    {
+      "id": "root",
+      "name": "root",
+      "root": ".",
+      "allow": null,
+      "files": 1,
+      "refsIn": 0,
+      "refsOut": 1
+    },
+    {
+      "id": "theme",
+      "name": "theme",
+      "root": "layers/theme",
+      "allow": [
+        "base"
+      ],
+      "files": 4,
+      "refsIn": 2,
+      "refsOut": 0
+    },
+    {
+      "id": "shop",
+      "name": "shop",
+      "root": "layers/shop",
+      "allow": [
+        "base"
+      ],
+      "files": 3,
+      "refsIn": 1,
+      "refsOut": 10
+    },
+    {
+      "id": "base",
+      "name": "base",
+      "root": "layers/base",
+      "allow": [],
+      "files": 3,
+      "refsIn": 5,
+      "refsOut": 0
+    },
+    {
+      "id": "npm",
+      "name": "npm",
+      "root": "<installed>",
+      "allow": null,
+      "files": 0,
+      "refsIn": 2,
+      "refsOut": 0
+    },
+    {
+      "id": "remote",
+      "name": "remote",
+      "root": "<installed>",
+      "allow": null,
+      "files": 0,
+      "refsIn": 1,
+      "refsOut": 0
+    }
+  ],
+  "edges": [
+    {
+      "from": "root",
+      "to": "shop",
+      "count": 1,
+      "status": "unrestricted",
+      "violations": 0,
+      "severity": null
+    },
+    {
+      "from": "shop",
+      "to": "base",
+      "count": 5,
+      "status": "allowed",
+      "violations": 0,
+      "severity": null
+    },
+    {
+      "from": "shop",
+      "to": "npm",
+      "count": 2,
+      "status": "not-allowed",
+      "violations": 2,
+      "severity": "error"
+    },
+    {
+      "from": "shop",
+      "to": "remote",
+      "count": 1,
+      "status": "not-allowed",
+      "violations": 1,
+      "severity": "error"
+    },
+    {
+      "from": "shop",
+      "to": "theme",
+      "count": 2,
+      "status": "not-allowed",
+      "violations": 2,
+      "severity": "error"
+    }
+  ],
+  "matrix": {
+    "layers": [
+      "root",
+      "theme",
+      "shop",
+      "base",
+      "npm",
+      "remote"
+    ],
+    "cells": [
+      [
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 1,
+          "status": "unrestricted",
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        }
+      ],
+      [
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        }
+      ],
+      [
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 2,
+          "status": "not-allowed",
+          "violations": 2
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 5,
+          "status": "allowed",
+          "violations": 0
+        },
+        {
+          "count": 2,
+          "status": "not-allowed",
+          "violations": 2
+        },
+        {
+          "count": 1,
+          "status": "not-allowed",
+          "violations": 1
+        }
+      ],
+      [
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        }
+      ],
+      [
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        }
+      ],
+      [
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        },
+        {
+          "count": 0,
+          "status": null,
+          "violations": 0
+        }
+      ]
+    ]
+  },
+  "layout": {
+    "nodes": [
+      {
+        "id": "root",
+        "rank": 0,
+        "order": 0,
+        "x": 16,
+        "y": 16
+      },
+      {
+        "id": "shop",
+        "rank": 1,
+        "order": 0,
+        "x": 216,
+        "y": 16
+      },
+      {
+        "id": "theme",
+        "rank": 2,
+        "order": 0,
+        "x": 416,
+        "y": 16
+      },
+      {
+        "id": "base",
+        "rank": 2,
+        "order": 1,
+        "x": 416,
+        "y": 88
+      },
+      {
+        "id": "npm",
+        "rank": 2,
+        "order": 2,
+        "x": 416,
+        "y": 160
+      },
+      {
+        "id": "remote",
+        "rank": 2,
+        "order": 3,
+        "x": 416,
+        "y": 232
+      }
+    ],
+    "edges": [
+      {
+        "from": "root",
+        "to": "shop",
+        "reversed": false,
+        "path": "M136 36 C176 36 176 36 216 36",
+        "labelX": 176,
+        "labelY": 30
+      },
+      {
+        "from": "shop",
+        "to": "base",
+        "reversed": false,
+        "path": "M336 36 C376 36 376 108 416 108",
+        "labelX": 376,
+        "labelY": 66
+      },
+      {
+        "from": "shop",
+        "to": "npm",
+        "reversed": false,
+        "path": "M336 36 C376 36 376 180 416 180",
+        "labelX": 376,
+        "labelY": 102
+      },
+      {
+        "from": "shop",
+        "to": "remote",
+        "reversed": false,
+        "path": "M336 36 C376 36 376 252 416 252",
+        "labelX": 376,
+        "labelY": 138
+      },
+      {
+        "from": "shop",
+        "to": "theme",
+        "reversed": false,
+        "path": "M336 36 C376 36 376 36 416 36",
+        "labelX": 376,
+        "labelY": 30
+      }
+    ],
+    "width": 552,
+    "height": 288
+  }
+}
