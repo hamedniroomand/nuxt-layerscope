@@ -100,7 +100,8 @@ function useConnection(
     client.value = null;
   };
   onMounted(() => {
-    if (typeof EventSource === 'undefined' && options.open === undefined) {
+    // A snapshot has no server: no event stream, no polling, no visibility watch.
+    if (context.demo || (typeof EventSource === 'undefined' && options.open === undefined)) {
       return;
     }
     const host = options.host ?? (globalThis as unknown as FrameWindow);
@@ -146,7 +147,12 @@ export function useLive(
     pausedHere.value = live.paused;
   };
   onBeforeUnmount(
-    shortcuts.register({ key: 'p', label: 'Pause or resume live updates', run: togglePause }),
+    shortcuts.register({
+      key: 'p',
+      label: 'Pause or resume live updates',
+      run: togglePause,
+      live: true,
+    }),
   );
   return {
     status: computed(() => {

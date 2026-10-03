@@ -14,6 +14,8 @@ export interface TabContext {
   shortcuts: Shortcuts;
   toast: Ref<Toast | null>;
   actions: BaselineActions;
+  /** A static snapshot: read-only, no live updates, no editor. */
+  demo: boolean;
 }
 
 export const TAB_CONTEXT: InjectionKey<TabContext> = Symbol('layerscope');

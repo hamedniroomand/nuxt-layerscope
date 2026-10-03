@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, watch } from 'vue';
+  import { computed, onMounted, shallowRef, watch } from 'vue';
 
   import AppHeader from './components/AppHeader.vue';
   import LiveStatus from './components/LiveStatus.vue';
@@ -7,7 +7,7 @@
   import ToastBar from './components/ToastBar.vue';
   import { useAppShortcuts } from './lib/app.ts';
   import { useTab } from './lib/context.ts';
-  import { duration } from './lib/format.ts';
+  import { dateTime, duration } from './lib/format.ts';
   import { useLive } from './lib/live-view.ts';
   import ActiveView from './views/ActiveView.vue';
 
@@ -56,7 +56,20 @@
       }, UNDO_MS);
     }
   });
-  onMounted(() => store.load());
+  // A snapshot says when it was taken and by which version, since nothing in it updates.
+  const version = shallowRef<string | null>(null);
+  const snapshot = computed(() => {
+    const at = store.state.data?.analyzedAt;
+    const by = version.value === null ? '' : ` · nuxt-layerscope ${version.value}`;
+    return at === undefined ? null : `Snapshot from ${dateTime(at)}${by}. Read-only.`;
+  });
+  onMounted(async () => {
+    await store.load();
+    if (context.demo) {
+      const state = await context.api.state().catch(() => null);
+      version.value = state?.version ?? null;
+    }
+  });
 </script>
 
 <template>
@@ -74,8 +87,14 @@
       </template>
     </AppHeader>
     <TabBar :tabs="tabs" />
+    <p
+      v-if="context.demo"
+      class="banner snapshot muted"
+    >
+      {{ snapshot }}
+    </p>
     <div
-      v-if="store.state.unreachable"
+      v-else-if="store.state.unreachable"
       class="banner"
       role="alert"
     >
@@ -159,6 +178,11 @@
     padding: 8px 14px;
     border-bottom: 1px solid var(--line);
     color: var(--warn);
+  }
+
+  .banner.snapshot {
+    margin: 0;
+    color: var(--fg-muted);
   }
 
   .failure {

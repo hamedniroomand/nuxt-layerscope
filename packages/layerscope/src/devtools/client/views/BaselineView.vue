@@ -2,6 +2,7 @@
   import { shallowRef } from 'vue';
 
   import CopyButton from '#src/devtools/client/components/CopyButton.vue';
+  import FileLocation from '#src/devtools/client/components/FileLocation.vue';
   import InlineConfirm from '#src/devtools/client/components/InlineConfirm.vue';
   import SeverityGlyph from '#src/devtools/client/components/SeverityGlyph.vue';
   import { entryKey } from '#src/devtools/client/lib/actions.ts';
@@ -86,14 +87,15 @@
             <span class="message">{{ finding.message }}</span>
           </span>
           <span class="where">
-            <a
-              class="mono"
-              href="#"
-              @click.prevent="api.openInEditor(finding.absFile, finding.line, finding.column)"
+            <FileLocation
+              :file="finding.absFile"
+              :line="finding.line"
+              :column="finding.column"
             >
               {{ location(finding.file, finding.line, finding.column) }}
-            </a>
+            </FileLocation>
             <button
+              v-if="!context.demo"
               type="button"
               @click="
                 pending = {
@@ -135,6 +137,7 @@
           </span>
           <span class="where">
             <button
+              v-if="!context.demo"
               type="button"
               @click="
                 pending = {

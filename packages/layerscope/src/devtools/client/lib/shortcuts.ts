@@ -6,6 +6,8 @@ export interface Shortcut {
   run: () => unknown;
   /** Also runs while a text field has focus. Only `Escape` needs this. */
   inFields?: boolean;
+  /** Needs the dev server (a write, a re-run, live updates or the editor): off in a snapshot. */
+  live?: boolean;
 }
 
 export interface KeyInput {
@@ -26,6 +28,10 @@ export interface Shortcuts {
 
 const FIELD_TAGS = new Set(['INPUT', 'TEXTAREA', 'SELECT']);
 
+function ignore(): void {
+  // A key that is not registered has nothing to remove.
+}
+
 export function isField(target: EventTarget | null): boolean {
   const element = target as { tagName?: string; isContentEditable?: boolean } | null;
   return (
@@ -34,11 +40,18 @@ export function isField(target: EventTarget | null): boolean {
   );
 }
 
-/** One key map for the whole tab; views register their keys while they are mounted. */
-export function createShortcuts(): Shortcuts {
+/**
+ * One key map for the whole tab; views register their keys while they are mounted. In a snapshot
+ * (`demo`), keys that need the dev server are not registered, so the sheet lists only keys that
+ * work.
+ */
+export function createShortcuts(demo = false): Shortcuts {
   const shortcuts: Shortcut[] = [];
   return {
     register: shortcut => {
+      if (demo && shortcut.live === true) {
+        return ignore;
+      }
       shortcuts.push(shortcut);
       return (): void => {
         const index = shortcuts.indexOf(shortcut);

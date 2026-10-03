@@ -46,7 +46,12 @@
   const removers = [
     context.shortcuts.register({ key: 'j', label: 'Next finding', run: () => reveal(1) }),
     context.shortcuts.register({ key: 'k', label: 'Previous finding', run: () => reveal(-1) }),
-    context.shortcuts.register({ key: 'o', label: 'Open in editor', run: view.openSelected }),
+    context.shortcuts.register({
+      key: 'o',
+      label: 'Open in editor',
+      run: view.openSelected,
+      live: true,
+    }),
     context.shortcuts.register({
       key: 't',
       label: 'Trace the selected finding',
@@ -60,6 +65,7 @@
     context.shortcuts.register({
       key: 'n',
       label: 'Next new finding',
+      live: true,
       run: async () => {
         view.nextNew();
         await reveal(0);
@@ -109,7 +115,7 @@
             <option value="none">none</option>
           </select>
         </label>
-        <label>
+        <label v-if="!context.demo">
           <input
             type="checkbox"
             :checked="view.query.value.onlyNew"
@@ -173,6 +179,7 @@
           </span>
           <span class="group-end">
             <button
+              v-if="!context.demo"
               type="button"
               class="quiet"
               @click="ignore.ask(group.findings)"

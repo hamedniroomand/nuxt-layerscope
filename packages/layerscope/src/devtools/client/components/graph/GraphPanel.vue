@@ -1,6 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue';
 
+  import FileLocation from '#src/devtools/client/components/FileLocation.vue';
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import type { GraphSelection } from '#src/devtools/client/lib/graph-model.ts';
   import { symbolLabel } from '#src/devtools/client/lib/graph-model.ts';
@@ -118,13 +119,7 @@
             v-for="file in panel.node.value.files"
             :key="file.file"
           >
-            <a
-              class="mono"
-              href="#"
-              @click.prevent="api.openInEditor(file.absFile)"
-            >
-              {{ file.file }}
-            </a>
+            <FileLocation :file="file.absFile">{{ file.file }}</FileLocation>
             <span class="num muted">{{ file.refsIn }} / {{ file.refsOut }}</span>
           </li>
         </ul>
@@ -183,13 +178,13 @@
               v-for="row in symbol.rows"
               :key="`${row.file}:${row.line}:${row.column}`"
             >
-              <a
-                class="mono"
-                href="#"
-                @click.prevent="api.openInEditor(row.absFile, row.line, row.column)"
+              <FileLocation
+                :file="row.absFile"
+                :line="row.line"
+                :column="row.column"
               >
                 {{ row.file }}:{{ row.line }}
-              </a>
+              </FileLocation>
             </li>
           </ul>
           <button

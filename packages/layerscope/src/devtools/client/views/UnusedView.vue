@@ -2,6 +2,7 @@
   import { computed } from 'vue';
 
   import CopyButton from '#src/devtools/client/components/CopyButton.vue';
+  import FileLocation from '#src/devtools/client/components/FileLocation.vue';
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import { useViewData } from '#src/devtools/client/lib/view-data.ts';
   import { unusedGroups } from '#src/devtools/client/lib/view-groups.ts';
@@ -73,13 +74,12 @@
           >
             {{ row.context }}
           </span>
-          <a
-            class="mono muted"
-            href="#"
-            @click.prevent="api.openInEditor(row.absFile ?? row.file)"
+          <FileLocation
+            class="muted"
+            :file="row.absFile ?? row.file"
           >
             {{ row.file }}
-          </a>
+          </FileLocation>
           <button
             type="button"
             @click="nav.trace(row.name)"

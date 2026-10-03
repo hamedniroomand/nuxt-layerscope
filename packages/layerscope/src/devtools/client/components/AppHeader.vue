@@ -3,10 +3,12 @@
 
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import { clock, duration, plural } from '#src/devtools/client/lib/format.ts';
+  import { useThemeToggle } from '#src/devtools/client/lib/theme.ts';
 
   import SeverityGlyph from './SeverityGlyph.vue';
 
-  const { store, nav } = useTab();
+  const { store, nav, demo } = useTab();
+  const theme = useThemeToggle();
   const data = computed(() => store.state.data);
   const suppressed = computed(() => data.value?.report.baseline?.suppressed.length ?? 0);
 </script>
@@ -82,6 +84,15 @@
       analyzed {{ clock(data.analyzedAt) }} in {{ duration(data.durationMs) }}
     </span>
     <button
+      v-if="demo"
+      type="button"
+      :aria-pressed="theme.dark.value"
+      @click="theme.toggle()"
+    >
+      Dark theme
+    </button>
+    <button
+      v-else
       type="button"
       aria-keyshortcuts="r"
       :disabled="store.state.running"

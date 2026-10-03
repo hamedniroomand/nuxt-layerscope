@@ -45,6 +45,8 @@ export type LiveAction = 'pause' | 'resume' | 'marker';
 
 export interface StateResponse extends SnapshotMeta {
   live: LiveState;
+  /** The package version that wrote a static snapshot. */
+  version?: string;
 }
 
 export interface Api {

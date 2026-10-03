@@ -2,6 +2,7 @@
   import { computed, shallowRef, watch } from 'vue';
 
   import CopyButton from '#src/devtools/client/components/CopyButton.vue';
+  import FileLocation from '#src/devtools/client/components/FileLocation.vue';
   import SymbolSearch from '#src/devtools/client/components/SymbolSearch.vue';
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import { useViewData } from '#src/devtools/client/lib/view-data.ts';
@@ -94,13 +95,13 @@
             v-for="use in group.uses"
             :key="`${use.file}:${use.line}:${use.column}`"
           >
-            <a
-              class="mono"
-              href="#"
-              @click.prevent="api.openInEditor(use.absFile ?? use.file, use.line, use.column)"
+            <FileLocation
+              :file="use.absFile ?? use.file"
+              :line="use.line"
+              :column="use.column"
             >
               {{ use.file }}:{{ use.line }}:{{ use.column }}
-            </a>
+            </FileLocation>
             <span class="muted">{{ STATUS_LABELS[use.status] }}</span>
           </li>
         </ul>

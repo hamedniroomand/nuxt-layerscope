@@ -1,4 +1,6 @@
 <script setup lang="ts">
+  import FileLocation from '#src/devtools/client/components/FileLocation.vue';
+  import { useTab } from '#src/devtools/client/lib/context.ts';
   import { location } from '#src/devtools/client/lib/format.ts';
   import type { TabFinding } from '#src/devtools/protocol.ts';
 
@@ -15,6 +17,7 @@
     /** False when the group header already names the rule. */
     showRule: boolean;
   }>();
+  const { demo } = useTab();
   defineEmits<{
     select: [];
     open: [file: string, line: number, column: number];
@@ -35,6 +38,7 @@
   >
     <div class="line">
       <input
+        v-if="!demo"
         class="pick"
         :class="{ shown: picking }"
         type="checkbox"
@@ -60,13 +64,13 @@
       <span class="sr-only">{{ finding.severity === 'error' ? 'error' : 'warning' }}</span>
     </div>
     <div class="line muted">
-      <a
-        class="mono"
-        href="#"
-        @click.prevent.stop="$emit('open', finding.absFile, finding.line, finding.column)"
+      <FileLocation
+        :file="finding.absFile"
+        :line="finding.line"
+        :column="finding.column"
       >
         {{ location(finding.file, finding.line, finding.column) }}
-      </a>
+      </FileLocation>
       <span
         v-if="finding.target"
         class="mono"
@@ -87,6 +91,7 @@
     <div class="actions">
       <slot name="actions" />
       <button
+        v-if="!demo"
         type="button"
         aria-keyshortcuts="i"
         @click.stop="$emit('ignore')"
@@ -101,6 +106,7 @@
         Trace
       </button>
       <button
+        v-if="!demo"
         type="button"
         aria-keyshortcuts="o"
         @click.stop="$emit('open', finding.absFile, finding.line, finding.column)"

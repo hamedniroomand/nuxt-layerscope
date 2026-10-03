@@ -3,9 +3,10 @@ import type { ShellConfig } from './protocol.ts';
 /**
  * Runs before first paint and sets only `dark`, as Nuxt DevTools does (it toggles `light` with the
  * same flag, so `light` means nothing). Inside DevTools the parent frame's class decides, and
- * DevTools keeps this frame in sync later; opened directly, the OS theme applies.
+ * DevTools keeps this frame in sync later; opened directly, the theme saved by a snapshot's theme
+ * button applies, else the OS theme.
  */
-export const THEME_SCRIPT = `(function(){var d=document.documentElement,dark;try{var p=window.parent!==window&&window.parent.document.documentElement;if(p){dark=p.classList.contains('dark')}}catch(e){}if(dark===undefined){dark=matchMedia('(prefers-color-scheme: dark)').matches}if(dark){d.classList.add('dark')}})()`;
+export const THEME_SCRIPT = `(function(){var d=document.documentElement,dark;try{var p=window.parent!==window&&window.parent.document.documentElement;if(p){dark=p.classList.contains('dark')}}catch(e){}if(dark===undefined){var s=null;try{s=localStorage.getItem('layerscope-theme')}catch(e){}dark=s?s==='dark':matchMedia('(prefers-color-scheme: dark)').matches}if(dark){d.classList.add('dark')}})()`;
 
 /** JSON inside `<template>`; `<` and `&` are escaped so HTML parsing cannot change a value. */
 function configJson(config: ShellConfig): string {

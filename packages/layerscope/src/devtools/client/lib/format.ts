@@ -19,3 +19,16 @@ export function duration(ms: number): string {
 export function location(file: string, line: number, column: number): string {
   return `${file}:${line}:${column}`;
 }
+
+const DATE_TIME = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+/** `3 Oct 2026, 14:02` in local time: when a snapshot was taken. */
+export function dateTime(time: number): string {
+  return DATE_TIME.format(time);
+}

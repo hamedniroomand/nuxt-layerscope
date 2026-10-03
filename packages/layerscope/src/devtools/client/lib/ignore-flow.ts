@@ -47,6 +47,7 @@ function registerKeys(
     context.shortcuts.register({
       key: 'i',
       label: 'Ignore the selected finding',
+      live: true,
       run: () => {
         const finding = view.current();
         if (finding !== undefined) {
@@ -57,6 +58,7 @@ function registerKeys(
     context.shortcuts.register({
       key: 'x',
       label: 'Pick the selected finding for a bulk action',
+      live: true,
       run: () => {
         const finding = view.current();
         if (finding !== undefined) {
