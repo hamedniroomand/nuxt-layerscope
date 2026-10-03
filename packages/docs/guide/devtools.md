@@ -2,7 +2,8 @@
 
 While `nuxi dev` runs, the [Nuxt module](./nuxt-module) adds a **Layerscope** tab to
 [Nuxt DevTools](https://devtools.nuxt.com). The tab shows the layer architecture of the app and
-updates while you edit code.
+updates while you edit code. A [live demo](https://layerscope.netlify.app/__layerscope/) shows the tab for the
+playground app.
 
 ## Open the tab
 
@@ -244,7 +245,8 @@ change takes less than 500 ms on the nuxt4 fixture.
 ## Publish a static snapshot
 
 The tab needs the dev server, so a deployed app cannot run it. To publish the layer report with
-your app, for a demo or for the team, let the build write a read-only copy of the tab:
+your app, for a demo or for the team, let the build write a read-only copy of the tab (the
+[live demo](https://layerscope.netlify.app/__layerscope/) is one):
 
 ```ts [nuxt.config.ts]
 export default defineNuxtConfig({

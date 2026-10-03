@@ -24,7 +24,8 @@
     </picture>
   </a>
   <br>
-  <sub>The Layerscope tab in Nuxt DevTools shows every finding, the layer graph and where each symbol is used.<br>It updates when you save a file.</sub>
+  <sub>The Layerscope tab in Nuxt DevTools shows every finding, the layer graph and where each symbol is used.<br>It updates when you save a file.<br>
+  <a href="https://layerscope.netlify.app/__layerscope/">Open the live demo</a>.</sub>
 </p>
 
 ---

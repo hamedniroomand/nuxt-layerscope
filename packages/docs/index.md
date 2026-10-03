@@ -16,6 +16,9 @@ hero:
       text: Why layerscope
       link: /guide/what-is-layerscope
     - theme: alt
+      text: Live demo
+      link: https://layerscope.netlify.app/__layerscope/
+    - theme: alt
       text: GitHub
       link: https://github.com/hamedniroomand/nuxt-layerscope
 ---

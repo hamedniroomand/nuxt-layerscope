@@ -15,9 +15,13 @@ The commands use `pnpm` scripts, because the `vp` command is not installed on th
 | ----------------- | ------------------------------------------------------------------------------- |
 | Base directory    | (empty: the repository root)                                                    |
 | Build command     | `pnpm --filter nuxt-layerscope build && pnpm --filter playground generate:demo` |
-| Publish directory | `packages/playground/.output/public`                                            |
+| Publish directory | `packages/playground/dist`                                                      |
 
 The output is static files only. The tab is at `/__layerscope/`.
+
+On Netlify, Nuxt picks the `netlify-static` preset on its own and writes to `packages/playground/dist`
+instead of `.output/public`. Set the publish directory to `dist`, or Netlify fails with "Deploy
+directory does not exist".
 
 ## Vercel
 
