@@ -80,6 +80,8 @@
 <style scoped>
   .search {
     position: relative;
+    flex: 1 1 280px;
+    min-width: 200px;
     max-width: 420px;
   }
 

@@ -107,9 +107,11 @@
 
 <style scoped>
   .row {
+    position: relative;
     display: grid;
     gap: 2px;
-    padding: 6px 14px 6px 12px;
+    /* The left gutter holds the pick checkbox, so both lines of the row start at one edge. */
+    padding: 6px 14px 6px 32px;
     border-left: 2px solid transparent;
     border-bottom: 1px solid var(--line);
     list-style: none;
@@ -153,6 +155,9 @@
   }
 
   .pick {
+    position: absolute;
+    top: 8px;
+    left: 10px;
     margin: 0;
     opacity: 0;
   }

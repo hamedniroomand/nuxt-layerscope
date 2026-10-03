@@ -139,6 +139,7 @@ describe('theme script', () => {
     document.documentElement.className = '';
     // eslint-disable-next-line typescript/no-implied-eval, typescript/no-unsafe-call -- runs the inline script as the browser does
     new Function(THEME_SCRIPT)();
-    expect(['dark', 'light']).toContain(document.documentElement.className);
+    // Only `dark` is ever set, as DevTools does; light is the absence of it.
+    expect(['dark', '']).toContain(document.documentElement.className);
   });
 });
