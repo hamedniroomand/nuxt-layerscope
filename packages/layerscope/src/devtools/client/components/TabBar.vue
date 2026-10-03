@@ -1,10 +1,24 @@
 <script setup lang="ts">
+  import { onBeforeUnmount, ref } from 'vue';
+
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import type { TabItem } from '#src/devtools/client/lib/router.ts';
 
+  import ShortcutSheet from './ShortcutSheet.vue';
+
   defineProps<{ tabs: TabItem[] }>();
 
-  const { nav } = useTab();
+  const { nav, shortcuts } = useTab();
+  const sheet = ref(false);
+  onBeforeUnmount(
+    shortcuts.register({
+      key: '?',
+      label: 'Show the keyboard shortcuts',
+      run: () => {
+        sheet.value = true;
+      },
+    }),
+  );
 </script>
 
 <template>
@@ -31,15 +45,20 @@
         {{ tab.badge }}
       </span>
     </button>
-    <a
+    <button
+      type="button"
       class="tab help"
-      href="https://layerscope.kitdev.space/guide/devtools"
-      target="_blank"
-      rel="noopener"
-      title="Documentation"
+      aria-label="Keyboard shortcuts"
+      aria-keyshortcuts="?"
+      @click="sheet = true"
     >
       ?
-    </a>
+    </button>
+    <ShortcutSheet
+      v-if="sheet"
+      :shortcuts="shortcuts.list()"
+      @close="sheet = false"
+    />
   </nav>
 </template>
 

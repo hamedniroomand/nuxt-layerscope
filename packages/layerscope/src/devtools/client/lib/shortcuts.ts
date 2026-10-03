@@ -62,3 +62,16 @@ export function createShortcuts(): Shortcuts {
     list: () => [...shortcuts],
   };
 }
+
+const KEY_NAMES: Record<string, string> = { Escape: 'Esc', ' ': 'Space' };
+
+/** One row per key for the shortcut sheet; the latest registration wins, as it does on a key press. */
+export function sheetRows(shortcuts: Shortcut[]): { key: string; label: string }[] {
+  const rows = new Map<string, string>();
+  for (const shortcut of shortcuts) {
+    rows.set(shortcut.key, shortcut.label);
+  }
+  return [...rows]
+    .map(([key, label]) => ({ key: KEY_NAMES[key] ?? key, label }))
+    .toSorted((a, b) => a.key.localeCompare(b.key));
+}

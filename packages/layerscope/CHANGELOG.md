@@ -5,7 +5,7 @@
 - The DevTools tab is a prebuilt Vue client with Overview and Findings views. Its theme
   follows Nuxt DevTools, and it follows the OS theme when you open `/__layerscope` directly.
   Findings filter by severity, rule, layer pair, file and text, with the filters kept in the URL
-  hash. Keyboard: `1` to `6`, `/`, `r`, `j`, `k`, `o`, `t`, `i`, `x`, `n`, `p`, `e` and `Esc`.
+  hash. Keyboard: `1` to `6`, `/`, `r`, `j`, `k`, `o`, `t`, `i`, `x`, `n`, `p`, `e`, `Esc`, and `?` for a sheet of every shortcut.
 - The DevTools tab updates while you code. An open tab re-runs the analysis 200 ms after a change
   and says what changed ("+2 violations, -1 fixed"). Findings that are new since the tab opened
   get a `NEW` chip, a "New only" filter and the `n` key. `p` pauses live updates. While the
