@@ -2,18 +2,20 @@
   import { computed, onMounted, ref, watch } from 'vue';
 
   import AppHeader from './components/AppHeader.vue';
+  import LiveStatus from './components/LiveStatus.vue';
   import TabBar from './components/TabBar.vue';
   import ToastBar from './components/ToastBar.vue';
   import { useAppShortcuts } from './lib/app.ts';
   import { useTab } from './lib/context.ts';
   import { duration } from './lib/format.ts';
-  import FindingsView from './views/FindingsView.vue';
-  import LayersView from './views/LayersView.vue';
-  import OverviewView from './views/OverviewView.vue';
+  import type { Toast } from './lib/live-view.ts';
+  import { useLive } from './lib/live-view.ts';
+  import ActiveView from './views/ActiveView.vue';
 
   const context = useTab();
   const { store, nav } = context;
-  const toast = ref<string | null>(null);
+  const toast = ref<Toast | null>(null);
+  const live = useLive(context, toast);
   const tabs = computed(() => [
     { view: 'overview' as const, label: 'Overview' },
     {
@@ -35,7 +37,10 @@
     () => store.state.running,
     (running, was) => {
       if (was && !running && store.state.data && store.state.error === null) {
-        toast.value = `Re-run finished in ${duration(store.state.data.durationMs)}`;
+        toast.value = {
+          message: `Re-run finished in ${duration(store.state.data.durationMs)}`,
+          showsNew: false,
+        };
       }
     },
   );
@@ -44,7 +49,18 @@
 
 <template>
   <div class="app">
-    <AppHeader />
+    <AppHeader>
+      <template
+        v-if="live.status.value"
+        #live
+      >
+        <LiveStatus
+          :status="live.status.value"
+          :paused="live.paused.value"
+          @toggle="live.togglePause()"
+        />
+      </template>
+    </AppHeader>
     <TabBar :tabs="tabs" />
     <div
       v-if="store.state.unreachable"
@@ -79,16 +95,27 @@
       >
         Analyzing…
       </p>
-      <template v-else>
-        <OverviewView v-if="nav.route.value.view === 'overview'" />
-        <FindingsView v-else-if="nav.route.value.view === 'findings'" />
-        <LayersView v-else-if="nav.route.value.view === 'layers'" />
-      </template>
+      <ActiveView v-else />
     </main>
     <ToastBar
-      :message="toast"
+      :message="toast?.message ?? null"
       @dismiss="toast = null"
-    />
+    >
+      <template v-if="toast?.showsNew">
+        <button
+          type="button"
+          @click="nav.open('findings', { onlyNew: true })"
+        >
+          Show new
+        </button>
+        <button
+          type="button"
+          @click="live.resetMarker()"
+        >
+          Reset marker
+        </button>
+      </template>
+    </ToastBar>
   </div>
 </template>
 

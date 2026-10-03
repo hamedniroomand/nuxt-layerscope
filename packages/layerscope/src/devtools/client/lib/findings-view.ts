@@ -5,7 +5,7 @@ import type { TabFinding } from '#src/devtools/protocol.ts';
 
 import type { TabContext } from './context.ts';
 import type { ChipCount, FindingGroup } from './filters.ts';
-import { countBy, filterFindings, groupFindings, toggle } from './filters.ts';
+import { countBy, filterFindings, groupFindings, rowIds, toggle } from './filters.ts';
 import type { FindingsQuery } from './router.ts';
 import { isGroup } from './router.ts';
 
@@ -20,7 +20,12 @@ export interface FindingsView {
   rules: ComputedRef<ChipCount[]>;
   total: ComputedRef<number>;
   text: Ref<string>;
-  selected: Ref<number>;
+  /** Id of the selected row; ids survive updates, so the selection stays on its finding. */
+  selected: Ref<string | null>;
+  idOf: (finding: TabFinding) => string;
+  select: (finding: TabFinding) => void;
+  /** Selects the next new finding after the selection, from the top after the last. */
+  nextNew: () => void;
   update: (patch: Partial<FindingsQuery>) => void;
   setGroup: (value: string) => void;
   toggleSev: (value: string) => void;
@@ -57,6 +62,44 @@ function useText(
   return text;
 }
 
+interface Selection {
+  selected: Ref<string | null>;
+  select: (finding: TabFinding) => void;
+  move: (step: number) => void;
+  nextNew: () => void;
+  current: () => TabFinding | undefined;
+}
+
+/** Keyboard selection by row id, so it stays on its finding while the list updates. */
+function useSelection(
+  rows: ComputedRef<TabFinding[]>,
+  idOf: (finding: TabFinding) => string,
+): Selection {
+  const selected = ref<string | null>(null);
+  const position = (): number => rows.value.findIndex(row => idOf(row) === selected.value);
+  const pick = (row: TabFinding | undefined): void => {
+    if (row !== undefined) {
+      selected.value = idOf(row);
+    }
+  };
+  return {
+    selected,
+    select: pick,
+    move: step => {
+      pick(rows.value.at(Math.min(Math.max(position() + step, 0), rows.value.length - 1)));
+    },
+    nextNew: () => {
+      const start = position();
+      const order = [...rows.value.slice(start + 1), ...rows.value.slice(0, start + 1)];
+      pick(order.find(row => row.isNew));
+    },
+    current: () => {
+      const index = position();
+      return index < 0 ? undefined : rows.value.at(index);
+    },
+  };
+}
+
 /** Filters, groups and keyboard selection of the Findings view. */
 export function useFindingsView(context: TabContext): FindingsView {
   const { nav, store, api } = context;
@@ -65,7 +108,9 @@ export function useFindingsView(context: TabContext): FindingsView {
   const filtered = computed(() => filterFindings(findings.value, query.value));
   const groups = computed(() => groupFindings(filtered.value, query.value.group));
   const rows = computed(() => groups.value.flatMap(group => group.findings));
-  const selected = ref(-1);
+  const ids = computed(() => rowIds(findings.value));
+  const idOf = (finding: TabFinding): string => ids.value.get(finding) ?? '';
+  const selection = useSelection(rows, idOf);
   const update = (patch: Partial<FindingsQuery>): void => {
     nav.go({ view: 'findings', query: { ...query.value, ...patch } });
   };
@@ -80,7 +125,8 @@ export function useFindingsView(context: TabContext): FindingsView {
     rules: computed(() => countBy(findings.value, finding => finding.rule)),
     total: computed(() => findings.value.length),
     text: useText(context, update),
-    selected,
+    ...selection,
+    idOf,
     update,
     setGroup: value => {
       if (isGroup(value)) {
@@ -93,12 +139,8 @@ export function useFindingsView(context: TabContext): FindingsView {
     toggleRule: value => {
       update({ rule: toggle(query.value.rule, value) });
     },
-    move: step => {
-      const last = rows.value.length - 1;
-      selected.value = Math.min(Math.max(selected.value + step, 0), last);
-    },
     openSelected: async () => {
-      const finding = selected.value < 0 ? undefined : rows.value.at(selected.value);
+      const finding = selection.current();
       if (finding !== undefined) {
         await open(finding.absFile, finding.line, finding.column);
       }

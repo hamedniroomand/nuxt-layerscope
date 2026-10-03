@@ -51,6 +51,22 @@
         </span>
       </a>
       <span v-if="suppressed > 0">{{ suppressed }} in baseline</span>
+      <a
+        v-if="report.newCount > 0"
+        href="#/findings?new=1"
+        @click.prevent="nav.open('findings', { onlyNew: true })"
+      >
+        <span>
+          <span class="new">NEW</span>
+          {{ report.newCount }} since opened
+        </span>
+        <span
+          class="muted"
+          aria-hidden="true"
+        >
+          →
+        </span>
+      </a>
       <p class="muted">
         {{ plural(report.summary.files, 'file') }} · {{ plural(report.layers.length, 'layer') }}
         <br />
@@ -145,6 +161,15 @@
 
   .counts a:hover {
     color: var(--accent);
+  }
+
+  .new {
+    padding: 0 4px;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    color: var(--accent);
+    font-size: 10px;
+    letter-spacing: 0.04em;
   }
 
   .counts p {

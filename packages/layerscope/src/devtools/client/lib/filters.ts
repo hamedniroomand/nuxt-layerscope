@@ -41,6 +41,7 @@ export function filterFindings(findings: TabFinding[], query: FindingsQuery): Ta
       matchesAny(query.rule, finding.rule) &&
       (query.pair === null || pairOf(finding) === query.pair) &&
       (query.file === null || finding.file === query.file) &&
+      (!query.onlyNew || finding.isNew) &&
       matchesText(finding, query.q.trim()),
   );
 }
@@ -107,4 +108,19 @@ export function countBy(
 /** Adds or removes one value of a multi-select filter. */
 export function toggle(values: string[], value: string): string[] {
   return values.includes(value) ? values.filter(item => item !== value) : [...values, value];
+}
+
+/**
+ * A stable id per row: the finding key plus its occurrence among findings with that key. When a
+ * finding is fixed, the other rows keep their ids, so nothing moves under the pointer.
+ */
+export function rowIds(findings: TabFinding[]): Map<TabFinding, string> {
+  const seen = new Map<string, number>();
+  const ids = new Map<TabFinding, string>();
+  for (const finding of findings) {
+    const index = seen.get(finding.key) ?? 0;
+    seen.set(finding.key, index + 1);
+    ids.set(finding, `${finding.key}#${index}`);
+  }
+  return ids;
 }

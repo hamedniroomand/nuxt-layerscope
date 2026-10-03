@@ -15,7 +15,8 @@ import { reportResponse, sampleFindings } from '#test/client/fixtures.ts';
 
 describe('router', () => {
   it('parses and formats the findings query', () => {
-    const hash = '#/findings?sev=error&rule=layer-boundary&pair=admin%3Ashop&q=cart&group=file';
+    const hash =
+      '#/findings?sev=error&rule=layer-boundary&pair=admin%3Ashop&q=cart&group=file&new=1';
     const route = parseHash(hash);
     expect(route).toEqual({
       view: 'findings',
@@ -26,6 +27,7 @@ describe('router', () => {
         file: null,
         q: 'cart',
         group: 'file',
+        onlyNew: true,
       },
     });
     expect(parseHash(formatHash(route))).toEqual(route);
@@ -158,13 +160,48 @@ describe('api and store', () => {
     expect(store.state.unreachable).toBe(true);
   });
 
-  it('re-runs with POST and stores the revision etag', async () => {
+  it('re-runs with POST and asks for the whole report next time', async () => {
     const request = vi.fn<typeof fetch>().mockResolvedValue(response(200, reportResponse({}, 3)));
     const store = createStore(createApi(config, request));
     await store.rerun();
     expect(request).toHaveBeenCalledWith('/__layerscope/api/rerun', { method: 'POST' });
-    expect(store.state.etag).toBe('"a-3"');
+    expect(store.state.data?.rev).toBe(3);
+    expect(store.state.etag).toBeNull();
     expect(store.state.running).toBe(false);
+  });
+});
+
+describe('store and live mode', () => {
+  const config = { base: '/__layerscope', openInEditor: '/_nuxt/__open-in-editor' };
+
+  it('takes the timing from a live event and fetches only a changed report', async () => {
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(200, reportResponse(), '"a-0-0-0"'))
+      .mockResolvedValueOnce(response(200, reportResponse({}, 1), '"a-1-0-0"'));
+    const store = createStore(createApi(config, request));
+    await store.load();
+    const event = { id: 'a', rev: 0, marker: 0, analyzedAt: 99, durationMs: 4 };
+    await store.applyEvent(event);
+    expect(request).toHaveBeenCalledOnce();
+    expect(store.state.data).toMatchObject({ analyzedAt: 99, durationMs: 4 });
+    await store.applyEvent({ ...event, rev: 1 });
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(store.state.data?.rev).toBe(1);
+  });
+
+  it('steers live mode and reads the state', async () => {
+    const live = { clients: 1, paused: true };
+    const request = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(response(200, { live }))
+      .mockResolvedValueOnce(response(200, { live }));
+    const api = createApi(config, request);
+    expect(await api.live('pause')).toEqual({ live });
+    expect(request).toHaveBeenLastCalledWith('/__layerscope/api/live/pause', { method: 'POST' });
+    await api.state();
+    expect(request.mock.lastCall?.[0]).toBe('/__layerscope/api/state');
+    expect(api.events).toBe('/__layerscope/events');
   });
 
   it('reports a failed re-run and opens files in the editor', async () => {

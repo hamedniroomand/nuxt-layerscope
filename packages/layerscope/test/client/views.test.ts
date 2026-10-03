@@ -1,61 +1,12 @@
 // @vitest-environment happy-dom
 import type { VueWrapper } from '@vue/test-utils';
-import { flushPromises, mount } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
+import { flushPromises } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 
-import App from '#src/devtools/client/App.vue';
-import type { Api } from '#src/devtools/client/lib/api.ts';
 import { ApiError } from '#src/devtools/client/lib/api.ts';
-import { createTabContext } from '#src/devtools/client/lib/app.ts';
-import { TAB_CONTEXT } from '#src/devtools/client/lib/context.ts';
 import { createNavigation } from '#src/devtools/client/lib/navigation.ts';
-import type { ReportResponse } from '#src/devtools/protocol.ts';
 import { THEME_SCRIPT } from '#src/devtools/shell.ts';
-import { reportResponse, sampleFindings } from '#test/client/fixtures.ts';
-
-interface Mounted {
-  wrapper: VueWrapper;
-  api: Api;
-}
-
-function fakeApi(data: ReportResponse | Error): Api {
-  const report = vi.fn<Api['report']>();
-  if (data instanceof Error) {
-    report.mockRejectedValue(data);
-  } else {
-    report.mockResolvedValue({ data, etag: '"a-0"' });
-  }
-  return {
-    report,
-    rerun: vi.fn<Api['rerun']>().mockResolvedValue(data instanceof Error ? reportResponse() : data),
-    openInEditor: vi.fn<Api['openInEditor']>().mockResolvedValue(),
-  };
-}
-
-async function mountApp(data: ReportResponse | Error = reportResponse()): Promise<Mounted> {
-  const api = fakeApi(data);
-  const wrapper = mount(App, {
-    attachTo: document.body,
-    global: { provide: { [TAB_CONTEXT as symbol]: createTabContext(window, api) } },
-  });
-  await flushPromises();
-  return { wrapper, api };
-}
-
-function press(key: string): void {
-  globalThis.dispatchEvent(new KeyboardEvent('keydown', { key }));
-}
-
-function withFindings(): ReportResponse {
-  const findings = sampleFindings();
-  return reportResponse({
-    findings,
-    summary: { files: 3, errors: 2, warnings: 1 },
-    hotFiles: [
-      { file: 'pages/index.vue', absFile: '/app/pages/index.vue', errors: 1, warnings: 0 },
-    ],
-  });
-}
+import { mountApp, press, withFindings } from '#test/client/mount.ts';
 
 let mounted: VueWrapper | undefined;
 

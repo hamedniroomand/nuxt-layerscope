@@ -22,6 +22,8 @@ export interface FindingsQuery {
   file: string | null;
   q: string;
   group: GroupBy;
+  /** Only findings new since the marker. */
+  onlyNew: boolean;
 }
 
 export interface Route {
@@ -30,7 +32,7 @@ export interface Route {
 }
 
 export function emptyQuery(): FindingsQuery {
-  return { sev: [], rule: [], pair: null, file: null, q: '', group: 'rule' };
+  return { sev: [], rule: [], pair: null, file: null, q: '', group: 'rule', onlyNew: false };
 }
 
 function isView(value: string): value is View {
@@ -59,6 +61,7 @@ export function parseHash(hash: string): Route {
       file: params.get('file'),
       q: params.get('q') ?? '',
       group: isGroup(group) ? group : 'rule',
+      onlyNew: params.get('new') === '1',
     },
   };
 }
@@ -74,6 +77,7 @@ export function formatHash(route: Route): string {
     ['file', query.file ?? ''],
     ['q', query.q],
     ['group', query.group === 'rule' ? '' : query.group],
+    ['new', query.onlyNew ? '1' : ''],
   ];
   for (const [name, value] of pairs) {
     if (value !== '') {

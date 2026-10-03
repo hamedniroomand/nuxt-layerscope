@@ -1,5 +1,6 @@
 import { reactive } from 'vue';
 
+import type { LiveEvent } from '#src/devtools/live.ts';
 import type { ReportResponse } from '#src/devtools/protocol.ts';
 
 import type { Api } from './api.ts';
@@ -16,10 +17,14 @@ export interface StoreState {
   running: boolean;
 }
 
+type EventMeta = Pick<LiveEvent, 'id' | 'rev' | 'marker' | 'analyzedAt' | 'durationMs'>;
+
 export interface Store {
   state: StoreState;
   load: () => Promise<void>;
   rerun: () => Promise<void>;
+  /** Takes the timing from a live event; fetches the report only when it changed. */
+  applyEvent: (event: EventMeta) => Promise<void>;
 }
 
 function fail(state: StoreState, error: unknown): void {
@@ -28,6 +33,41 @@ function fail(state: StoreState, error: unknown): void {
     state.unreachable = false;
   } else {
     state.unreachable = true;
+  }
+}
+
+function succeed(state: StoreState): void {
+  state.error = null;
+  state.unreachable = false;
+}
+
+async function load(api: Api, state: StoreState): Promise<void> {
+  state.loading = true;
+  try {
+    const next = await api.report(state.data === null ? null : state.etag);
+    if (next !== null) {
+      state.data = next.data;
+      state.etag = next.etag;
+    }
+    succeed(state);
+  } catch (error) {
+    fail(state, error);
+  } finally {
+    state.loading = false;
+  }
+}
+
+async function rerun(api: Api, state: StoreState): Promise<void> {
+  state.running = true;
+  try {
+    state.data = await api.rerun();
+    // The next load asks for the whole report once; it then has a current ETag.
+    state.etag = null;
+    succeed(state);
+  } catch (error) {
+    fail(state, error);
+  } finally {
+    state.running = false;
   }
 }
 
@@ -41,36 +81,28 @@ export function createStore(api: Api): Store {
     loading: false,
     running: false,
   });
-  const load = async (): Promise<void> => {
-    state.loading = true;
-    try {
-      const next = await api.report(state.data === null ? null : state.etag);
-      if (next !== null) {
-        state.data = next.data;
-        state.etag = next.etag;
+  return {
+    state,
+    load: async () => {
+      await load(api, state);
+    },
+    rerun: async () => {
+      await rerun(api, state);
+    },
+    applyEvent: async event => {
+      const { data } = state;
+      const same =
+        data !== null &&
+        data.id === event.id &&
+        data.rev === event.rev &&
+        data.marker === event.marker;
+      if (!same) {
+        await load(api, state);
+        return;
       }
-      state.error = null;
-      state.unreachable = false;
-    } catch (error) {
-      fail(state, error);
-    } finally {
-      state.loading = false;
-    }
+      // Same revision and marker: only the time of the run moved, so no request is needed.
+      data.analyzedAt = event.analyzedAt;
+      data.durationMs = event.durationMs;
+    },
   };
-  const rerun = async (): Promise<void> => {
-    state.running = true;
-    try {
-      const data = await api.rerun();
-      state.data = data;
-      // The same value `/api/report` sends as its ETag.
-      state.etag = `"${data.id}-${data.rev}"`;
-      state.error = null;
-      state.unreachable = false;
-    } catch (error) {
-      fail(state, error);
-    } finally {
-      state.running = false;
-    }
-  };
-  return { state, load, rerun };
 }

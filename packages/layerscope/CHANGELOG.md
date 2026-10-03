@@ -5,7 +5,14 @@
 - The DevTools tab is a prebuilt Vue client with Overview, Findings and Layers views. Its theme
   follows Nuxt DevTools, and it follows the OS theme when you open `/__layerscope` directly.
   Findings filter by severity, rule, layer pair, file and text, with the filters kept in the URL
-  hash. Keyboard: `1` to `3`, `/`, `r`, `j`, `k`, `o` and `Esc`.
+  hash. Keyboard: `1` to `3`, `/`, `r`, `j`, `k`, `o`, `n`, `p` and `Esc`.
+- The DevTools tab updates while you code. An open tab re-runs the analysis 200 ms after a change
+  and says what changed ("+2 violations, -1 fixed"). Findings that are new since the tab opened
+  get a `NEW` chip, a "New only" filter and the `n` key. `p` pauses live updates. With no tab
+  open, a change does no work. Events come from `/__layerscope/events`; when the stream fails,
+  the tab polls `/api/state`.
+- Large projects re-run much faster in the tab: suggestions are indexed, the analysis yields to
+  the event loop between batches, and the loaded symbols are kept until the registry changes.
 - `/__layerscope/api/report` adds absolute paths (`absRoot`, `absFile`, `absTarget`), `hotFiles`
   and per-layer `layerStats`.
 - The server-rendered DevTools page is removed. `/__layerscope?format=json` still returns the

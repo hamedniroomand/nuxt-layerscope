@@ -41,9 +41,9 @@ export function reportResponse(overrides: Partial<TabReport> = {}, rev = 0): Rep
   return { id: 'a', rev, marker: 0, analyzedAt: 0, durationMs: 12, report: tabReport(overrides) };
 }
 
-/** Two boundary errors in two files and one warning, in report order. */
-export function sampleFindings(): TabFinding[] {
-  return [
+/** Two boundary errors in two files and one warning, in report order; `fresh` marks one new. */
+export function sampleFindings(fresh = -1): TabFinding[] {
+  const findings = [
     tabFinding({ symbol: 'useCart', message: 'useCart is not allowed' }),
     tabFinding({
       file: 'layers/admin/pages/orders.vue',
@@ -60,4 +60,8 @@ export function sampleFindings(): TabFinding[] {
       message: 'Button is shadowed',
     }),
   ];
+  for (const [index, finding] of findings.entries()) {
+    finding.isNew = index === fresh;
+  }
+  return findings;
 }

@@ -20,6 +20,12 @@
     <div class="line">
       <SeverityGlyph :severity="finding.severity" />
       <span
+        v-if="finding.isNew"
+        class="new"
+      >
+        NEW
+      </span>
+      <span
         v-if="finding.toLayer && finding.toLayer !== finding.fromLayer"
         class="pair"
       >
@@ -102,6 +108,16 @@
 
   .rule {
     margin-left: auto;
+  }
+
+  .new {
+    padding: 0 4px;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    color: var(--accent);
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    line-height: 14px;
   }
 
   .actions {

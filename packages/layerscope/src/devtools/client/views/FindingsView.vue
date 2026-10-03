@@ -20,6 +20,14 @@
     context.shortcuts.register({ key: 'j', label: 'Next finding', run: () => reveal(1) }),
     context.shortcuts.register({ key: 'k', label: 'Previous finding', run: () => reveal(-1) }),
     context.shortcuts.register({ key: 'o', label: 'Open in editor', run: view.openSelected }),
+    context.shortcuts.register({
+      key: 'n',
+      label: 'Next new finding',
+      run: async () => {
+        view.nextNew();
+        await reveal(0);
+      },
+    }),
   ];
   onBeforeUnmount(() => {
     for (const remove of removers) {
@@ -64,6 +72,14 @@
             <option value="none">none</option>
           </select>
         </label>
+        <label>
+          <input
+            type="checkbox"
+            :checked="view.query.value.onlyNew"
+            @change="view.update({ onlyNew: ($event.target as HTMLInputElement).checked })"
+          />
+          New only
+        </label>
       </div>
     </div>
     <p
@@ -100,10 +116,10 @@
         >
           <FindingRow
             v-for="finding in group.findings"
-            :key="`${finding.absFile}:${finding.line}:${finding.column}:${finding.rule}:${finding.symbol}`"
+            :key="view.idOf(finding)"
             :finding="finding"
-            :selected="view.rows.value[view.selected.value] === finding"
-            @select="view.selected.value = view.rows.value.indexOf(finding)"
+            :selected="view.selected.value === view.idOf(finding)"
+            @select="view.select(finding)"
             @open="view.open"
           />
         </ul>
