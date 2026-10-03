@@ -46,7 +46,7 @@
     >
       <span class="muted">
         {{ plural(data.report.summary.files, 'file') }} ·
-        {{ plural(data.report.layers.length, 'layer') }} ·
+        {{ plural(data.report.layers.length, 'layer') }}
       </span>
       <a
         href="#/findings?sev=error"
@@ -70,7 +70,7 @@
         class="muted"
         @click.prevent="nav.open('baseline')"
       >
-        · {{ suppressed }} in baseline
+        {{ suppressed }} in baseline
       </a>
     </span>
     <span class="spacer" />

@@ -179,7 +179,6 @@
             >
               Ignore all {{ group.findings.length }}
             </button>
-            <span class="num muted">{{ group.findings.length }}</span>
           </span>
         </h3>
         <ul
@@ -193,6 +192,7 @@
             :selected="view.selected.value === view.idOf(finding)"
             :picked="ignore.multi.has(view.idOf(finding))"
             :picking="ignore.multi.count.value > 0"
+            :show-rule="view.query.value.group !== 'rule'"
             :tab-stop="
               view.selected.value === null
                 ? view.rows.value[0] === finding

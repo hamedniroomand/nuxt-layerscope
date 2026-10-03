@@ -81,26 +81,30 @@
           v-for="finding in baseline.data.value.suppressed"
           :key="`${finding.key}:${finding.line}:${finding.column}`"
         >
-          <SeverityGlyph :severity="finding.severity" />
-          <span>{{ finding.message }}</span>
-          <a
-            class="mono"
-            href="#"
-            @click.prevent="api.openInEditor(finding.absFile, finding.line, finding.column)"
-          >
-            {{ location(finding.file, finding.line, finding.column) }}
-          </a>
-          <button
-            type="button"
-            @click="
-              pending = {
-                keys: [finding.key],
-                message: `Remove ${finding.symbol} in ${finding.file} from the baseline? It shows as a finding again.`,
-              }
-            "
-          >
-            Remove from baseline
-          </button>
+          <span class="what">
+            <SeverityGlyph :severity="finding.severity" />
+            <span class="message">{{ finding.message }}</span>
+          </span>
+          <span class="where">
+            <a
+              class="mono"
+              href="#"
+              @click.prevent="api.openInEditor(finding.absFile, finding.line, finding.column)"
+            >
+              {{ location(finding.file, finding.line, finding.column) }}
+            </a>
+            <button
+              type="button"
+              @click="
+                pending = {
+                  keys: [finding.key],
+                  message: `Remove ${finding.symbol} in ${finding.file} from the baseline? It shows as a finding again.`,
+                }
+              "
+            >
+              Remove from baseline
+            </button>
+          </span>
         </li>
       </ul>
       <h3 class="group">
@@ -118,26 +122,30 @@
           v-for="entry in baseline.data.value.removable"
           :key="`${entry.rule}:${entry.file}:${entry.symbol}:${entry.toLayer}`"
         >
-          <span>{{ entry.rule }}</span>
-          <span class="mono">{{ entry.file }}</span>
-          <span>{{ entry.symbol }}</span>
-          <span
-            v-if="(entry.count ?? 1) > 1"
-            class="num"
-          >
-            ×{{ entry.count }}
+          <span class="what">
+            <span>{{ entry.rule }}</span>
+            <span class="mono">{{ entry.file }}</span>
+            <span>{{ entry.symbol }}</span>
+            <span
+              v-if="(entry.count ?? 1) > 1"
+              class="num"
+            >
+              ×{{ entry.count }}
+            </span>
           </span>
-          <button
-            type="button"
-            @click="
-              pending = {
-                keys: [entryKey(entry)],
-                message: `Remove the stale entry for ${entry.symbol} in ${entry.file}?`,
-              }
-            "
-          >
-            Remove
-          </button>
+          <span class="where">
+            <button
+              type="button"
+              @click="
+                pending = {
+                  keys: [entryKey(entry)],
+                  message: `Remove the stale entry for ${entry.symbol} in ${entry.file}?`,
+                }
+              "
+            >
+              Remove
+            </button>
+          </span>
         </li>
       </ul>
     </template>
@@ -178,16 +186,40 @@
     list-style: none;
   }
 
+  /* The text wraps in the first column; the location and the button stay on one line. */
   .rows li {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
     gap: 8px;
-    min-height: var(--row);
+    padding: 3px 0;
+  }
+
+  .what,
+  .where {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-height: calc(var(--row) - 6px);
+  }
+
+  /* The button padding and border (3px) move its text down; the text on the left moves with it. */
+  .what {
+    flex-wrap: wrap;
+    padding-top: 3px;
+  }
+
+  /* A zero basis keeps a long message on the glyph's line; it wraps inside its own box. */
+  .message {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .where {
+    white-space: nowrap;
   }
 
   .rows a {
-    margin-left: auto;
     text-decoration: none;
   }
 </style>

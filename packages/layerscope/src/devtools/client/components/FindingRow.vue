@@ -12,6 +12,8 @@
     picking: boolean;
     /** The one row in the list that Tab reaches: the selected one, or the first. */
     tabStop: boolean;
+    /** False when the group header already names the rule. */
+    showRule: boolean;
   }>();
   defineEmits<{
     select: [];
@@ -71,7 +73,12 @@
       >
         → {{ finding.target }}
       </span>
-      <span class="rule">{{ finding.rule }}</span>
+      <span
+        v-if="showRule"
+        class="rule"
+      >
+        {{ finding.rule }}
+      </span>
     </div>
     <HintLine
       v-if="selected"

@@ -2,7 +2,6 @@
   import { computed, shallowRef, watch } from 'vue';
 
   import CopyButton from '#src/devtools/client/components/CopyButton.vue';
-  import SeverityGlyph from '#src/devtools/client/components/SeverityGlyph.vue';
   import SymbolSearch from '#src/devtools/client/components/SymbolSearch.vue';
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import { useViewData } from '#src/devtools/client/lib/view-data.ts';
@@ -87,13 +86,7 @@
         :key="group.layer"
       >
         <h3 class="group">
-          <span>
-            <SeverityGlyph
-              v-if="group.status === 'not-allowed'"
-              severity="error"
-            />
-            {{ group.layer }} ({{ STATUS_LABELS[group.status] }})
-          </span>
+          <span>{{ group.layer }} ({{ STATUS_LABELS[group.status] }})</span>
           <span class="num muted">{{ group.uses.length }}</span>
         </h3>
         <ul class="uses">
