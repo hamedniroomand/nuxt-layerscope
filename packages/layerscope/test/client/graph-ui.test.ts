@@ -70,6 +70,31 @@ describe('graph view', () => {
   });
 });
 
+describe('graph edge panel', () => {
+  it('shows the kind of each symbol, so two rows with the same label differ', async () => {
+    const { wrapper, api } = await mountGraph();
+    const both = makeResult({
+      ...result(),
+      edges: [
+        makeEdge(),
+        makeEdge({ symbol: '#layers/shop/composables/useCart', kind: 'import', line: 4 }),
+      ],
+    });
+    vi.mocked(api.edge).mockResolvedValue(edgeView(both, 'web', 'shop'));
+    await wrapper.get('.edge').trigger('click');
+    await flushPromises();
+    const rows = wrapper.findAll('.panel .symbol summary').map(summary => ({
+      label: summary.get('[title]').text(),
+      title: summary.get('[title]').attributes('title'),
+      kind: summary.get('.chip').text(),
+    }));
+    expect(rows).toEqual([
+      { label: 'useCart', title: '#layers/shop/composables/useCart', kind: 'import' },
+      { label: 'useCart', title: 'useCart', kind: 'auto-import' },
+    ]);
+  });
+});
+
 describe('graph view filters and table', () => {
   it('hides edges without violations on request', async () => {
     const { wrapper } = await mountGraph();

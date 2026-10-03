@@ -172,7 +172,10 @@
           class="symbol"
         >
           <summary>
-            <span :title="symbol.symbol">{{ symbolLabel(symbol.symbol) }}</span>
+            <span class="name">
+              <span :title="symbol.symbol">{{ symbolLabel(symbol.symbol) }}</span>
+              <span class="chip">{{ symbol.kind }}</span>
+            </span>
             <span class="num muted">{{ symbol.count }}</span>
           </summary>
           <ul class="list">
@@ -280,6 +283,16 @@
     display: flex;
     justify-content: space-between;
     cursor: pointer;
+  }
+
+  /* The kind tells apart two references with the same label, such as an auto-import and an import. */
+  .chip {
+    margin-left: 6px;
+    padding: 0 6px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    color: var(--fg-muted);
+    font-size: 11px;
   }
 
   @media (max-width: 900px) {
