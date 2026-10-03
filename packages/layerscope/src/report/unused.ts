@@ -41,11 +41,22 @@ function formatUnusedText(unused: UnusedSymbol[], cwd: string): string {
   return `${[...sections, footer].join('\n\n')}\n`;
 }
 
+export interface UnusedRow extends UnusedSymbol {
+  /** Set with `absolute`, for opening the file in an editor. */
+  absFile?: string;
+}
+
+/** `unused --format json` rows; with `absolute`, each row also carries the absolute path. */
+export function toUnusedRows(unused: UnusedSymbol[], cwd: string, absolute = false): UnusedRow[] {
+  return unused.map(symbol => ({
+    ...symbol,
+    file: relative(cwd, symbol.file),
+    ...(absolute && { absFile: symbol.file }),
+  }));
+}
+
 function formatUnusedJson(unused: UnusedSymbol[], cwd: string): string {
-  const report = {
-    version: JSON_REPORT_VERSION,
-    unused: unused.map(symbol => ({ ...symbol, file: relative(cwd, symbol.file) })),
-  };
+  const report = { version: JSON_REPORT_VERSION, unused: toUnusedRows(unused, cwd) };
   return `${JSON.stringify(report, null, 2)}\n`;
 }
 

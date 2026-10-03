@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 
-import { formatWhy, isWhyFormat } from '#src/report/why.ts';
+import { formatWhy, isWhyFormat, STATUS_LABELS, toWhyReport } from '#src/report/why.ts';
 import type { SymbolTarget } from '#src/why/index.ts';
 import { makeEdge } from '#test/factories.ts';
 
@@ -61,5 +61,24 @@ describe('isWhyFormat', () => {
   it('accepts text and json only', () => {
     expect(isWhyFormat('text')).toBe(true);
     expect(isWhyFormat('github')).toBe(false);
+  });
+});
+
+describe('toWhyReport', () => {
+  it('matches the json format and adds absolute paths on request', () => {
+    expect(`${JSON.stringify(toWhyReport('useCart', targets, CWD), null, 2)}\n`).toBe(
+      formatWhy('useCart', targets, 'json', CWD),
+    );
+    const report = toWhyReport('useCart', targets, CWD, true);
+    expect(report.targets[0]).toMatchObject({
+      file: 'layers/shop/composables/useCart.ts',
+      absFile: '/app/layers/shop/composables/useCart.ts',
+    });
+    expect(report.targets[0]?.uses[0]).toMatchObject({
+      file: 'pages/index.vue',
+      absFile: '/app/pages/index.vue',
+    });
+    expect(report.targets[1]?.absFile).toBeNull();
+    expect(STATUS_LABELS['not-allowed']).toBe('✖ not allowed');
   });
 });

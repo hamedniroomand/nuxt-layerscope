@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 
-import { formatUnused, isUnusedFormat } from '#src/report/unused.ts';
+import { formatUnused, isUnusedFormat, toUnusedRows } from '#src/report/unused.ts';
 import type { UnusedSymbol } from '#src/unused/index.ts';
 
 const CWD = '/app';
@@ -57,5 +57,18 @@ describe('isUnusedFormat', () => {
   it('accepts text and json only', () => {
     expect(isUnusedFormat('json')).toBe(true);
     expect(isUnusedFormat('github')).toBe(false);
+  });
+});
+
+describe('toUnusedRows', () => {
+  it('makes paths relative and adds absolute paths on request', () => {
+    expect(toUnusedRows(unused, CWD)[0]).toEqual({
+      ...unused[0],
+      file: 'layers/ui/app/components/BaseCard.vue',
+    });
+    expect(toUnusedRows(unused, CWD, true)[1]).toMatchObject({
+      file: 'layers/ui/server/utils/useThing.ts',
+      absFile: '/app/layers/ui/server/utils/useThing.ts',
+    });
   });
 });
