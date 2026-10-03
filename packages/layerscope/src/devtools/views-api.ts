@@ -102,9 +102,14 @@ export const VIEW_PATHS = [
 
 export type ViewQuery = Partial<Record<'symbol' | 'from' | 'to' | 'layer' | 'offset', string>>;
 
-function graphBody(path: string, result: AnalyzeResult, query: ViewQuery): object | null {
+async function graphBody(
+  path: string,
+  result: AnalyzeResult,
+  query: ViewQuery,
+): Promise<object | null> {
   if (path === '/api/graph') {
-    return graphView(result);
+    const graph = await graphView(result);
+    return graph;
   }
   const known = new Set(result.layers.map(layer => layer.name));
   if (path === '/api/edge') {
@@ -135,5 +140,9 @@ export async function viewBody(
     const unused = await unusedView(result);
     return unused;
   }
-  return path === '/api/baseline' ? baselineView(result) : graphBody(path, result, query);
+  if (path === '/api/baseline') {
+    return baselineView(result);
+  }
+  const body = await graphBody(path, result, query);
+  return body;
 }

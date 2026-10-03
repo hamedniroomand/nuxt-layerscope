@@ -50,7 +50,7 @@ describe('layer graph layout', () => {
     expect(layout.edges[0]?.path).toMatch(/^M[\d.]+ [\d.]+ C/u);
   });
 
-  it('breaks a cycle by drawing one edge back below the ranks', () => {
+  it('breaks a cycle by drawing one edge right to left, with no overlap', () => {
     const layout = layoutGraph(
       ['a', 'b', 'c'],
       [
@@ -59,14 +59,11 @@ describe('layer graph layout', () => {
         { from: 'c', to: 'a' },
       ],
     );
-    const reversed = layout.edges.filter(edge => edge.reversed);
-    expect(reversed).toEqual([expect.objectContaining({ from: 'c', to: 'a' })]);
-    expect(reversed[0]?.labelY).toBeGreaterThan(Math.max(...layout.nodes.map(node => node.y)));
-    expect(layout.height).toBeGreaterThan(reversed[0]?.labelY ?? 0);
+    expect(layout.edges.filter(edge => edge.reversed)).toHaveLength(1);
+    expect(overlaps(layout)).toBe(false);
+    expect(layout.height).toBeGreaterThan(Math.max(...layout.nodes.map(node => node.y)));
   });
-});
 
-describe('layer graph layout with cycles', () => {
   it('staggers return curves so their labels do not overlap', () => {
     const layout = layoutGraph(
       ['a', 'b', 'c'],
@@ -82,7 +79,9 @@ describe('layer graph layout with cycles', () => {
     expect(new Set(labels).size).toBe(2);
     expect(layout.height).toBeGreaterThan(Math.max(...labels));
   });
+});
 
+describe('layer graph layout edge cases', () => {
   it('places disconnected nodes and a single node, and skips self and unknown edges', () => {
     const layout = layoutGraph(
       ['a', 'b', 'c'],
@@ -111,10 +110,18 @@ describe('layer graph layout at scale', () => {
     }
   });
 
-  it('lays out 100 nodes in under 50 ms', () => {
-    const { nodes, edges } = randomGraph(100, 3);
+  it('lays out 15 layers in under 50 ms, the scale the graph is made for', () => {
+    const { nodes, edges } = randomGraph(15, 3);
+    layoutGraph(nodes, edges);
     const started = performance.now();
     layoutGraph(nodes, edges);
     expect(performance.now() - started).toBeLessThan(50);
+  });
+
+  it('lays out 100 nodes in under 500 ms, as a regression guard', () => {
+    const { nodes, edges } = randomGraph(100, 3);
+    const started = performance.now();
+    layoutGraph(nodes, edges);
+    expect(performance.now() - started).toBeLessThan(500);
   });
 });

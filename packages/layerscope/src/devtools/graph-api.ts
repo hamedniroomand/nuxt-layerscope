@@ -1,7 +1,6 @@
 import { relative } from 'pathe';
 
 import { buildGraph } from '#src/graph/index.ts';
-import { layoutGraph } from '#src/graph/layout.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import { edgeStatus } from '#src/rules/edge-status.ts';
 import type { AnalyzeResult, Edge, Finding } from '#src/types.ts';
@@ -33,8 +32,9 @@ function violationsByPair(findings: Finding[]): Map<string, { count: number; err
   return pairs;
 }
 
-/** The layer graph with counts, the matrix built from the same edges, and the layout. */
-export function graphView(result: AnalyzeResult): GraphView {
+async function buildView(result: AnalyzeResult): Promise<GraphView> {
+  // dagre loads on the first graph request, so it stays out of Nuxt's startup.
+  const { layoutGraph } = await import('#src/graph/layout.ts');
   const graph = buildGraph(result, result.config, 'layer');
   const pairs = violationsByPair(result.findings);
   const edges = graph.edges.map(({ from, to, count, status }) => {
@@ -67,6 +67,17 @@ export function graphView(result: AnalyzeResult): GraphView {
     matrix: { layers, cells },
     layout: layoutGraph(layers, edges),
   };
+}
+
+/** One payload per analysis result: the layout costs a few ms per layer, so it runs once. */
+const views = new WeakMap<AnalyzeResult, Promise<GraphView>>();
+
+/** The layer graph with counts, the matrix built from the same edges, and the layout. */
+export async function graphView(result: AnalyzeResult): Promise<GraphView> {
+  const cached = views.get(result) ?? buildView(result);
+  views.set(result, cached);
+  const view = await cached;
+  return view;
 }
 
 /** The name an edge is known by: `#imports:useCart` is `useCart`. */

@@ -59,6 +59,7 @@
     "tarball": "vp run build && vp pm pack --pack-destination ../../.release"
   },
   "dependencies": {
+    "@dagrejs/dagre": "^3.1.1",
     "@nuxt/kit": "^4.5.2",
     "@nuxt/schema": "^4.5.2",
     "@vue/compiler-sfc": "^3.5.43",

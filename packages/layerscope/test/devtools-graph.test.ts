@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vite-plus/test';
 import { analyze } from '#src/analyze/index.ts';
 import { edgeView, graphView, nodeView } from '#src/devtools/graph-api.ts';
 import { buildGraph } from '#src/graph/index.ts';
+import { NODE_HEIGHT, NODE_WIDTH } from '#src/graph/layout-size.ts';
 import { makeEdge, makeFinding, makeResult } from '#test/factories.ts';
 import { MATRIX_ROOT, NUXT4_ROOT } from '#test/fixtures.ts';
 
@@ -22,8 +23,8 @@ function result(): ReturnType<typeof makeResult> {
 }
 
 describe('graph payload', () => {
-  it('adds violations, severity and stats, and builds the matrix from the same edges', () => {
-    const view = graphView(result());
+  it('adds violations, severity and stats, and builds the matrix from the same edges', async () => {
+    const view = await graphView(result());
     expect(view.edges).toEqual([
       {
         from: 'web',
@@ -108,9 +109,14 @@ describe('graph payload on fixtures', () => {
     const nuxt4 = await analyze({ rootDir: NUXT4_ROOT });
     const cli = buildGraph(nuxt4, nuxt4.config, 'layer');
     expect(
-      graphView(nuxt4).edges.map(({ from, to, count, status }) => ({ from, to, count, status })),
+      (await graphView(nuxt4)).edges.map(({ from, to, count, status }) => ({
+        from,
+        to,
+        count,
+        status,
+      })),
     ).toEqual(cli.edges);
-    const matrix = graphView(await analyze({ rootDir: MATRIX_ROOT }));
+    const matrix = await graphView(await analyze({ rootDir: MATRIX_ROOT }));
     // Package and git layers live under node_modules, at a path that differs between machines.
     for (const node of matrix.nodes) {
       node.root = node.root.includes('node_modules') ? '<installed>' : node.root;
@@ -118,5 +124,48 @@ describe('graph payload on fixtures', () => {
     await expect(`${JSON.stringify(matrix, null, 2)}\n`).toMatchFileSnapshot(
       'snapshots/graph/matrix-devtools.json',
     );
+  }, 60_000);
+});
+
+/** Points along an SVG path made of `M x y` and `C …` segments, 20 per segment. */
+function samples(path: string): { x: number; y: number }[] {
+  const numbers = (path.match(/-?[\d.]+/gu) ?? []).map(Number);
+  const points: { x: number; y: number }[] = [];
+  let [x0 = 0, y0 = 0] = numbers;
+  for (let index = 2; index + 5 < numbers.length + 1; index += 6) {
+    const [x1 = 0, y1 = 0, x2 = 0, y2 = 0, x3 = 0, y3 = 0] = numbers.slice(index, index + 6);
+    for (let step = 0; step <= 20; step += 1) {
+      const t = step / 20;
+      const u = 1 - t;
+      points.push({
+        x: u ** 3 * x0 + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t ** 3 * x3,
+        y: u ** 3 * y0 + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t ** 3 * y3,
+      });
+    }
+    [x0, y0] = [x3, y3];
+  }
+  return points;
+}
+
+describe('graph layout on the nuxt4 fixture', () => {
+  it('routes no edge through a node it does not connect', async () => {
+    const { layout } = await graphView(await analyze({ rootDir: NUXT4_ROOT }));
+    const inset = 2;
+    for (const edge of layout.edges) {
+      const others = layout.nodes.filter(node => node.id !== edge.from && node.id !== edge.to);
+      const crossed = samples(edge.path).flatMap(point =>
+        others.filter(
+          node =>
+            point.x > node.x + inset &&
+            point.x < node.x + NODE_WIDTH - inset &&
+            point.y > node.y + inset &&
+            point.y < node.y + NODE_HEIGHT - inset,
+        ),
+      );
+      expect(
+        crossed.map(node => node.id),
+        `${edge.from} → ${edge.to}`,
+      ).toEqual([]);
+    }
   }, 60_000);
 });

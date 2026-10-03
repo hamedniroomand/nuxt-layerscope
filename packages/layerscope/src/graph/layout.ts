@@ -1,6 +1,12 @@
+import * as dagreModule from '@dagrejs/dagre';
+
+import { NODE_HEIGHT, NODE_WIDTH } from './layout-size.ts';
+
+export { NODE_HEIGHT, NODE_WIDTH } from './layout-size.ts';
+
 /**
- * Layered layout for the layer graph: deterministic, small, and meant for 2 to 15 layers.
- * Left to right reads "depends on": an edge from A to B puts A in an earlier column than B.
+ * Layered layout for the layer graph, by dagre: edges are routed around nodes and labels get room
+ * of their own. Left to right reads "depends on": an edge from A to B puts A before B.
  */
 
 export interface LayoutEdgeInput {
@@ -10,8 +16,9 @@ export interface LayoutEdgeInput {
 
 export interface LayoutNode {
   id: string;
+  /** Column, left to right. */
   rank: number;
-  /** Position inside the rank, top to bottom. */
+  /** Position inside the column, top to bottom. */
   order: number;
   x: number;
   y: number;
@@ -20,7 +27,7 @@ export interface LayoutNode {
 export interface LayoutEdge {
   from: string;
   to: string;
-  /** The edge closes a cycle; it is drawn back with a curve below the ranks. */
+  /** The edge runs right to left: it closes a cycle. */
   reversed: boolean;
   /** SVG path data. */
   path: string;
@@ -36,195 +43,143 @@ export interface Layout {
   height: number;
 }
 
-export const NODE_WIDTH = 120;
-export const NODE_HEIGHT = 40;
 const GAP_X = 80;
 const GAP_Y = 32;
 const MARGIN = 16;
-const RETURN_DEPTH = 28;
-/** Extra depth per reversed edge, so return curves and their labels do not overlap. */
-const RETURN_STEP = 12;
+/** Room dagre keeps free for an edge's count label. */
+const LABEL_WIDTH = 28;
+const LABEL_HEIGHT = 14;
 
-type Adjacency = Map<string, string[]>;
-
-function adjacency(nodes: string[], edges: LayoutEdgeInput[]): Adjacency {
-  const next: Adjacency = new Map(nodes.map(node => [node, []]));
-  for (const edge of edges) {
-    next.get(edge.from)?.push(edge.to);
-  }
-  return next;
+interface Point {
+  x: number;
+  y: number;
 }
 
-/** Edges that close a cycle, found by a depth-first search in node order. */
-function backEdges(nodes: string[], next: Adjacency): Set<string> {
-  const state = new Map<string, 'open' | 'done'>();
-  const back = new Set<string>();
-  const visit = (node: string): void => {
-    state.set(node, 'open');
-    for (const target of next.get(node) ?? []) {
-      const seen = state.get(target);
-      if (seen === 'open') {
-        back.add(`${node}\0${target}`);
-      } else if (seen === undefined) {
-        visit(target);
-      }
-    }
-    state.set(node, 'done');
-  };
-  for (const node of nodes) {
-    if (!state.has(node)) {
-      visit(node);
-    }
-  }
-  return back;
+/** The part of dagre the layout uses. */
+interface DagreGraph {
+  setGraph: (label: Record<string, number | string>) => void;
+  setDefaultEdgeLabel: (label: () => object) => void;
+  setNode: (id: string, label: { width: number; height: number }) => void;
+  setEdge: (from: string, to: string, label: Record<string, number | string>) => void;
+  node: (id: string) => Point;
+  edge: (from: string, to: string) => { points: Point[]; x: number; y: number };
+  graph: () => { width?: number; height?: number };
 }
 
-/** Longest path from a source over the edges that keep the graph acyclic. */
-function ranks(nodes: string[], forward: LayoutEdgeInput[]): Map<string, number> {
-  const rank = new Map(nodes.map(node => [node, 0]));
-  // A DAG settles after at most one pass per node; each pass only raises ranks.
-  for (let pass = 0; pass < nodes.length; pass += 1) {
-    let changed = false;
-    for (const { from, to } of forward) {
-      const wanted = (rank.get(from) ?? 0) + 1;
-      if ((rank.get(to) ?? 0) < wanted) {
-        rank.set(to, wanted);
-        changed = true;
-      }
-    }
-    if (!changed) {
-      break;
-    }
-  }
-  return rank;
+interface Dagre {
+  Graph: new () => DagreGraph;
+  layout: (graph: DagreGraph) => void;
 }
 
-function barycenter(node: string, neighbors: Adjacency, position: Map<string, number>): number {
-  const around = (neighbors.get(node) ?? []).map(other => position.get(other) ?? 0);
-  return around.length === 0
-    ? (position.get(node) ?? 0)
-    : around.reduce((a, b) => a + b, 0) / around.length;
+// dagre's own .d.ts files import each other without extensions, which `nodenext` cannot resolve.
+const dagre = dagreModule as unknown as Dagre;
+
+function round(value: number): number {
+  return Math.round(value * 10) / 10;
 }
 
-/** Rows within each rank, ordered by two barycenter sweeps to cut crossings. */
-function orderRanks(
-  nodes: string[],
-  rank: Map<string, number>,
-  forward: LayoutEdgeInput[],
-): string[][] {
-  const columns: string[][] = [];
-  for (const node of nodes) {
-    const index = rank.get(node) ?? 0;
-    columns[index] = [...(columns[index] ?? []), node];
+/** A smooth path through `points`: Catmull-Rom segments drawn as cubic Béziers. */
+export function smoothPath(points: Point[]): string {
+  const start = points.at(0);
+  if (start === undefined) {
+    return '';
   }
-  const dense = columns.filter(column => column.length > 0);
-  const before = adjacency(
-    nodes,
-    forward.map(edge => ({ from: edge.to, to: edge.from })),
+  const parts = [`M${round(start.x)} ${round(start.y)}`];
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const p1 = points[index] ?? start;
+    const p0 = points[index - 1] ?? p1;
+    const p2 = points[index + 1] ?? p1;
+    const p3 = points[index + 2] ?? p2;
+    const c1 = { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 };
+    const c2 = { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 };
+    parts.push(
+      `C${round(c1.x)} ${round(c1.y)} ${round(c2.x)} ${round(c2.y)} ${round(p2.x)} ${round(p2.y)}`,
+    );
+  }
+  return parts.join(' ');
+}
+
+/** Columns and rows from dagre's positions: equal x is one column, ordered top to bottom. */
+function ranked(centers: Map<string, Point>): Map<string, { rank: number; order: number }> {
+  const columns = [...new Set([...centers.values()].map(point => round(point.x)))].toSorted(
+    (a, b) => a - b,
   );
-  const after = adjacency(nodes, forward);
-  const position = new Map<string, number>();
-  const place = (): void => {
-    for (const column of dense) {
-      for (const [index, node] of column.entries()) {
-        position.set(node, index);
-      }
-    }
-  };
-  place();
-  for (const [sweep, neighbors] of [
-    [dense.slice(1), before],
-    [dense.slice(0, -1).toReversed(), after],
-  ] as const) {
-    for (const column of sweep) {
-      const keyed = column.map((node, index) => ({
-        node,
-        index,
-        key: barycenter(node, neighbors, position),
-      }));
-      keyed.sort((a, b) => a.key - b.key || a.index - b.index);
-      column.splice(0, column.length, ...keyed.map(entry => entry.node));
-      place();
+  const places = new Map<string, { rank: number; order: number }>();
+  for (const [rank, x] of columns.entries()) {
+    const column = [...centers]
+      .filter(([, point]) => round(point.x) === x)
+      .toSorted((a, b) => a[1].y - b[1].y);
+    for (const [order, [id]] of column.entries()) {
+      places.set(id, { rank, order });
     }
   }
-  return dense;
+  return places;
 }
 
-function edgePath(
-  from: LayoutNode,
-  to: LayoutNode,
-  reversed: boolean,
-  /** For reversed edges: how far below the ranks the curve turns. */
-  low: number,
-): Omit<LayoutEdge, 'from' | 'to' | 'reversed'> {
-  if (reversed) {
-    // From the bottom of `from`, under every rank, back up into the bottom of `to`.
-    const x1 = from.x + NODE_WIDTH / 2;
-    const x2 = to.x + NODE_WIDTH / 2;
-    const y1 = from.y + NODE_HEIGHT;
-    const y2 = to.y + NODE_HEIGHT;
-    return {
-      path: `M${x1} ${y1} C${x1} ${low} ${x2} ${low} ${x2} ${y2}`,
-      labelX: (x1 + x2) / 2,
-      labelY: low - 4,
-    };
+function buildGraph(nodes: string[], edges: LayoutEdgeInput[]): DagreGraph {
+  const graph = new dagre.Graph();
+  graph.setGraph({
+    rankdir: 'LR',
+    nodesep: GAP_Y,
+    ranksep: GAP_X,
+    marginx: MARGIN,
+    marginy: MARGIN,
+    acyclicer: 'greedy',
+    ranker: 'network-simplex',
+  });
+  graph.setDefaultEdgeLabel(() => ({}));
+  for (const id of nodes) {
+    graph.setNode(id, { width: NODE_WIDTH, height: NODE_HEIGHT });
   }
-  const x1 = from.x + NODE_WIDTH;
-  const y1 = from.y + NODE_HEIGHT / 2;
-  const x2 = to.x;
-  const y2 = to.y + NODE_HEIGHT / 2;
-  const bend = (x2 - x1) / 2;
-  return {
-    path: `M${x1} ${y1} C${x1 + bend} ${y1} ${x2 - bend} ${y2} ${x2} ${y2}`,
-    labelX: (x1 + x2) / 2,
-    labelY: (y1 + y2) / 2 - 6,
-  };
+  for (const edge of edges) {
+    graph.setEdge(edge.from, edge.to, { width: LABEL_WIDTH, height: LABEL_HEIGHT, labelpos: 'c' });
+  }
+  dagre.layout(graph);
+  return graph;
 }
 
-/** Positions for every node and a path for every edge. Self-edges are ignored. */
+/** Positions for every node and a path for every edge. Self-edges and unknown nodes are dropped. */
 export function layoutGraph(nodeIds: string[], input: LayoutEdgeInput[]): Layout {
   const nodes = [...new Set(nodeIds)];
   const known = new Set(nodes);
-  const edges = input.filter(
-    edge => edge.from !== edge.to && known.has(edge.from) && known.has(edge.to),
-  );
-  const back = backEdges(nodes, adjacency(nodes, edges));
-  const isBack = (edge: LayoutEdgeInput): boolean => back.has(`${edge.from}\0${edge.to}`);
-  const forward = edges.filter(edge => !isBack(edge));
-  const columns = orderRanks(nodes, ranks(nodes, forward), forward);
-  const placed = new Map<string, LayoutNode>();
-  for (const [rank, column] of columns.entries()) {
-    for (const [order, id] of column.entries()) {
-      placed.set(id, {
-        id,
-        rank,
-        order,
-        x: MARGIN + rank * (NODE_WIDTH + GAP_X),
-        y: MARGIN + order * (NODE_HEIGHT + GAP_Y),
-      });
-    }
-  }
-  const rows = Math.max(1, ...columns.map(column => column.length));
-  const bottom = MARGIN + rows * (NODE_HEIGHT + GAP_Y) - GAP_Y;
-  let returns = 0;
-  const depthOf = (): number => {
-    returns += 1;
-    return bottom + RETURN_DEPTH + (returns - 1) * RETURN_STEP;
-  };
-  const laidOut = edges.flatMap(edge => {
-    const from = placed.get(edge.from);
-    const to = placed.get(edge.to);
-    if (from === undefined || to === undefined) {
-      return [];
-    }
-    const reversed = isBack(edge);
-    const low = reversed ? depthOf() : bottom;
-    return [{ from: edge.from, to: edge.to, reversed, ...edgePath(from, to, reversed, low) }];
+  const seen = new Set<string>();
+  const edges = input.filter(edge => {
+    const key = `${edge.from}\0${edge.to}`;
+    const keep =
+      edge.from !== edge.to && known.has(edge.from) && known.has(edge.to) && !seen.has(key);
+    seen.add(key);
+    return keep;
   });
+  const graph = buildGraph(nodes, edges);
+  const centers = new Map(nodes.map(id => [id, graph.node(id)]));
+  const places = ranked(centers);
+  const laidOut = edges.map((edge): LayoutEdge => {
+    const label = graph.edge(edge.from, edge.to);
+    const first = label.points.at(0);
+    const last = label.points.at(-1);
+    return {
+      from: edge.from,
+      to: edge.to,
+      reversed: first !== undefined && last !== undefined && last.x < first.x,
+      path: smoothPath(label.points),
+      labelX: round(label.x),
+      labelY: round(label.y),
+    };
+  });
+  const size = graph.graph();
   return {
-    nodes: [...placed.values()],
+    nodes: nodes.map(id => {
+      const center = centers.get(id) ?? { x: 0, y: 0 };
+      return {
+        id,
+        rank: places.get(id)?.rank ?? 0,
+        order: places.get(id)?.order ?? 0,
+        x: round(center.x - NODE_WIDTH / 2),
+        y: round(center.y - NODE_HEIGHT / 2),
+      };
+    }),
     edges: laidOut,
-    width: MARGIN * 2 + columns.length * (NODE_WIDTH + GAP_X) - GAP_X,
-    height: bottom + MARGIN + (returns === 0 ? 0 : RETURN_DEPTH + (returns - 1) * RETURN_STEP),
+    width: round(size.width ?? 0),
+    height: round(size.height ?? 0),
   };
 }

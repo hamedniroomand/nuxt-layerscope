@@ -5,7 +5,7 @@
   import { edgesOf, nearestNode, strokeWidth } from '#src/devtools/client/lib/graph-model.ts';
   import { usePanZoom } from '#src/devtools/client/lib/pan-zoom.ts';
   import type { GraphEdgeView, GraphView } from '#src/devtools/protocol.ts';
-  import { NODE_HEIGHT, NODE_WIDTH } from '#src/graph/layout.ts';
+  import { NODE_HEIGHT, NODE_WIDTH } from '#src/graph/layout-size.ts';
 
   const props = defineProps<{
     view: GraphView;
@@ -105,8 +105,9 @@
         viewBox="0 0 8 8"
         refX="8"
         refY="4"
-        markerWidth="7"
-        markerHeight="7"
+        markerUnits="userSpaceOnUse"
+        markerWidth="9"
+        markerHeight="9"
         orient="auto-start-reverse"
       >
         <path
@@ -255,6 +256,10 @@
   .edge text {
     fill: var(--fg-muted);
     font-size: 11px;
+    /* A halo in the page color keeps the count readable where it sits on its line. */
+    paint-order: stroke;
+    stroke: var(--bg);
+    stroke-width: 3px;
   }
 
   .edge.viol .line {

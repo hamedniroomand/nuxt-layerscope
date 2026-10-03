@@ -32,7 +32,7 @@ function result(layers = 2): ReturnType<typeof makeResult> {
 async function mountGraph(layers = 2): Promise<Awaited<ReturnType<typeof mountApp>>> {
   window.location.hash = '#/graph';
   const mountedApp = await mountApp();
-  vi.mocked(mountedApp.api.graph).mockResolvedValue(graphView(result(layers)));
+  vi.mocked(mountedApp.api.graph).mockResolvedValue(await graphView(result(layers)));
   vi.mocked(mountedApp.api.edge).mockResolvedValue(edgeView(result(layers), 'web', 'shop'));
   // Leave and come back, so the view fetches with the mocks in place.
   press('1');
@@ -112,7 +112,7 @@ describe('overview mini graph', () => {
   it('draws the graph and opens the Graph view on a click', async () => {
     const { wrapper, api } = await mountApp();
     mounted = wrapper;
-    vi.mocked(api.graph).mockResolvedValue(graphView(result()));
+    vi.mocked(api.graph).mockResolvedValue(await graphView(result()));
     press('2');
     await flushPromises();
     press('1');
