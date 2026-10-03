@@ -12,6 +12,7 @@ interface Registered {
   routes: (string | undefined)[];
   tabs: unknown[];
   publicAssets: number;
+  prerenderIgnore: unknown[];
 }
 
 /** Loads the fixture with the module in a child process; see `devtools-nuxt.ts` for why. */
@@ -47,5 +48,8 @@ describe('devtools tab', () => {
     // `{ static: true }` adds exactly the one hook that writes the snapshot.
     expect(snapshot.publicAssets).toBe(plain.publicAssets + 1);
     expect(snapshot.routes).not.toContain(DEVTOOLS_ROUTE);
+    // `nuxi generate` must not crawl into the snapshot, which it cannot serve.
+    expect(snapshot.prerenderIgnore).toContain(DEVTOOLS_ROUTE);
+    expect(plain.prerenderIgnore).not.toContain(DEVTOOLS_ROUTE);
   });
 });

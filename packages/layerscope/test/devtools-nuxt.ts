@@ -25,8 +25,23 @@ try {
   // Handlers of the hook that writes the static snapshot, from any module.
   const hooks = (nuxt.hooks as unknown as { _hooks: Record<string, unknown[] | undefined> })._hooks;
   const publicAssets = hooks['nitro:build:public-assets']?.length ?? 0;
+  // What the module adds to Nitro's prerender ignore list. Nuxt's own handlers need a full config,
+  // so each handler runs on a near-empty one, and the ones that throw are left out.
+  const nitroConfig: { prerender?: { ignore?: unknown[] } } = {};
+  const configHandlers = (hooks['nitro:config'] ?? []) as ((config: object) => unknown)[];
+  await Promise.allSettled(
+    configHandlers.map(async handler => {
+      await handler(nitroConfig);
+    }),
+  );
+  const prerenderIgnore = nitroConfig.prerender?.ignore ?? [];
   process.stdout.write(
-    JSON.stringify({ routes: handlers.map(handler => handler.route), tabs, publicAssets }),
+    JSON.stringify({
+      routes: handlers.map(handler => handler.route),
+      tabs,
+      publicAssets,
+      prerenderIgnore,
+    }),
   );
 } finally {
   await nuxt.close();

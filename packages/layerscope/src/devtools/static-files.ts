@@ -66,44 +66,60 @@ async function reportFiles(result: AnalyzeResult, context: StaticContext): Promi
   ];
 }
 
+/**
+ * Runs `run` for each item, one after another. The views load their report code on first use,
+ * and Nuxt loads this module through jiti, where parallel first loads of the same file can see it
+ * half evaluated. The answers are cheap, so the order costs little.
+ */
+async function inOrder<T, R>(items: readonly T[], run: (item: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = [];
+  const next = async (index: number): Promise<R[]> => {
+    if (index >= items.length) {
+      return results;
+    }
+    results.push(await run(items[index] as T));
+    return next(index + 1);
+  };
+  const all = await next(0);
+  return all;
+}
+
+function edgePairs(result: AnalyzeResult): [string, string][] {
+  const keys = result.edges
+    .filter(edge => edge.toLayer !== null && edge.toLayer !== edge.fromLayer)
+    .map(edge => `${edge.fromLayer}\0${edge.toLayer}`);
+  return [...new Set(keys)].map(key => {
+    const [from = '', to = ''] = key.split('\0');
+    return [from, to];
+  });
+}
+
 /** The files of a snapshot: one for each answer the tab can ask for, with the same bodies. */
 export async function staticFiles(
   result: AnalyzeResult,
   context: StaticContext,
 ): Promise<StaticFile[]> {
-  const fixed = await Promise.all(
-    (['symbols', 'unused', 'baseline'] as const).map(async name => ({
-      path: STATIC_PATHS[name],
-      body: await context.view(`/api/${name}`, {}),
-    })),
-  );
+  const fixed = await inOrder(['symbols', 'unused', 'baseline'] as const, async name => ({
+    path: STATIC_PATHS[name],
+    body: await context.view(`/api/${name}`, {}),
+  }));
   const graph = {
     path: STATIC_PATHS.graph,
     body: await context.view('/api/graph', { layout: '1' }),
   };
   const listed = fixed[0]?.body as { symbols: SymbolEntry[] } | undefined;
   const names = [...new Set((listed?.symbols ?? []).map(symbol => symbol.name))];
-  const traces = await Promise.all(
-    names.map(async symbol => ({
-      path: tracePath(symbol),
-      body: await context.view('/api/trace', { symbol }),
-    })),
-  );
-  const edges = await Promise.all(
-    result.edges
-      .filter(edge => edge.toLayer !== null && edge.toLayer !== edge.fromLayer)
-      .map(edge => `${edge.fromLayer}\0${edge.toLayer}`)
-      .filter((key, index, all) => all.indexOf(key) === index)
-      .map(async key => {
-        const [from = '', to = ''] = key.split('\0');
-        return { path: edgePath(from, to), body: await context.view('/api/edge', { from, to }) };
-      }),
-  );
-  const nodes = await Promise.all(
-    result.layers.map(async layer => ({
-      path: nodePath(layer.name),
-      body: await wholeNode(context, layer.name),
-    })),
-  );
+  const traces = await inOrder(names, async symbol => ({
+    path: tracePath(symbol),
+    body: await context.view('/api/trace', { symbol }),
+  }));
+  const edges = await inOrder(edgePairs(result), async ([from, to]) => ({
+    path: edgePath(from, to),
+    body: await context.view('/api/edge', { from, to }),
+  }));
+  const nodes = await inOrder(result.layers, async layer => ({
+    path: nodePath(layer.name),
+    body: await wholeNode(context, layer.name),
+  }));
   return [...(await reportFiles(result, context)), ...fixed, graph, ...traces, ...edges, ...nodes];
 }

@@ -50,6 +50,12 @@ export function setupDevtools(nuxt: Nuxt): void {
   });
 }
 
+/** The slice of Nitro's config the snapshot changes; typed by Nuxt's Nitro integration. */
+type NitroConfigHook = (
+  name: 'nitro:config',
+  handler: (config: { prerender?: { ignore?: unknown[] } }) => void,
+) => unknown;
+
 type PublicAssetsHook = (
   name: 'nitro:build:public-assets',
   handler: (nitro: { options: { output: { publicDir: string } } }) => Promise<void>,
@@ -61,6 +67,12 @@ type PublicAssetsHook = (
  */
 export function setupStaticDevtools(nuxt: Nuxt): void {
   const { rootDir, app } = nuxt.options;
+  // The snapshot is written after the build, so the prerender crawler of `nuxi generate` does not
+  // know its files: a link to the tab would fail the crawl with a 404.
+  (nuxt.hook as unknown as NitroConfigHook)('nitro:config', config => {
+    config.prerender ??= {};
+    config.prerender.ignore = [...(config.prerender.ignore ?? []), DEVTOOLS_ROUTE];
+  });
   (nuxt.hook as unknown as PublicAssetsHook)('nitro:build:public-assets', async nitro => {
     const { writeSnapshot } = await import('./static.ts');
     await writeSnapshot({
