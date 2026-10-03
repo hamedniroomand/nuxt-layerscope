@@ -5,9 +5,10 @@ import { BASELINE_FILE } from '#src/baseline/index.ts';
 import { onDevtoolsCustomTabs } from '#src/module/nuxt.ts';
 import type { Nuxt } from '#src/module/nuxt.ts';
 
-import { Analyzer } from './analyzer.ts';
 import { computeEnvKey } from './env-key.ts';
 import { createDevtoolsHandler } from './handler.ts';
+import type { Session } from './session.ts';
+import { createSession } from './session.ts';
 
 export const DEVTOOLS_ROUTE = '/__layerscope';
 
@@ -17,8 +18,8 @@ type WatchHook = (name: 'builder:watch', handler: () => void) => unknown;
 export function setupDevtools(nuxt: Nuxt): void {
   const { rootDir, buildDir, app } = nuxt.options;
   // Created on the first request; until then the hooks below do nothing.
-  let analyzer: Analyzer | undefined;
-  const invalidate = (): void => analyzer?.invalidate();
+  let session: Session | undefined;
+  const invalidate = (): void => session?.live.invalidate();
   nuxt.hook('app:templatesGenerated', invalidate);
   (nuxt.hook as unknown as WatchHook)('builder:watch', invalidate);
 
@@ -26,13 +27,13 @@ export function setupDevtools(nuxt: Nuxt): void {
   addDevServerHandler({
     route: DEVTOOLS_ROUTE,
     handler: createDevtoolsHandler({
-      get analyzer(): Analyzer {
-        analyzer ??= new Analyzer({
+      get session(): Session {
+        session ??= createSession({
           rootDir,
           baseline: BASELINE_FILE,
           envKey: (): string => computeEnvKey(rootDir, buildDir),
         });
-        return analyzer;
+        return session;
       },
       openInEditor,
       base: DEVTOOLS_ROUTE,

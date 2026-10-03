@@ -18,14 +18,14 @@ export interface Baseline {
   entries: BaselineEntry[];
 }
 
-type Keyed = Pick<BaselineEntry, 'rule' | 'file' | 'symbol' | 'toLayer'>;
+export type Keyed = Pick<BaselineEntry, 'rule' | 'file' | 'symbol' | 'toLayer'>;
 
 /** Rule, file, symbol and target layer; lines are left out so unrelated edits keep the entry. */
-function keyOf(entry: Keyed): string {
+export function keyOf(entry: Keyed): string {
   return [entry.rule, entry.file, entry.symbol, entry.toLayer ?? ''].join('\0');
 }
 
-function toKeyed(finding: Finding, rootDir: string): Keyed {
+export function toKeyed(finding: Finding, rootDir: string): Keyed {
   return {
     rule: finding.rule,
     file: relative(rootDir, finding.file),

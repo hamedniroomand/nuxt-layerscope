@@ -3,10 +3,16 @@ import type { AnalyzeResult } from '#src/types.ts';
 import type { TabFinding, TabReport } from './protocol.ts';
 import { hotFiles, layerStats } from './stats.ts';
 
-type JsonReport = Omit<TabReport, 'absRoot' | 'hotFiles' | 'layerStats'>;
+type JsonReport = Omit<TabReport, 'absRoot' | 'hotFiles' | 'layerStats' | 'newCount'>;
+
+/** Per finding, in report order: its key and whether it is new since the marker. */
+export interface FindingMarks {
+  keys: string[];
+  isNew: boolean[];
+}
 
 /** The `check --format json` report plus what the tab needs: absolute paths and statistics. */
-export async function tabReport(result: AnalyzeResult): Promise<TabReport> {
+export async function tabReport(result: AnalyzeResult, marks: FindingMarks): Promise<TabReport> {
   // Loaded on request, so the report code stays out of Nuxt's startup.
   const { formatResult } = await import('#src/report/index.ts');
   const { rootDir } = result;
@@ -16,6 +22,8 @@ export async function tabReport(result: AnalyzeResult): Promise<TabReport> {
     ...finding,
     absFile: result.findings[index]?.file ?? finding.file,
     absTarget: result.findings[index]?.target ?? null,
+    key: marks.keys[index] ?? '',
+    isNew: marks.isNew[index] ?? false,
   }));
   return {
     ...report,
@@ -23,5 +31,6 @@ export async function tabReport(result: AnalyzeResult): Promise<TabReport> {
     findings,
     hotFiles: hotFiles(result.findings, rootDir),
     layerStats: layerStats(result),
+    newCount: marks.isNew.filter(Boolean).length,
   };
 }

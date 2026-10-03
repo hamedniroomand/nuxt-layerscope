@@ -1,0 +1,98 @@
+import type { H3Event } from 'h3';
+import { getHeader, setResponseHeader, setResponseStatus } from 'h3';
+
+import type { Snapshot } from './analyzer.ts';
+import type { ReportResponse, SnapshotMeta } from './protocol.ts';
+import { tabReport } from './report.ts';
+import { isSameOrigin } from './same-origin.ts';
+import type { Session } from './session.ts';
+
+const JSON_TYPE = 'application/json';
+
+export function json(event: H3Event, status: number, body: unknown): string {
+  setResponseStatus(event, status);
+  setResponseHeader(event, 'content-type', JSON_TYPE);
+  return JSON.stringify(body);
+}
+
+/** Sets the ETag and answers `true` when the client already has this version. */
+export function notModified(event: H3Event, etag: string): boolean {
+  setResponseHeader(event, 'etag', etag);
+  if (getHeader(event, 'if-none-match') !== etag) {
+    return false;
+  }
+  setResponseStatus(event, 304);
+  return true;
+}
+
+function meta(snapshot: Snapshot, session: Session): SnapshotMeta {
+  const { id, rev, analyzedAt, durationMs } = snapshot;
+  return { id, rev, marker: session.live.marker, analyzedAt, durationMs };
+}
+
+async function withReport(snapshot: Snapshot, session: Session): Promise<ReportResponse> {
+  const report = await tabReport(snapshot.result, session.live.keysOf(snapshot));
+  return { ...meta(snapshot, session), report };
+}
+
+/** POST routes that steer live mode; each answers with the new live state. */
+const LIVE_POSTS: Partial<Record<string, (session: Session) => object>> = {
+  '/api/live/pause': session => {
+    session.live.pause();
+    return { live: session.live.state };
+  },
+  '/api/live/resume': session => {
+    session.live.resume();
+    return { live: session.live.state };
+  },
+  '/api/live/marker': session => {
+    session.live.resetMarker();
+    return { live: session.live.state, marker: session.live.marker };
+  },
+};
+
+async function post(path: string, session: Session): Promise<object> {
+  const live = LIVE_POSTS[path];
+  if (live !== undefined) {
+    return live(session);
+  }
+  const snapshot = await session.analyzer.refresh();
+  const body = await withReport(snapshot, session);
+  return body;
+}
+
+async function read(event: H3Event, path: string, session: Session): Promise<string> {
+  const snapshot = await session.analyzer.get();
+  const { live } = session;
+  setResponseHeader(event, 'cache-control', 'no-cache');
+  // The marker and the pause flag change what the tab shows without a new revision.
+  const etag = `"${snapshot.id}-${snapshot.rev}-${live.marker}-${live.state.paused ? 1 : 0}"`;
+  if (notModified(event, etag)) {
+    return '';
+  }
+  const body =
+    path === '/api/state'
+      ? { ...meta(snapshot, session), status: 'ready', live: live.state }
+      : await withReport(snapshot, session);
+  return json(event, 200, body);
+}
+
+/** `/api/*`: state and report read the cached snapshot; POST routes re-run or steer live mode. */
+export async function api(event: H3Event, path: string, session: Session): Promise<string> {
+  if (path === '/api/rerun' || path in LIVE_POSTS) {
+    if (event.method !== 'POST') {
+      return json(event, 405, { error: 'Use POST' });
+    }
+    return isSameOrigin(event)
+      ? json(event, 200, await post(path, session))
+      : json(event, 403, { error: 'Cross-origin requests are not allowed' });
+  }
+  if (path !== '/api/state' && path !== '/api/report') {
+    return json(event, 404, { error: `Not found: ${path}` });
+  }
+  if (event.method !== 'GET') {
+    return json(event, 405, { error: 'Use GET' });
+  }
+  const body = await read(event, path, session);
+  return body;
+}

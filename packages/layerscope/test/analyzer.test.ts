@@ -103,6 +103,21 @@ describe('Analyzer concurrency', () => {
     expect(snapshot.result.findings).toHaveLength(1);
   });
 
+  it('tells subscribers about each snapshot and ignores a failing one', async () => {
+    const { analyzer } = setup();
+    const seen: number[] = [];
+    analyzer.subscribe(() => {
+      throw new Error('listener bug');
+    });
+    const leave = analyzer.subscribe(snapshot => {
+      seen.push(snapshot.rev);
+    });
+    await expect(analyzer.refresh()).resolves.toBeDefined();
+    leave();
+    await analyzer.refresh();
+    expect(seen).toEqual([0]);
+  });
+
   it('gives each analyzer its own snapshot id', async () => {
     const one = await setup().analyzer.get();
     const two = await setup().analyzer.get();

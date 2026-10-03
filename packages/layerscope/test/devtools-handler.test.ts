@@ -1,9 +1,9 @@
 import { createApp, toWebHandler } from 'h3';
 import { describe, expect, it, vi } from 'vite-plus/test';
 
-import { Analyzer } from '#src/devtools/analyzer.ts';
 import { createDevtoolsHandler } from '#src/devtools/handler.ts';
 import { DEVTOOLS_ROUTE } from '#src/devtools/index.ts';
+import { createSession } from '#src/devtools/session.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { packageVersion } from '#src/version.ts';
 import { fakeAssets } from '#test/devtools-assets.ts';
@@ -17,7 +17,7 @@ interface Server {
 }
 
 function server(run: Run = vi.fn<Run>().mockResolvedValue(makeResult())): Server {
-  const analyzer = new Analyzer({
+  const session = createSession({
     rootDir: '/app',
     baseline: 'b.json',
     envKey: (): string => 'k',
@@ -27,7 +27,7 @@ function server(run: Run = vi.fn<Run>().mockResolvedValue(makeResult())): Server
   app.use(
     DEVTOOLS_ROUTE,
     createDevtoolsHandler({
-      analyzer,
+      session,
       openInEditor: '/_nuxt/__open-in-editor',
       assetsDir: fakeAssets(),
     }),
@@ -91,7 +91,8 @@ describe('devtools handler api', () => {
     const state = await fetch('/api/state');
     expect(await state.json()).toMatchObject({ rev: 0, status: 'ready' });
     const report = await fetch('/api/report');
-    expect(report.headers.get('etag')).toMatch(/^"[\w-]+-0"$/u);
+    // Revision, marker and pause flag.
+    expect(report.headers.get('etag')).toMatch(/^"[\w-]+-0-0-0"$/u);
     expect(report.headers.get('cache-control')).toBe('no-cache');
     expect(await report.json()).toHaveProperty('report.findings');
   });

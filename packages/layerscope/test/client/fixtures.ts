@@ -9,6 +9,8 @@ export function tabFinding(overrides: Partial<TabFinding> = {}): TabFinding {
     target: 'layers/shop/composables/useCart.ts',
     absFile: finding.file,
     absTarget: finding.target,
+    key: `layer-boundary\0pages/index.vue\0${finding.symbol}\0shop`,
+    isNew: false,
     ...overrides,
   };
 }
@@ -30,12 +32,13 @@ export function tabReport(overrides: Partial<TabReport> = {}): TabReport {
       { name: 'web', root: '.', allow: ['base'], files: 1, refsIn: 0, refsOut: 1 },
       { name: 'shop', root: 'layers/shop', allow: null, files: 1, refsIn: 1, refsOut: 0 },
     ],
+    newCount: 0,
     ...overrides,
   };
 }
 
 export function reportResponse(overrides: Partial<TabReport> = {}, rev = 0): ReportResponse {
-  return { id: 'a', rev, analyzedAt: 0, durationMs: 12, report: tabReport(overrides) };
+  return { id: 'a', rev, marker: 0, analyzedAt: 0, durationMs: 12, report: tabReport(overrides) };
 }
 
 /** Two boundary errors in two files and one warning, in report order. */

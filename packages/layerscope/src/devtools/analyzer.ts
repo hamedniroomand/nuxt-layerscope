@@ -48,6 +48,7 @@ export class Analyzer {
   private snapshot: Snapshot | undefined;
   private lastFingerprint = '';
   private dirty = true;
+  private readonly listeners = new Set<(snapshot: Snapshot) => void>();
   private inflight: Promise<Snapshot> | undefined;
   private queued: Promise<Snapshot> | undefined;
 
@@ -57,6 +58,14 @@ export class Analyzer {
 
   public get current(): Snapshot | undefined {
     return this.snapshot;
+  }
+
+  /** Calls `listener` with every new snapshot, whatever started the run. */
+  public subscribe(listener: (snapshot: Snapshot) => void): () => void {
+    this.listeners.add(listener);
+    return (): void => {
+      this.listeners.delete(listener);
+    };
   }
 
   /** Marks the snapshot stale; the next `get` re-analyzes. Does no work itself. */
@@ -123,10 +132,17 @@ export class Analyzer {
         durationMs: Date.now() - started,
         result,
       };
-      return this.snapshot;
     } catch (error) {
       this.dirty = true;
       throw error;
     }
+    for (const listener of this.listeners) {
+      try {
+        listener(this.snapshot);
+      } catch {
+        // A listener must not fail the request that started the run.
+      }
+    }
+    return this.snapshot;
   }
 }

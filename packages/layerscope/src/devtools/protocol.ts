@@ -4,6 +4,10 @@ import type { BaselineEntry, Finding, Suggestion } from '#src/types.ts';
 export interface TabFinding extends Finding {
   absFile: string;
   absTarget: string | null;
+  /** The baseline key: rule, relative file, symbol and target layer. Not unique per row. */
+  key: string;
+  /** Present beyond the count its key had when the marker was set. */
+  isNew: boolean;
 }
 
 export interface HotFile {
@@ -38,11 +42,15 @@ export interface TabReport {
   baseline?: { file: string; suppressed: Finding[]; removable: BaselineEntry[] };
   hotFiles: HotFile[];
   layerStats: LayerStat[];
+  /** Findings new since the marker. */
+  newCount: number;
 }
 
 export interface SnapshotMeta {
   id: string;
   rev: number;
+  /** Changes when the "new since" marker moves. */
+  marker: number;
   analyzedAt: number;
   durationMs: number;
 }
