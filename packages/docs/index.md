@@ -33,7 +33,7 @@ graph and where each symbol is used, and it updates when you save a file.
 
 <Screenshot
   name="overview"
-  alt="The Layerscope tab in Nuxt DevTools: the Overview view with 5 errors and 2 warnings in 6 layers, a small layer graph and the files with findings."
+  alt="The Layerscope tab in Nuxt DevTools: the Overview view with 2 errors and 3 warnings in 5 layers, a small layer graph and the files with findings."
 />
 
 ## The dependencies nobody imports
