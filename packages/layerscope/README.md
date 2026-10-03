@@ -2,6 +2,10 @@
 
 Layer boundary checks for Nuxt 3 and 4 apps that also see auto-imports.
 
+<a href="https://layerscope.kitdev.space/guide/devtools"><img src="https://layerscope.kitdev.space/devtools/hero-dark.webp" width="1600" height="611" alt="The Layerscope tab in Nuxt DevTools: the layer graph of six layers, the admin to web edge selected, with its four symbols in the side panel"></a>
+
+<sub>The Layerscope tab in Nuxt DevTools shows every finding, the layer graph and where each symbol is used. It updates when you save a file.</sub>
+
 Boundary tools usually read `import` statements only, so a component in `admin` that calls an
 auto-imported composable from `web` goes unnoticed. layerscope reads the registry Nuxt resolves
 (components, app and server auto-imports, layers), resolves every auto-imported identifier,

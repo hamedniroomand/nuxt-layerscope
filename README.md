@@ -16,6 +16,17 @@
   <a href="https://layerscope.kitdev.space/"><img src="https://img.shields.io/badge/docs-layerscope-00dc82" alt="Documentation"></a>
 </p>
 
+<p align="center">
+  <a href="https://layerscope.kitdev.space/guide/devtools">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./packages/docs/public/devtools/hero-dark.webp">
+      <img src="./packages/docs/public/devtools/hero-light.webp" width="1600" height="611" alt="The Layerscope tab in Nuxt DevTools: the layer graph of six layers, the admin to web edge selected, with its four symbols in the side panel">
+    </picture>
+  </a>
+  <br>
+  <sub>The Layerscope tab in Nuxt DevTools shows every finding, the layer graph and where each symbol is used.<br>It updates when you save a file.</sub>
+</p>
+
 ---
 
 A component in `admin` that calls an auto-imported composable from `web` has no `import`
