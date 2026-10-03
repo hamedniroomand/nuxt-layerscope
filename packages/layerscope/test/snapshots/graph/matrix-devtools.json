@@ -1,37 +1,6 @@
 {
   "nodes": [
     {
-      "id": "root",
-      "name": "root",
-      "root": ".",
-      "allow": null,
-      "files": 1,
-      "refsIn": 0,
-      "refsOut": 1
-    },
-    {
-      "id": "theme",
-      "name": "theme",
-      "root": "layers/theme",
-      "allow": [
-        "base"
-      ],
-      "files": 4,
-      "refsIn": 2,
-      "refsOut": 0
-    },
-    {
-      "id": "shop",
-      "name": "shop",
-      "root": "layers/shop",
-      "allow": [
-        "base"
-      ],
-      "files": 3,
-      "refsIn": 1,
-      "refsOut": 10
-    },
-    {
       "id": "base",
       "name": "base",
       "root": "layers/base",
@@ -56,6 +25,37 @@
       "allow": null,
       "files": 0,
       "refsIn": 1,
+      "refsOut": 0
+    },
+    {
+      "id": "root",
+      "name": "root",
+      "root": ".",
+      "allow": null,
+      "files": 1,
+      "refsIn": 0,
+      "refsOut": 1
+    },
+    {
+      "id": "shop",
+      "name": "shop",
+      "root": "layers/shop",
+      "allow": [
+        "base"
+      ],
+      "files": 3,
+      "refsIn": 1,
+      "refsOut": 10
+    },
+    {
+      "id": "theme",
+      "name": "theme",
+      "root": "layers/theme",
+      "allow": [
+        "base"
+      ],
+      "files": 4,
+      "refsIn": 2,
       "refsOut": 0
     }
   ],
@@ -101,298 +101,46 @@
       "severity": "error"
     }
   ],
-  "matrix": {
-    "layers": [
-      "root",
-      "theme",
-      "shop",
-      "base",
-      "npm",
-      "remote"
-    ],
-    "cells": [
-      [
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 1,
-          "status": "unrestricted",
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        }
-      ],
-      [
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        }
-      ],
-      [
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 2,
-          "status": "not-allowed",
-          "violations": 2
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 5,
-          "status": "allowed",
-          "violations": 0
-        },
-        {
-          "count": 2,
-          "status": "not-allowed",
-          "violations": 2
-        },
-        {
-          "count": 1,
-          "status": "not-allowed",
-          "violations": 1
-        }
-      ],
-      [
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        }
-      ],
-      [
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        }
-      ],
-      [
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        },
-        {
-          "count": 0,
-          "status": null,
-          "violations": 0
-        }
-      ]
-    ]
-  },
+  "matrix": [
+    {
+      "from": "root",
+      "to": "shop",
+      "count": 1,
+      "status": "unrestricted",
+      "violations": 0
+    },
+    {
+      "from": "shop",
+      "to": "base",
+      "count": 5,
+      "status": "allowed",
+      "violations": 0
+    },
+    {
+      "from": "shop",
+      "to": "npm",
+      "count": 2,
+      "status": "not-allowed",
+      "violations": 2
+    },
+    {
+      "from": "shop",
+      "to": "remote",
+      "count": 1,
+      "status": "not-allowed",
+      "violations": 1
+    },
+    {
+      "from": "shop",
+      "to": "theme",
+      "count": 2,
+      "status": "not-allowed",
+      "violations": 2
+    }
+  ],
   "layout": {
-    "nodes": [
-      {
-        "id": "root",
-        "rank": 0,
-        "order": 0,
-        "x": 16,
-        "y": 124
-      },
-      {
-        "id": "theme",
-        "rank": 2,
-        "order": 0,
-        "x": 472,
-        "y": 16
-      },
-      {
-        "id": "shop",
-        "rank": 1,
-        "order": 0,
-        "x": 244,
-        "y": 124
-      },
-      {
-        "id": "base",
-        "rank": 2,
-        "order": 3,
-        "x": 472,
-        "y": 232
-      },
-      {
-        "id": "npm",
-        "rank": 2,
-        "order": 2,
-        "x": 472,
-        "y": 160
-      },
-      {
-        "id": "remote",
-        "rank": 2,
-        "order": 1,
-        "x": 472,
-        "y": 88
-      }
-    ],
-    "edges": [
-      {
-        "from": "root",
-        "to": "shop",
-        "reversed": false,
-        "path": "M136 144 C145 144 172 144 190 144 C208 144 235 144 244 144",
-        "labelX": 190,
-        "labelY": 144
-      },
-      {
-        "from": "shop",
-        "to": "base",
-        "reversed": false,
-        "path": "M325.1 164 C340.6 178.7 393.5 237.3 418 252 C442.5 266.7 463 252 472 252",
-        "labelX": 418,
-        "labelY": 252
-      },
-      {
-        "from": "shop",
-        "to": "npm",
-        "reversed": false,
-        "path": "M364 162.9 C373 165.8 400 177.2 418 180 C436 182.8 463 180 472 180",
-        "labelX": 418,
-        "labelY": 180
-      },
-      {
-        "from": "shop",
-        "to": "remote",
-        "reversed": false,
-        "path": "M364 125.1 C373 122.2 400 110.8 418 108 C436 105.2 463 108 472 108",
-        "labelX": 418,
-        "labelY": 108
-      },
-      {
-        "from": "shop",
-        "to": "theme",
-        "reversed": false,
-        "path": "M325.1 124 C340.6 109.3 393.5 50.7 418 36 C442.5 21.3 463 36 472 36",
-        "labelX": 418,
-        "labelY": 36
-      }
-    ],
-    "width": 608,
-    "height": 288
+    "nodes": 6,
+    "edges": 5,
+    "reversed": 0
   }
 }

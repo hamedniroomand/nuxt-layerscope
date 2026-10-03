@@ -104,6 +104,39 @@ describe('edge and node detail', () => {
   });
 });
 
+type Payload = Awaited<ReturnType<typeof graphView>>;
+
+/**
+ * The payload without the layer order: Nuxt versions list extended layers in different orders,
+ * and the matrix and the layout follow that order. Nodes sort by id, the matrix becomes its
+ * non-empty cells, and the layout becomes its counts.
+ */
+function orderFree(view: Payload): object {
+  const { layers, cells } = view.matrix;
+  const matrix = cells
+    .flatMap((row, from) =>
+      row.map((cell, to) => ({
+        from: layers[from],
+        to: layers[to],
+        count: cell.count,
+        status: cell.status,
+        violations: cell.violations,
+      })),
+    )
+    .filter(cell => cell.count > 0)
+    .toSorted((a, b) => `${a.from}\0${a.to}`.localeCompare(`${b.from}\0${b.to}`));
+  return {
+    nodes: view.nodes.toSorted((a, b) => a.id.localeCompare(b.id)),
+    edges: view.edges,
+    matrix,
+    layout: view.layout && {
+      nodes: view.layout.nodes.length,
+      edges: view.layout.edges.length,
+      reversed: view.layout.edges.filter(edge => edge.reversed).length,
+    },
+  };
+}
+
 describe('graph payload on fixtures', () => {
   it('matches `layerscope graph --format json` and the matrix snapshot', async () => {
     const nuxt4 = await analyze({ rootDir: NUXT4_ROOT });
@@ -121,9 +154,11 @@ describe('graph payload on fixtures', () => {
     for (const node of matrix.nodes) {
       node.root = node.root.includes('node_modules') ? '<installed>' : node.root;
     }
-    await expect(`${JSON.stringify(matrix, null, 2)}\n`).toMatchFileSnapshot(
+    await expect(`${JSON.stringify(orderFree(matrix), null, 2)}\n`).toMatchFileSnapshot(
       'snapshots/graph/matrix-devtools.json',
     );
+    const reversed = await graphView({ ...nuxt4, layers: nuxt4.layers.toReversed() });
+    expect(orderFree(reversed)).toEqual(orderFree(await graphView(nuxt4)));
   }, 60_000);
 });
 
