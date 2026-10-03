@@ -48,12 +48,17 @@ Two auto-imports have no users, so the Unused view lists them: `formatDate` in `
 `layerscope-baseline.json` holds the one accepted finding, as `layerscope check --update-baseline`
 writes it. If you try Ignore in the tab, restore the file with `git checkout` when you are done.
 
+## Deploying
+
+`nuxi build` and `nuxi generate` also write a read-only snapshot of the tab to `/__layerscope/`,
+and the home page links to it. [DEPLOY.md](./DEPLOY.md) has the Netlify and Vercel settings.
+
 ## Notes
 
 - The docs screenshots come from this app (`vp run docs#screenshots`). After a change here, run
   that script again, and check the numbers in the DevTools guide.
 - The linter skips this package: like the test fixtures, it relies on Nuxt auto-imports that the
   linter cannot see. Formatting still applies.
-- It has no `build` script, so CI does not build it. Keep it free of secrets and machine paths:
-  it may become a public demo later.
+- It has no `build` script, only `build:demo` and `generate:demo`, so CI does not build it. Keep it
+  free of secrets and machine paths: the deployed snapshot is public.
 - To experiment, use this app, not the fixtures under `packages/layerscope/test`: tests pin those.

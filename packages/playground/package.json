@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "nuxi dev",
     "prepare:nuxt": "nuxi prepare",
-    "check": "layerscope check"
+    "check": "layerscope check",
+    "build:demo": "nuxi build",
+    "generate:demo": "nuxi generate"
   },
   "dependencies": {
     "nuxt": "^4.4.1",

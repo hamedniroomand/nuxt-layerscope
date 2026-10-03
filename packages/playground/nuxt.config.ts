@@ -4,5 +4,8 @@
 export default defineNuxtConfig({
   modules: ['../layerscope/src/index.ts'],
   devtools: { enabled: true },
+  // `nuxi build` and `nuxi generate` also write a read-only snapshot of the tab to /__layerscope/,
+  // so a deployed playground shows it. See DEPLOY.md
+  layerscope: { devtools: { static: true } },
   compatibilityDate: '2025-07-15',
 });
