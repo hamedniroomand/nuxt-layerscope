@@ -28,23 +28,83 @@ The bar at the top shows the file and layer counts, the errors and warnings, the
 | **Baseline** | `6` | The findings that the baseline accepts, and entries that no longer match a finding.      |
 
 Every count is a link. For example, click **5 errors** to see only the errors in **Findings**.
-Click a file name to open the file in your editor at that line.
+Click a file name to open the file in your editor at that line. The pictures below show the
+`nuxt4` test project of this repository.
+
+### Overview
+
+The counts, a small copy of the graph, and the files with the most findings. Press <kbd>1</kbd>.
+
+<Screenshot
+  name="overview"
+  alt="The Overview view: 21 files in 6 layers, 5 errors and 2 warnings, a small layer graph, and the six files that have findings."
+/>
 
 ### Findings
+
+Every finding, grouped by rule, file or layer pair. Filter by severity, rule, layer pair, file or
+text; the filters stay in the URL. Press <kbd>2</kbd>, then <kbd>/</kbd> to filter.
+
+<Screenshot
+  name="findings"
+  alt="The Findings view: 7 findings in two groups, layer-boundary with 5 errors and unresolved-reference with 2 warnings."
+/>
 
 Select a finding with <kbd>j</kbd> and <kbd>k</kbd>. The selected finding shows a suggestion from
 the analysis: move the file, allow the layer, or leave the reference. For an "allow" suggestion, the
 tab shows the config change to copy and how many findings it removes. The tab does not change your
-config.
+config. <kbd>o</kbd> opens the file, <kbd>t</kbd> traces the symbol, and <kbd>i</kbd> accepts the
+finding into the baseline.
+
+<Screenshot
+  name="findings-selected"
+  alt="The first finding selected: admin uses useCart from web. The suggestion allows admin to use web, which resolves 4 findings in 3 files, with the config snippet and the Ignore, Trace and Open buttons."
+/>
+
+### Trace
+
+Every use of a component or auto-import, grouped by layer, as `layerscope why` shows it. Press
+<kbd>3</kbd>, or <kbd>t</kbd> on a finding.
+
+<Screenshot
+  name="trace"
+  alt="The Trace view for useCart: 2 uses in 2 layers, not allowed from admin and in the same layer from web."
+/>
+
+### Unused
+
+Components and auto-imports that nothing uses, as `layerscope unused` shows them. Press
+<kbd>4</kbd>.
+
+<Screenshot
+  name="unused"
+  alt="The Unused view: 4 unused symbols in 2 layers, the CartBadge component in web and three auto-imports in admin."
+/>
 
 ### Graph
 
 The graph reads from left to right: a layer depends on the layers to its right. A line is thicker
-when it carries more references. Click a layer to see its files and the layers it uses. Click a line
-to see the symbols and files behind it.
+when it carries more references. Violations are dashed lines with an `!N` badge. Click a layer to
+see its files and the layers it uses. Click a line to see the symbols and files behind it. Press
+<kbd>5</kbd>, and <kbd>e</kbd> to go through the lines of the selected layer.
+
+<Screenshot
+  name="graph"
+  alt="The Graph view: six layers, the admin to web edge selected, and the side panel lists four symbols with their kinds."
+/>
 
 **Table** shows the same data as a matrix: rows use the layers in the columns. Above 15 layers, the
 view opens on the table, and the graph is one click away.
+
+### Baseline
+
+The findings that the [baseline](./baseline) accepts, and entries that no longer match a finding.
+Press <kbd>6</kbd>.
+
+<Screenshot
+  name="baseline"
+  alt="The Baseline view: 2 warnings accepted into layerscope-baseline.json, each with a Remove from baseline button."
+/>
 
 ## Live updates
 

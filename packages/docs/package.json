@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vitepress dev",
-    "build": "vitepress build",
+    "build": "node scripts/check-images.ts && vitepress build",
     "preview": "vitepress preview",
     "screenshots": "node scripts/screenshots.ts"
   },

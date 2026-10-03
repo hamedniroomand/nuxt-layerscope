@@ -25,6 +25,17 @@ npx nuxi module add nuxt-layerscope --dev
 npx layerscope check --prepare
 ```
 
+## See it while you code
+
+In development, the Nuxt module adds a tab to Nuxt DevTools. It shows every finding, the layer
+graph and where each symbol is used, and it updates when you save a file.
+[Open the DevTools guide](/guide/devtools).
+
+<Screenshot
+  name="overview"
+  alt="The Layerscope tab in Nuxt DevTools: the Overview view with 5 errors and 2 warnings in 6 layers, a small layer graph and the files with findings."
+/>
+
 ## The dependencies nobody imports
 
 In a Nuxt layer, most dependencies never appear as an `import`. The admin layer below uses a

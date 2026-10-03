@@ -1,0 +1,23 @@
+{
+  "version": "0.2.0",
+  "fixtureCommit": "1a3400d4f5c3cbdd9e5e3dd2f0d09927a22829d9",
+  "images": {
+    "overview-light.png": 80567,
+    "findings-light.png": 147240,
+    "findings-selected-light.png": 155817,
+    "trace-light.png": 45761,
+    "unused-light.png": 68917,
+    "graph-light.png": 70375,
+    "overview-dark.png": 83892,
+    "findings-dark.png": 146086,
+    "findings-selected-dark.png": 154436,
+    "trace-dark.png": 45495,
+    "unused-dark.png": 68644,
+    "graph-dark.png": 72286,
+    "hero-light.webp": 39412,
+    "hero-dark.webp": 39732,
+    "og-image.png": 111652,
+    "baseline-light.png": 59861,
+    "baseline-dark.png": 60330
+  }
+}

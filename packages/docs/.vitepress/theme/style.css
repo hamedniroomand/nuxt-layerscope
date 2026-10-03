@@ -733,3 +733,24 @@ pre {
 .vp-code-group [class*='language-'] > span.lang {
   display: none;
 }
+
+/* DevTools screenshots: one image per theme, switched with the docs theme. */
+.ls-shot {
+  margin: 16px 0;
+}
+
+.ls-shot img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+}
+
+.ls-shot-dark,
+.dark .ls-shot-light {
+  display: none;
+}
+
+.dark .ls-shot-dark {
+  display: block;
+}
