@@ -108,13 +108,16 @@ pre {
 }
 
 .VPNav {
+  border-bottom: 0;
+}
+
+/* The frosted bar lives on .VPNavBar, not .VPNav: a backdrop-filter on .VPNav would become the
+   containing block of the fixed .VPNavScreen and collapse the mobile menu to the nav height. */
+.VPNavBar,
+.VPNavBar:not(.has-sidebar):not(.home.top) {
   border-bottom: 1px solid var(--vp-c-divider);
   background: color-mix(in srgb, var(--vp-c-bg) 86%, transparent);
   backdrop-filter: blur(16px) saturate(160%);
-}
-
-.VPNavBar:not(.has-sidebar):not(.home.top) {
-  background: transparent;
 }
 
 /* Home */
