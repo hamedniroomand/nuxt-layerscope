@@ -13,7 +13,8 @@
     "lint": "vp lint",
     "format": "vp format",
     "test": "vp test",
-    "prepare": "vp config"
+    "prepare": "vp config",
+    "playground": "vp run nuxt-layerscope#build && pnpm --dir packages/layerscope/test/fixtures/nuxt4 exec nuxi dev"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
