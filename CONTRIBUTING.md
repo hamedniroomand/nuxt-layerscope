@@ -21,6 +21,20 @@ vp run dev      # run the docs site locally
 The [development guide](./packages/docs/contributing/development.md) covers the layout, the test
 fixtures and snapshots.
 
+## Updating the DevTools screenshots
+
+The docs and the READMEs show the DevTools tab in pictures that a script makes from the `nuxt4`
+fixture. After a change to the tab, make them again:
+
+```bash
+vp run nuxt-layerscope#build
+vp run docs#screenshots
+```
+
+The script uses the Chrome on your machine (set `CHROME_PATH` if it cannot find it). Stop other dev
+servers of the fixture first, because Nuxt runs only one at a time. Two runs on the same UI give the same files, so `git status`
+shows only the pictures that changed. See [`packages/docs/scripts`](./packages/docs/scripts/README.md).
+
 ## Pull requests
 
 - Keep a pull request to one change, and open an issue first for anything large.
