@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { nextTick, onBeforeUnmount, useTemplateRef } from 'vue';
+  import { computed, nextTick, onBeforeUnmount, useTemplateRef, watch } from 'vue';
 
   import FilterChips from '#src/devtools/client/components/FilterChips.vue';
   import FindingRow from '#src/devtools/client/components/FindingRow.vue';
@@ -8,10 +8,33 @@
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import { useFindingsView } from '#src/devtools/client/lib/findings-view.ts';
   import { useIgnoreFlow } from '#src/devtools/client/lib/ignore-flow.ts';
+  import { useProgressive } from '#src/devtools/client/lib/progressive.ts';
 
   const context = useTab();
   const view = useFindingsView(context);
   const ignore = useIgnoreFlow(context, view);
+  // Long lists render a frame at a time; selection and keys still work on the whole list.
+  const progressive = useProgressive(
+    () => view.rows.value.length,
+    () => JSON.stringify(view.query.value),
+  );
+  const shownGroups = computed(() => {
+    let left = progressive.shown.value;
+    return view.groups.value.flatMap(group => {
+      if (left <= 0) {
+        return [];
+      }
+      const shown = group.findings.slice(0, left);
+      left -= shown.length;
+      return [{ ...group, shown }];
+    });
+  });
+  watch(view.selected, () => {
+    const finding = view.current();
+    if (finding !== undefined) {
+      progressive.reveal(view.rows.value.indexOf(finding));
+    }
+  });
   const list = useTemplateRef<HTMLElement>('list');
 
   const reveal = async (step: number): Promise<void> => {
@@ -140,7 +163,7 @@
       ref="list"
     >
       <section
-        v-for="group in view.groups.value"
+        v-for="group in shownGroups"
         :key="group.key"
       >
         <h3 class="group">
@@ -164,7 +187,7 @@
           :aria-label="group.label"
         >
           <FindingRow
-            v-for="finding in group.findings"
+            v-for="finding in group.shown"
             :key="view.idOf(finding)"
             :finding="finding"
             :selected="view.selected.value === view.idOf(finding)"
