@@ -3,12 +3,12 @@
   --bg: #fbfbfa;
   --bg-raised: #f2f2f0;
   --fg: #1c1e21;
-  --fg-muted: #6b7075;
+  --fg-muted: #696e73;
   --line: #e2e3e1;
   --accent: #0f766e;
   --error: #c2410c;
-  --warn: #a16207;
-  --ok: #15803d;
+  --warn: #9d6007;
+  --ok: #157e3c;
   --font: 13px/1.45 system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 12px/1.45 ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --row: 28px;
