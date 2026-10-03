@@ -16,6 +16,7 @@ export interface Symbols {
   notes: string[];
 }
 
+// ponytail: one synchronous block of about 80 ms on large projects; build the table incrementally or in a worker if it shows.
 /** The module's registry when present (or required), else the generated `.d.ts` files. */
 export function loadSymbols(buildDir: string, source: SourceOption): Symbols {
   const read = source === 'types' ? null : readRegistry(buildDir);

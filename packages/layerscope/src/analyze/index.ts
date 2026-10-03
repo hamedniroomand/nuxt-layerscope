@@ -7,7 +7,8 @@ import { runRules } from '#src/rules/index.ts';
 import type { AnalyzeResult, LayerscopeConfig, SourceOption } from '#src/types.ts';
 
 import { analyzeFiles } from './cache.ts';
-import type { AnalysisCache } from './cache.ts';
+import type { AnalysisCache, EnvironmentCache } from './cache.ts';
+import type { Environment, EnvironmentOptions } from './environment.ts';
 import { loadEnvironment } from './environment.ts';
 import { collectFiles } from './files.ts';
 import { prepareNuxt } from './prepare.ts';
@@ -30,8 +31,28 @@ export interface AnalyzeOptions {
   baseline?: string;
   /** Reuses per-file analyses across runs. Used by the DevTools tab; the CLI passes none. */
   cache?: AnalysisCache;
-  /** Changes when the symbol table or config changes, which flushes `cache`. */
+  /** Changes when the symbol table or config changes, which flushes `cache` and `environment`. */
   envKey?: string;
+  /** Reuses the loaded layers and symbols while `envKey` holds. Used by the DevTools tab. */
+  environment?: EnvironmentCache;
+}
+
+async function environmentOf(
+  options: AnalyzeOptions,
+  input: EnvironmentOptions,
+): Promise<Environment> {
+  const { environment, envKey } = options;
+  if (environment === undefined || envKey === undefined) {
+    const fresh = await loadEnvironment(input);
+    return fresh;
+  }
+  // The config object is part of the key: a caller can pass one that the env key does not see.
+  const key = JSON.stringify([envKey, input.buildDir, input.source, input.config]);
+  const cached = await environment.get(key, async () => {
+    const loaded = await loadEnvironment(input);
+    return loaded;
+  });
+  return cached;
 }
 
 export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResult> {
@@ -41,7 +62,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
   if (options.prepare === true) {
     prepareNuxt(rootDir);
   }
-  const environment = await loadEnvironment({
+  const environment = await environmentOf(options, {
     rootDir,
     buildDir,
     config: fileConfig,

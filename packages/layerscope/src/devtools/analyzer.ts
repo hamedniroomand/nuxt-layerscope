@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-import { AnalysisCache } from '#src/analyze/cache.ts';
+import { AnalysisCache, createEnvironmentCache } from '#src/analyze/cache.ts';
 import type { AnalyzeOptions } from '#src/analyze/index.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 
@@ -44,6 +44,7 @@ export class Analyzer {
   private readonly options: AnalyzerOptions;
   private readonly id = randomUUID();
   private readonly cache = new AnalysisCache();
+  private readonly environment = createEnvironmentCache();
   private snapshot: Snapshot | undefined;
   private lastFingerprint = '';
   private dirty = true;
@@ -109,6 +110,7 @@ export class Analyzer {
         rootDir: this.options.rootDir,
         baseline: this.options.baseline,
         cache: this.cache,
+        environment: this.environment,
         envKey: await this.options.envKey(),
       });
       const next = fingerprint(result);

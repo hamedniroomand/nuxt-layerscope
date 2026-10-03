@@ -3,6 +3,7 @@ import { statSync } from 'node:fs';
 import type { Layer } from '#src/types.ts';
 import { createYielder, yieldTurn } from '#src/utils/yield.ts';
 
+import type { Environment } from './environment.ts';
 import type { AnalysisEnv, FileAnalysis } from './file-analysis.ts';
 import { analyzeFile } from './file-analysis.ts';
 
@@ -81,4 +82,28 @@ export async function analyzeFiles(
   // One more turn, so the rules that run next start a task of their own.
   await yieldTurn();
   return analyses;
+}
+
+/** Keeps the last environment while its key holds. */
+export interface EnvironmentCache {
+  get: (key: string, load: () => Promise<Environment>) => Promise<Environment>;
+}
+
+/**
+ * Loading the environment parses the registry or the `.d.ts` files, the slowest step of a warm
+ * run; the DevTools tab keeps it while the files it reads stay the same.
+ */
+export function createEnvironmentCache(): EnvironmentCache {
+  let last: { key: string; environment: Environment } | undefined;
+  return {
+    get: async (key, load) => {
+      if (last?.key === key) {
+        return last.environment;
+      }
+      // A failed load leaves the cache as it was, so the next run tries again.
+      const environment = await load();
+      last = { key, environment };
+      return environment;
+    },
+  };
 }
