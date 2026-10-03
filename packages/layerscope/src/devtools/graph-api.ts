@@ -67,10 +67,20 @@ function buildView(result: AnalyzeResult): GraphView {
   };
 }
 
+/** The layout weight of an edge without violations; a violation weighs 1. */
+const ALLOWED_WEIGHT = 10;
+
 async function buildLayout(view: GraphView): Promise<Layout> {
   // dagre loads on the first layout, so it stays out of Nuxt's startup.
   const { layoutGraph } = await import('#src/graph/layout.ts');
-  return layoutGraph(view.matrix.layers, view.edges);
+  // Allowed dependencies set the left-to-right order; a violation runs against it when the two
+  // close a cycle, so it is the edge that dagre turns around.
+  const edges = view.edges.map(edge => ({
+    from: edge.from,
+    to: edge.to,
+    weight: edge.violations > 0 ? 1 : ALLOWED_WEIGHT,
+  }));
+  return layoutGraph(view.matrix.layers, edges);
 }
 
 /** One payload and one layout per analysis result: the layout costs a few ms per layer. */

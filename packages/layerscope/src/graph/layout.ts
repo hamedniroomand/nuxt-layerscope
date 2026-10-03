@@ -12,6 +12,11 @@ export { NODE_HEIGHT, NODE_WIDTH } from './layout-size.ts';
 export interface LayoutEdgeInput {
   from: string;
   to: string;
+  /**
+   * How hard dagre keeps the edge left to right; 1 when not given. To break a cycle it turns the
+   * lightest edges around, so a violation should weigh less than an allowed dependency.
+   */
+  weight?: number;
 }
 
 export interface LayoutNode {
@@ -132,7 +137,12 @@ function buildGraph(nodes: string[], edges: LayoutEdgeInput[]): DagreGraph {
     graph.setNode(id, { width: NODE_WIDTH, height: NODE_HEIGHT });
   }
   for (const edge of edges) {
-    graph.setEdge(edge.from, edge.to, { width: LABEL_WIDTH, height: LABEL_HEIGHT, labelpos: 'c' });
+    graph.setEdge(edge.from, edge.to, {
+      width: LABEL_WIDTH,
+      height: LABEL_HEIGHT,
+      labelpos: 'c',
+      weight: edge.weight ?? 1,
+    });
   }
   dagre.layout(graph);
   return graph;

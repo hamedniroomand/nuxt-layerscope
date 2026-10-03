@@ -105,6 +105,21 @@ describe('layer graph layout edge cases', () => {
   });
 });
 
+describe('layer graph layout with cycles', () => {
+  it('turns the lightest edge of a cycle around, so a violation runs right to left', () => {
+    const nodes = ['app', 'shop', 'ui', 'base'];
+    const chain = [
+      { from: 'app', to: 'shop', weight: 10 },
+      { from: 'shop', to: 'ui', weight: 10 },
+      { from: 'ui', to: 'base', weight: 10 },
+    ];
+    // `base` reaching up to `ui` closes a cycle with the allowed `ui` → `base`.
+    const layout = layoutGraph(nodes, [...chain, { from: 'base', to: 'ui', weight: 1 }]);
+    expect(nodes.map(node => rankOf(layout, node))).toEqual([0, 1, 2, 3]);
+    expect(layout.edges.filter(edge => edge.reversed).map(edge => edge.from)).toEqual(['base']);
+  });
+});
+
 describe('layer graph layout at scale', () => {
   it('gives the same layout for the same graph', () => {
     const { nodes, edges } = randomGraph(15, 7);
