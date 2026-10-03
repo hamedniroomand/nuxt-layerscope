@@ -28,6 +28,7 @@
   next write; the Baseline view can also remove entries. The file matches what
   `check --update-baseline` writes. Writes need a token that only the tab knows, come only from
   the same origin, and are refused when the findings changed in the meantime.
+- The client size test measures the production build, as it ships.
 - Large projects re-run much faster in the tab: suggestions are indexed, the analysis yields to
   the event loop between batches, and the loaded symbols are kept until the registry changes.
 - `/__layerscope/api/report` adds absolute paths (`absRoot`, `absFile`, `absTarget`), `hotFiles`
