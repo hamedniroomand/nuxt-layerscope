@@ -28,6 +28,9 @@ export function fakeApi(data: ReportResponse | Error): Api {
     unused: vi
       .fn<Api['unused']>()
       .mockResolvedValue({ unused: [], possiblyUsed: false, layers: [] }),
+    ignore: vi.fn<Api['ignore']>().mockRejectedValue(new Error('no ignore in this test')),
+    remove: vi.fn<Api['remove']>().mockRejectedValue(new Error('no remove in this test')),
+    undo: vi.fn<Api['undo']>().mockRejectedValue(new Error('no undo in this test')),
     graph: vi.fn<Api['graph']>().mockRejectedValue(new Error('no graph in this test')),
     edge: vi.fn<Api['edge']>().mockRejectedValue(new Error('no edge in this test')),
     node: vi.fn<Api['node']>().mockRejectedValue(new Error('no node in this test')),

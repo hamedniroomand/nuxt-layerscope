@@ -3,16 +3,18 @@ import { makeFinding } from '#test/factories.ts';
 
 export function tabFinding(overrides: Partial<TabFinding> = {}): TabFinding {
   const finding = makeFinding();
-  return {
+  const merged = {
     ...finding,
     file: 'pages/index.vue',
     target: 'layers/shop/composables/useCart.ts',
     absFile: finding.file,
     absTarget: finding.target,
-    key: `layer-boundary\0pages/index.vue\0${finding.symbol}\0shop`,
     isNew: false,
     ...overrides,
   };
+  // The key follows the overrides, as the server derives it from the finding.
+  const key = [merged.rule, merged.file, merged.symbol, merged.toLayer ?? ''].join('\0');
+  return { key, ...merged };
 }
 
 export function tabReport(overrides: Partial<TabReport> = {}): TabReport {

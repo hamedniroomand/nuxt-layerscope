@@ -5,7 +5,7 @@
 - The DevTools tab is a prebuilt Vue client with Overview and Findings views. Its theme
   follows Nuxt DevTools, and it follows the OS theme when you open `/__layerscope` directly.
   Findings filter by severity, rule, layer pair, file and text, with the filters kept in the URL
-  hash. Keyboard: `1` to `6`, `/`, `r`, `j`, `k`, `o`, `t`, `n`, `p`, `e` and `Esc`.
+  hash. Keyboard: `1` to `6`, `/`, `r`, `j`, `k`, `o`, `t`, `i`, `x`, `n`, `p`, `e` and `Esc`.
 - The DevTools tab updates while you code. An open tab re-runs the analysis 200 ms after a change
   and says what changed ("+2 violations, -1 fixed"). Findings that are new since the tab opened
   get a `NEW` chip, a "New only" filter and the `n` key. `p` pauses live updates. While the
@@ -22,6 +22,12 @@
   shows its files and symbols; a Table view shows the same numbers as a matrix and opens first
   above 15 layers. The Overview shows a small copy of the graph. The Layers view is folded into
   it. The graph loads as a separate chunk, only when needed.
+- Findings can be accepted into `layerscope-baseline.json` from the tab: one row (`i`), a picked
+  set (`x` and shift-click) or a whole group, always after an inline confirm that says how many
+  entries and files it adds. Undo is one click for 10 s, and the Baseline view keeps it until the
+  next write; the Baseline view can also remove entries. The file matches what
+  `check --update-baseline` writes. Writes need a token that only the tab knows, come only from
+  the same origin, and are refused when the findings changed in the meantime.
 - Large projects re-run much faster in the tab: suggestions are indexed, the analysis yields to
   the event loop between batches, and the loaded symbols are kept until the registry changes.
 - `/__layerscope/api/report` adds absolute paths (`absRoot`, `absFile`, `absTarget`), `hotFiles`

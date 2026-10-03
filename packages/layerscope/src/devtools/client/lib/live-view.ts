@@ -4,18 +4,13 @@ import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue';
 import type { FindingDelta } from '#src/devtools/finding-keys.ts';
 import type { LiveEvent } from '#src/devtools/live.ts';
 
+import type { Toast } from './actions.ts';
 import type { TabContext } from './context.ts';
 import { plural } from './format.ts';
 import type { EventSourceLike, LiveClient, LiveHandlers, LiveStatus } from './live.ts';
 import { connectLive } from './live.ts';
 import type { FrameWindow } from './visibility.ts';
 import { isVisible, watchVisibility } from './visibility.ts';
-
-export interface Toast {
-  message: string;
-  /** The toast offers "Show new" and "Reset marker". */
-  showsNew: boolean;
-}
 
 export interface LiveView {
   /** `null` when the browser has no `EventSource`; the header then shows no live status. */
@@ -61,7 +56,8 @@ function liveHandlers(
   return {
     snapshot: async event => {
       await store.applyEvent(event);
-      const message = describeEvent(event);
+      // A write from a tab shows its own message; the event only refreshes the data.
+      const message = event.cause === 'baseline' ? null : describeEvent(event);
       if (message !== null) {
         toast.value = { message, showsNew: event.newCount > 0 };
       }

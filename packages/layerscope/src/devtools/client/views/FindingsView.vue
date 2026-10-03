@@ -3,12 +3,15 @@
 
   import FilterChips from '#src/devtools/client/components/FilterChips.vue';
   import FindingRow from '#src/devtools/client/components/FindingRow.vue';
+  import InlineConfirm from '#src/devtools/client/components/InlineConfirm.vue';
   import SeverityGlyph from '#src/devtools/client/components/SeverityGlyph.vue';
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import { useFindingsView } from '#src/devtools/client/lib/findings-view.ts';
+  import { useIgnoreFlow } from '#src/devtools/client/lib/ignore-flow.ts';
 
   const context = useTab();
   const view = useFindingsView(context);
+  const ignore = useIgnoreFlow(context, view);
   const list = useTemplateRef<HTMLElement>('list');
 
   const reveal = async (step: number): Promise<void> => {
@@ -92,6 +95,33 @@
         </label>
       </div>
     </div>
+    <div
+      v-if="ignore.pending.value || ignore.multi.count.value > 0"
+      class="bulk"
+    >
+      <InlineConfirm
+        v-if="ignore.pending.value"
+        :message="ignore.pending.value.message"
+        action="Add"
+        @confirm="ignore.confirm()"
+        @cancel="ignore.cancel()"
+      />
+      <template v-else>
+        <span class="num">{{ ignore.multi.count.value }} picked</span>
+        <button
+          type="button"
+          @click="ignore.askPicked()"
+        >
+          Ignore picked
+        </button>
+        <button
+          type="button"
+          @click="ignore.multi.clear()"
+        >
+          Clear
+        </button>
+      </template>
+    </div>
     <p
       v-if="view.total.value === 0"
       class="empty"
@@ -117,7 +147,16 @@
             <SeverityGlyph :severity="group.severity" />
             {{ group.label }}
           </span>
-          <span class="num muted">{{ group.findings.length }}</span>
+          <span class="group-end">
+            <button
+              type="button"
+              class="quiet"
+              @click="ignore.ask(group.findings)"
+            >
+              Ignore all {{ group.findings.length }}
+            </button>
+            <span class="num muted">{{ group.findings.length }}</span>
+          </span>
         </h3>
         <ul
           class="rows"
@@ -129,7 +168,11 @@
             :key="view.idOf(finding)"
             :finding="finding"
             :selected="view.selected.value === view.idOf(finding)"
+            :picked="ignore.multi.has(view.idOf(finding))"
+            :picking="ignore.multi.count.value > 0"
             @select="view.select(finding)"
+            @pick="ignore.multi.toggle(view.idOf(finding), $event)"
+            @ignore="ignore.ask([finding])"
             @open="view.open"
             @trace="context.nav.trace"
           />
@@ -166,6 +209,27 @@
     padding: 6px 14px;
     background: var(--bg-raised);
     border-bottom: 1px solid var(--line);
+  }
+
+  .bulk {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .group-end {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .quiet {
+    border-color: transparent;
+    color: var(--fg-muted);
+    font-weight: 400;
   }
 
   .rows {

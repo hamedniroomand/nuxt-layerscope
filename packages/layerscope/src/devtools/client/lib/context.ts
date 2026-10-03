@@ -1,6 +1,7 @@
-import type { InjectionKey } from 'vue';
+import type { InjectionKey, Ref } from 'vue';
 import { inject } from 'vue';
 
+import type { BaselineActions, Toast } from './actions.ts';
 import type { Api } from './api.ts';
 import type { Navigation } from './navigation.ts';
 import type { Shortcuts } from './shortcuts.ts';
@@ -11,6 +12,8 @@ export interface TabContext {
   store: Store;
   nav: Navigation;
   shortcuts: Shortcuts;
+  toast: Ref<Toast | null>;
+  actions: BaselineActions;
 }
 
 export const TAB_CONTEXT: InjectionKey<TabContext> = Symbol('layerscope');

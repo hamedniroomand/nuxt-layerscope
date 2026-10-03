@@ -23,6 +23,8 @@ export interface Store {
   state: StoreState;
   load: () => Promise<void>;
   rerun: () => Promise<void>;
+  /** Takes a report the server sent with a write. */
+  replace: (data: ReportResponse) => void;
   /** Takes the timing from a live event; fetches the report only when it changed. */
   applyEvent: (event: EventMeta) => Promise<void>;
 }
@@ -88,6 +90,12 @@ export function createStore(api: Api): Store {
     },
     rerun: async () => {
       await rerun(api, state);
+    },
+    replace: data => {
+      state.data = data;
+      // The next load asks for the whole report once; it then has a current ETag.
+      state.etag = null;
+      succeed(state);
     },
     applyEvent: async event => {
       const { data } = state;

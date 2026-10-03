@@ -1,5 +1,7 @@
-import { nextTick, onBeforeUnmount } from 'vue';
+import { nextTick, onBeforeUnmount, ref } from 'vue';
 
+import type { Toast } from './actions.ts';
+import { createActions } from './actions.ts';
 import type { Api } from './api.ts';
 import { createApi, readConfig } from './api.ts';
 import type { TabContext } from './context.ts';
@@ -13,11 +15,15 @@ export function createTabContext(
   win: Window = window,
   api: Api = createApi(readConfig(win.document), win.fetch.bind(win)),
 ): TabContext {
+  const store = createStore(api);
+  const toast = ref<Toast | null>(null);
   return {
     api,
-    store: createStore(api),
+    store,
     nav: createNavigation(win),
     shortcuts: createShortcuts(),
+    toast,
+    actions: createActions(api, store, toast),
   };
 }
 

@@ -1,12 +1,23 @@
 <script setup lang="ts">
+  import { shallowRef } from 'vue';
+
   import CopyButton from '#src/devtools/client/components/CopyButton.vue';
+  import InlineConfirm from '#src/devtools/client/components/InlineConfirm.vue';
   import SeverityGlyph from '#src/devtools/client/components/SeverityGlyph.vue';
+  import { entryKey } from '#src/devtools/client/lib/actions.ts';
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import { location } from '#src/devtools/client/lib/format.ts';
   import { useViewData } from '#src/devtools/client/lib/view-data.ts';
 
   const context = useTab();
-  const { api } = context;
+  const { api, actions } = context;
+  // Entries waiting for the inline confirm: their keys and what the confirm says.
+  const pending = shallowRef<{ keys: string[]; message: string } | null>(null);
+  const confirm = async (): Promise<void> => {
+    const keys = pending.value?.keys ?? [];
+    pending.value = null;
+    await actions.remove(keys);
+  };
   const baseline = useViewData(context, async () => {
     const view = await api.baseline();
     return view;
@@ -27,6 +38,25 @@
         label="Copy as CLI"
       />
     </div>
+    <div
+      v-if="actions.lastWrite.value !== null"
+      class="bar"
+    >
+      <span class="muted">The last change to the baseline can be undone.</span>
+      <button
+        type="button"
+        @click="actions.undo()"
+      >
+        Undo
+      </button>
+    </div>
+    <InlineConfirm
+      v-if="pending"
+      :message="pending.message"
+      action="Remove"
+      @confirm="confirm()"
+      @cancel="pending = null"
+    />
     <p
       v-if="baseline.error.value"
       class="err"
@@ -60,6 +90,17 @@
           >
             {{ location(finding.file, finding.line, finding.column) }}
           </a>
+          <button
+            type="button"
+            @click="
+              pending = {
+                keys: [finding.key],
+                message: `Remove ${finding.symbol} in ${finding.file} from the baseline? It shows as a finding again.`,
+              }
+            "
+          >
+            Remove from baseline
+          </button>
         </li>
       </ul>
       <h3 class="group">
@@ -86,6 +127,17 @@
           >
             ×{{ entry.count }}
           </span>
+          <button
+            type="button"
+            @click="
+              pending = {
+                keys: [entryKey(entry)],
+                message: `Remove the stale entry for ${entry.symbol} in ${entry.file}?`,
+              }
+            "
+          >
+            Remove
+          </button>
         </li>
       </ul>
     </template>

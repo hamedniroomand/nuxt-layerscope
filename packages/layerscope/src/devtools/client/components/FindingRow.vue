@@ -5,11 +5,13 @@
   import HintLine from './HintLine.vue';
   import SeverityGlyph from './SeverityGlyph.vue';
 
-  defineProps<{ finding: TabFinding; selected: boolean }>();
+  defineProps<{ finding: TabFinding; selected: boolean; picked: boolean; picking: boolean }>();
   defineEmits<{
     select: [];
     open: [file: string, line: number, column: number];
     trace: [symbol: string];
+    pick: [range: boolean];
+    ignore: [];
   }>();
 </script>
 
@@ -23,6 +25,15 @@
     @click="$emit('select')"
   >
     <div class="line">
+      <input
+        class="pick"
+        :class="{ shown: picking }"
+        type="checkbox"
+        :checked="picked"
+        :aria-label="`Pick ${finding.symbol} for a bulk action`"
+        aria-keyshortcuts="x"
+        @click.stop="$emit('pick', ($event as MouseEvent).shiftKey)"
+      />
       <SeverityGlyph :severity="finding.severity" />
       <span
         v-if="finding.isNew"
@@ -61,6 +72,13 @@
     />
     <div class="actions">
       <slot name="actions" />
+      <button
+        type="button"
+        aria-keyshortcuts="i"
+        @click.stop="$emit('ignore')"
+      >
+        Ignore
+      </button>
       <button
         type="button"
         aria-keyshortcuts="t"
@@ -124,6 +142,18 @@
 
   .rule {
     margin-left: auto;
+  }
+
+  .pick {
+    margin: 0;
+    opacity: 0;
+  }
+
+  .pick.shown,
+  .row:hover .pick,
+  .row:focus-within .pick,
+  .row.selected .pick {
+    opacity: 1;
   }
 
   .new {

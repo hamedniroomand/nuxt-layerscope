@@ -10,6 +10,7 @@ import type {
   SymbolEntry,
   TraceView,
   UnusedView,
+  WriteResponse,
 } from '#src/devtools/protocol.ts';
 
 /** The config the shell embeds; defaults keep the client usable in tests. */
@@ -59,6 +60,10 @@ export interface Api {
   unused: () => Promise<UnusedView>;
   baseline: () => Promise<BaselineView>;
   graph: () => Promise<GraphView>;
+  /** Writes the baseline; `rev` must be the revision the tab shows. */
+  ignore: (meta: { id: string; rev: number }, keys: string[]) => Promise<WriteResponse>;
+  remove: (meta: { id: string; rev: number }, keys: string[]) => Promise<WriteResponse>;
+  undo: (id: string, writeId: number) => Promise<WriteResponse>;
   edge: (from: string, to: string) => Promise<EdgeView>;
   node: (layer: string, offset?: number) => Promise<NodeView>;
   /** URL of the server's event stream. */
@@ -104,6 +109,32 @@ function viewCalls(
   };
 }
 
+/** The calls that write the baseline: JSON bodies, and the token that proves the tab sent them. */
+function writeCalls(call: Call, token: string): Pick<Api, 'ignore' | 'remove' | 'undo'> {
+  const post = async (path: string, body: object): Promise<WriteResponse> => {
+    const data = await call<WriteResponse>(path, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-layerscope-token': token },
+      body: JSON.stringify(body),
+    });
+    return data;
+  };
+  return {
+    ignore: async ({ id, rev }, keys) => {
+      const data = await post('/api/baseline/ignore', { id, rev, keys });
+      return data;
+    },
+    remove: async ({ id, rev }, keys) => {
+      const data = await post('/api/baseline/remove', { id, rev, keys });
+      return data;
+    },
+    undo: async (id, writeId) => {
+      const data = await post('/api/baseline/undo', { id, writeId });
+      return data;
+    },
+  };
+}
+
 export function createApi(config: ShellConfig, request: typeof fetch = fetch): Api {
   const call = async <T>(path: string, init?: RequestInit): Promise<T> => {
     const response = await request(`${config.base}${path}`, init);
@@ -114,6 +145,7 @@ export function createApi(config: ShellConfig, request: typeof fetch = fetch): A
   };
   return {
     events: `${config.base}/events`,
+    ...writeCalls(call, config.token),
     report: async etag => {
       const headers: HeadersInit = etag === null ? {} : { 'if-none-match': etag };
       const response = await request(`${config.base}/api/report`, { headers });

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { computed, onMounted, ref, watch } from 'vue';
+  import { computed, onMounted, watch } from 'vue';
 
   import AppHeader from './components/AppHeader.vue';
   import LiveStatus from './components/LiveStatus.vue';
@@ -8,13 +8,12 @@
   import { useAppShortcuts } from './lib/app.ts';
   import { useTab } from './lib/context.ts';
   import { duration } from './lib/format.ts';
-  import type { Toast } from './lib/live-view.ts';
   import { useLive } from './lib/live-view.ts';
   import ActiveView from './views/ActiveView.vue';
 
   const context = useTab();
   const { store, nav } = context;
-  const toast = ref<Toast | null>(null);
+  const { toast } = context;
   const live = useLive(context, toast);
   const tabs = computed(() => {
     const report = store.state.data?.report;
@@ -46,6 +45,17 @@
       }
     },
   );
+  // The Undo in the toast lasts 10 s; the Baseline view keeps one until the next write.
+  const UNDO_MS = 10_000;
+  watch(toast, shown => {
+    if (shown?.undo !== undefined) {
+      setTimeout(() => {
+        if (toast.value === shown) {
+          toast.value = { ...shown, undo: undefined };
+        }
+      }, UNDO_MS);
+    }
+  });
   onMounted(() => store.load());
 </script>
 
@@ -103,6 +113,13 @@
       :message="toast?.message ?? null"
       @dismiss="toast = null"
     >
+      <button
+        v-if="toast?.undo !== undefined"
+        type="button"
+        @click="context.actions.undo()"
+      >
+        Undo
+      </button>
       <template v-if="toast?.showsNew">
         <button
           type="button"
