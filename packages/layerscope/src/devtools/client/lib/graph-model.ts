@@ -55,6 +55,14 @@ export function strokeWidth(count: number): number {
   return 1 + Math.log2(Math.max(1, count));
 }
 
+/** Stroke widths from this value use the larger arrowhead, so it stays in proportion to the line. */
+const LARGE_ARROW_FROM = 2.5;
+
+/** The `<marker>` id for an edge drawn at `width`. */
+export function markerFor(width: number): 'ls-arrow' | 'ls-arrow-lg' {
+  return width < LARGE_ARROW_FROM ? 'ls-arrow' : 'ls-arrow-lg';
+}
+
 /** Matrix shade from 0 (no references) to 3 (the heaviest cell). */
 export function cellShade(count: number, max: number): number {
   if (count === 0 || max === 0) {

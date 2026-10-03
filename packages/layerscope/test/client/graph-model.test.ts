@@ -6,6 +6,7 @@ import {
   formatSelection,
   nearestNode,
   parseSelection,
+  markerFor,
   strokeWidth,
   symbolLabel,
   visibleEdges,
@@ -53,6 +54,11 @@ describe('graph drawing helpers', () => {
   it('scales strokes, shades cells and shortens specifiers', () => {
     expect(strokeWidth(1)).toBe(1);
     expect(strokeWidth(8)).toBe(4);
+    expect(
+      [strokeWidth(1), strokeWidth(2), strokeWidth(3), strokeWidth(8)].map(width =>
+        markerFor(width),
+      ),
+    ).toEqual(['ls-arrow', 'ls-arrow', 'ls-arrow-lg', 'ls-arrow-lg']);
     expect([0, 1, 5, 10].map(count => cellShade(count, 10))).toEqual([0, 1, 2, 3]);
     expect(cellShade(3, 0)).toBe(0);
     expect(symbolLabel('#layers/web/app/composables/useCart')).toBe('useCart');

@@ -7,10 +7,21 @@
     GraphSelection,
     LaidOutGraph,
   } from '#src/devtools/client/lib/graph-model.ts';
-  import { edgesOf, nearestNode, strokeWidth } from '#src/devtools/client/lib/graph-model.ts';
+  import {
+    edgesOf,
+    markerFor,
+    nearestNode,
+    strokeWidth,
+  } from '#src/devtools/client/lib/graph-model.ts';
   import { usePanZoom } from '#src/devtools/client/lib/pan-zoom.ts';
   import type { GraphEdgeView, GraphView } from '#src/devtools/protocol.ts';
   import { NODE_HEIGHT, NODE_WIDTH } from '#src/graph/layout-size.ts';
+
+  /** Two chevron sizes, so the arrowhead stays in proportion to thin and thick lines. */
+  const ARROWS = [
+    { id: 'ls-arrow', size: 10, stroke: 1.75 },
+    { id: 'ls-arrow-lg', size: 14, stroke: 2 },
+  ] as const;
 
   const props = defineProps<{
     view: LaidOutGraph;
@@ -105,19 +116,26 @@
     @pointerup="pan.onPointerUp"
   >
     <defs>
+      <!-- Open chevrons; context-stroke gives them the color of their line, also in forced colors. -->
       <marker
-        id="ls-arrow"
-        viewBox="0 0 8 8"
-        refX="8"
-        refY="4"
+        v-for="arrow in ARROWS"
+        :id="arrow.id"
+        :key="arrow.id"
+        viewBox="0 0 10 10"
+        refX="9"
+        refY="5"
         markerUnits="userSpaceOnUse"
-        markerWidth="9"
-        markerHeight="9"
+        :markerWidth="arrow.size"
+        :markerHeight="arrow.size"
         orient="auto-start-reverse"
       >
         <path
-          d="M0 0 8 4 0 8z"
-          fill="context-stroke"
+          d="M2 2 L8 5 L2 8"
+          fill="none"
+          stroke="context-stroke"
+          :stroke-width="arrow.stroke"
+          stroke-linecap="round"
+          stroke-linejoin="round"
         />
       </marker>
     </defs>
@@ -140,10 +158,16 @@
           :d="path.path"
         />
         <path
+          v-if="isSelectedEdge(edge)"
+          class="halo"
+          :d="path.path"
+          :stroke-width="strokeWidth(edge.count) + 8"
+        />
+        <path
           class="line"
           :d="path.path"
           :stroke-width="strokeWidth(edge.count)"
-          marker-end="url(#ls-arrow)"
+          :marker-end="`url(#${markerFor(strokeWidth(edge.count))})`"
         />
         <text
           :x="path.labelX"
@@ -250,6 +274,8 @@
   .edge .line {
     fill: none;
     stroke: var(--fg-muted);
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .edge .hit {
@@ -269,7 +295,8 @@
 
   .edge.viol .line {
     stroke: var(--error);
-    stroke-dasharray: 5 4;
+    /* Short dashes with round caps read as pills. */
+    stroke-dasharray: 4 7;
   }
 
   .edge.viol text {
@@ -279,6 +306,15 @@
 
   .edge.sel .line {
     stroke-width: 3;
+  }
+
+  /* The selection is a soft band under the line, so the line keeps its own color. */
+  .edge .halo {
+    fill: none;
+    stroke: var(--accent);
+    stroke-opacity: 0.28;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .dimmed .edge:not(.hot) {
@@ -292,6 +328,11 @@
 
     .edge.viol .line {
       stroke: Highlight;
+    }
+
+    .edge .halo {
+      stroke: Highlight;
+      stroke-opacity: 1;
     }
   }
 </style>
