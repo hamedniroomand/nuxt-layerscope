@@ -1,8 +1,7 @@
 <!doctype html>
 <!--
-  Source of public/og-image.png (1200x630). After a brand change, render it with any Chrome:
-  chrome --headless=new --hide-scrollbars --window-size=1200,630 \
-    --screenshot=packages/docs/public/og-image.png packages/docs/scripts/og-image.html
+  Source of public/og-image.png (1200x630). `vp run docs#screenshots` renders it after the tab
+  captures, so it shows the current Overview view.
 -->
 <html>
   <head>
@@ -60,8 +59,8 @@
       }
       h1 {
         margin-top: 56px;
-        max-width: 900px;
-        font-size: 66px;
+        max-width: 560px;
+        font-size: 56px;
         line-height: 1.05;
         letter-spacing: -0.045em;
         font-weight: 700;
@@ -91,6 +90,15 @@
       .cmd b {
         color: #34e8a0;
         font-weight: 500;
+      }
+      .shot {
+        position: absolute;
+        top: 160px;
+        left: 660px;
+        width: 500px;
+        border: 1px solid #262c30;
+        border-radius: 12px;
+        box-shadow: 0 24px 60px rgb(0 0 0 / 0.5);
       }
       .tags {
         font-size: 22px;
@@ -140,6 +148,11 @@
         fill="url(#p)"
       />
     </svg>
+    <img
+      class="shot"
+      src="../public/devtools/overview-dark.png"
+      alt=""
+    />
     <div class="content">
       <div class="brand">
         <img

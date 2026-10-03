@@ -9,10 +9,13 @@
   "scripts": {
     "dev": "vitepress dev",
     "build": "vitepress build",
-    "preview": "vitepress preview"
+    "preview": "vitepress preview",
+    "screenshots": "node scripts/screenshots.ts"
   },
   "devDependencies": {
     "mermaid": "^12.0.0",
+    "playwright-core": "^1.63.0",
+    "sharp": "^0.35.5",
     "vitepress": "2.0.0-alpha.20",
     "vitepress-plugin-llms": "^1.14.0",
     "vue": "^3.5.43"

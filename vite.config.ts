@@ -120,6 +120,13 @@ export default defineConfig({
         files: ['packages/docs/.vitepress/config.ts'],
         rules: { 'import/no-default-export': 'off' },
       },
+      {
+        // Maintainer scripts: they report to the terminal, capture one page after the other, and
+        // run code in the browser through Playwright.
+        files: ['packages/docs/scripts/**'],
+        env: { browser: true },
+        rules: { 'no-console': 'off', 'no-await-in-loop': 'off', 'unicorn/no-process-exit': 'off' },
+      },
     ],
   },
   test: {
