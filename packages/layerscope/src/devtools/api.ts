@@ -1,11 +1,12 @@
 import type { H3Event } from 'h3';
-import { getHeader, setResponseHeader, setResponseStatus } from 'h3';
+import { getHeader, getQuery, setResponseHeader, setResponseStatus } from 'h3';
 
 import type { Snapshot } from './analyzer.ts';
 import type { ReportResponse, SnapshotMeta } from './protocol.ts';
 import { tabReport } from './report.ts';
 import { isSameOrigin } from './same-origin.ts';
 import type { Session } from './session.ts';
+import { VIEW_PATHS, viewBody } from './views-api.ts';
 
 const JSON_TYPE = 'application/json';
 
@@ -70,14 +71,18 @@ async function read(event: H3Event, path: string, session: Session): Promise<str
   if (notModified(event, etag)) {
     return '';
   }
-  const body =
-    path === '/api/state'
-      ? { ...meta(snapshot, session), status: 'ready', live: live.state }
-      : await withReport(snapshot, session);
+  if (path === '/api/state') {
+    return json(event, 200, { ...meta(snapshot, session), status: 'ready', live: live.state });
+  }
+  if (path === '/api/report') {
+    return json(event, 200, await withReport(snapshot, session));
+  }
+  const symbol = getQuery(event).symbol;
+  const body = await viewBody(path, snapshot.result, typeof symbol === 'string' ? symbol : '');
   return json(event, 200, body);
 }
 
-/** `/api/*`: state and report read the cached snapshot; POST routes re-run or steer live mode. */
+/** `/api/*`: GET routes read the cached snapshot; POST routes re-run or steer live mode. */
 export async function api(event: H3Event, path: string, session: Session): Promise<string> {
   if (path === '/api/rerun' || path in LIVE_POSTS) {
     if (event.method !== 'POST') {
@@ -87,7 +92,7 @@ export async function api(event: H3Event, path: string, session: Session): Promi
       ? json(event, 200, await post(path, session))
       : json(event, 403, { error: 'Cross-origin requests are not allowed' });
   }
-  if (path !== '/api/state' && path !== '/api/report') {
+  if (path !== '/api/state' && path !== '/api/report' && !VIEW_PATHS.includes(path)) {
     return json(event, 404, { error: `Not found: ${path}` });
   }
   if (event.method !== 'GET') {

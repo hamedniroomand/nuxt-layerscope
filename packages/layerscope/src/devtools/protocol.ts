@@ -1,4 +1,23 @@
-import type { BaselineEntry, Finding, Suggestion } from '#src/types.ts';
+import type { UnusedRow } from '#src/report/unused.ts';
+import type { WhyReport } from '#src/report/why.ts';
+import type { BaselineEntry, Context, Finding, Suggestion } from '#src/types.ts';
+
+/** Copy-only fix for a boundary finding whose suggestion is to allow the target layer. */
+export interface AllowHint {
+  kind: 'allow';
+  /** The layer whose `allow` list grows. */
+  layer: string;
+  /** The layer to add. */
+  add: string;
+  /** Findings the change clears, from the analyzer's suggestion. */
+  resolves: number;
+  /** Files those findings are in. */
+  files: number;
+  /** How many of them the baseline already suppresses. */
+  baselined: number;
+  /** The `layers.<layer>` entry of the config, with the layer added. */
+  snippet: string;
+}
 
 /** A finding as the tab receives it: relative paths for display, absolute ones for the editor. */
 export interface TabFinding extends Finding {
@@ -8,6 +27,7 @@ export interface TabFinding extends Finding {
   key: string;
   /** Present beyond the count its key had when the marker was set. */
   isNew: boolean;
+  hint?: AllowHint;
 }
 
 export interface HotFile {
@@ -65,6 +85,32 @@ export interface ShellConfig {
   base: string;
   /** Vite's open-in-editor endpoint, such as `/_nuxt/__open-in-editor`. */
   openInEditor: string;
+}
+
+export interface SymbolEntry {
+  name: string;
+  kind: 'component' | 'auto-import';
+  /** Owning layer; `null` for packages and Nuxt itself. */
+  layer: string | null;
+  /** Auto-import contexts; empty for components. */
+  contexts: Context[];
+}
+
+export type TraceView = WhyReport;
+
+export interface UnusedView {
+  unused: UnusedRow[];
+  /** The project renders components chosen at runtime, so some may be used after all. */
+  possiblyUsed: boolean;
+  /** Layer order for grouping. */
+  layers: string[];
+}
+
+export interface BaselineView {
+  /** Relative to the project root; `null` when there is no baseline file. */
+  file: string | null;
+  suppressed: TabFinding[];
+  removable: BaselineEntry[];
 }
 
 export type { Suggestion };
