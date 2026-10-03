@@ -16,7 +16,7 @@ adds [provenance](https://docs.npmjs.com/generating-provenance-statements).
 3. Tag `main` and push the tag:
 
    ```bash
-   git switch main && git pull && git tag v0.2.0 && git push origin v0.2.0
+   git switch main && git pull && git tag v0.3.0 && git push origin v0.3.0
    ```
 
 The workflow then:
@@ -30,7 +30,7 @@ The workflow then:
 A tag with a pre-release suffix, such as `v0.3.0-beta.1`, is published under the `next` dist-tag
 and marked as a pre-release on GitHub.
 
-The GitHub Action is referenced by tag (`hamedniroomand/nuxt-layerscope@v0.2.0`), so every
+The GitHub Action is referenced by tag (`hamedniroomand/nuxt-layerscope@v0.3.0`), so every
 release needs its tag.
 
 ## Try a change before it is released
