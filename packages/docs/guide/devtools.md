@@ -212,8 +212,9 @@ starts an analysis.
 ## Performance
 
 The tab costs nothing until you open it: no analysis runs, and production builds contain no
-layerscope code. When it is open, the analysis gives the event loop of the dev server a turn
-between small batches of work, so HMR stays fast.
+layerscope code (a [static snapshot](#publish-a-static-snapshot) is files, not code). When it is
+open, the analysis gives the event loop of the dev server a turn between small batches of work, so
+HMR stays fast.
 
 Measured on 2026-10-03 on an Apple Silicon laptop. "Synthetic" is a generated project with 12
 layers, 1,980 files and 1,687 findings.
@@ -240,6 +241,40 @@ and records the longest time between two event-loop turns. The browser numbers c
 with a `PerformanceObserver` for long tasks. A test in CI checks that an analysis after a one-file
 change takes less than 500 ms on the nuxt4 fixture.
 
+## Publish a static snapshot
+
+The tab needs the dev server, so a deployed app cannot run it. To publish the layer report with
+your app, for a demo or for the team, let the build write a read-only copy of the tab:
+
+```ts [nuxt.config.ts]
+export default defineNuxtConfig({
+  modules: ['nuxt-layerscope'],
+  layerscope: { devtools: { static: true } },
+});
+```
+
+`nuxi build` and `nuxi generate` then analyze the project once and write `/__layerscope/` to the
+public output: the tab, and one JSON file for each answer it can show. The host serves files only.
+The tab in `nuxi dev` stays as it is.
+
+The snapshot is read-only. It has no live updates, no Re-run, no Ignore, Remove or Undo, and file
+names are text, not editor links. A line under the tabs says when it was taken. A button in the
+header switches between the light and dark theme.
+
+- Paths: the snapshot is public, so every path in it is relative to the project root. No path of
+  the build machine is written.
+- Size: the client is about 50 KB (gzip), plus one small trace file for each component and
+  auto-import. The [playground](https://github.com/hamedniroomand/nuxt-layerscope/tree/main/packages/playground)
+  writes 373 JSON files, 76 KB in total.
+- Prerender: `nuxi generate` does not crawl into `/__layerscope/`, so a link to it from your pages
+  is safe.
+- Base URL: the snapshot uses `app.baseURL`, so it also works when the app is not at the root of
+  the domain.
+
+The snapshot needs the built client of the module. When you load the module from a local path, as
+the playground does, build `nuxt-layerscope` first, or the build stops with "The DevTools client is
+not built".
+
 ## Turn the tab off
 
 ```ts [nuxt.config.ts]
@@ -249,4 +284,5 @@ export default defineNuxtConfig({
 });
 ```
 
-The tab exists only in development. Production builds contain no layerscope code.
+The tab exists only in development. Production builds contain no layerscope code, unless you ask
+for a [static snapshot](#publish-a-static-snapshot).

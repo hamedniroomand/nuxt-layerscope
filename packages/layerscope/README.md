@@ -192,6 +192,8 @@ at the start of the script with their template line in the message.
 While `nuxi dev` runs, the module adds a **Layerscope** tab to Nuxt DevTools with the layers,
 what each may depend on and the current findings. File links open in your editor. The report is
 also served as JSON at `/__layerscope?format=json`. Turn it off with `layerscope: { devtools: false }`.
+With `layerscope: { devtools: { static: true } }`, `nuxi build` and `nuxi generate` also write a
+read-only copy of the tab to `/__layerscope/`, for any static host.
 
 ## Config
 

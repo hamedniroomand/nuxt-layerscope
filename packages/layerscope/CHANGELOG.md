@@ -31,6 +31,10 @@
   contrast of 4.5:1 or more in both themes.
 - Large projects re-run much faster in the tab: suggestions are indexed, the analysis yields to
   the event loop between batches, and the loaded symbols are kept until the registry changes.
+- `layerscope: { devtools: { static: true } }` publishes a read-only snapshot of the tab:
+  `nuxi build` and `nuxi generate` write `/__layerscope/` to the public output, with paths
+  relative to the project. The snapshot has no live updates and no writes, and works on any static
+  host.
 - New JSON endpoints under `/__layerscope/api`: `symbols`, `trace`, `unused`, `baseline`,
   `graph`, `edge`, `node`, `live/*` and `baseline/*`. `report` adds absolute paths (`absRoot`,
   `absFile`, `absTarget`), `hotFiles` and per-layer `layerStats`.

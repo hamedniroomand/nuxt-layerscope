@@ -53,7 +53,7 @@ export default defineNuxtConfig({
   layerscope: {
     // Set to false to stop writing the registry.
     enabled: true,
-    // Set to false to remove the Nuxt DevTools tab.
+    // Set to false to remove the Nuxt DevTools tab; { static: true } also publishes a snapshot.
     devtools: true,
     // Layers, rules, ignore and globals, as in layerscope.config.ts.
     layers: { admin: { allow: ['shared'] } },
@@ -71,7 +71,8 @@ note that `nuxt.config` is newer than the registry.
 ## DevTools tab
 
 While `nuxi dev` runs, the module also adds a Layerscope tab to Nuxt DevTools. See
-[DevTools](./devtools).
+[DevTools](./devtools). With `devtools: { static: true }`, `nuxi build` and `nuxi generate` also
+write a read-only copy of the tab; see [Publish a static snapshot](./devtools#publish-a-static-snapshot).
 
 ## Checking which source was used
 
