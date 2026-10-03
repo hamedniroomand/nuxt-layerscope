@@ -147,6 +147,7 @@ export default defineConfig({
         'packages/layerscope/src/devtools/client/shims.d.ts',
       ],
       reporter: ['text', 'html', 'clover', 'json', 'lcov'],
+      thresholds: { statements: 90, branches: 80, functions: 90, lines: 90 },
     },
   },
   run: {
