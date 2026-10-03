@@ -32,9 +32,9 @@ describe('compareByPosition', () => {
 describe('runRules', () => {
   const config = { layers: { web: { allow: [] } } };
 
-  it('merges unresolved and boundary findings in report order', () => {
+  it('merges unresolved and boundary findings in report order', async () => {
     const unresolved = makeFinding({ rule: 'unresolved-reference', severity: 'warn', line: 1 });
-    const { findings } = runRules({
+    const { findings } = await runRules({
       edges: [makeEdge({ line: 2 })],
       unresolved: [unresolved],
       registry: null,
@@ -46,7 +46,7 @@ describe('runRules', () => {
     expect(findings.map(f => f.rule)).toEqual(['unresolved-reference', 'layer-boundary']);
   });
 
-  it('notes that shadowed-component could not run without a registry', () => {
+  it('notes that shadowed-component could not run without a registry', async () => {
     const input = {
       edges: [],
       unresolved: [],
@@ -56,8 +56,8 @@ describe('runRules', () => {
       ownerOf: noOwner,
       config,
     };
-    expect(runRules(input).notes).toEqual([SHADOWED_NEEDS_REGISTRY]);
+    expect((await runRules(input)).notes).toEqual([SHADOWED_NEEDS_REGISTRY]);
     const off = { ...config, rules: { 'shadowed-component': 'off' as const } };
-    expect(runRules({ ...input, config: off }).notes).toEqual([]);
+    expect((await runRules({ ...input, config: off })).notes).toEqual([]);
   });
 });

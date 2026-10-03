@@ -48,10 +48,11 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     source: options.source ?? 'auto',
   });
   const { layers, env, registry, config } = environment;
+  // Collecting reads the file system, so the event loop gets a turn after the environment loads.
   const files = await collectFiles(layers, env.ownerOf, config.ignore ?? []);
-  const analyses = analyzeFiles(files, env, options.cache, options.envKey);
+  const analyses = await analyzeFiles(files, env, options.cache, options.envKey);
   const edges = analyses.flatMap(analysis => analysis.edges).toSorted(compareByPosition);
-  const { findings, notes } = runRules({
+  const { findings, notes } = await runRules({
     edges,
     unresolved: analyses.flatMap(analysis => analysis.unresolved),
     registry,

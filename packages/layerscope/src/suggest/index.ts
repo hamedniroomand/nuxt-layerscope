@@ -1,5 +1,6 @@
 import type { Edge, Finding, Layer, LayerscopeConfig, Suggestion } from '#src/types.ts';
 import { plural } from '#src/utils/strings.ts';
+import { createYielder } from '#src/utils/yield.ts';
 
 import type { Context } from './context.ts';
 import { createContext, isLocal, pairKey, reaches } from './context.ts';
@@ -46,13 +47,16 @@ function suggest(context: Context, finding: Finding): Suggestion {
   return cycle ? leaveSuggestion(from, to) : allowSuggestion(context, from, to);
 }
 
-export function addSuggestions(
+const BATCH_FINDINGS = 200;
+
+/** Adds a suggestion to each boundary finding; yields to the event loop between batches. */
+export async function addSuggestions(
   findings: Finding[],
   edges: Edge[],
   layers: Layer[],
   config: LayerscopeConfig,
   rootDir: string,
-): Finding[] {
+): Promise<Finding[]> {
   const context = createContext(findings, edges, layers, config, rootDir);
   // A suggestion reads only the layer pair and the target file, so findings that share them
   // get the same one. Each finding gets its own copy, so no two findings share an object.
@@ -63,9 +67,16 @@ export function addSuggestions(
     memo.set(key, known);
     return { ...known, impact: { ...known.impact } };
   };
-  return findings.map(finding =>
-    finding.rule === 'layer-boundary'
-      ? { ...finding, suggestion: suggestionFor(finding) }
-      : finding,
-  );
+  const pause = createYielder({ files: BATCH_FINDINGS });
+  const result: Finding[] = [];
+  for (const finding of findings) {
+    result.push(
+      finding.rule === 'layer-boundary'
+        ? { ...finding, suggestion: suggestionFor(finding) }
+        : finding,
+    );
+    // eslint-disable-next-line no-await-in-loop -- yields between batches of findings
+    await pause();
+  }
+  return result;
 }
