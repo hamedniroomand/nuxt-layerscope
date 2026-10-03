@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 import { ApiError, createApi } from '#src/devtools/client/lib/api.ts';
 import {
   countBy,
+  severityChips,
   filterFindings,
   groupFindings,
   toggle,
@@ -75,6 +76,11 @@ describe('filters', () => {
       { value: 'error', count: 2 },
       { value: 'warn', count: 1 },
     ]);
+    // More warnings than errors: the error chip still comes first.
+    const warns = [...findings, ...findings.filter(finding => finding.severity === 'warn')];
+    const many = [...warns, ...warns.filter(finding => finding.severity === 'warn')];
+    expect(severityChips(many).map(chip => chip.value)).toEqual(['error', 'warn']);
+    expect(countBy(many, finding => finding.severity)[0]?.value).toBe('warn');
     expect(toggle(['a'], 'b')).toEqual(['a', 'b']);
     expect(toggle(['a', 'b'], 'a')).toEqual(['b']);
   });

@@ -5,7 +5,14 @@ import type { TabFinding } from '#src/devtools/protocol.ts';
 
 import type { TabContext } from './context.ts';
 import type { ChipCount, FindingGroup } from './filters.ts';
-import { countBy, filterFindings, groupFindings, rowIds, toggle } from './filters.ts';
+import {
+  countBy,
+  filterFindings,
+  groupFindings,
+  rowIds,
+  severityChips,
+  toggle,
+} from './filters.ts';
 import type { FindingsQuery } from './router.ts';
 import { isGroup } from './router.ts';
 
@@ -123,7 +130,7 @@ export function useFindingsView(context: TabContext): FindingsView {
     query,
     groups,
     rows,
-    severities: computed(() => countBy(findings.value, finding => finding.severity)),
+    severities: computed(() => severityChips(findings.value)),
     rules: computed(() => countBy(findings.value, finding => finding.rule)),
     total: computed(() => findings.value.length),
     text: useText(context, update),

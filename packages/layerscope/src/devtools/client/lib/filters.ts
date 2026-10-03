@@ -105,6 +105,15 @@ export function countBy(
     .toSorted((a, b) => b.count - a.count || a.value.localeCompare(b.value));
 }
 
+const SEVERITY_ORDER = ['error', 'warn'];
+
+/** The severity chips, errors first whatever the counts, as everywhere else in the tab. */
+export function severityChips(findings: TabFinding[]): ChipCount[] {
+  return countBy(findings, finding => finding.severity).toSorted(
+    (a, b) => SEVERITY_ORDER.indexOf(a.value) - SEVERITY_ORDER.indexOf(b.value),
+  );
+}
+
 /** Adds or removes one value of a multi-select filter. */
 export function toggle(values: string[], value: string): string[] {
   return values.includes(value) ? values.filter(item => item !== value) : [...values, value];
