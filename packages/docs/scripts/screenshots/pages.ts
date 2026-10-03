@@ -12,12 +12,12 @@ export interface Capture {
 }
 
 export const CAPTURES: Capture[] = [
-  { name: 'overview', hash: '#/overview', ready: '.overview svg' },
+  { name: 'overview', hash: '#/overview', ready: '.overview .graph-slot .node' },
   { name: 'findings', hash: '#/findings', ready: '.findings .row' },
   { name: 'findings-selected', hash: '#/findings', ready: '.findings .row', keys: ['j'] },
   { name: 'trace', hash: '#/trace/useCart', ready: '.trace .heading' },
   { name: 'unused', hash: '#/unused', ready: '.unused' },
-  { name: 'graph', hash: '#/graph/edge/admin/web', ready: '.graph svg g' },
+  { name: 'graph', hash: '#/graph/edge/ui/shop', ready: '.graph svg g' },
   { name: 'baseline', hash: '#/baseline', ready: '.baseline' },
 ];
 

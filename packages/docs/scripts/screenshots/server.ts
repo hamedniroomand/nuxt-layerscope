@@ -5,7 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 const START_TIMEOUT = 180_000;
 
-export interface Fixture {
+export interface DevServer {
   base: string;
   stop: () => void;
 }
@@ -38,11 +38,11 @@ async function ready(base: string, child: ChildProcess, output: () => string): P
     }
     await delay(500);
   }
-  throw new Error(`The fixture did not start in ${START_TIMEOUT / 1000} s.`);
+  throw new Error(`The dev server did not start in ${START_TIMEOUT / 1000} s.`);
 }
 
-/** Starts `nuxi dev` on the fixture and waits until the tab answers. */
-export async function startFixture(root: string): Promise<Fixture> {
+/** Starts `nuxi dev` in `root` and waits until the tab answers. */
+export async function startDevServer(root: string): Promise<DevServer> {
   const port = await freePort();
   const base = `http://127.0.0.1:${port}`;
   const child = spawn(
@@ -63,7 +63,7 @@ export async function startFixture(root: string): Promise<Fixture> {
       process.kill(-child.pid, 'SIGTERM');
     }
   };
-  // Also on a crash: a server left running holds the Nuxt dev lock of the fixture.
+  // Also on a crash: a server left running holds the Nuxt dev lock of the project.
   process.once('exit', stop);
   try {
     await ready(base, child, () => errors);

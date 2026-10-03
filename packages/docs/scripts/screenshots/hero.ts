@@ -4,7 +4,7 @@ import type { Theme } from './pages.ts';
 import { settle, STILL_CSS, themedContext, WIDTH } from './pages.ts';
 
 const BAR = 36;
-/** Shorter than the view captures: the fixture graph needs no more room. */
+/** Shorter than the view captures: the playground graph needs no more room. */
 const HEIGHT = 420;
 /** A path on the dev server origin, so the tab inside the frame can read the theme class. */
 const FRAME_PATH = '/__layerscope-hero';
@@ -32,7 +32,7 @@ export async function captureHero(browser: Browser, base: string, theme: Theme):
   await context.route(`**${FRAME_PATH}`, async route => {
     await route.fulfill({
       contentType: 'text/html',
-      body: frameHtml(theme, '#/graph/edge/admin/web'),
+      body: frameHtml(theme, '#/graph/edge/ui/shop'),
     });
   });
   const page = await context.newPage();

@@ -4,25 +4,22 @@
  * See `scripts/README.md`.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import type { Browser } from 'playwright-core';
 import { chromium } from 'playwright-core';
 
-import { acceptWarnings } from './screenshots/baseline.ts';
 import { captureHero, captureOg } from './screenshots/hero.ts';
 import { compressPng, isBlank, MAX_PNG_BYTES, toWebp } from './screenshots/image.ts';
 import type { Theme } from './screenshots/pages.ts';
 import { CAPTURES, captureView, themedContext } from './screenshots/pages.ts';
-import { startFixture } from './screenshots/server.ts';
+import { startDevServer } from './screenshots/server.ts';
 
 const path = (relative: string): string => fileURLToPath(new URL(relative, import.meta.url));
 const PACKAGE = path('../../layerscope/');
-const FIXTURE = path('../../layerscope/test/fixtures/nuxt4/');
+const PLAYGROUND = path('../../playground/');
 const OUT = path('../public/devtools/');
-/** The capture of the Baseline view writes this file; the script removes it again. */
-const BASELINE = `${FIXTURE}layerscope-baseline.json`;
 const THEMES: Theme[] = ['light', 'dark'];
 const HERO_WIDTH = 1600;
 /** Software rendering, sRGB and no font hinting: two runs give the same pixels. */
@@ -69,8 +66,11 @@ async function captureThemes(browser: Browser, base: string, names: string[]): P
 }
 
 async function captureAll(browser: Browser, base: string): Promise<void> {
-  const views = CAPTURES.map(capture => capture.name).filter(name => name !== 'baseline');
-  await captureThemes(browser, base, views);
+  await captureThemes(
+    browser,
+    base,
+    CAPTURES.map(capture => capture.name),
+  );
   for (const theme of THEMES) {
     await save(
       `hero-${theme}.webp`,
@@ -78,19 +78,16 @@ async function captureAll(browser: Browser, base: string): Promise<void> {
     );
   }
   await save('og-image.png', await compressPng(await captureOg(browser, path('og-image.html'))));
-  // Last, because accepted findings change the counts in every other view.
-  await acceptWarnings(browser, base);
-  await captureThemes(browser, base, ['baseline']);
 }
 
 function writeManifest(): void {
   const { version } = JSON.parse(readFileSync(`${PACKAGE}package.json`, 'utf8')) as {
     version: string;
   };
-  const fixtureCommit = execFileSync('git', ['log', '-1', '--format=%H', '--', FIXTURE], {
+  const playgroundCommit = execFileSync('git', ['log', '-1', '--format=%H', '--', PLAYGROUND], {
     encoding: 'utf8',
   }).trim();
-  const manifest = { version, fixtureCommit, images: sizes };
+  const manifest = { version, playgroundCommit, images: sizes };
   writeFileSync(`${OUT}manifest.json`, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
@@ -100,19 +97,14 @@ async function main(): Promise<void> {
     process.exit(1);
   }
   mkdirSync(OUT, { recursive: true });
-  if (existsSync(BASELINE)) {
-    console.error(`Remove ${BASELINE} first: the captures need the fixture without a baseline.`);
-    process.exit(1);
-  }
   const browser = await launch();
-  const fixture = await startFixture(FIXTURE);
+  const app = await startDevServer(PLAYGROUND);
   try {
-    await captureAll(browser, fixture.base);
+    await captureAll(browser, app.base);
     writeManifest();
   } finally {
-    fixture.stop();
+    app.stop();
     await browser.close();
-    rmSync(BASELINE, { force: true });
   }
 }
 
