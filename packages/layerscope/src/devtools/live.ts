@@ -14,6 +14,8 @@ export interface LiveEvent {
   summary: { errors: number; warnings: number };
   delta: FindingDelta;
   newCount: number;
+  /** What made this snapshot: an analysis, or a baseline the tab wrote. */
+  cause: Snapshot['cause'];
 }
 
 export interface LiveState {
@@ -165,6 +167,7 @@ export class Live {
       summary: summarize(snapshot.result.findings),
       delta,
       newCount: this.keysOf(snapshot).isNew.filter(Boolean).length,
+      cause: snapshot.cause,
     };
     this.broadcast({ event: 'snapshot', data });
   }

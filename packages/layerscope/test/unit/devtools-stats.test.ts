@@ -50,7 +50,7 @@ describe('layerStats', () => {
 describe('renderShell', () => {
   it('embeds the config as json that html parsing cannot change', () => {
     const html = renderShell(
-      { base: '/__layerscope', openInEditor: '/x?a=1&b=</template>' },
+      { base: '/__layerscope', openInEditor: '/x?a=1&b=</template>', token: 't<k>' },
       '1.0.0',
     );
     const config = /<template id="config">(?<json>.*)<\/template>/u.exec(html)?.groups?.json ?? '';
@@ -59,11 +59,13 @@ describe('renderShell', () => {
     expect(JSON.parse(config)).toEqual({
       base: '/__layerscope',
       openInEditor: '/x?a=1&b=</template>',
+      token: 't<k>',
     });
+    expect(config).toContain('"token":"t\\u003ck>"');
   });
 
   it('links the versioned client assets', () => {
-    const html = renderShell({ base: '/__layerscope', openInEditor: '/e' }, '1.2.3');
+    const html = renderShell({ base: '/__layerscope', openInEditor: '/e', token: 't' }, '1.2.3');
     expect(html).toContain('src="/__layerscope/assets/client.js?v=1.2.3"');
     expect(html).toContain('href="/__layerscope/assets/client.css?v=1.2.3"');
   });

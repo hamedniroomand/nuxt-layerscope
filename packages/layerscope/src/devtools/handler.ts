@@ -1,9 +1,11 @@
 import type { EventHandler, H3Event } from 'h3';
 import { defineEventHandler, getQuery, setResponseHeader } from 'h3';
 
-import { api, json, notModified } from './api.ts';
+import { api } from './api.ts';
 import { assetVersion, defaultAssetsDir, readAsset } from './assets.ts';
+import { BASELINE_WRITES, baselineWrite } from './baseline-api.ts';
 import { streamEvents } from './events.ts';
+import { json, notModified } from './respond.ts';
 import type { Session } from './session.ts';
 import { renderShell } from './shell.ts';
 
@@ -32,7 +34,11 @@ async function page(event: H3Event, _path: string, input: HandlerInput): Promise
   setResponseHeader(event, 'content-type', HTML_TYPE);
   setResponseHeader(event, 'cache-control', 'no-cache');
   return renderShell(
-    { base: input.base ?? '/__layerscope', openInEditor: input.openInEditor },
+    {
+      base: input.base ?? '/__layerscope',
+      openInEditor: input.openInEditor,
+      token: input.session.token,
+    },
     assetVersion(input.assetsDir ?? defaultAssetsDir()),
   );
 }
@@ -60,7 +66,9 @@ async function events(event: H3Event, _path: string, input: HandlerInput): Promi
 }
 
 async function apiRoute(event: H3Event, path: string, input: HandlerInput): Promise<string> {
-  const body = await api(event, path, input.session);
+  const body = BASELINE_WRITES.has(path)
+    ? await baselineWrite(event, path, input.session)
+    : await api(event, path, input.session);
   return body;
 }
 

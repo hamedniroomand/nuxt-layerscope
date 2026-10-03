@@ -1,5 +1,10 @@
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
+import { join } from 'pathe';
 import { describe, expect, it, vi } from 'vite-plus/test';
 
+import { applyBaselineFile, createBaseline, writeBaseline } from '#src/baseline/index.ts';
 import { Analyzer } from '#src/devtools/analyzer.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { makeFinding, makeResult } from '#test/factories.ts';
@@ -122,5 +127,24 @@ describe('Analyzer concurrency', () => {
     const one = await setup().analyzer.get();
     const two = await setup().analyzer.get();
     expect(one.id).not.toBe(two.id);
+  });
+});
+
+describe('Analyzer rebaseline', () => {
+  it('applies a changed baseline file to the last result without analyzing again', async () => {
+    const rootDir = mkdtempSync(join(tmpdir(), 'layerscope-rebaseline-'));
+    const findings = [makeFinding(), makeFinding({ symbol: 'useTotal', line: 9 })];
+    const run = vi.fn<Run>().mockResolvedValue(makeResult({ findings }));
+    const analyzer = new Analyzer({ rootDir, baseline: 'b.json', envKey: (): string => 'k', run });
+    const first = await analyzer.get();
+    const file = join(rootDir, 'b.json');
+    writeBaseline(file, createBaseline([findings[0] ?? makeFinding()], '/app'));
+    const next = await analyzer.rebaseline();
+    expect(run).toHaveBeenCalledOnce();
+    expect(next.cause).toBe('baseline');
+    expect(next.rev).toBe(first.rev + 1);
+    const fresh = applyBaselineFile(makeResult({ findings }), file);
+    expect(next.result.findings).toEqual(fresh.findings);
+    expect(next.result.baseline?.suppressed).toEqual(fresh.baseline?.suppressed);
   });
 });

@@ -6,7 +6,14 @@ import { Live } from '#src/devtools/live.ts';
 import { makeFinding, makeResult } from '#test/factories.ts';
 
 function snapshot(rev: number, findings = [makeFinding()]): Snapshot {
-  return { id: 'a', rev, analyzedAt: 0, durationMs: 1, result: makeResult({ findings }) };
+  return {
+    id: 'a',
+    rev,
+    analyzedAt: 0,
+    durationMs: 1,
+    result: makeResult({ findings }),
+    cause: 'analysis',
+  };
 }
 
 function target(): LiveTarget & { refresh: ReturnType<typeof vi.fn> } {

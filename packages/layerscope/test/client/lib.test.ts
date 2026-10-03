@@ -134,7 +134,7 @@ function response(status: number, body: unknown, etag?: string): Response {
 }
 
 describe('api and store', () => {
-  const config = { base: '/__layerscope', openInEditor: '/_nuxt/__open-in-editor' };
+  const config = { base: '/__layerscope', openInEditor: '/_nuxt/__open-in-editor', token: 't' };
 
   it('loads the report, revalidates with the etag and keeps data on 304', async () => {
     const request = vi
@@ -172,7 +172,7 @@ describe('api and store', () => {
 });
 
 describe('store and live mode', () => {
-  const config = { base: '/__layerscope', openInEditor: '/_nuxt/__open-in-editor' };
+  const config = { base: '/__layerscope', openInEditor: '/_nuxt/__open-in-editor', token: 't' };
 
   it('takes the timing from a live event and fetches only a changed report', async () => {
     const request = vi

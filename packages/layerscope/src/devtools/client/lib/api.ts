@@ -15,7 +15,11 @@ import type {
 /** The config the shell embeds; defaults keep the client usable in tests. */
 export function readConfig(doc: Document = document): ShellConfig {
   const text = doc.querySelector<HTMLTemplateElement>('#config')?.content.textContent ?? '';
-  const fallback: ShellConfig = { base: '/__layerscope', openInEditor: '/_nuxt/__open-in-editor' };
+  const fallback: ShellConfig = {
+    base: '/__layerscope',
+    openInEditor: '/_nuxt/__open-in-editor',
+    token: '',
+  };
   if (text === '') {
     return fallback;
   }

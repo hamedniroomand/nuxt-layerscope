@@ -81,12 +81,19 @@ export interface ReportResponse extends SnapshotMeta {
   report: TabReport;
 }
 
+/** The answer to a baseline write: the report after it, and the id an undo must name. */
+export interface WriteResponse extends ReportResponse {
+  writeId: number;
+}
+
 /** Read by the client from the shell's `<template id="config">`. */
 export interface ShellConfig {
   /** Base of the tab, such as `/__layerscope`. */
   base: string;
   /** Vite's open-in-editor endpoint, such as `/_nuxt/__open-in-editor`. */
   openInEditor: string;
+  /** Sent back on requests that write the baseline. */
+  token: string;
 }
 
 export interface SymbolEntry {

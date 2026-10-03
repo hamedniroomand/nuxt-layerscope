@@ -16,6 +16,7 @@ function event(overrides: Partial<LiveEvent>): LiveEvent {
     summary: { errors: 0, warnings: 0 },
     delta: { added: [], removed: [] },
     newCount: 0,
+    cause: 'analysis',
     ...overrides,
   };
 }

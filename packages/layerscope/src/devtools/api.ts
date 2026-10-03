@@ -1,41 +1,11 @@
 import type { H3Event } from 'h3';
-import { getHeader, getQuery, setResponseHeader, setResponseStatus } from 'h3';
+import { getQuery, setResponseHeader } from 'h3';
 
-import type { Snapshot } from './analyzer.ts';
-import type { ReportResponse, SnapshotMeta } from './protocol.ts';
-import { tabReport } from './report.ts';
+import { json, meta, notModified, withReport } from './respond.ts';
 import { isSameOrigin } from './same-origin.ts';
 import type { Session } from './session.ts';
 import type { ViewQuery } from './views-api.ts';
 import { VIEW_PATHS, viewBody } from './views-api.ts';
-
-const JSON_TYPE = 'application/json';
-
-export function json(event: H3Event, status: number, body: unknown): string {
-  setResponseStatus(event, status);
-  setResponseHeader(event, 'content-type', JSON_TYPE);
-  return JSON.stringify(body);
-}
-
-/** Sets the ETag and answers `true` when the client already has this version. */
-export function notModified(event: H3Event, etag: string): boolean {
-  setResponseHeader(event, 'etag', etag);
-  if (getHeader(event, 'if-none-match') !== etag) {
-    return false;
-  }
-  setResponseStatus(event, 304);
-  return true;
-}
-
-function meta(snapshot: Snapshot, session: Session): SnapshotMeta {
-  const { id, rev, analyzedAt, durationMs } = snapshot;
-  return { id, rev, marker: session.live.marker, analyzedAt, durationMs };
-}
-
-async function withReport(snapshot: Snapshot, session: Session): Promise<ReportResponse> {
-  const report = await tabReport(snapshot.result, session.live.keysOf(snapshot));
-  return { ...meta(snapshot, session), report };
-}
 
 /** POST routes that steer live mode; each answers with the new live state. */
 const LIVE_POSTS: Partial<Record<string, (session: Session) => object>> = {
