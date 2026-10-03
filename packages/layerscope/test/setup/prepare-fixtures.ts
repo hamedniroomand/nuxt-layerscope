@@ -4,6 +4,9 @@ import { fileURLToPath } from 'node:url';
 
 const FIXTURES = ['nuxt3', 'nuxt4', 'matrix'];
 
+/** The playground is not a fixture, but `playground.test.ts` analyzes it, so it needs a registry. */
+const PLAYGROUND = fileURLToPath(new URL('../../../playground', import.meta.url));
+
 function fixturePath(path: string): string {
   return fileURLToPath(new URL(`../fixtures/${path}`, import.meta.url));
 }
@@ -32,17 +35,14 @@ function createRemoteLayerRepo(): void {
   );
 }
 
-function prepare(fixture: string): void {
+function prepare(fixture: string, cwd = fixturePath(fixture)): void {
   try {
-    execFileSync('npx', ['--no-install', 'nuxi', 'prepare'], {
-      cwd: fixturePath(fixture),
-      stdio: 'pipe',
-    });
+    execFileSync('npx', ['--no-install', 'nuxi', 'prepare'], { cwd, stdio: 'pipe' });
   } catch (error) {
     const { stdout, stderr } = error as { stdout?: Buffer; stderr?: Buffer };
     const output = `${String(stdout ?? '')}${String(stderr ?? '')}`.trim();
     throw new Error(
-      `"nuxi prepare" failed in the ${fixture} fixture. Run "vp install" after pulling.\n${output}`,
+      `"nuxi prepare" failed in ${fixture}. Run "vp install" after pulling.\n${output}`,
       { cause: error },
     );
   }
@@ -53,4 +53,5 @@ export function setup(): void {
   for (const fixture of FIXTURES) {
     prepare(fixture);
   }
+  prepare('playground', PLAYGROUND);
 }

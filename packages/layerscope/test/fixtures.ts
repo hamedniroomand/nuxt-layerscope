@@ -6,3 +6,4 @@ export const MATRIX_ROOT = fileURLToPath(new URL('fixtures/matrix', import.meta.
 export const CONFIGS_DIR = fileURLToPath(new URL('configs', import.meta.url));
 export const SNAPSHOTS_DIR = fileURLToPath(new URL('snapshots', import.meta.url));
 export const LAYER_UI_ROOT = fileURLToPath(new URL('fixtures/layer-ui', import.meta.url));
+export const PLAYGROUND_ROOT = fileURLToPath(new URL('../../playground', import.meta.url));
