@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- `layerscope check --prepare` no longer prints Node's `WASI is an experimental feature` warning,
+  which appears where oxc-parser uses its wasm fallback, such as StackBlitz. Other warnings stay.
+
 ## 0.3.0
 
 - The DevTools tab is a new prebuilt Vue client with six views: Overview, Findings, Trace,
