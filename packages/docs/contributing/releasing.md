@@ -11,7 +11,9 @@ adds [provenance](https://docs.npmjs.com/generating-provenance-statements).
    of `packages/layerscope/CHANGELOG.md` to `## <version>`. Changes merged between releases add
    their line under `## Unreleased`. If the DevTools tab changed, run `vp run docs#screenshots`
    and commit the pictures; `packages/docs/public/devtools/manifest.json` shows the version they
-   were made for.
+   were made for. If the new version leaves the range of `nuxt-layerscope` in
+   `examples/shop/package.json` (a caret range on 0.x stops at the next minor), update the range.
+   `vp run example:verify` fails when the example no longer links the local package.
 2. Merge that to `main`.
 3. Tag `main` and push the tag:
 

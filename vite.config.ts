@@ -48,6 +48,10 @@ export default defineConfig({
       'packages/layerscope/test/snapshots/**',
       // Like the fixtures, the playground relies on Nuxt auto-imports that the linter cannot see.
       'packages/playground/**',
+      // The example relies on Nuxt auto-imports too, and its `violations/` fail on purpose.
+      'examples/**',
+      // A plain Node script. The root has no `@types/node`, so type-aware rules cannot read it.
+      'scripts/verify-example.mjs',
     ],
     categories: {
       correctness: 'error',

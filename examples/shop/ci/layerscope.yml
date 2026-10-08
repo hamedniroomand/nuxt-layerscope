@@ -1,0 +1,22 @@
+# A sample. GitHub runs workflows only from `.github/workflows` at the top of a repository, so
+# copy this file there. In this repository the example runs in `.github/workflows/ci.yml`.
+name: layerscope
+on: pull_request
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  layerscope:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm install
+      - run: npx nuxi prepare
+      - uses: hamedniroomand/nuxt-layerscope@main
+        with:
+          comment: 'true'

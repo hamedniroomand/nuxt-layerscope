@@ -5,6 +5,8 @@ takes about five minutes.
 
 You need Node.js 22.18 or later and Nuxt 3.12 or later, or Nuxt 4.
 
+To see layerscope work before you set it up, try the [example project](https://github.com/hamedniroomand/nuxt-layerscope/tree/main/examples/shop). It has four layers, a baseline and one violation for each rule. [Open it in StackBlitz](https://stackblitz.com/github/hamedniroomand/nuxt-layerscope/tree/main/examples/shop).
+
 <Steps>
 
 ### Install the module

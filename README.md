@@ -67,7 +67,7 @@ npx layerscope check --prepare
 ```
 
 Read the [getting started guide](https://layerscope.kitdev.space/guide/getting-started)
-for the full setup.
+for the full setup. To see a working project first, try the [example project](https://github.com/hamedniroomand/nuxt-layerscope/tree/main/examples/shop) ([open it in StackBlitz](https://stackblitz.com/github/hamedniroomand/nuxt-layerscope/tree/main/examples/shop)).
 
 ## Documentation
 
