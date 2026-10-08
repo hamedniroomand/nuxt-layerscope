@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "rule": "layer-boundary",
+      "file": "layers/shop/app/composables/useCart.ts",
+      "symbol": "useUser",
+      "toLayer": "auth"
+    }
+  ]
+}

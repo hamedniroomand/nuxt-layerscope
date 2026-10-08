@@ -1,10 +1,15 @@
 packages:
   - packages/*
+  - examples/*
   - packages/layerscope/test/fixtures/*
   # Installed from a directory, so pnpm copies it like a package from npm.
   - '!packages/layerscope/test/fixtures/npm-layer'
   # Only reached through a local git repo.
   - '!packages/layerscope/test/fixtures/remote-layer'
+
+# The example asks for the published range of nuxt-layerscope, so a copy of it installs from npm.
+# In this repository, pnpm links the workspace package when the range matches its version.
+linkWorkspacePackages: true
 
 peerDependencyRules:
   allowAny:

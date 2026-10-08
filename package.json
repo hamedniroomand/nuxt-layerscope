@@ -14,7 +14,8 @@
     "format": "vp format",
     "test": "vp test",
     "prepare": "vp config",
-    "playground": "vp run nuxt-layerscope#build && vp run playground#dev"
+    "playground": "vp run nuxt-layerscope#build && vp run playground#dev",
+    "example:verify": "vp run nuxt-layerscope#build && node scripts/verify-example.mjs"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",

@@ -39,6 +39,7 @@ file under `layers/` to see a live update.
 - Ignore and Undo write `layerscope-baseline.json` in the playground. Restore it with
   `git checkout` when you are done.
 - The playground's README lists the findings it has on purpose. A test pins them.
+- The playground is for work on layerscope. [`examples/shop`](./examples/shop) is the project for new users to try. Do not mix them. `vp run example:verify` checks the example.
 
 ## Updating the DevTools screenshots
 

@@ -1,0 +1,22 @@
+{
+  "name": "layerscope-example-shop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxi dev",
+    "prepare:nuxt": "nuxi prepare",
+    "check": "layerscope check --prepare",
+    "break": "node scripts/overlay.mjs break",
+    "reset": "node scripts/overlay.mjs reset",
+    "why": "layerscope why useCart",
+    "fix": "layerscope fix --dry-run",
+    "graph": "layerscope graph"
+  },
+  "dependencies": {
+    "nuxt": "~4.5.2",
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "nuxt-layerscope": "^0.3.0"
+  }
+}
