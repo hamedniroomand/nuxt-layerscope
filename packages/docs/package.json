@@ -13,7 +13,7 @@
     "screenshots": "node scripts/screenshots.ts"
   },
   "devDependencies": {
-    "mermaid": "^12.0.0",
+    "mermaid": "^12.1.0",
     "playwright-core": "^1.63.0",
     "sharp": "^0.35.5",
     "vitepress": "2.0.0-alpha.20",
