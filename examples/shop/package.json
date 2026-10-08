@@ -13,8 +13,8 @@
     "graph": "layerscope graph"
   },
   "dependencies": {
-    "nuxt": "^4.4.1",
-    "vue": "^3.5.0"
+    "nuxt": "~4.5.2",
+    "vue": "^3.5.43"
   },
   "devDependencies": {
     "nuxt-layerscope": "^0.3.0"
