@@ -19,12 +19,13 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
-    "@vitest/coverage-v8": "5.0.1",
-    "playwright-core": "^1.63.0",
-    "vite-plus": "catalog:"
+    "@vitest/coverage-v8": "catalog:",
+    "playwright-core": "^1.64.0",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=22.18.0"
   },
-  "packageManager": "pnpm@12.6.0"
+  "packageManager": "pnpm@12.10.1"
 }
