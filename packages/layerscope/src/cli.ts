@@ -5,6 +5,7 @@ import { registerDrift } from '#src/commands/drift.ts';
 import { registerFix } from '#src/commands/fix.ts';
 import { registerGraph } from '#src/commands/graph.ts';
 import { registerInit } from '#src/commands/init.ts';
+import { registerMcp } from '#src/commands/mcp.ts';
 import { EXIT_CLEAN, EXIT_ERROR } from '#src/commands/shared.ts';
 import { registerUnused } from '#src/commands/unused.ts';
 import { registerWhy } from '#src/commands/why.ts';
@@ -20,6 +21,7 @@ function createCli(): ReturnType<typeof cac> {
   registerWhy(cli);
   registerGraph(cli);
   registerUnused(cli);
+  registerMcp(cli);
   cli.help();
   return cli;
 }
