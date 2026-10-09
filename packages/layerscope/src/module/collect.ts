@@ -86,8 +86,10 @@ export class RegistryCollector {
   private readonly nuxt: Nuxt;
   private readonly config: ProjectConfig;
   private dirs: ComponentsDir[] = [];
-  /** By file: `nuxi dev` rescans components on every change. */
+  /** Filled while Nuxt scans the dirs, by file. Moved to `lastScan` once the scan is done. */
   private readonly scanned = new Map<string, Component>();
+  /** The last complete scan: `nuxi dev` rescans all dirs on a change, so deleted files drop out. */
+  private lastScan: Component[] = [];
   private registered: Component[] = [];
   private appImports: Unimport | null = null;
   private nitro: Nitro | null = null;
@@ -108,6 +110,9 @@ export class RegistryCollector {
     nuxt.hook('components:extend', components => {
       // Nuxt keeps adding to this list (server placeholders); it is read when writing.
       this.registered = components;
+      // Nuxt scans every dir before this hook, so this pass is complete.
+      this.lastScan = [...this.scanned.values()];
+      this.scanned.clear();
     });
     nuxt.hook('imports:context', context => {
       this.appImports = context;
@@ -183,7 +188,7 @@ export class RegistryCollector {
 
   private shadowed(registered: RegistryComponent[]): ShadowedComponent[] {
     const files = new Set(registered.map(component => component.file));
-    const shadowed = [...this.scanned.values()]
+    const shadowed = this.lastScan
       .map(component => this.toComponent(component))
       .filter(component => !files.has(component.file))
       .flatMap(component => {

@@ -39,9 +39,8 @@ One finding is old on purpose: `useCart` in `shop` uses `useUser` from `auth`.
    1. The DevTools tab updates by itself.
 4. **Ask questions.** Run `npm run why` (who uses `useCart`), `npm run fix` (what to move, with
    no change made) and `npm run graph` (a Mermaid graph of the layers).
-5. **Go back.** Run `npm run reset` to remove the violation files. If the DevTools tab still shows
-   the `shadowed-component` finding, restart `npm run dev`: the tab keeps the list of components
-   until Nuxt starts again.
+5. **Go back.** Run `npm run reset` to remove the violation files. The DevTools tab updates by
+   itself.
 
 The check reports 9 problems. The table shows the six causes; the other three follow from them (a
 cycle through `OrdersTable`, a cycle through `AccountMenu`, and `LoginForm` that now gets the
