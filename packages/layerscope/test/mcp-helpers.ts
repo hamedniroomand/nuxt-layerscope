@@ -99,6 +99,7 @@ export interface LayersData {
     expose: string[] | null;
   }[];
   rules: Record<string, string>;
+  preset: { name: string; base: string[] } | null;
 }
 
 export interface GraphData {

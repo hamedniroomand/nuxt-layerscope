@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 import { analyze } from '#src/analyze/index.ts';
 import { EXIT_CLEAN, EXIT_ERROR, run } from '#src/cli.ts';
 import { propose, renderConfig } from '#src/init/index.ts';
+import { formatInit } from '#src/report/init.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
 
 function capture(): { stdout: () => string; stderr: () => string } {
@@ -60,5 +61,27 @@ describe('layerscope init', () => {
     );
     expect(await run(init)).toBe(EXIT_ERROR);
     expect(await run([...init, '--force'])).toBe(EXIT_CLEAN);
+  });
+});
+
+describe('the preset line of init', () => {
+  const proposal = {
+    edges: [{ from: 'shop', to: 'core', count: 1, example: 'x:1' }],
+    preset: { name: 'features' as const, base: ['core', 'ui'] },
+    readiness: { references: 1, unresolved: 0, byLayer: [], byDirectory: [] },
+    remaining: [],
+  };
+  const options = { source: '', written: false, configFile: 'c', baselineFile: null };
+
+  it('names the preset and the base layers that it picked', async () => {
+    const result = await analyze({ rootDir: NUXT4_ROOT, config: {} });
+    const text = formatInit(result, proposal, options);
+    expect(text).toContain('A preset fits these dependencies: features (base: core, ui).');
+    expect(text).toContain("Use preset: 'features'");
+  });
+
+  it('says nothing when no preset fits', async () => {
+    const result = await analyze({ rootDir: NUXT4_ROOT, config: {} });
+    expect(formatInit(result, { ...proposal, preset: null }, options)).not.toContain('A preset');
   });
 });

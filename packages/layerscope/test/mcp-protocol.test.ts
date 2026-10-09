@@ -82,6 +82,18 @@ describe('tools/list', () => {
   });
 });
 
+describe('tools/list and the layers tool', () => {
+  it('declares preset in the output schema, as an object or null', async () => {
+    const reply = await request('tools/list');
+    const tools = reply.result?.tools as {
+      name: string;
+      outputSchema: { properties: Record<string, { type: unknown }> };
+    }[];
+    const layers = tools.find(tool => tool.name === 'layers');
+    expect(layers?.outputSchema.properties.preset.type).toEqual(['object', 'null']);
+  });
+});
+
 describe('framing and errors', () => {
   it('answers ping', async () => {
     expect((await request('ping')).result).toEqual({});

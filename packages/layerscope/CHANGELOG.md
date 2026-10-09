@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- New preset `features`: a core and a UI kit build up, and every other layer may use them but not
+  each other. `layered` and `features` take base layers by name with
+  `preset: { name, base: [...] }`, and `features` picks `core`, `base`, `shared` or `common`, then
+  `ui` or `design-system`, when you give none. `layerscope init` suggests the strictest preset that
+  fits today's dependencies. The MCP `layers` tool now returns `preset` as `{ name, base }` and not
+  as a name.
 - A guide for moving from eslint-plugin-nuxt-layers: how to convert the layer map, how to run both
   tools, and what differs, including that `require()` calls are not scanned yet.
 - `layerscope check --staged`, `--changed`, `--since <ref>` and file arguments check only some

@@ -9,7 +9,13 @@ export type RuleName =
   | 'unresolved-reference'
   | 'shadowed-component';
 
-export type PresetName = 'layered' | 'stacked';
+export type PresetName = 'layered' | 'stacked' | 'features';
+
+/** A preset with options. `base` names the layers that the others build on, lowest first. */
+export interface PresetOptions {
+  name: PresetName;
+  base?: string[];
+}
 
 /** The Nuxt auto-import context a source file runs in. */
 export type Context = 'app' | 'server' | 'shared';
@@ -116,7 +122,7 @@ export interface LayerRule {
 
 export interface LayerscopeConfig {
   /** Fills `allow` for layers that do not set it. */
-  preset?: PresetName;
+  preset?: PresetName | PresetOptions;
   layers?: Record<string, LayerRule>;
   rules?: Partial<Record<RuleName | 'unused-symbol', Severity>>;
   /** Globs relative to each scanned dir. */

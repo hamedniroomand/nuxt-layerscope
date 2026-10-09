@@ -1,8 +1,11 @@
 import type { ProjectSession } from './session.ts';
 
 /** A JSON Schema, the subset that the tools use and `validateArgs` checks. */
+type SchemaType = 'object' | 'string' | 'integer' | 'boolean' | 'array' | 'null';
+
 export interface Schema {
-  type?: 'object' | 'string' | 'integer' | 'boolean' | 'array';
+  /** A list of types, such as `['object', 'null']`, says that the value can be any of them. */
+  type?: SchemaType | SchemaType[];
   description?: string;
   enum?: string[];
   properties?: Record<string, Schema>;
