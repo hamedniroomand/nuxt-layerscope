@@ -31,6 +31,7 @@
   ],
   "type": "module",
   "imports": {
+    "#bench/*": "./bench/*",
     "#src/*": "./src/*",
     "#test/*": "./test/*"
   },
@@ -53,6 +54,8 @@
     "access": "public"
   },
   "scripts": {
+    "bench": "node bench/run.ts",
+    "bench:generate": "node bench/generate.ts",
     "build": "vp pack && vp build --config vite.client.config.ts",
     "check:client": "vue-tsc --noEmit -p src/devtools/client/tsconfig.json",
     "test": "vp test",

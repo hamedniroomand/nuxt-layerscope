@@ -13,6 +13,8 @@ flowchart LR
   R --> O[Findings]
 ```
 
+How long a run takes is on the [performance](./performance) page.
+
 ## 1. Layers
 
 With the [Nuxt module](./nuxt-module), layers come from the registry it wrote: Nuxt's `_layers`

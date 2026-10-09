@@ -17,6 +17,8 @@ export default defineConfig({
       'openspec',
       '**/.nuxt/**',
       '**/.output/**',
+      // Thousands of generated files; they use Nuxt auto-imports.
+      'packages/layerscope/bench/.project/**',
       'packages/layerscope/test/fixtures/**',
       'packages/layerscope/test/snapshots/**',
     ],
@@ -44,6 +46,7 @@ export default defineConfig({
       'vite.config.ts',
       '**/.nuxt/**',
       '**/.output/**',
+      'packages/layerscope/bench/.project/**',
       'packages/layerscope/test/fixtures/**',
       'packages/layerscope/test/snapshots/**',
       // Like the fixtures, the playground relies on Nuxt auto-imports that the linter cannot see.
@@ -52,6 +55,9 @@ export default defineConfig({
       'examples/**',
       // A plain Node script. The root has no `@types/node`, so type-aware rules cannot read it.
       'scripts/verify-example.mjs',
+      // Plain Node scripts that run the CLI and a child process; the pure parts are linted.
+      'packages/layerscope/bench/{generate,run,in-process}.ts',
+      'packages/layerscope/bench/rss-hook.mjs',
     ],
     categories: {
       correctness: 'error',

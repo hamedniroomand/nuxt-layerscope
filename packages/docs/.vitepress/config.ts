@@ -159,6 +159,7 @@ export default defineConfig({
           text: 'In depth',
           items: [
             link('workflow', 'How it works', '/guide/how-it-works'),
+            link('gauge', 'Performance', '/guide/performance'),
             link('life-buoy', 'Troubleshooting', '/guide/troubleshooting'),
             link('scale', 'Compared with other tools', '/guide/comparison'),
             link('terminal', 'Coding assistants', '/guide/coding-tools'),

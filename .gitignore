@@ -39,6 +39,9 @@ dist-ssr
 # VitePress
 .vitepress/cache
 
+# The generated benchmark project (pnpm bench)
+packages/layerscope/bench/.project
+
 # Local package tarballs (vp run tarball)
 .release
 
