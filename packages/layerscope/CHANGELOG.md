@@ -1,9 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.3.1
 
+- The DevTools tab no longer keeps a `shadowed-component` finding after you delete, rename or move
+  the file that causes it. The module now writes the shadowed components of the last scan only,
+  so the tab updates without a restart of `nuxi dev`.
 - `layerscope check --prepare` no longer prints Node's `WASI is an experimental feature` warning,
   which appears where oxc-parser uses its wasm fallback, such as StackBlitz. Other warnings stay.
+- New example project, `examples/shop`: four layers with the layered preset, a baseline, and a
+  `violations/` overlay that triggers every rule. Run it locally or on StackBlitz. CI checks its
+  findings on every change.
 
 ## 0.3.0
 
