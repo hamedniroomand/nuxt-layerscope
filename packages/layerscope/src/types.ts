@@ -120,6 +120,8 @@ export interface LayerRule {
   source?: string;
 }
 
+export type TypeImports = 'check' | 'ignore';
+
 export interface LayerscopeConfig {
   /** Fills `allow` for layers that do not set it. */
   preset?: PresetName | PresetOptions;
@@ -129,6 +131,11 @@ export interface LayerscopeConfig {
   ignore?: string[];
   /** Identifiers and component names never reported as unresolved. */
   globals?: string[];
+  /**
+   * `check` (default): a type-only import is a dependency like any other. `ignore`: it makes no
+   * edge, so no rule reports it.
+   */
+  typeImports?: TypeImports;
   /** Relative to the project root. Defaults to `.nuxt`. */
   buildDir?: string;
 }

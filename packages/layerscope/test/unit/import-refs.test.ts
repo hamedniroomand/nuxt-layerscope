@@ -19,7 +19,7 @@ const table: SymbolTable = {
 const env = { table, aliases: [] as [string, string][], buildDir: '/app/.nuxt' };
 
 function ref(specifier: string, names: string[]): ImportRef {
-  return { specifier, names, offset: 0 };
+  return { specifier, names, typeOnly: false, typeNames: [], offset: 0 };
 }
 
 describe('resolveImportRef', () => {

@@ -21,6 +21,7 @@ export function createAnalysisEnv(
     ownerOf,
     identifiers: knownIdentifiers(config.globals ?? []),
     components: knownComponents(config.globals ?? []),
+    typeImports: config.typeImports ?? 'check',
     unresolvedSeverity: ruleSeverity(config, 'unresolved-reference'),
   };
 }

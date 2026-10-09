@@ -8,7 +8,14 @@ import { validateConfig } from './validate.ts';
 const NUXT_CONFIG_LABEL = 'nuxt.config (layerscope)';
 
 /** The keys that describe the project; `buildDir` only says where to look. */
-export const PROJECT_CONFIG_KEYS = ['preset', 'layers', 'rules', 'ignore', 'globals'] as const;
+export const PROJECT_CONFIG_KEYS = [
+  'preset',
+  'layers',
+  'rules',
+  'ignore',
+  'globals',
+  'typeImports',
+] as const;
 
 export type ProjectConfig = Pick<LayerscopeConfig, (typeof PROJECT_CONFIG_KEYS)[number]>;
 
@@ -20,6 +27,12 @@ export function pickProjectConfig(config: LayerscopeConfig): ProjectConfig {
   return Object.fromEntries(
     PROJECT_CONFIG_KEYS.flatMap(key => (config[key] === undefined ? [] : [[key, config[key]]])),
   );
+}
+
+function keysSet(config: ProjectConfig): string {
+  return PROJECT_CONFIG_KEYS.filter(key => config[key] !== undefined)
+    .map(key => `"${key}"`)
+    .join(', ');
 }
 
 /**
@@ -35,7 +48,7 @@ export function effectiveConfig(
   }
   if (hasProjectConfig(fileConfig)) {
     throw new LayerscopeError(
-      'Layers or rules are set both in layerscope.config and in the "layerscope" key of nuxt.config. Keep one.',
+      `Project options are set both in layerscope.config (${keysSet(fileConfig)}) and in the "layerscope" key of nuxt.config (${keysSet(recorded)}). Keep one.`,
     );
   }
   validateConfig(recorded, NUXT_CONFIG_LABEL);

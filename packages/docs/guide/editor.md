@@ -29,7 +29,7 @@ With `@nuxt/eslint`, add `layerscope.configs.recommended` to the configs you pas
 | `layerscope/unresolved-reference` | `warn`      | [`unresolved-reference`](../reference/rules) findings          |
 
 Severities come from the ESLint config; the `rules` section of `layerscope.config.ts` does not
-apply here. Layers, `allow` lists, `ignore` and `globals` do.
+apply here. Layers, `allow` lists, `ignore`, `globals` and `typeImports` do.
 
 ### Caching
 

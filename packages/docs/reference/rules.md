@@ -45,6 +45,10 @@ a computed key or a plain `require()` takes the whole module. These are not coun
 `const { createRequire } = require('module')`. A binding is the name that `createRequire`
 was assigned to, so a later reassignment of that name does not change what counts.
 
+A type-only import (`import type { A } from '...'`) counts as an explicit import, unless
+[`typeImports`](./config#typeimports) is `'ignore'`. Then it makes no dependency and no rule
+reports it.
+
 To fix a finding, either move the symbol to a layer both may use (often `shared`), or allow the
 dependency if it is intended.
 

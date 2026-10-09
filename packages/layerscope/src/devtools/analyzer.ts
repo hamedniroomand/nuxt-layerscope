@@ -39,6 +39,7 @@ function fingerprint(result: AnalyzeResult): string {
     result.findings,
     result.baseline?.suppressed,
     result.config.layers,
+    result.config.typeImports,
     layerStats(result),
     result.files.length,
     result.notes,
