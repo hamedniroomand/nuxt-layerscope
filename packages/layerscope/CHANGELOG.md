@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+### Minor Changes
+
+- [#76](https://github.com/hamedniroomand/nuxt-layerscope/pull/76) [`aa2f8d6`](https://github.com/hamedniroomand/nuxt-layerscope/commit/aa2f8d6118f959ce6cc026375339b5dc5d019a60) - New option `typeImports`. With `'ignore'`, a type-only import makes no dependency, so no rule reports it and it is not in the graph. The forms are `import type`, `import { type A }` with `type` on every name, `export type ... from` and `import type x = require(...)`. An import with value names still counts, with the value names only. The default is `'check'`, which keeps the old result.
+
 ## 0.4.0
 
 - `require('...')` calls are scanned, also through `createRequire(...)`, and so are `.cjs` and
