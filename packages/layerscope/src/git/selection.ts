@@ -4,7 +4,7 @@ import { LayerscopeError } from '#src/errors.ts';
 import { git, splitNul, tryGit } from '#src/utils/git.ts';
 
 /** The files that `layerscope` scans: the same extensions as `collectFiles`. */
-const SOURCE = /\.(?:vue|ts|tsx|mts|js|jsx|mjs)$/u;
+const SOURCE = /\.(?:vue|ts|tsx|mts|cts|js|jsx|mjs|cjs)$/u;
 
 export interface Selection {
   /** Absolute paths of the files to check, source files only. */

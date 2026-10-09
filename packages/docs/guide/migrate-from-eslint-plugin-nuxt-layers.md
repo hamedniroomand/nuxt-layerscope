@@ -18,7 +18,8 @@ only `shared`. The `cart` layer breaks this rule in six places:
 - `useCartCjs.js` loads the same file with `require()` and with `import()`.
 - `useCartExport.js` re-exports from `../../../products/app/utils/title`.
 
-eslint-plugin-nuxt-layers reports four of the six:
+eslint-plugin-nuxt-layers reports four problems. It reads each `import`, `import()`, `require()`
+and `export ... from` statement. It cannot see the auto-import or the component:
 
 ```text
 layers/cart/app/components/CartSummary.vue
@@ -34,7 +35,7 @@ layers/cart/app/composables/useCartExport.js
 ✖ 4 problems (4 errors, 0 warnings)
 ```
 
-layerscope reports five of the six:
+layerscope reports five findings:
 
 ```text
 layers/cart/app/components/CartSummary.vue
@@ -52,7 +53,7 @@ layers/cart/app/components/CartSummary.vue
                  suggestion: allow "cart" to use "products" (adds 1 edge, clears 5 findings)
 
 layers/cart/app/composables/useCartCjs.js
-  4:29    error  Import "#layers/products/app/utils/title" crosses from layer "cart" into "products"  layer-boundary
+  1:24    error  Import "#layers/products/app/utils/title" crosses from layer "cart" into "products"  layer-boundary
                  #layers/products/app/utils/title → layers/products/app/utils/title.js
                  allowed for "cart": shared
                  suggestion: allow "cart" to use "products" (adds 1 edge, clears 5 findings)
@@ -66,10 +67,10 @@ layers/cart/app/composables/useCartExport.js
 ✖ 5 problems (5 errors, 0 warnings)
 ```
 
-Only layerscope reports the auto-import and the component. Only the old plugin reports the
-`require()` call at line 1 of `useCartCjs.js`. layerscope reads ES `import`, dynamic `import()` and `export ... from`, and it
-does not read `require()`. Nuxt code is ES modules, so this matters only for a file that still
-uses CommonJS.
+Both tools find the same imports, and layerscope also finds the auto-import and the component.
+layerscope reports one finding for each import path in a file, at its first use. So the `require()`
+at line 1 and the `import()` at line 4 of `useCartCjs.js` are one finding at `1:24`, and the old
+plugin lists both lines.
 
 ## Move the layer map
 
@@ -191,12 +192,10 @@ Commit `layerscope-baseline.json`. From now on, `layerscope check` fails only on
 
 ## Remove the old plugin
 
-Remove eslint-plugin-nuxt-layers when all of these are true:
+Remove eslint-plugin-nuxt-layers when both of these are true:
 
 - `layerscope check` runs in CI, so a boundary break fails the build. See [CI](./ci).
 - You have a replacement for the editor feedback, or you do not need it.
-- No file in your layers uses `require()` or has the extension `.cjs` or `.cts`. See
-  [the differences](#differences-to-know).
 
 For editor feedback, use `nuxt-layerscope/eslint`. It reports layerscope findings in ESLint and in
 the editor, with the auto-imports and components:
@@ -222,13 +221,16 @@ pnpm remove eslint-plugin-nuxt-layers
 
 ## Differences to know
 
-- **`require()` is not checked, so moving over can drop checks on CommonJS code.** The old plugin
-  reports a `require()` of a file in a forbidden layer. layerscope does not: `require` is a known
-  Node global, so a `require()` call is skipped and gives no finding, not even an
-  `unresolved-reference` warning. Files with the extensions `.cjs` and `.cts` are not scanned at
-  all. In the example above, line 1 of `useCartCjs.js` is the `require()` call that only the old
-  plugin reports. If you have CommonJS code in your layers, keep the ESLint rule until this is
-  fixed. The fix is planned in [issue 68](https://github.com/hamedniroomand/nuxt-layerscope/issues/68).
+- **One finding for each import path in a file.** The old plugin reports every statement.
+  layerscope reports the first use of an import path in a file, so two uses of the same path in one
+  file are one finding. Fix the first one and the next run shows the next use, if the path is still
+  forbidden.
+- **`require()` and CommonJS files are checked.** layerscope reads `require('...')` with a string
+  literal, also through a name that `createRequire(...)` gave, and it scans `.cjs` and `.cts`
+  files. With `const { a, b } = require('...')` it takes the names `a` and `b`, as it does for a
+  named import. It does not count `require.resolve('...')`, a `require()` with a value that is not
+  a string literal, a `createRequire` binding that goes through a function or a reassignment, or
+  `createRequire` imported under another name.
 - **Layers come from Nuxt, not from the path.** The old plugin finds the layer of an import from
   its text: the first folder after an alias such as `#layers/`, or the folder after `/<root>/` in
   a relative path that it resolves against the file. layerscope uses the layers that Nuxt

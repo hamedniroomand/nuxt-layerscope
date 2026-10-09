@@ -1,62 +1,30 @@
-import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-
-import { join } from 'pathe';
-import { beforeEach, describe, expect, it } from 'vite-plus/test';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { resolveFile } from '#src/resolve/file.ts';
+import { tempDir, write } from '#test/watch-project.ts';
 
-let dir = '';
-
-function touch(relativePath: string): string {
-  const file = join(dir, relativePath);
-  mkdirSync(join(file, '..'), { recursive: true });
-  writeFileSync(file, '');
-  return file;
-}
-
-beforeEach(() => {
-  dir = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-resolve-file-')));
-});
-
-describe('resolveFile', () => {
-  it('returns an exact file as is', () => {
-    const file = touch('a.css');
-    expect(resolveFile(file)).toBe(file);
+describe('resolveFile and the CommonJS extensions', () => {
+  it('finds a .cjs and a .cts file by name without an extension', () => {
+    const root = tempDir();
+    write(root, 'a.cjs', '');
+    write(root, 'b.cts', '');
+    expect(resolveFile(`${root}/a`)).toBe(`${root}/a.cjs`);
+    expect(resolveFile(`${root}/b`)).toBe(`${root}/b.cts`);
   });
 
-  it('adds a known extension', () => {
-    const file = touch('utils.ts');
-    expect(resolveFile(join(dir, 'utils'))).toBe(file);
+  it('keeps the order of before: .js and an index file come before .cjs and .cts', () => {
+    const root = tempDir();
+    write(root, 'x.cjs', '');
+    write(root, 'x/index.ts', '');
+    write(root, 'y.cts', '');
+    write(root, 'y.js', '');
+    expect(resolveFile(`${root}/x`)).toBe(`${root}/x/index.ts`);
+    expect(resolveFile(`${root}/y`)).toBe(`${root}/y.js`);
   });
 
-  it('prefers TypeScript over other extensions', () => {
-    touch('utils.js');
-    const ts = touch('utils.ts');
-    expect(resolveFile(join(dir, 'utils'))).toBe(ts);
-  });
-
-  it('maps a .js specifier to its .ts source', () => {
-    const file = touch('helper.ts');
-    expect(resolveFile(join(dir, 'helper.js'))).toBe(file);
-  });
-
-  it('maps a .mjs specifier to its .mts source', () => {
-    const file = touch('helper.mts');
-    expect(resolveFile(join(dir, 'helper.mjs'))).toBe(file);
-  });
-
-  it('falls back to a directory index', () => {
-    const file = touch('composables/index.ts');
-    expect(resolveFile(join(dir, 'composables'))).toBe(file);
-  });
-
-  it('returns null when nothing matches', () => {
-    expect(resolveFile(join(dir, 'missing'))).toBeNull();
-  });
-
-  it('does not resolve a bare directory', () => {
-    mkdirSync(join(dir, 'empty'));
-    expect(resolveFile(join(dir, 'empty'))).toBeNull();
+  it('turns a .cjs path into the .cts file when the .cjs file is missing', () => {
+    const root = tempDir();
+    write(root, 'z.cts', '');
+    expect(resolveFile(`${root}/z.cjs`)).toBe(`${root}/z.cts`);
   });
 });

@@ -6,6 +6,8 @@ import type { VisitContext } from './script-visitors.ts';
 import type { FileScan, Lang, OffsetMapper } from './types.ts';
 import { emptyScan, toLang } from './types.ts';
 
+type SourceType = 'module' | 'commonjs';
+
 interface ScopedProgram {
   program: Program;
   tracker: ScopeTracker;
@@ -16,11 +18,11 @@ interface ScopedProgram {
  * Parses and pre-walks the code so hoisted declarations are known before references are
  * checked; a local `useFoo` then correctly shadows the auto-imported one.
  */
-function parseScoped(code: string, lang: Lang): ScopedProgram {
+function parseScoped(code: string, lang: Lang, sourceType: SourceType = 'module'): ScopedProgram {
   const tracker = new ScopeTracker({ preserveExitedScopes: true });
   const parsed = parseAndWalk(code, `file.${lang}`, {
     scopeTracker: tracker,
-    parseOptions: { lang, sourceType: 'module' },
+    parseOptions: { lang, sourceType },
   });
   tracker.freeze();
   const first = parsed.errors.at(0);
@@ -34,13 +36,14 @@ export function scanScript(
   lang: Lang,
   mapOffset: OffsetMapper,
   scan: FileScan,
+  sourceType: SourceType = 'module',
 ): void {
-  const { program, tracker, error } = parseScoped(code, lang);
+  const { program, tracker, error } = parseScoped(code, lang, sourceType);
   if (error !== null) {
     scan.error = { message: error.message, offset: mapOffset(error.start) };
     return;
   }
-  const ctx: VisitContext = { scan, tracker, mapOffset };
+  const ctx: VisitContext = { scan, tracker, mapOffset, requireBindings: new Set() };
   walk(program, {
     scopeTracker: tracker,
     enter(node, parent) {
@@ -66,6 +69,8 @@ export function collectTopLevelNames(code: string, lang: Lang): Record<string, s
 export function scanModule(code: string, file: string): FileScan {
   const scan = emptyScan();
   const ext = /\.[cm]?([jt]sx?)$/u.exec(file)?.[1];
-  scanScript(code, toLang(ext), offset => offset, scan);
+  // `.cjs` and `.cts` are CommonJS: a top-level `return` is valid in them.
+  const sourceType = /\.c[jt]s$/u.test(file) ? 'commonjs' : 'module';
+  scanScript(code, toLang(ext), offset => offset, scan, sourceType);
   return scan;
 }
