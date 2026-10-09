@@ -2,13 +2,7 @@ import type { Node } from 'oxc-parser';
 import type { ScopeTracker, ScopeTrackerNode, WalkerThisContextEnter } from 'oxc-walker';
 import { isReferenceIdentifier } from 'oxc-walker';
 
-import {
-  importedName,
-  isCreateRequire,
-  reexportedName,
-  requiredNames,
-  stringLiteral,
-} from './ast.ts';
+import { importedName, reexportedName, requiredNames, stringLiteral } from './ast.ts';
 import type { FileScan, OffsetMapper } from './types.ts';
 
 export interface VisitContext {
@@ -94,18 +88,6 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
   TSMethodSignature: skip,
   TSCallSignatureDeclaration: skip,
   TSConstructSignatureDeclaration: skip,
-  VariableDeclarator(node, _parent, { tracker, requireBindings }) {
-    if (
-      node.type === 'VariableDeclarator' &&
-      node.id.type === 'Identifier' &&
-      isCreateRequire(node.init)
-    ) {
-      const declaration = tracker.getDeclaration(node.id.name);
-      if (declaration !== null) {
-        requireBindings.add(declaration);
-      }
-    }
-  },
   TSImportEqualsDeclaration(node, _parent, { scan, mapOffset }) {
     // `import x = require('./y')`, the import form of a `.cts` file. A type-only one counts too,
     // as `import type` does.

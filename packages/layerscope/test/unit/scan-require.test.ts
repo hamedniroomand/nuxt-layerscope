@@ -53,10 +53,12 @@ describe('require() in a script', () => {
   });
 });
 
+const IMPORT = "import { createRequire } from 'node:module';\n";
+const ONE = [{ specifier: './a', names: ['*'] }];
+
 describe('createRequire', () => {
   it('counts the call of a binding that createRequire gave, whatever its name', () => {
-    const code = `
-      import { createRequire } from 'node:module';
+    const code = `${IMPORT}
       const load = createRequire(import.meta.url);
       const require = createRequire(import.meta.url);
       load('./a');
@@ -69,10 +71,44 @@ describe('createRequire', () => {
     ]);
   });
 
-  it('knows module.createRequire and a namespace member', () => {
-    expect(required("const r = mod.createRequire(import.meta.url); r('./a');")).toEqual([
-      { specifier: './a', names: ['*'] },
-    ]);
+  it('knows createRequire of a namespace or default import, and the global module', () => {
+    const call = "const r = mod.createRequire(import.meta.url); r('./a');";
+    const ns = required(`import * as mod from 'node:module';\n${call}`, 'file.mjs');
+    const dflt = required(`import mod from 'module';\n${call}`, 'file.mjs');
+    const global = required("const r = module.createRequire(__filename); r('./a');", 'file.cjs');
+    expect(ns.slice(1)).toEqual(ONE);
+    expect(dflt.slice(1)).toEqual(ONE);
+    expect(global).toEqual(ONE);
+  });
+
+  it('knows createRequire under another name', () => {
+    const code = "import { createRequire as cr } from 'node:module';\nconst r = cr(url); r('./a');";
+    expect(required(code, 'file.mjs').slice(1)).toEqual(ONE);
+  });
+
+  it('finds a call that comes before the declaration in the file', () => {
+    const code = `${IMPORT}function run() { load('./a'); }\nconst load = createRequire(import.meta.url);`;
+    expect(required(code, 'file.mjs').slice(1)).toEqual(ONE);
+  });
+});
+
+describe('createRequire that is not from module', () => {
+  it('does not know a local function that is called createRequire', () => {
+    const code =
+      "function createRequire(url) { return url; }\nconst r = createRequire(url); r('./a');";
+    expect(required(code, 'file.mjs')).toEqual([]);
+  });
+
+  it('does not know createRequire imported from another file', () => {
+    const code =
+      "import { createRequire } from './helpers';\nconst r = createRequire(url); r('./a');";
+    expect(required(code, 'file.mjs').map(item => item.specifier)).toEqual(['./helpers']);
+  });
+
+  it('does not know a member of another module or of a local object', () => {
+    const other = "import mod from './mod';\nconst r = mod.createRequire(url); r('./a');";
+    expect(required(other, 'file.mjs').map(item => item.specifier)).toEqual(['./mod']);
+    expect(required("const r = tools.createRequire(url); r('./a');", 'file.mjs')).toEqual([]);
   });
 
   it('does not follow a binding that createRequire did not give', () => {
@@ -82,30 +118,21 @@ describe('createRequire', () => {
 
 describe('createRequire and scope', () => {
   it('does not take a parameter or an inner binding with the same name', () => {
-    const code = `
+    const code = `${IMPORT}
       const load = createRequire(import.meta.url);
       function inner(load) { load('./param'); }
       function other() { const load = makeLoader(); load('./inner'); }
       load('./outer');
     `;
-    expect(required(code, 'file.mjs')).toEqual([{ specifier: './outer', names: ['*'] }]);
+    expect(required(code, 'file.mjs').slice(1)).toEqual([{ specifier: './outer', names: ['*'] }]);
   });
 
   it('does not take a binding outside the function that holds it', () => {
-    const code = `
+    const code = `${IMPORT}
       function setup() { const load = createRequire(import.meta.url); load('./in'); }
       load('./out');
     `;
-    expect(required(code, 'file.mjs')).toEqual([{ specifier: './in', names: ['*'] }]);
-  });
-
-  it('does not know createRequire under another name', () => {
-    expect(
-      required(
-        "import { createRequire as cr } from 'node:module';\nconst r = cr(url); r('./a');",
-        'file.mjs',
-      ),
-    ).toEqual([{ specifier: 'node:module', names: ['createRequire'] }]);
+    expect(required(code, 'file.mjs').slice(1)).toEqual([{ specifier: './in', names: ['*'] }]);
   });
 });
 

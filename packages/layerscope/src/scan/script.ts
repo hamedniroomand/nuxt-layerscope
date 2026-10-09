@@ -1,6 +1,8 @@
 import type { Program } from 'oxc-parser';
 import { parseAndWalk, ScopeTracker, walk } from 'oxc-walker';
+import type { ScopeTrackerNode } from 'oxc-walker';
 
+import { isCreateRequire } from './ast.ts';
 import { scriptVisitors } from './script-visitors.ts';
 import type { VisitContext } from './script-visitors.ts';
 import type { FileScan, Lang, OffsetMapper } from './types.ts';
@@ -31,6 +33,30 @@ function parseScoped(code: string, lang: Lang, sourceType: SourceType = 'module'
   return { program: parsed.program, tracker, error };
 }
 
+/**
+ * The declarations of names that `createRequire(...)` was assigned to. Found before the scan, so a
+ * call that comes before the declaration in the file (inside a function) is known.
+ */
+function createRequireBindings(program: Program, tracker: ScopeTracker): Set<ScopeTrackerNode> {
+  const bindings = new Set<ScopeTrackerNode>();
+  walk(program, {
+    scopeTracker: tracker,
+    enter(node) {
+      if (
+        node.type === 'VariableDeclarator' &&
+        node.id.type === 'Identifier' &&
+        isCreateRequire(node.init, tracker)
+      ) {
+        const declaration = tracker.getDeclaration(node.id.name);
+        if (declaration !== null) {
+          bindings.add(declaration);
+        }
+      }
+    },
+  });
+  return bindings;
+}
+
 export function scanScript(
   code: string,
   lang: Lang,
@@ -43,7 +69,12 @@ export function scanScript(
     scan.error = { message: error.message, offset: mapOffset(error.start) };
     return;
   }
-  const ctx: VisitContext = { scan, tracker, mapOffset, requireBindings: new Set() };
+  const ctx: VisitContext = {
+    scan,
+    tracker,
+    mapOffset,
+    requireBindings: createRequireBindings(program, tracker),
+  };
   walk(program, {
     scopeTracker: tracker,
     enter(node, parent) {

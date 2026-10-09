@@ -229,8 +229,7 @@ pnpm remove eslint-plugin-nuxt-layers
   literal, also through a name that `createRequire(...)` gave, and it scans `.cjs` and `.cts`
   files. With `const { a, b } = require('...')` it takes the names `a` and `b`, as it does for a
   named import. It does not count `require.resolve('...')`, a `require()` with a value that is not
-  a string literal, a `createRequire` binding that goes through a function or a reassignment, or
-  `createRequire` imported under another name.
+  a string literal, or a `createRequire` binding that goes through a function.
 - **Layers come from Nuxt, not from the path.** The old plugin finds the layer of an import from
   its text: the first folder after an alias such as `#layers/`, or the folder after `/<root>/` in
   a relative path that it resolves against the file. layerscope uses the layers that Nuxt
