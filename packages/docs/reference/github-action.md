@@ -4,10 +4,12 @@
 inline on the pull request diff and the job fails on errors.
 
 ```yaml
-- uses: hamedniroomand/nuxt-layerscope@v0.1.0
+- uses: hamedniroomand/nuxt-layerscope@v0
   with:
     root: .
 ```
+
+`@v0` follows the newest 0.x release. To pin a release, use a full tag such as `@v0.4.0`.
 
 The action does not install dependencies or run `nuxi prepare` for you unless asked: install
 first, then either run `npx nuxi prepare` or set `prepare: true`. See

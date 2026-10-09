@@ -1,7 +1,7 @@
 # Releasing
 
-`nuxt-layerscope` is published to npm by `.github/workflows/release.yml` when a `v*` tag is
-pushed. The workflow uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers):
+`nuxt-layerscope` is published to npm by `.github/workflows/release.yml` when a
+`v<major>.<minor>.<patch>` tag is pushed. The workflow uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers):
 GitHub Actions proves its identity to npm with OIDC, so no npm token is stored anywhere, and npm
 adds [provenance](https://docs.npmjs.com/generating-provenance-statements).
 
@@ -22,7 +22,9 @@ adds [provenance](https://docs.npmjs.com/generating-provenance-statements).
 3. Tag `main` and push the tag:
 
    ```bash
-   git switch main && git pull && git tag v0.4.0 && git push origin v0.4.0
+   git switch main && git pull
+   v=$(node -p "require('./packages/layerscope/package.json').version")
+   git tag "v$v" && git push origin "v$v"
    ```
 
 The workflow then:
@@ -36,8 +38,10 @@ The workflow then:
 A tag with a pre-release suffix, such as `v0.3.0-beta.1`, is published under the `next` dist-tag
 and marked as a pre-release on GitHub.
 
-The GitHub Action is referenced by tag (`hamedniroomand/nuxt-layerscope@v0.4.0`), so every
-release needs its tag.
+The GitHub Action is referenced by the moving major tag (`hamedniroomand/nuxt-layerscope@v0`).
+After a stable release, the workflow moves `v0` to the released commit. A pre-release does not
+move it. The workflow starts only for tags like `v0.4.0` or `v0.4.0-beta.1`, so `v0` does not
+start a release.
 
 ## Add a changeset
 
