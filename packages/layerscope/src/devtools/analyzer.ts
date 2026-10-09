@@ -24,6 +24,8 @@ export interface AnalyzerOptions {
   /** Baseline file relative to `rootDir`. */
   baseline: string;
   envKey: () => Promise<string> | string;
+  /** More options for every run, such as the config file the CLI was given. */
+  analyze?: Pick<AnalyzeOptions, 'configFile' | 'source'>;
   /** Defaults to `analyze`, imported on first use so it stays out of Nuxt's startup. */
   run?: (options: AnalyzeOptions) => Promise<AnalyzeResult>;
 }
@@ -158,6 +160,7 @@ export class Analyzer {
     try {
       const run = this.options.run ?? (await import('#src/analyze/index.ts')).analyze;
       const result = await run({
+        ...this.options.analyze,
         rootDir: this.options.rootDir,
         baseline: this.options.baseline,
         cache: this.cache,

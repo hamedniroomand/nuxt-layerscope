@@ -79,6 +79,33 @@ oxlint hands plugins only the `<script>` of a `.vue` file. layerscope reads the 
 the template too; findings in the template are reported at the start of the script, with the
 template line in the message.
 
+## Watch mode
+
+`layerscope check --watch` runs a full check, then checks again each time you save a file. It is
+the lightest way to get feedback in a terminal while you write code:
+
+```bash
+layerscope check --watch
+```
+
+```text
+12:03:41  214 files  +1 new  -0 fixed  18 ms  watching, Ctrl+C to exit
+```
+
+- A change to one file analyzes that file again. Adding or deleting a file analyzes all files
+  again, because it can change what an import resolves to. A change to a config file or to the
+  generated files in `.nuxt` also gives a full run.
+- It does not run `nuxi prepare` for you. After you add a component or an auto-import, keep
+  `nuxi dev` running or run `nuxi prepare`; the watch reads the registry again when it changes.
+  `--prepare` runs it once, at the start.
+- Layers in `node_modules` are not watched.
+- It never exits with `1`: findings are shown, not counted. Ctrl+C exits with `0`. A run that
+  fails, such as a config error, is printed and the watch goes on.
+- On a terminal each run clears the screen, and a save that changes nothing only updates the
+  status line. Without a terminal, a separator line starts each run. With `--format json`,
+  `sarif` or `gitlab`, each run writes one complete document to stdout and the status line goes
+  to stderr.
+
 ## Unsaved changes
 
 In ESLint the plugin lints the text in the editor, so a new cross-layer call is reported before the

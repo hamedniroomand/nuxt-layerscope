@@ -252,6 +252,9 @@ importers:
       cac:
         specifier: ^7.0.0
         version: 7.0.0
+      chokidar:
+        specifier: ^5.0.0
+        version: 5.0.0
       globals:
         specifier: ^17.13.0
         version: 17.13.0

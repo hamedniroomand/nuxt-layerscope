@@ -29,4 +29,16 @@ describe('computeEnvKey', () => {
     utimesSync(file, new Date(), new Date(Date.now() + 5000));
     expect(computeEnvKey(root, buildDir)).not.toBe(before);
   });
+
+  it('does not change when a file is written again with the same content', () => {
+    const root = mkdtempSync(join(tmpdir(), 'layerscope-envkey-'));
+    const buildDir = join(root, '.nuxt');
+    const file = join(buildDir, 'layerscope/registry.json');
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, '{"a":1}');
+    const before = computeEnvKey(root, buildDir);
+    writeFileSync(file, '{"a":1}');
+    utimesSync(file, new Date(), new Date(Date.now() + 5000));
+    expect(computeEnvKey(root, buildDir)).toBe(before);
+  });
 });

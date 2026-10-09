@@ -1,3 +1,5 @@
+import { pathToFileURL } from 'node:url';
+
 import { DEFAULT_SEVERITY, ruleSeverity } from '#src/config/rules.ts';
 import type { AnalyzeResult, Finding, RuleName, Severity } from '#src/types.ts';
 import { packageVersion } from '#src/version.ts';
@@ -12,13 +14,20 @@ const SCHEMA = 'https://json.schemastore.org/sarif-2.1.0.json';
 const DESCRIPTIONS: Record<RuleName, string> = {
   'layer-boundary': 'A file uses a layer that its own layer does not allow.',
   'layer-cycle': 'Layers depend on each other in a cycle.',
-  'unresolved-reference': 'A component or auto-import cannot be resolved to a layer.',
+  'unresolved-reference':
+    'A reference cannot be resolved: an unknown identifier, component or import, a dynamic component, or a file that cannot be parsed.',
   'shadowed-component': 'A component is replaced by a component of the same name in another layer.',
 };
 
 const RULES = Object.keys(DEFAULT_SEVERITY) as RuleName[];
 
 const LEVELS: Record<Severity, string> = { error: 'error', warn: 'warning', off: 'none' };
+
+/** A file URI with a trailing slash, as SARIF wants for a base. */
+function directoryUri(root: string): string {
+  const { href } = pathToFileURL(root);
+  return href.endsWith('/') ? href : `${href}/`;
+}
 
 function location(file: string, root: string): { artifactLocation: object } {
   return { artifactLocation: { uri: repoPath(file, root), uriBaseId: '%SRCROOT%' } };
@@ -81,6 +90,7 @@ export function formatSarif(
     version: '2.1.0',
     runs: [
       {
+        originalUriBaseIds: { '%SRCROOT%': { uri: directoryUri(repoRoot) } },
         tool: {
           driver: {
             name: 'nuxt-layerscope',

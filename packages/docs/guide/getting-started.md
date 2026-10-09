@@ -133,6 +133,9 @@ The command exits with `1` when there are errors, so it fails CI.
 
 </Steps>
 
+To check again after each save, run `layerscope check --watch`. See
+[Watch mode](./editor#watch-mode).
+
 ## Try it without installing
 
 To see what layerscope finds before adding anything to the project:
