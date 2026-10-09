@@ -36,6 +36,18 @@ function readinessLines({ readiness }: Proposal, paint: Paint): string[] {
   ];
 }
 
+function presetLines({ preset, edges }: Proposal): string[] {
+  if (preset === null || edges.length === 0) {
+    return [];
+  }
+  const base = preset.base.length === 0 ? '' : ` (base: ${preset.base.join(', ')})`;
+  return [
+    '',
+    `A preset fits these dependencies: ${preset.name}${base}.`,
+    `Use preset: '${preset.name}' instead of the allowed edges above, if you want the shape and not the list.`,
+  ];
+}
+
 function nextSteps({ remaining }: Proposal, options: InitReportOptions): string[] {
   if (!options.written) {
     return ['Nothing written (--dry-run). The config would be:', '', options.source];
@@ -74,6 +86,7 @@ export function formatInit(
           edge =>
             `  ${edge.from} → ${edge.to}  ${plural(edge.count, 'reference')}, e.g. ${edge.example}`,
         )),
+    ...presetLines(proposal),
     '',
     paint('bold', 'Readiness'),
     ...readinessLines(proposal, paint),

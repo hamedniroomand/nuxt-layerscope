@@ -138,15 +138,17 @@ the ref, so `github:acme/console#v2` names the same layer. A layer sets either `
 
 ## `preset`
 
-- Type: `'layered' | 'stacked'`
+- Type: `'layered' | 'stacked' | 'features' | { name, base? }`
 
 Fills `allow` for every layer that does not set it. `root` is left unrestricted, and a layer's own
-`allow` always wins over the preset. A preset does not touch `expose`, so the two work together.
+`allow` always wins over the preset. A preset does not touch `expose` or `rules`, so they work
+together. To turn on a rule, set it in [`rules`](#rules).
 
-| Preset    | Shape                                                                                     | Fits                                         |
-| --------- | ----------------------------------------------------------------------------------------- | -------------------------------------------- |
-| `layered` | `shared` uses nothing; every other layer may use only `shared`, never each other          | Independent feature layers on a common base  |
-| `stacked` | Each layer may use only the layers below it in Nuxt's priority order, as `extends` stacks | Layers that build on each other, base to app |
+| Preset     | Shape                                                                                     | Fits                                         |
+| ---------- | ----------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `layered`  | `shared` uses nothing; every other layer may use only `shared`, never each other          | Independent feature layers on a common base  |
+| `stacked`  | Each layer may use only the layers below it in Nuxt's priority order, as `extends` stacks | Layers that build on each other, base to app |
+| `features` | A core and a UI kit that build up; every other layer may use them, and never each other   | Feature layers on a core and a design system |
 
 ```ts [layerscope.config.ts]
 export default defineConfig({
@@ -155,7 +157,28 @@ export default defineConfig({
 });
 ```
 
-`layered` expects a layer named `shared`; without one, layers may use nothing.
+### Base layers
+
+`layered` and `features` build on base layers. A base layer may use only the base layers below it.
+
+- **`layered`** has one base layer, `shared`. Without a layer of that name, layers may use nothing.
+- **`features`** has up to two. The first is the first layer that exists of `core`, `base`,
+  `shared` and `common`, in this order. The second is the first that exists of `ui` and
+  `design-system`, and it may use the first. A name that does not exist is skipped.
+
+Use the object form to name the base layers yourself. `base` lists them, lowest first, and every
+name must be a layer, and `root` cannot be one. A name may appear once. For `layered` it holds
+exactly one name. For `features`, `base: []` means no base layers. `stacked` takes no `base`.
+
+```ts [layerscope.config.ts]
+export default defineConfig({
+  preset: { name: 'features', base: ['tokens', 'kit'] }, // `kit` may use `tokens`
+});
+```
+
+The [`layers` tool of the MCP server](../guide/coding-tools) and `layerscope init` show the base
+layers that a preset picked, so you do not need to guess what the default chose. `init` also
+suggests the strictest preset that allows every dependency that exists today.
 
 ## `rules`
 

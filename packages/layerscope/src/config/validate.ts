@@ -1,10 +1,11 @@
 import { LayerscopeError } from '#src/errors.ts';
-import type { LayerscopeConfig } from '#src/types.ts';
+import type { LayerscopeConfig, PresetOptions } from '#src/types.ts';
 
 import { isPreset } from './presets.ts';
 import { isRuleName, RESERVED_RULES, SEVERITIES } from './rules.ts';
 
 const SCOPED_KEYS = new Set(['layer', 'only']);
+const PRESET_KEYS = new Set(['name', 'base']);
 
 function isNames(value: unknown): value is string[] {
   return Array.isArray(value) && value.every(item => typeof item === 'string');
@@ -64,10 +65,42 @@ function validateExpose(expose: unknown, where: string): void {
   }
 }
 
-export function validateConfig(config: LayerscopeConfig, file: string): void {
-  if (config.preset !== undefined && !isPreset(config.preset)) {
-    throw new LayerscopeError(`${file}: unknown preset "${String(config.preset)}"`);
+function validatePreset(preset: unknown, file: string): void {
+  if (preset === undefined) {
+    return;
   }
+  const options = typeof preset === 'object' && preset !== null ? (preset as PresetOptions) : null;
+  const name = options === null ? preset : options.name;
+  if (typeof name !== 'string' || !isPreset(name)) {
+    throw new LayerscopeError(`${file}: unknown preset ${JSON.stringify(name)}`);
+  }
+  const unknown = Object.keys(options ?? {}).find(key => !PRESET_KEYS.has(key));
+  if (unknown !== undefined) {
+    throw new LayerscopeError(
+      `${file}: unknown key "${unknown}" in the options of preset "${name}"; use "name" and "base"`,
+    );
+  }
+  if (options?.base === undefined) {
+    return;
+  }
+  const where = `${file}: preset "${name}" option "base"`;
+  if (!isNames(options.base)) {
+    throw new LayerscopeError(`${where} must be an array of layer names`);
+  }
+  const twice = options.base.find((layer, index) => options.base?.indexOf(layer) !== index);
+  if (twice !== undefined) {
+    throw new LayerscopeError(`${where} lists "${twice}" twice`);
+  }
+  if (name === 'stacked') {
+    throw new LayerscopeError(`${file}: preset "stacked" takes no "base" option`);
+  }
+  if (name === 'layered' && options.base.length !== 1) {
+    throw new LayerscopeError(`${where} must hold exactly one layer for "layered"`);
+  }
+}
+
+export function validateConfig(config: LayerscopeConfig, file: string): void {
+  validatePreset(config.preset, file);
   for (const [rule, severity] of Object.entries(config.rules ?? {})) {
     if (!isRuleName(rule) && !RESERVED_RULES.has(rule)) {
       throw new LayerscopeError(`${file}: unknown rule "${rule}"`);

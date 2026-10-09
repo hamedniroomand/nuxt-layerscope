@@ -39,6 +39,19 @@ function recordedConfig(buildDir: string, registry: Registry | null): ProjectCon
   return read.kind === 'ok' ? read.registry.config : undefined;
 }
 
+/** A preset that names a layer which does not exist is an error of the config that holds it. */
+function presetApplied(
+  config: LayerscopeConfig,
+  layers: Layer[],
+  recorded: ProjectConfig | undefined,
+): LayerscopeConfig {
+  try {
+    return applyPreset(config, layers);
+  } catch (error) {
+    throw labelConfigError(error, recorded);
+  }
+}
+
 /** Everything the analysis reads from Nuxt: layers, the symbol registry and aliases. */
 export async function loadEnvironment(options: EnvironmentOptions): Promise<Environment> {
   const { rootDir, buildDir } = options;
@@ -50,7 +63,7 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
       throw labelConfigError(error, recorded);
     },
   );
-  const config = applyPreset(effective, layers);
+  const config = presetApplied(effective, layers, recorded);
   const stale = registry === null ? null : staleConfigNote(rootDir, symbols.sourceFile);
   await (registry === null ? assertFresh(table, layers) : assertRegistryFresh(table, registry));
   return {

@@ -87,6 +87,27 @@ describe('presets', () => {
     expect(found).toEqual(['Auto-import "usea" crosses from layer "c" into "a"']);
   });
 
+  it('features picks shared as the base layer here, and a base option can name another', async () => {
+    const found = await messages(ring(), { preset: 'features' }, 'layer-boundary');
+    expect(found).toHaveLength(3);
+    const own = await messages(
+      ring(),
+      { preset: { name: 'features', base: ['a'] } },
+      'layer-boundary',
+    );
+    // Every layer may use `a`; `a` itself uses `b` and `shared`.
+    expect(own.join()).toContain('into "b"');
+    expect(own.join()).not.toContain('into "a"');
+  });
+
+  it('reports a base layer that is not a layer as a config error', async () => {
+    const root = ring();
+    const layers = config({}).layers;
+    await expect(
+      analyze({ rootDir: root, config: { layers, preset: { name: 'features', base: ['nope'] } } }),
+    ).rejects.toThrow('preset "features": base layer "nope" is not a layer');
+  });
+
   it('lets an explicit allow win over the preset', async () => {
     const layers = { c: { path: 'layers/c', allow: ['a'] } };
     const found = await messages(

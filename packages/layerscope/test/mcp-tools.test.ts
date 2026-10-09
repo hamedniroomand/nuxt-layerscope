@@ -11,15 +11,19 @@ import { callTool, dataOf } from './mcp-helpers.ts';
 import { tempDir } from './watch-project.ts';
 
 /** The nuxt4 fixture with the layers of another config, which `--config` reads. */
-function withLayers(layers: string): ProjectSession {
+function withConfig(config: string): ProjectSession {
   const configFile = join(tempDir(), 'layerscope.config.mjs');
-  writeFileSync(configFile, `export default { layers: ${layers} };\n`);
+  writeFileSync(configFile, `export default { ${config} };\n`);
   return new ProjectSession({
     rootDir: NUXT4_ROOT,
     configFile,
     source: 'auto',
     baseline: 'layerscope-baseline.json',
   });
+}
+
+function withLayers(layers: string): ProjectSession {
+  return withConfig(`layers: ${layers}`);
 }
 
 const json = (text: string): Record<string, unknown> => JSON.parse(text) as Record<string, unknown>;
@@ -142,6 +146,20 @@ describe('why, layers and graph', () => {
     expect(byName.web.expose).toEqual(['useCart']);
     expect(byName.web.allow).toBeNull();
     expect(result.rules['layer-internal']).toBe('error');
+  });
+
+  it('gives the preset with the base layers that it picked, or null without one', async () => {
+    const none = dataOf<LayersData>(await callTool('layers'));
+    expect(none.preset).toBeNull();
+    const picked = dataOf<LayersData>(
+      await callTool('layers', {}, withConfig("preset: 'features'")),
+    );
+    expect(picked.preset?.name).toBe('features');
+    expect(picked.preset?.base).toContain('shared');
+    const given = dataOf<LayersData>(
+      await callTool('layers', {}, withConfig("preset: { name: 'features', base: ['auth'] }")),
+    );
+    expect(given.preset).toEqual({ name: 'features', base: ['auth'] });
   });
 
   it('gives the layer graph with a status for each edge, and a cut file graph', async () => {
