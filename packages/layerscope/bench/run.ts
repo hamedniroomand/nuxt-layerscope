@@ -25,19 +25,24 @@ interface Timed {
 
 /** Runs the built CLI in a fresh process and measures wall time and peak memory. */
 function runCli(project: string, args: string[]): Timed {
-  const rssFile = join(mkdtempSync(join(tmpdir(), 'layerscope-bench-')), 'rss');
-  const start = process.hrtime.bigint();
-  const result = spawnSync(
-    process.execPath,
-    ['--import', HOOK, BIN, 'check', project, '--format', 'json', ...args],
-    { env: { ...process.env, BENCH_RSS_FILE: rssFile }, encoding: 'utf8', maxBuffer: 1 << 28 },
-  );
-  const ms = Number(process.hrtime.bigint() - start) / 1e6;
-  const maxRssKb = existsSync(rssFile) ? Number(readFileSync(rssFile, 'utf8')) : Number.NaN;
-  if (result.status !== 0 && result.status !== 1) {
-    throw new Error(`layerscope check exited with ${String(result.status)}:\n${result.stderr}`);
+  const dir = mkdtempSync(join(tmpdir(), 'layerscope-bench-'));
+  const rssFile = join(dir, 'rss');
+  try {
+    const start = process.hrtime.bigint();
+    const result = spawnSync(
+      process.execPath,
+      ['--import', HOOK, BIN, 'check', project, '--format', 'json', ...args],
+      { env: { ...process.env, BENCH_RSS_FILE: rssFile }, encoding: 'utf8', maxBuffer: 1 << 28 },
+    );
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    const maxRssKb = existsSync(rssFile) ? Number(readFileSync(rssFile, 'utf8')) : Number.NaN;
+    if (result.status !== 0 && result.status !== 1) {
+      throw new Error(`layerscope check exited with ${String(result.status)}:\n${result.stderr}`);
+    }
+    return { ms, maxRssKb, status: result.status, stdout: result.stdout };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
   }
-  return { ms, maxRssKb, status: result.status, stdout: result.stdout };
 }
 
 function findingsOf(timed: Timed): number {
@@ -149,7 +154,10 @@ function main(): void {
   let shape = '';
   if (project === undefined) {
     project = PROJECT_DIR;
-    if (args.generate || !existsSync(project)) {
+    if (!args.generate && !existsSync(project)) {
+      throw new Error('There is no generated project. Run without --no-generate first.');
+    }
+    if (args.generate) {
       process.stderr.write(`Generating a project of ${args.files} files and preparing it...\n`);
       const plan = generateProject({ files: args.files });
       expected = plan.expectedFindings;
