@@ -122,6 +122,11 @@ describe('the preset that init suggests', () => {
     expect(fittingPreset([edge('shop', 'root')], ['root', 'shop', 'shared'])).toBeNull();
   });
 
+  it('suggests nothing when the only dependencies are those of root', () => {
+    const edges = [edge('root', 'shop'), edge('root', 'shared')];
+    expect(fittingPreset(edges, ['root', 'shop', 'shared'])).toBeNull();
+  });
+
   it('suggests features with the base layers it picked', () => {
     const edges = [edge('shop', 'core'), edge('shop', 'ui'), edge('ui', 'core')];
     expect(fittingPreset(edges, ['shop', 'ui', 'core'])).toEqual({

@@ -19,6 +19,14 @@ export const layersTool: Tool = {
     properties: {
       layers: { type: 'array' },
       rules: { type: 'object' },
+      preset: {
+        type: ['object', 'null'],
+        description: 'The preset as { name, base }, or null without one.',
+        properties: {
+          name: { type: 'string' },
+          base: { type: 'array', items: { type: 'string' } },
+        },
+      },
     },
   },
   async run(_args, session) {
