@@ -48,21 +48,23 @@ the edges you want.
 layerscope check [root] [options]
 ```
 
-| Option              | Default                    | Description                                                              |
-| ------------------- | -------------------------- | ------------------------------------------------------------------------ |
-| `--format <format>` | `text`                     | [Output format](./output): `text`, `github`, `json`, `sarif` or `gitlab` |
-| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                           |
-| `--prepare`         |                            | Run `nuxi prepare` before checking                                       |
-| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                  |
-| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                 |
-| `--update-baseline` |                            | Write every current finding to the baseline file and exit `0`            |
-| `--verbose`         |                            | Print where symbols were read from                                       |
+| Option              | Default                    | Description                                                                               |
+| ------------------- | -------------------------- | ----------------------------------------------------------------------------------------- |
+| `--format <format>` | `text`                     | [Output format](./output): `text`, `github`, `json`, `sarif` or `gitlab`                  |
+| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                                            |
+| `--prepare`         |                            | Run `nuxi prepare` before checking                                                        |
+| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                                   |
+| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                  |
+| `--update-baseline` |                            | Write every current finding to the baseline file and exit `0`                             |
+| `--watch`           |                            | Check again after each change, until Ctrl+C. See [Watch mode](../guide/editor#watch-mode) |
+| `--verbose`         |                            | Print where symbols were read from                                                        |
 
 ```bash
 layerscope check                                  # current directory
 layerscope check apps/shop --format github        # another root, GitHub annotations
 layerscope check --prepare --source registry      # regenerate, and require the module
 layerscope check --update-baseline                # accept the current findings
+layerscope check --watch                          # check again after each save
 ```
 
 ## `layerscope drift`

@@ -20,9 +20,15 @@ interface Entry {
 export class AnalysisCache {
   private envKey = '';
   private readonly entries = new Map<string, Entry>();
+  private computed = 0;
 
   public get size(): number {
     return this.entries.size;
+  }
+
+  /** How often a file was analyzed instead of read from the cache; tests use it. */
+  public get misses(): number {
+    return this.computed;
   }
 
   public reset(envKey: string): void {
@@ -38,6 +44,7 @@ export class AnalysisCache {
     if (entry?.mtimeMs === mtimeMs && entry.size === size) {
       return entry.analysis;
     }
+    this.computed += 1;
     const analysis = compute();
     this.entries.set(file, { mtimeMs, size, analysis });
     return analysis;

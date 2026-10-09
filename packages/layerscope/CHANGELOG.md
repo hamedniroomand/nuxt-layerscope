@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- `layerscope check --watch` checks again after each change and shows what is new and what is
+  fixed. It analyzes only the changed file, and runs in full when files are added or deleted or
+  when a config file or the Nuxt registry changes. It works with every output format and never
+  exits with `1`.
+- The DevTools tab and `check --watch` no longer run in full when `nuxi dev` writes a generated
+  file again with the same content. The environment key now hashes the content.
 - `layerscope check --format sarif` writes a SARIF 2.1.0 log for GitHub code scanning. Findings
   that the baseline accepts are included as suppressed results.
 - `layerscope check --format gitlab` writes a GitLab Code Quality report for the merge request
