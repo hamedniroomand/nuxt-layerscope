@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 
-import { createIgnore, isConfigFile } from '#src/watch/ignore.ts';
+import { createIgnore, isConfigChange, isConfigFile } from '#src/watch/ignore.ts';
 
 const ignore = createIgnore('/p/.nuxt');
 
@@ -44,5 +44,13 @@ describe('isConfigFile', () => {
     expect(isConfigFile('/p/layers/a/nuxt.config.ts')).toBe(true);
     expect(isConfigFile('/p/layerscope.config.mjs')).toBe(true);
     expect(isConfigFile('/p/layers/a/app/config.ts')).toBe(false);
+  });
+});
+
+describe('isConfigChange', () => {
+  it('matches the file given with --config, whatever its name', () => {
+    expect(isConfigChange('/c/my-rules.ts', '/c/my-rules.ts')).toBe(true);
+    expect(isConfigChange('/c/other.ts', '/c/my-rules.ts')).toBe(false);
+    expect(isConfigChange('/p/nuxt.config.ts')).toBe(true);
   });
 });

@@ -29,3 +29,10 @@ const CONFIG_FILE = /(?:^|\/)(?:nuxt|layerscope)\.config\.[cm]?[jt]s$/u;
 export function isConfigFile(path: string): boolean {
   return CONFIG_FILE.test(normalize(path));
 }
+
+/** The config file named by `--config` may be anywhere and have any name. */
+export function isConfigChange(path: string, configPath?: string): boolean {
+  return (
+    isConfigFile(path) || (configPath !== undefined && normalize(path) === normalize(configPath))
+  );
+}

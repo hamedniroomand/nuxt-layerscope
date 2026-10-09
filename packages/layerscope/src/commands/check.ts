@@ -34,9 +34,6 @@ async function updateBaseline(rootDir: string, flags: CheckFlags): Promise<numbe
 }
 
 async function watch(rootDir: string, format: OutputFormat, flags: CheckFlags): Promise<number> {
-  if (flags.updateBaseline === true) {
-    throw new LayerscopeError('--watch cannot be used with --update-baseline.');
-  }
   // Loaded here, so a one-shot check does not load the watch code.
   const { watchCheck } = await import('#src/watch/index.ts');
   const abort = new AbortController();
@@ -75,6 +72,9 @@ export async function check(root: string | undefined, flags: CheckFlags): Promis
   const { format } = flags;
   if (!isOutputFormat(format)) {
     throw new LayerscopeError(`Unknown format "${format}". Use ${OUTPUT_FORMATS.join(', ')}.`);
+  }
+  if (flags.watch === true && flags.updateBaseline === true) {
+    throw new LayerscopeError('--watch cannot be used with --update-baseline.');
   }
   const rootDir = resolve(root ?? process.cwd());
   if (flags.updateBaseline === true) {

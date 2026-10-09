@@ -1,43 +1,78 @@
-import { writeFileSync } from 'node:fs';
+import { unlinkSync, writeFileSync } from 'node:fs';
 
-import { join } from 'pathe';
+import { basename, dirname, join } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
+import { analyze } from '#src/analyze/index.ts';
+import { createBaseline, writeBaseline } from '#src/baseline/index.ts';
 import { formatResult } from '#src/report/index.ts';
 import { plain } from '#src/utils/style.ts';
 import { watchCheck } from '#src/watch/index.ts';
 import type { WatchOptions } from '#src/watch/index.ts';
 import type { Change, StartWatcher } from '#src/watch/watcher.ts';
 
-import { page, project, write } from './watch-project.ts';
+import { page, project, tempDir, write } from './watch-project.ts';
 
 function noop(): void {
   // Nothing to do.
 }
 
 interface Session {
+  /** The paths given to the watcher at the start, and the ones added later. */
+  watched: string[];
+  added: string[];
   out: string[];
   err: string[];
   stop: () => Promise<number>;
   change: (change?: Partial<Change>) => void;
 }
 
-/** Runs the watch with a watcher that the test drives, and with short delays. */
-function start(root: string, format: 'text' | 'json' = 'text', tty = false): Session {
-  const out: string[] = [];
-  const err: string[] = [];
-  const abort = new AbortController();
-  let notify: (change: Change) => void = noop;
-  const startWatcher: StartWatcher = async (_paths, _buildDir, onChange) => {
-    notify = onChange;
+/** A watcher the test drives: it records the paths and sends the changes it is told to. */
+function fakeWatcher(): {
+  startWatcher: StartWatcher;
+  watched: string[];
+  added: string[];
+  send: (change: Change) => void;
+} {
+  const watched: string[] = [];
+  const added: string[] = [];
+  const handlers: ((change: Change) => void)[] = [];
+  const startWatcher: StartWatcher = async (paths, _buildDir, onChange) => {
+    handlers.push(onChange);
+    watched.push(...paths);
     await Promise.resolve();
     return {
-      add: noop,
+      add: more => {
+        added.push(...more);
+      },
       close: async () => {
         await Promise.resolve();
       },
     };
   };
+  return {
+    startWatcher,
+    watched,
+    added,
+    send: change => {
+      for (const handler of handlers) {
+        handler(change);
+      }
+    },
+  };
+}
+
+/** Runs the watch with a watcher that the test drives, and with short delays. */
+function start(
+  root: string,
+  format: 'text' | 'json' = 'text',
+  tty = false,
+  extra: Partial<WatchOptions> = {},
+): Session {
+  const { startWatcher, watched, added, send } = fakeWatcher();
+  const out: string[] = [];
+  const err: string[] = [];
+  const abort = new AbortController();
   const options: WatchOptions = {
     rootDir: root,
     source: 'auto',
@@ -56,9 +91,12 @@ function start(root: string, format: 'text' | 'json' = 'text', tty = false): Ses
     delayMs: 5,
     maxWaitMs: 50,
     startWatcher,
+    ...extra,
   };
   const done = watchCheck(options);
   return {
+    watched,
+    added,
     out,
     err,
     stop: async () => {
@@ -67,7 +105,7 @@ function start(root: string, format: 'text' | 'json' = 'text', tty = false): Ses
       return code;
     },
     change: change => {
-      notify({ path: join(root, 'x'), config: false, ...change });
+      send({ path: join(root, 'x'), config: false, ...change });
     },
   };
 }
@@ -191,5 +229,70 @@ describe('watchCheck with the file watcher', () => {
     await seen(out, '+0 new  -1 fixed', 20_000);
     abort.abort();
     expect(await done).toBe(0);
+  });
+});
+
+describe('watchCheck inputs', () => {
+  it('watches a layer outside the root, also when it appears after the first run', async () => {
+    const root = project();
+    const outside = join(dirname(root), `${basename(root)}-ext`);
+    write(outside, 'app/ext.ts', 'export default 1;\n');
+    // A `.ts` config: Node caches a `.mjs` module, so it cannot be read again.
+    unlinkSync(join(root, 'layerscope.config.mjs'));
+    write(
+      root,
+      'layerscope.config.ts',
+      "export default { layers: { a: { path: 'layers/a' } } };\n",
+    );
+    const session = start(root);
+    await seen(session.out, '0 findings');
+    expect(session.added).toEqual([]);
+    write(
+      root,
+      'layerscope.config.ts',
+      `export default { layers: { a: { path: 'layers/a' }, ext: { path: '../${basename(outside)}' } } };\n`,
+    );
+    session.change({ config: true });
+    await vi.waitFor(
+      () => {
+        expect(session.added, joined(session.err)).toEqual([outside]);
+      },
+      { timeout: 5000 },
+    );
+    await session.stop();
+  });
+});
+
+describe('watchCheck inputs of the report', () => {
+  it('prints the report again when only the baseline file changed', async () => {
+    const root = project();
+    write(root, 'layers/a/app/pages/bad.vue', page('./missing'));
+    const found = await analyze({ rootDir: root });
+    const file = join(root, 'layerscope-baseline.json');
+    writeBaseline(file, createBaseline(found.findings, root));
+    const session = start(root);
+    await seen(session.out, '0 findings');
+    expect(joined(session.out)).toContain('1 more in the baseline');
+    const baseline = createBaseline(found.findings, root);
+    baseline.entries.push({
+      rule: 'layer-boundary',
+      file: 'layers/a/gone.ts',
+      symbol: 'x',
+      toLayer: 'b',
+    });
+    writeBaseline(file, baseline);
+    session.change();
+    await seen(session.out, '1 fixed entry');
+    await session.stop();
+  });
+
+  it('watches the file of --config, wherever it is', async () => {
+    const root = project();
+    const configFile = join(tempDir(), 'custom.config.mjs');
+    writeFileSync(configFile, "export default { layers: { a: { path: 'layers/a' } } };\n");
+    const session = start(root, 'text', false, { configFile });
+    await seen(session.out, '0 findings');
+    expect(session.watched).toEqual([root, configFile]);
+    await session.stop();
   });
 });

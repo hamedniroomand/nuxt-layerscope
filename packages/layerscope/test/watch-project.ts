@@ -8,6 +8,10 @@ export function write(root: string, path: string, content: string): void {
   writeFileSync(join(root, path), content);
 }
 
+export function tempDir(): string {
+  return realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-watch-')));
+}
+
 /** The text of a page that imports `from`; an import that does not resolve is a finding. */
 export function page(from: string): string {
   return `<script setup lang="ts">\nimport thing from "${from}";\nconsole.log(thing);\n</script>\n`;
@@ -15,7 +19,7 @@ export function page(from: string): string {
 
 /** A project with one layer and `count` pages that resolve, without a Nuxt registry. */
 export function project(count = 1): string {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-watch-')));
+  const root = tempDir();
   write(root, '.nuxt/types/imports.d.ts', 'export {}\ndeclare global {}\n');
   write(root, '.nuxt/components.d.ts', '\n');
   write(root, 'layerscope.config.mjs', "export default { layers: { a: { path: 'layers/a' } } };\n");

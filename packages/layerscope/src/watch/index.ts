@@ -1,15 +1,15 @@
-import { join, resolve } from 'pathe';
+import { resolve } from 'pathe';
 
-import { prepareNuxt } from '#src/analyze/prepare.ts';
-import { loadConfig } from '#src/config/load.ts';
 import { Analyzer } from '#src/devtools/analyzer.ts';
 import { computeEnvKey } from '#src/devtools/env-key.ts';
 import { countKeys, diffKeys } from '#src/devtools/finding-keys.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult, SourceOption } from '#src/types.ts';
 
+import { isConfigChange } from './ignore.ts';
+import { buildDirOf, buildDirOrDefault, configPathOf, prepareProject } from './project.ts';
 import { Trigger } from './trigger.ts';
-import type { StartWatcher } from './watcher.ts';
+import type { StartWatcher, Watcher } from './watcher.ts';
 import { startWatcher } from './watcher.ts';
 
 const CLEAR_SCREEN = '\u001B[2J\u001B[3J\u001B[H';
@@ -50,14 +50,17 @@ function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-/** What the screen shows: findings the baseline accepts do not change it, notes and files do. */
+/** What the report shows. When it is the same, the screen is left as it is. */
 function outputKey(result: AnalyzeResult): string {
-  return JSON.stringify([result.findings, result.notes, result.files.length]);
-}
-
-async function buildDirOf(rootDir: string, configFile?: string): Promise<string> {
-  const config = await loadConfig(rootDir, configFile);
-  return resolve(rootDir, config.buildDir ?? '.nuxt');
+  const { baseline } = result;
+  return JSON.stringify([
+    result.findings,
+    result.notes,
+    result.files.length,
+    // The text report counts these and the JSON report lists them.
+    baseline?.suppressed,
+    baseline?.removable,
+  ]);
 }
 
 /** One `check --watch`: the analyzer, what is on the screen, and the runs. */
@@ -94,9 +97,7 @@ class WatchRun {
   }
 
   public async buildDir(): Promise<string> {
-    const dir = await buildDirOf(this.rootDir, this.options.configFile).catch(() =>
-      join(this.rootDir, '.nuxt'),
-    );
+    const dir = await buildDirOrDefault(this.rootDir, this.options.configFile);
     return dir;
   }
 
@@ -105,7 +106,7 @@ class WatchRun {
       return;
     }
     try {
-      prepareNuxt(this.rootDir);
+      prepareProject(this.rootDir);
     } catch (error) {
       this.options.warn(`layerscope: ${messageOf(error)}\n`);
     }
@@ -201,26 +202,44 @@ async function untilAborted(signal: AbortSignal): Promise<void> {
 export async function watchCheck(options: WatchOptions): Promise<number> {
   const watch = new WatchRun(options);
   watch.prepare();
+  const rootDir = resolve(options.rootDir);
+  const configPath = configPathOf(rootDir, options.configFile);
+  const added = new Set<string>();
+  const handle: { watcher?: Watcher } = {};
+  // Layers outside the project root are known after a run, and a run can add more.
+  const watchNewRoots = (): void => {
+    const roots = watch
+      .layerRoots()
+      .filter(root => root !== rootDir && !root.startsWith(`${rootDir}/`) && !added.has(root));
+    for (const root of roots) {
+      added.add(root);
+    }
+    if (roots.length > 0) {
+      handle.watcher?.add(roots);
+    }
+  };
   const trigger = new Trigger(
     async () => {
       await watch.run();
+      watchNewRoots();
     },
     options.delayMs ?? 150,
     options.maxWaitMs ?? 1000,
   );
   const start = options.startWatcher ?? startWatcher;
-  const rootDir = resolve(options.rootDir);
-  const watcher = await start([rootDir], await watch.buildDir(), change => {
-    if (change.config) {
+  // A config file given with `--config` can be outside the root.
+  const paths = configPath === undefined ? [rootDir] : [rootDir, configPath];
+  const watcher = await start(paths, await watch.buildDir(), change => {
+    if (change.config || isConfigChange(change.path, configPath)) {
       watch.configChanged();
     }
     trigger.touch();
   }).catch((error: unknown) => {
     throw new LayerscopeError(`Cannot watch ${rootDir}: ${messageOf(error)}`);
   });
+  handle.watcher = watcher;
   await watch.run();
-  // The root covers the layers inside it; the others are added once they are known.
-  watcher.add(watch.layerRoots().filter(root => !root.startsWith(`${rootDir}/`)));
+  watchNewRoots();
   await untilAborted(options.signal);
   trigger.stop();
   await watcher.close();
