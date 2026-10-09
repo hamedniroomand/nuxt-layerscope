@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `layerscope mcp` starts a read-only MCP server over stdio, so coding assistants can ask
+  focused questions: `check`, `why`, `layers`, `can_use`, `suggest` and `graph`. The analysis stays
+  in memory, and each call reads only the files that changed. Paths outside the project are refused.
+  Setup for Claude Code, Cursor and VS Code is on the coding assistants page.
 - A layer can allow only part of another layer: an entry of `allow` can be `{ layer: 'web', only: ['useCart'] }`.
   `only` takes names and globs on the file path. Any other use of that layer is a `layer-boundary`
   finding that names the entry. The suggestion of a boundary finding proposes a scoped entry when up to

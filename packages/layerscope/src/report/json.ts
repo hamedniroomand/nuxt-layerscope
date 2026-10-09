@@ -13,7 +13,7 @@ function relativeSuggestion(suggestion: Suggestion, cwd: string): Suggestion {
     : { ...suggestion, file: relative(cwd, suggestion.file) };
 }
 
-function relativeFinding(finding: Finding, cwd: string): Finding {
+export function relativeFinding(finding: Finding, cwd: string): Finding {
   return {
     ...finding,
     file: relative(cwd, finding.file),
