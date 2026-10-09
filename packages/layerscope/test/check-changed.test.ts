@@ -86,6 +86,19 @@ describe('check --changed', () => {
   });
 });
 
+describe('check --changed on the default branch', () => {
+  it('takes the commits that are not on origin yet when it is on the default branch', async () => {
+    const repo = gitProject();
+    repo.git('update-ref', 'refs/remotes/origin/main', 'HEAD');
+    repo.git('symbolic-ref', 'refs/remotes/origin/HEAD', 'refs/remotes/origin/main');
+    repo.write(PAGE0, BAD);
+    repo.commit('unpushed');
+    repo.write(PAGE1, BAD);
+    const report = reportOf(await check([repo.root, '--changed', '--format', 'json'], repo.root));
+    expect(files(report).toSorted()).toEqual([PAGE0, PAGE1]);
+  });
+});
+
 describe('check --since and the first commit', () => {
   it('diffs --since from the merge base, so work that landed on main is not checked', async () => {
     const repo = gitProject();

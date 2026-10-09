@@ -88,7 +88,7 @@ hook.
 - **`--staged`** takes the files that are added, copied, modified or renamed in the index.
   **`--changed`** takes the files that differ from the merge base with the default branch
   (`origin/HEAD`, else `main`, else `master`) in the working tree, committed or not, and the
-  untracked files. On the default branch itself it takes the uncommitted work. **`--since <ref>`**
+  untracked files. On the default branch itself it takes the uncommitted work and the commits that are not on `origin` yet, so it also fits a pre-push hook. Without a remote it takes only the uncommitted work. **`--since <ref>`**
   uses another ref: the files that differ from the merge base of `HEAD` and the ref, so work that
   landed on the ref after your branch left it is not checked. Without a merge base, the ref itself
   is used. Before the first commit, every file in the index is new. In a repository with several projects, `git` is asked from the project root,

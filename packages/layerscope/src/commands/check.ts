@@ -1,15 +1,14 @@
-import { relative, resolve } from 'pathe';
-
 import { analyze } from '#src/analyze/index.ts';
-import { BASELINE_FILE, createBaseline, writeBaseline } from '#src/baseline/index.ts';
+import { BASELINE_FILE } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatResult, isOutputFormat, OUTPUT_FORMATS } from '#src/report/index.ts';
 import type { OutputFormat } from '#src/report/index.ts';
 import { repoRoot } from '#src/report/paths.ts';
-import { plural } from '#src/utils/strings.ts';
 import { paintFor } from '#src/utils/style.ts';
 
-import { selectTarget } from './check-files.ts';
+import { updateBaseline } from './check-baseline.ts';
+import { deletedNote, selectTarget } from './check-files.ts';
+import { checkNothing } from './check-nothing.ts';
 import type { Cli, CommonFlags } from './shared.ts';
 import { EXIT_CLEAN, EXIT_VIOLATIONS, toSource, withCommonOptions, writeNotes } from './shared.ts';
 
@@ -20,21 +19,6 @@ export interface CheckFlags extends CommonFlags {
   staged?: boolean;
   changed?: boolean;
   since?: string;
-}
-
-async function updateBaseline(rootDir: string, flags: CheckFlags): Promise<number> {
-  const result = await analyze({
-    rootDir,
-    configFile: flags.config,
-    prepare: flags.prepare,
-    source: toSource(flags.source),
-  });
-  const file = resolve(rootDir, flags.baseline);
-  writeBaseline(file, createBaseline(result.findings, rootDir));
-  const count = plural(result.findings.length, 'finding');
-  process.stdout.write(`✔ Wrote ${count} to ${relative(process.cwd(), file)}\n`);
-  writeNotes(result, flags.verbose === true);
-  return EXIT_CLEAN;
 }
 
 async function watch(rootDir: string, format: OutputFormat, flags: CheckFlags): Promise<number> {
@@ -72,33 +56,6 @@ async function watch(rootDir: string, format: OutputFormat, flags: CheckFlags): 
   }
 }
 
-/** A check that has nothing to look at: no analysis of files, and a short message. */
-async function checkNothing(
-  rootDir: string,
-  none: string,
-  format: OutputFormat,
-  flags: CheckFlags,
-): Promise<number> {
-  process.stderr.write(`layerscope: ${none}\n`);
-  if (format === 'text' || format === 'github') {
-    return EXIT_CLEAN;
-  }
-  // A machine format still gets a valid, empty document.
-  const result = await analyze({
-    rootDir,
-    configFile: flags.config,
-    prepare: flags.prepare,
-    source: toSource(flags.source),
-    baseline: flags.baseline,
-    only: [],
-  });
-  const repository = format === 'sarif' || format === 'gitlab' ? repoRoot(rootDir) : rootDir;
-  process.stdout.write(
-    formatResult(result, format, process.cwd(), paintFor(process.stdout), repository),
-  );
-  return EXIT_CLEAN;
-}
-
 export async function check(
   root: string | undefined,
   files: string[],
@@ -119,7 +76,7 @@ export async function check(
     return watch(rootDir, format, flags);
   }
   if (selection?.files.length === 0) {
-    return checkNothing(rootDir, selection.none, format, flags);
+    return checkNothing(rootDir, selection, format, flags);
   }
   const result = await analyze({
     rootDir,
@@ -129,10 +86,9 @@ export async function check(
     baseline: flags.baseline,
     ...(selection === undefined ? {} : { only: selection.files }),
   });
-  if (selection !== undefined && selection.deleted > 0) {
-    result.notes.push(
-      `${plural(selection.deleted, 'deleted source file')}: files that used their symbols are not checked.`,
-    );
+  const deleted = selection === undefined ? null : deletedNote(selection);
+  if (deleted !== null) {
+    result.notes.push(deleted);
   }
   // Only `sarif` and `gitlab` read the repository root; the others do not run git.
   const repository = format === 'sarif' || format === 'gitlab' ? repoRoot(rootDir) : rootDir;

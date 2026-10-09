@@ -1,3 +1,6 @@
+import { rmSync } from 'node:fs';
+
+import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { BAD, check, files, gitProject, reportOf } from './git-project.ts';
@@ -63,8 +66,7 @@ describe('check --staged with nothing to check', () => {
   it('exits at once when nothing is staged, even when the project could not be analyzed', async () => {
     const repo = gitProject();
     // Without `.nuxt` a full check stops with an error: this one never looks at it.
-    repo.git('rm', '-rq', '--cached', '.');
-    repo.git('commit', '-q', '-m', 'empty');
+    rmSync(join(repo.root, '.nuxt'), { recursive: true });
     const result = await check([repo.root, '--staged'], repo.root);
     expect(result).toMatchObject({ code: 0, out: '' });
     expect(result.err).toContain('No staged source files to check.');
@@ -86,5 +88,37 @@ describe('check --staged with nothing to check', () => {
     expect(result.code).toBe(0);
     expect(reportOf(result).findings).toEqual([]);
     expect(result.err).toContain('No staged source files to check.');
+  });
+});
+
+describe('check --staged with nothing to check, in a machine format', () => {
+  it.each(['json', 'sarif', 'gitlab'])(
+    'prints a valid, empty report in %s when the project cannot be read',
+    async format => {
+      const repo = gitProject();
+      rmSync(join(repo.root, '.nuxt'), { recursive: true });
+      const result = await check([repo.root, '--staged', '--format', format], repo.root);
+      expect(result.code).toBe(0);
+      expect(() => JSON.parse(result.out) as unknown).not.toThrow();
+    },
+  );
+
+  it('says in the report why the project was not read', async () => {
+    const repo = gitProject();
+    rmSync(join(repo.root, '.nuxt'), { recursive: true });
+    const json = reportOf(await check([repo.root, '--staged', '--format', 'json'], repo.root));
+    expect(json.findings).toEqual([]);
+    expect(json.notes.join('\n')).toContain('The project was not read');
+  });
+
+  it('says that deleted files were not checked when only deletions are staged', async () => {
+    const repo = gitProject();
+    repo.git('rm', '-q', PAGE1);
+    const text = await check([repo.root, '--staged'], repo.root);
+    expect(text).toMatchObject({ code: 0, out: '' });
+    expect(text.err).toContain('No staged source files to check.');
+    expect(text.err).toContain('1 deleted source file');
+    const json = reportOf(await check([repo.root, '--staged', '--format', 'json'], repo.root));
+    expect(json.notes.join('\n')).toContain('1 deleted source file');
   });
 });

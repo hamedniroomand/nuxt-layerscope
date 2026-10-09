@@ -5,6 +5,14 @@ import { resolve } from 'pathe';
 import { LayerscopeError } from '#src/errors.ts';
 import { changedFiles, pathSelection, stagedFiles } from '#src/git/selection.ts';
 import type { Selection } from '#src/git/selection.ts';
+import { plural } from '#src/utils/strings.ts';
+
+/** The note about deleted files in a selection, or `null` when none was deleted. */
+export function deletedNote(selection: Selection): string | null {
+  return selection.deleted === 0
+    ? null
+    : `${plural(selection.deleted, 'deleted source file')}: files that used their symbols are not checked.`;
+}
 
 export interface FileFlags {
   staged?: boolean;
