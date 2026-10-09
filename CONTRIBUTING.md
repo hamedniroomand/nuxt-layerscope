@@ -21,6 +21,17 @@ vp run dev      # run the docs site locally
 The [development guide](./packages/docs/contributing/development.md) covers the layout, the test
 fixtures and snapshots.
 
+## Measuring speed
+
+```bash
+vp run nuxt-layerscope#build       # the benchmark runs the built CLI
+pnpm --filter nuxt-layerscope bench --files 3000
+```
+
+It generates a project of source files in ten layers (in the git-ignored
+`packages/layerscope/bench/.project`), runs `nuxi prepare` on it, and prints the times. The
+[performance page](./packages/docs/guide/performance.md) explains the method.
+
 ## Trying the DevTools tab
 
 ```bash

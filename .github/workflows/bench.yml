@@ -1,0 +1,52 @@
+name: Benchmark
+
+# Times layerscope on a generated project and writes the table to the job summary. It never fails
+# on a slow run: shared runners are too noisy for a limit. Run it by hand to compare a change.
+
+on:
+  workflow_dispatch:
+    inputs:
+      files:
+        description: Source files in the generated project
+        default: '500'
+  push:
+    branches: [main]
+    paths:
+      - packages/layerscope/src/**
+      - packages/layerscope/bench/**
+      - .github/workflows/bench.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version: '24'
+          cache: true
+          run-install: true
+      - run: vp run nuxt-layerscope#build
+      - name: Run the benchmark
+        # `shell: bash` sets pipefail, so a failing benchmark fails the step instead of `tee`.
+        shell: bash
+        env:
+          FILES: ${{ inputs.files || '500' }}
+        run: |
+          pnpm --filter nuxt-layerscope bench --files "$FILES" --runs 3 --json "$RUNNER_TEMP/bench.json" | tee "$RUNNER_TEMP/bench.md"
+          { echo "## Benchmark, $FILES source files"; echo; cat "$RUNNER_TEMP/bench.md"; } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: benchmark
+          path: ${{ runner.temp }}/bench.json
+          retention-days: 30

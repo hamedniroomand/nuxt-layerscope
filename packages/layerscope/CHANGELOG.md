@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `pnpm bench` in `packages/layerscope` measures `check` on a generated project of any size, or on
+  your own with `--project`: a one-shot run, a run with `nuxi prepare`, and a long-running process
+  that reads the cache. The new performance page has the numbers and the method.
 - `layerscope mcp` starts a read-only MCP server over stdio, so coding assistants can ask
   focused questions: `check`, `why`, `layers`, `can_use`, `suggest` and `graph`. The analysis stays
   in memory, and each call reads only the files that changed. Paths outside the project are refused.
