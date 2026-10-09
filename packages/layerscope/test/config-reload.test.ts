@@ -6,6 +6,7 @@ import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { loadConfig, loadConfigSync } from '#src/config/load.ts';
+import { importNative } from '#src/config/native.ts';
 
 import { tempDir } from './watch-project.ts';
 
@@ -189,5 +190,21 @@ describe('in plain Node, without the test runner', () => {
     const result = spawnSync('node', [join(dir, 'run.mjs')], { encoding: 'utf8' });
     expect(result.stdout.trim()).toBe('quiet');
     expect(result.stderr).not.toContain('Failed to load the ES module');
+  });
+});
+
+describe('the filter for the Node warning', () => {
+  it('puts process.emit back after loads that overlap', async () => {
+    const before: unknown = Reflect.get(process, 'emit');
+    const first = project('commonjs');
+    const second = project('commonjs');
+    first.write('layerscope.config.js', PLAIN('one'));
+    second.write('layerscope.config.js', PLAIN('two'));
+    const results = await Promise.all([
+      importNative(join(first.dir, 'layerscope.config.js')),
+      importNative(join(second.dir, 'layerscope.config.js')),
+    ]);
+    expect(results.every(result => 'value' in result)).toBe(true);
+    expect(Reflect.get(process, 'emit')).toBe(before);
   });
 });

@@ -26,26 +26,54 @@ function isEsmTypeWarning(warning: unknown): boolean {
 type Emit = typeof process.emit;
 
 /**
+ * Loads can overlap in one process (the DevTools tab and a watch or MCP refresh), so the filter is
+ * installed by the first and removed by the last, and the original method is saved once.
+ */
+const filter: { active: number; original?: Emit } = { active: 0 };
+
+const dropEsmTypeWarning = (event: string, ...args: unknown[]): boolean => {
+  if (event === 'warning' && isEsmTypeWarning(args[0])) {
+    return false;
+  }
+  return (filter.original as (event: string, ...args: unknown[]) => boolean).call(
+    process,
+    event,
+    ...args,
+  );
+};
+
+function installFilter(): void {
+  if (filter.active === 0) {
+    // The method is put back as it was, and called with `process` as `this`.
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    filter.original = process.emit;
+    process.emit = dropEsmTypeWarning as Emit;
+  }
+  filter.active += 1;
+}
+
+function removeFilter(): void {
+  filter.active -= 1;
+  if (filter.active === 0 && filter.original !== undefined) {
+    process.emit = filter.original;
+    filter.original = undefined;
+  }
+}
+
+/**
  * Runs `task` with that one warning dropped. Node queues the warning and prints it from the
  * `warning` event, so the event is the place to drop it, and one more turn of the event loop lets
  * a queued warning arrive before the filter is removed. Every other warning still reaches the user.
  */
 async function withoutEsmTypeWarning<T>(task: () => Promise<T>): Promise<T> {
-  // The method is put back as it was, and called with `process` as `this`.
-  // eslint-disable-next-line @typescript-eslint/unbound-method
-  const original = process.emit;
-  const emit = (event: string, ...args: unknown[]): boolean =>
-    event === 'warning' && isEsmTypeWarning(args[0])
-      ? false
-      : (original as (event: string, ...args: unknown[]) => boolean).call(process, event, ...args);
-  process.emit = emit as Emit;
+  installFilter();
   try {
     return await task();
   } finally {
     await new Promise<void>(resolve => {
       setImmediate(resolve);
     });
-    process.emit = original;
+    removeFilter();
   }
 }
 
