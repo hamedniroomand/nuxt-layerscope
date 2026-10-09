@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 import ajvModule from 'ajv';
 import { join } from 'pathe';
@@ -31,6 +32,7 @@ const validateSarif = new Ajv({ strict: false, validateFormats: false }).compile
 
 interface Sarif {
   runs: {
+    originalUriBaseIds: Record<string, { uri: string }>;
     tool: { driver: { rules: { id: string; helpUri: string }[]; version: string } };
     results: {
       ruleId: string;
@@ -57,6 +59,14 @@ describe('sarif format', () => {
     const log = await sarif(NUXT4_ROOT);
     expect(validateSarif(log), JSON.stringify(validateSarif.errors)).toBe(true);
     expect(log.runs[0]?.results.length).toBeGreaterThan(0);
+  });
+
+  it('gives the base of %SRCROOT% as a directory URI', async () => {
+    const [run1] = (await sarif(NUXT4_ROOT)).runs;
+    const base = run1.originalUriBaseIds['%SRCROOT%']?.uri;
+    expect(base).toMatch(/^file:\/\/\/.+\/$/u);
+    // The git root of the repository that holds the fixture.
+    expect(pathToFileURL(NUXT4_ROOT).href.startsWith(base)).toBe(true);
   });
 
   it('rejects a log that lacks the version', () => {
