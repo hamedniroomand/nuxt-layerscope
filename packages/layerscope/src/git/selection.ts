@@ -84,24 +84,28 @@ function hasCommit(rootDir: string): boolean {
   return tryGit(rootDir, 'rev-parse', '--verify', 'HEAD^{commit}') !== null;
 }
 
+/** Files of a repository without a commit: the index holds every file, and some may be gone. */
+function beforeFirstCommit(rootDir: string): Selection {
+  const gone = names(rootDir, 'ls-files', '--deleted', '-z');
+  const missing = new Set(gone);
+  const tracked = names(rootDir, 'ls-files', '-z').filter(file => !missing.has(file));
+  const untracked = names(rootDir, 'ls-files', '--others', '--exclude-standard', '-z');
+  return toSelection([...tracked, ...untracked], gone, 'No changed source files to check.');
+}
+
 /** Files that differ from `ref` in the working tree, and untracked files. */
 export function changedFiles(rootDir: string, ref?: string): Selection {
   assertRepository(rootDir, ref === undefined ? '--changed' : '--since');
-  const untracked = names(rootDir, 'ls-files', '--others', '--exclude-standard', '-z');
-  if (!hasCommit(rootDir)) {
-    // No `HEAD` to diff from: every file in the index is new.
-    return toSelection(
-      [...names(rootDir, 'ls-files', '-z'), ...untracked],
-      [],
-      'No changed source files to check.',
-    );
-  }
   if (ref !== undefined && tryGit(rootDir, 'rev-parse', '--verify', `${ref}^{commit}`) === null) {
     throw new LayerscopeError(`Unknown git ref "${ref}". Fetch it, or pass another with --since.`);
+  }
+  if (!hasCommit(rootDir)) {
+    return beforeFirstCommit(rootDir);
   }
   const base = ref === undefined ? defaultRef(rootDir) : sinceBase(rootDir, ref);
   const diff = ['diff', '--name-only', '-z', '--relative'];
   const tracked = names(rootDir, ...diff, '--diff-filter=ACMR', base);
+  const untracked = names(rootDir, 'ls-files', '--others', '--exclude-standard', '-z');
   return toSelection(
     [...tracked, ...untracked],
     names(rootDir, ...diff, '--diff-filter=D', base),

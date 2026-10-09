@@ -1,3 +1,6 @@
+import { rmSync } from 'node:fs';
+
+import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { BAD, check, files, git, gitProject, reportOf } from './git-project.ts';
@@ -19,6 +22,17 @@ function branch(): ReturnType<typeof gitProject> {
   repo.write(PAGE1, BAD);
   repo.write(NEW, BAD);
   return repo;
+}
+
+/** A project in a new repository: no commit yet, and the files that a Nuxt project needs. */
+function unborn(): string {
+  const root = tempDir();
+  write(root, '.nuxt/types/imports.d.ts', 'export {}\ndeclare global {}\n');
+  write(root, '.nuxt/components.d.ts', '\n');
+  write(root, 'layerscope.config.mjs', "export default { layers: { a: { path: 'layers/a' } } };\n");
+  write(root, '.gitignore', '.nuxt\n');
+  git(root, 'init', '-q', '-b', 'main');
+  return root;
 }
 
 describe('check --changed', () => {
@@ -99,22 +113,43 @@ describe('check --since and the first commit', () => {
     );
     expect(files(report)).toEqual([PAGE0]);
   });
+});
 
+describe('check --changed before the first commit', () => {
   it('works in a repository without a commit', async () => {
+    const root = unborn();
+    write(root, PAGE0, BAD);
+    git(root, 'add', PAGE0);
+    const result = await check([root, '--changed', '--format', 'json'], root);
+    expect(result.err).not.toContain('Command failed');
+    expect(files(reportOf(result))).toEqual([PAGE0]);
+  });
+
+  it('leaves out a file that is deleted on disk before the first commit, and says so', async () => {
+    const root = unborn();
+    write(root, PAGE0, BAD);
+    write(root, PAGE1, BAD);
+    git(root, 'add', PAGE0, PAGE1);
+    rmSync(join(root, PAGE1));
+    const result = await check([root, '--changed', '--format', 'json'], root);
+    const report = reportOf(result);
+    expect(files(report)).toEqual([PAGE0]);
+    expect(report.notes.join('\n')).toContain('1 deleted source file');
+    // Only the config file, an untracked source file in no layer, is skipped: not the deleted page.
+    expect(report.notes.join('\n')).toContain('1 selected file is in no layer');
+  });
+
+  it('refuses an unknown ref before the first commit', async () => {
     const root = tempDir();
-    write(root, '.nuxt/types/imports.d.ts', 'export {}\ndeclare global {}\n');
-    write(root, '.nuxt/components.d.ts', '\n');
     write(
       root,
       'layerscope.config.mjs',
       "export default { layers: { a: { path: 'layers/a' } } };\n",
     );
-    write(root, PAGE0, BAD);
     git(root, 'init', '-q', '-b', 'main');
-    git(root, 'add', PAGE0);
-    const result = await check([root, '--changed', '--format', 'json'], root);
-    expect(result.err).not.toContain('Command failed');
-    expect(files(reportOf(result))).toEqual([PAGE0]);
+    const result = await check([root, '--since', 'nope'], root);
+    expect(result.code).toBe(2);
+    expect(result.err).toContain('Unknown git ref "nope"');
   });
 });
 
