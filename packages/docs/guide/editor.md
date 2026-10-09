@@ -99,6 +99,9 @@ layerscope check --watch
 - It does not run `nuxi prepare` for you. After you add a component or an auto-import, keep
   `nuxi dev` running or run `nuxi prepare`; the watch reads the registry again when it changes.
   `--prepare` runs it once, at the start.
+- A change to `layerscope.config.*` applies on the next run, in every config format. A local file
+  that the config imports is not read again: change the config file as well (for example, add a
+  comment), or start the watch again.
 - Layers in `node_modules` are not watched.
 - It never exits with `1`: findings are shown, not counted. Ctrl+C exits with `0`. A run that
   fails, such as a config error, is printed and the watch goes on.

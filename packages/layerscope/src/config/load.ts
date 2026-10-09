@@ -8,6 +8,7 @@ import { resolve } from 'pathe';
 import { LayerscopeError } from '#src/errors.ts';
 import type { LayerscopeConfig } from '#src/types.ts';
 
+import { forgetCommonJs, importNative, isNodeModule } from './native.ts';
 import { validateConfig } from './validate.ts';
 
 const CONFIG_NAMES = [
@@ -64,15 +65,22 @@ export async function loadConfig(rootDir: string, configFile?: string): Promise<
   if (file === null) {
     return {};
   }
+  const native = isNodeModule(file) ? await importNative(file) : undefined;
+  if (native !== undefined && 'value' in native) {
+    return toConfig(native.value, file);
+  }
+  // A config that jiti loads but Node does not, or one that throws, is run a second time here. When
+  // both fail, the error of Node is the one to show: it says what is wrong with the file itself.
   const config = await createLoader()
     .import(file, { default: true })
     .catch((error: unknown) => {
-      throw loadFailed(file, error);
+      throw loadFailed(file, native === undefined ? error : native.error);
     });
   return toConfig(config, file);
 }
 
 function requireConfig(file: string): unknown {
+  forgetCommonJs(file);
   try {
     return createLoader()(file);
   } catch (error) {
