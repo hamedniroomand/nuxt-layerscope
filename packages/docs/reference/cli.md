@@ -48,15 +48,15 @@ the edges you want.
 layerscope check [root] [options]
 ```
 
-| Option              | Default                    | Description                                                   |
-| ------------------- | -------------------------- | ------------------------------------------------------------- |
-| `--format <format>` | `text`                     | [Output format](./output): `text`, `github` or `json`         |
-| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                |
-| `--prepare`         |                            | Run `nuxi prepare` before checking                            |
-| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`       |
-| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root      |
-| `--update-baseline` |                            | Write every current finding to the baseline file and exit `0` |
-| `--verbose`         |                            | Print where symbols were read from                            |
+| Option              | Default                    | Description                                                              |
+| ------------------- | -------------------------- | ------------------------------------------------------------------------ |
+| `--format <format>` | `text`                     | [Output format](./output): `text`, `github`, `json`, `sarif` or `gitlab` |
+| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                           |
+| `--prepare`         |                            | Run `nuxi prepare` before checking                                       |
+| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                  |
+| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                 |
+| `--update-baseline` |                            | Write every current finding to the baseline file and exit `0`            |
+| `--verbose`         |                            | Print where symbols were read from                                       |
 
 ```bash
 layerscope check                                  # current directory

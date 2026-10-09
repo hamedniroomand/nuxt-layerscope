@@ -64,10 +64,12 @@ entries:
 import type { AnalyzeResult, Edge, Finding, Layer } from 'nuxt-layerscope';
 ```
 
-## `formatResult(result, format, cwd?)`
+## `formatResult(result, format, cwd?, paint?, repoRoot?)`
 
-Formats a result as `'text'`, `'github'` or `'json'`, exactly like the CLI. Paths are relative
-to `cwd`, which defaults to `process.cwd()`.
+Formats a result as `'text'`, `'github'`, `'json'`, `'sarif'` or `'gitlab'`, exactly like the CLI.
+Paths are relative to `cwd`, which defaults to `process.cwd()`. The `sarif` and `gitlab` formats
+use paths relative to `repoRoot` instead, which defaults to the project root. The CLI passes the
+git root of the project there.
 
 ## `createBaseline(findings, rootDir)`
 
