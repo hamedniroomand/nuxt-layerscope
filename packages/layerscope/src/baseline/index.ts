@@ -145,10 +145,23 @@ export function applyBaseline(
   return { findings: fresh, baseline: { file, suppressed, removable } };
 }
 
-/** The result with the baseline applied, or unchanged when the file does not exist. */
-export function applyBaselineFile(result: AnalyzeResult, file: string): AnalyzeResult {
+/**
+ * The result with the baseline applied, or unchanged when the file does not exist. With `inScope`
+ * only the entries of those files count: a run that checked a few files cannot tell whether an
+ * entry of another file is fixed.
+ */
+export function applyBaselineFile(
+  result: AnalyzeResult,
+  file: string,
+  inScope?: (relativeFile: string) => boolean,
+): AnalyzeResult {
   const baseline = readBaseline(file);
-  return baseline === null
-    ? result
-    : { ...result, ...applyBaseline(result.findings, baseline, file, result.rootDir) };
+  if (baseline === null) {
+    return result;
+  }
+  const scoped =
+    inScope === undefined
+      ? baseline
+      : { ...baseline, entries: baseline.entries.filter(entry => inScope(entry.file)) };
+  return { ...result, ...applyBaseline(result.findings, scoped, file, result.rootDir) };
 }

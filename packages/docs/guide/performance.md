@@ -54,6 +54,14 @@ These are the numbers of one machine. Yours will differ; run the benchmark to se
   is checked, and the step after the file was added must count one file more. With `--project`, no
   number of findings is known, so nothing is checked.
 
+## Checking only some files
+
+[`check --staged`](./ci#git-hooks), `--changed` and file arguments load the whole project but read
+only the selected files. On the project above, a check of five files (the same machine, median of
+seven runs, process start included) took **305 ms**, and a check of all files took 768 ms. The
+rest is starting Node and loading the project: the layers, the symbol table and the list of files.
+The gap grows with the number of files.
+
 ## What takes the time
 
 Most of a one-shot run is scanning and parsing the files. A cached run skips that for every file

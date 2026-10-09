@@ -9,6 +9,7 @@ import { repoRoot } from '#src/report/paths.ts';
 import { plural } from '#src/utils/strings.ts';
 import { paintFor } from '#src/utils/style.ts';
 
+import { selectTarget } from './check-files.ts';
 import type { Cli, CommonFlags } from './shared.ts';
 import { EXIT_CLEAN, EXIT_VIOLATIONS, toSource, withCommonOptions, writeNotes } from './shared.ts';
 
@@ -16,6 +17,9 @@ export interface CheckFlags extends CommonFlags {
   baseline: string;
   updateBaseline?: boolean;
   watch?: boolean;
+  staged?: boolean;
+  changed?: boolean;
+  since?: string;
 }
 
 async function updateBaseline(rootDir: string, flags: CheckFlags): Promise<number> {
@@ -68,7 +72,37 @@ async function watch(rootDir: string, format: OutputFormat, flags: CheckFlags): 
   }
 }
 
-export async function check(root: string | undefined, flags: CheckFlags): Promise<number> {
+/** A check that has nothing to look at: no analysis of files, and a short message. */
+async function checkNothing(
+  rootDir: string,
+  none: string,
+  format: OutputFormat,
+  flags: CheckFlags,
+): Promise<number> {
+  process.stderr.write(`layerscope: ${none}\n`);
+  if (format === 'text' || format === 'github') {
+    return EXIT_CLEAN;
+  }
+  // A machine format still gets a valid, empty document.
+  const result = await analyze({
+    rootDir,
+    configFile: flags.config,
+    source: toSource(flags.source),
+    baseline: flags.baseline,
+    only: [],
+  });
+  const repository = format === 'sarif' || format === 'gitlab' ? repoRoot(rootDir) : rootDir;
+  process.stdout.write(
+    formatResult(result, format, process.cwd(), paintFor(process.stdout), repository),
+  );
+  return EXIT_CLEAN;
+}
+
+export async function check(
+  root: string | undefined,
+  files: string[],
+  flags: CheckFlags,
+): Promise<number> {
   const { format } = flags;
   if (!isOutputFormat(format)) {
     throw new LayerscopeError(`Unknown format "${format}". Use ${OUTPUT_FORMATS.join(', ')}.`);
@@ -76,12 +110,15 @@ export async function check(root: string | undefined, flags: CheckFlags): Promis
   if (flags.watch === true && flags.updateBaseline === true) {
     throw new LayerscopeError('--watch cannot be used with --update-baseline.');
   }
-  const rootDir = resolve(root ?? process.cwd());
+  const { rootDir, selection } = selectTarget(root, files, flags);
   if (flags.updateBaseline === true) {
     return updateBaseline(rootDir, flags);
   }
   if (flags.watch === true) {
     return watch(rootDir, format, flags);
+  }
+  if (selection?.files.length === 0) {
+    return checkNothing(rootDir, selection.none, format, flags);
   }
   const result = await analyze({
     rootDir,
@@ -89,7 +126,13 @@ export async function check(root: string | undefined, flags: CheckFlags): Promis
     prepare: flags.prepare,
     source: toSource(flags.source),
     baseline: flags.baseline,
+    ...(selection === undefined ? {} : { only: selection.files }),
   });
+  if (selection !== undefined && selection.deleted > 0) {
+    result.notes.push(
+      `${plural(selection.deleted, 'deleted source file')}: files that used their symbols are not checked.`,
+    );
+  }
   // Only `sarif` and `gitlab` read the repository root; the others do not run git.
   const repository = format === 'sarif' || format === 'gitlab' ? repoRoot(rootDir) : rootDir;
   process.stdout.write(
@@ -105,7 +148,7 @@ export async function check(root: string | undefined, flags: CheckFlags): Promis
 export function registerCheck(cli: Cli): void {
   withCommonOptions(
     cli
-      .command('check [root]', 'Check layer boundaries, including auto-imports')
+      .command('check [root] [...files]', 'Check layer boundaries, including auto-imports')
       .option('--format <format>', `Output format: ${OUTPUT_FORMATS.join(', ')}`, {
         default: 'text',
       })
@@ -113,6 +156,12 @@ export function registerCheck(cli: Cli): void {
         default: BASELINE_FILE,
       })
       .option('--update-baseline', 'Write every current finding to the baseline file')
+      .option('--staged', 'Check only the files staged for commit')
+      .option('--changed', 'Check only the files that changed since the default branch')
+      .option(
+        '--since <ref>',
+        'Check only the files that changed since a git ref (implies --changed)',
+      )
       .option('--watch', 'Check again after each change, until Ctrl+C'),
   ).action(check);
 }

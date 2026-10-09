@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- `layerscope check --staged`, `--changed`, `--since <ref>` and file arguments check only some
+  files: the project loads as always, but only the selected files are read and reported. It fits a
+  pre-commit hook, with `lint-staged` (file names are read as files) or `--staged`. A file outside
+  the project or in no layer is skipped with a note, and nothing selected exits `0` at once.
 - `pnpm bench` in `packages/layerscope` measures `check` on a generated project of any size, or on
   your own with `--project`: a one-shot run, a run with `nuxi prepare`, and a long-running process
   that reads the cache. The new performance page has the numbers and the method.
