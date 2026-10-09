@@ -41,7 +41,8 @@ that you wrote and called `createRequire` is not it. `.cjs` and `.cts` files are
 `const { a, b } = require('...')` the names are `a` and `b`, as for a named import; a rest element,
 a computed key or a plain `require()` takes the whole module. These are not counted:
 `require.resolve('...')`, a `require()` with a value that is not a string literal, and a
-`createRequire` binding that goes through a function. A binding is the name that `createRequire`
+`createRequire` binding that goes through a function, and `createRequire` taken with
+`const { createRequire } = require('module')`. A binding is the name that `createRequire`
 was assigned to, so a later reassignment of that name does not change what counts.
 
 To fix a finding, either move the symbol to a layer both may use (often `shared`), or allow the
