@@ -21,7 +21,11 @@ export interface ImportRef {
   specifier: string;
   /** Export names, with `default` and `*` for default and namespace imports. */
   names: string[];
-  /** The statement has no runtime effect: `import type`, or a `type` keyword on every name. */
+  /**
+   * layerscope treats the statement as type-only: `import type`, or a `type` keyword on every
+   * name. An inline `type` keyword can still leave a side-effect import in the output, under
+   * `verbatimModuleSyntax`.
+   */
   typeOnly: boolean;
   /** The names in `names` that only a `type` keyword brings in; a name that a value also brings is not in it. */
   typeNames: string[];

@@ -29,6 +29,12 @@ export function pickProjectConfig(config: LayerscopeConfig): ProjectConfig {
   );
 }
 
+function keysSet(config: ProjectConfig): string {
+  return PROJECT_CONFIG_KEYS.filter(key => config[key] !== undefined)
+    .map(key => `"${key}"`)
+    .join(', ');
+}
+
 /**
  * `layerscope.config.*` or the `layerscope` key of `nuxt.config`, which the module records in the
  * registry. Both at once is an error rather than a merge, so it is always clear which one applies.
@@ -42,7 +48,7 @@ export function effectiveConfig(
   }
   if (hasProjectConfig(fileConfig)) {
     throw new LayerscopeError(
-      'Layers or rules are set both in layerscope.config and in the "layerscope" key of nuxt.config. Keep one.',
+      `Project options are set both in layerscope.config (${keysSet(fileConfig)}) and in the "layerscope" key of nuxt.config (${keysSet(recorded)}). Keep one.`,
     );
   }
   validateConfig(recorded, NUXT_CONFIG_LABEL);

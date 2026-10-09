@@ -77,6 +77,17 @@ describe('Analyzer revisions', () => {
     expect(changed.rev).toBe(first.rev + 1);
   });
 
+  it('bumps the revision when only typeImports changes', async () => {
+    const run = vi
+      .fn<Run>()
+      .mockResolvedValueOnce(makeResult({ config: { typeImports: 'check' } }))
+      .mockResolvedValueOnce(makeResult({ config: { typeImports: 'ignore' } }));
+    const { analyzer } = setup(run);
+    const first = await analyzer.get();
+    const changed = await analyzer.refresh();
+    expect(changed.rev).toBe(first.rev + 1);
+  });
+
   it('does not cache a failure', async () => {
     const run = vi
       .fn<Run>()

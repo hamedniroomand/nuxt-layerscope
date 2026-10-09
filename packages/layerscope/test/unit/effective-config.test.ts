@@ -30,6 +30,12 @@ describe('effectiveConfig', () => {
     );
   });
 
+  it('names the keys that are set in each place', () => {
+    expect(() => effectiveConfig({ typeImports: 'ignore', globals: ['x'] }, recorded)).toThrow(
+      'set both in layerscope.config ("globals", "typeImports") and in the "layerscope" key of nuxt.config ("layers")',
+    );
+  });
+
   it('validates nuxt.config options like a config file', () => {
     const invalid = { rules: { 'no-such-rule': 'error' } } as unknown as LayerscopeConfig;
     expect(() => effectiveConfig({}, invalid)).toThrow('nuxt.config (layerscope): unknown rule');
