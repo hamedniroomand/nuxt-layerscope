@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- A guide for moving from eslint-plugin-nuxt-layers: how to convert the layer map, how to run both
+  tools, and what differs, including that `require()` calls are not scanned yet.
 - `layerscope check --staged`, `--changed`, `--since <ref>` and file arguments check only some
   files: the project loads as always, but only the selected files are read and reported. It fits a
   pre-commit hook, with `lint-staged` (file names are read as files) or `--staged`. A file outside

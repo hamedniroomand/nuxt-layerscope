@@ -14,7 +14,8 @@ does, understands Nuxt layer semantics, and is built to fail a CI job.
 
 - **eslint-plugin-nuxt-layers** checks `import` statements against a layer map. It runs inside
   ESLint and the editor, but auto-imports have no import statement to check. The two work well
-  together: ESLint for instant feedback on imports, layerscope in CI for everything.
+  together: ESLint for instant feedback on imports, layerscope in CI for everything. To move
+  from one to the other, see [Migrate from eslint-plugin-nuxt-layers](./migrate-from-eslint-plugin-nuxt-layers).
 - **nuxt-fsd** sets up Feature-Sliced Design in Nuxt and blocks cross-imports, but its own README
   notes that auto-imports do not respect those rules.
 - **Archora** (`@archora/cli`) is a general frontend architecture analyzer that also resolves Nuxt

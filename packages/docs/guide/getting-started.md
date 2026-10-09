@@ -178,4 +178,10 @@ Trace a symbol, draw the layer graph and find unused code.
 
 </Card>
 
+<Card title="Move from eslint-plugin-nuxt-layers" icon="arrow-right" to="/guide/migrate-from-eslint-plugin-nuxt-layers">
+
+Convert the layer map and keep both tools until you are ready.
+
+</Card>
+
 </CardGroup>
