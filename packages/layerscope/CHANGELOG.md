@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- A `layerscope.config.mjs` or `.js` is read again when its content changes in a long-running
+  process: `check --watch`, the DevTools tab and `layerscope mcp`. Before, Node kept the first
+  copy until the process restarted. A file that the config imports is still read once.
 - New preset `features`: a core and a UI kit build up, and every other layer may use them but not
   each other. `layered` and `features` take base layers by name with
   `preset: { name, base: [...] }`, and `features` picks `core`, `base`, `shared` or `common`, then
