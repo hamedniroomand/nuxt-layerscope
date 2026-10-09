@@ -133,7 +133,8 @@ npx layerscope check --staged
 
 `lint-staged` adds the names of the staged files to the command, and layerscope reads them as files,
 so no flag is needed. For a pre-push hook, check what the branch changed:
-`npx layerscope check --changed`.
+`npx layerscope check --changed`. It needs the default branch in the clone: in CI, fetch it
+(`actions/checkout` with `fetch-depth: 0`), or pass `--since <ref>`. Without a base, it exits `2`.
 
 In a repository with several projects, `lint-staged` runs from the repository root and passes the
 files of every package. Give the project first; files in other projects are skipped:

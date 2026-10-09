@@ -87,6 +87,7 @@ async function checkNothing(
   const result = await analyze({
     rootDir,
     configFile: flags.config,
+    prepare: flags.prepare,
     source: toSource(flags.source),
     baseline: flags.baseline,
     only: [],
@@ -160,7 +161,7 @@ export function registerCheck(cli: Cli): void {
       .option('--changed', 'Check only the files that changed since the default branch')
       .option(
         '--since <ref>',
-        'Check only the files that changed since a git ref (implies --changed)',
+        'Check only the files that changed since the merge base with a git ref (implies --changed)',
       )
       .option('--watch', 'Check again after each change, until Ctrl+C'),
   ).action(check);

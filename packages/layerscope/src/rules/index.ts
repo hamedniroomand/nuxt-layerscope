@@ -19,6 +19,8 @@ export interface RuleInput {
   config: LayerscopeConfig;
   layers: Layer[];
   rootDir: string;
+  /** Off for a run on some files: suggestions need the edges of every file. */
+  suggest?: boolean;
 }
 
 /** Every rule's findings in report order, and notes on rules that could not run. */
@@ -38,6 +40,9 @@ export async function runRules(
   ].toSorted(compareByPosition);
   // The rules and the suggestions each get a task of their own.
   await yieldTurn();
-  const findings = await addSuggestions(found, input.edges, input.layers, config, input.rootDir);
+  const findings =
+    input.suggest === false
+      ? found
+      : await addSuggestions(found, input.edges, input.layers, config, input.rootDir);
   return { findings, notes };
 }

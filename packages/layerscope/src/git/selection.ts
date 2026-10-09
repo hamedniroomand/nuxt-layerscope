@@ -49,7 +49,13 @@ export function stagedFiles(rootDir: string): Selection {
   );
 }
 
-/** The merge base with the default branch, or `HEAD` on it or when there is none. */
+const FETCH_HINT =
+  'Fetch the base branch, for example actions/checkout with fetch-depth: 0, or pass --since <ref>.';
+
+/**
+ * The merge base with the default branch, or `HEAD` on it. Throws when no default branch has a
+ * merge base: a shallow or detached CI checkout, where `HEAD` would hide every change.
+ */
 export function defaultRef(rootDir: string): string {
   const remote = tryGit(rootDir, 'symbolic-ref', '--short', 'refs/remotes/origin/HEAD')?.trim();
   const head = tryGit(rootDir, 'rev-parse', 'HEAD')?.trim();
@@ -64,19 +70,38 @@ export function defaultRef(rootDir: string): string {
       return base === head ? 'HEAD' : base;
     }
   }
-  return 'HEAD';
+  throw new LayerscopeError(`--changed found no merge base with the default branch. ${FETCH_HINT}`);
+}
+
+/** The commit that `--since` diffs from: the merge base with `ref`, or `ref` when there is none. */
+function sinceBase(rootDir: string, ref: string): string {
+  const base = tryGit(rootDir, 'merge-base', 'HEAD', ref)?.trim();
+  return base === undefined || base === '' ? ref : base;
+}
+
+/** Whether the repository has a commit. Before the first one, every tracked file is new. */
+function hasCommit(rootDir: string): boolean {
+  return tryGit(rootDir, 'rev-parse', '--verify', 'HEAD^{commit}') !== null;
 }
 
 /** Files that differ from `ref` in the working tree, and untracked files. */
 export function changedFiles(rootDir: string, ref?: string): Selection {
   assertRepository(rootDir, ref === undefined ? '--changed' : '--since');
+  const untracked = names(rootDir, 'ls-files', '--others', '--exclude-standard', '-z');
+  if (!hasCommit(rootDir)) {
+    // No `HEAD` to diff from: every file in the index is new.
+    return toSelection(
+      [...names(rootDir, 'ls-files', '-z'), ...untracked],
+      [],
+      'No changed source files to check.',
+    );
+  }
   if (ref !== undefined && tryGit(rootDir, 'rev-parse', '--verify', `${ref}^{commit}`) === null) {
     throw new LayerscopeError(`Unknown git ref "${ref}". Fetch it, or pass another with --since.`);
   }
-  const base = ref ?? defaultRef(rootDir);
+  const base = ref === undefined ? defaultRef(rootDir) : sinceBase(rootDir, ref);
   const diff = ['diff', '--name-only', '-z', '--relative'];
   const tracked = names(rootDir, ...diff, '--diff-filter=ACMR', base);
-  const untracked = names(rootDir, 'ls-files', '--others', '--exclude-standard', '-z');
   return toSelection(
     [...tracked, ...untracked],
     names(rootDir, ...diff, '--diff-filter=D', base),

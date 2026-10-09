@@ -40,7 +40,7 @@ export function scopeNote(scope: Scope, total: number, cycles = false): string {
       ? ''
       : ` ${skipped} selected file${skipped === 1 ? ' is' : 's are'} in no layer, outside the project or ignored.`;
   const scanned = cycles ? 'All files were scanned for the layer-cycle rule. ' : '';
-  return `${scanned}Findings are shown for ${scope.files.size} of ${total} files.${left} Findings in other files, such as a use of a symbol that changed, are found by a full "layerscope check".`;
+  return `${scanned}Findings are shown for ${scope.files.size} of ${total} files.${left} Findings in other files, such as a use of a symbol that changed, are found by a full "layerscope check", which also gives fix suggestions.`;
 }
 
 export interface ScanPlan {

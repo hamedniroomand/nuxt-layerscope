@@ -59,6 +59,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     config,
     layers,
     rootDir,
+    suggest: scope === undefined,
   });
   const { findings, notes } = applyScope(plan, ran, collected.size);
   const result: AnalyzeResult = {

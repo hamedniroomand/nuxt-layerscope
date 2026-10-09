@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test';
 
-import { BAD, check, files, gitProject, reportOf } from './git-project.ts';
+import { BAD, check, files, git, gitProject, reportOf } from './git-project.ts';
+import { tempDir, write } from './watch-project.ts';
 
 const PAGE0 = 'layers/a/app/pages/p0.vue';
 const PAGE1 = 'layers/a/app/pages/p1.vue';
@@ -68,5 +69,86 @@ describe('check --changed', () => {
     const result = await check([repo.root, '--changed'], repo.root);
     expect(result).toMatchObject({ code: 0, out: '' });
     expect(result.err).toContain('No changed source files to check.');
+  });
+});
+
+describe('check --since and the first commit', () => {
+  it('diffs --since from the merge base, so work that landed on main is not checked', async () => {
+    const repo = gitProject();
+    repo.git('switch', '-q', '-c', 'feature');
+    repo.write(PAGE0, BAD);
+    repo.commit('feature');
+    repo.git('switch', '-q', 'main');
+    repo.write('layers/a/app/pages/landed.vue', BAD);
+    repo.commit('landed');
+    repo.git('switch', '-q', 'feature');
+    const report = reportOf(
+      await check([repo.root, '--since', 'main', '--format', 'json'], repo.root),
+    );
+    expect(files(report)).toEqual([PAGE0]);
+  });
+
+  it('takes a ref as it is when there is no merge base', async () => {
+    const repo = gitProject();
+    repo.write(PAGE0, BAD);
+    const tree = repo.git('write-tree').trim();
+    const unrelated = repo.git('commit-tree', '-m', 'unrelated', tree).trim();
+    repo.git('update-ref', 'refs/heads/other', unrelated);
+    const report = reportOf(
+      await check([repo.root, '--since', 'other', '--format', 'json'], repo.root),
+    );
+    expect(files(report)).toEqual([PAGE0]);
+  });
+
+  it('works in a repository without a commit', async () => {
+    const root = tempDir();
+    write(root, '.nuxt/types/imports.d.ts', 'export {}\ndeclare global {}\n');
+    write(root, '.nuxt/components.d.ts', '\n');
+    write(
+      root,
+      'layerscope.config.mjs',
+      "export default { layers: { a: { path: 'layers/a' } } };\n",
+    );
+    write(root, PAGE0, BAD);
+    git(root, 'init', '-q', '-b', 'main');
+    git(root, 'add', PAGE0);
+    const result = await check([root, '--changed', '--format', 'json'], root);
+    expect(result.err).not.toContain('Command failed');
+    expect(files(reportOf(result))).toEqual([PAGE0]);
+  });
+});
+
+describe('check --changed without a merge base', () => {
+  function clone(options: string[]): string {
+    const repo = branch();
+    repo.commit('wip');
+    const target = tempDir();
+    git(target, 'clone', '-q', ...options, `file://${repo.repo}`, 'clone');
+    return `${target}/clone`;
+  }
+
+  it('exits 2 with a hint in a shallow clone of a branch', async () => {
+    const root = clone(['--depth', '1', '--branch', 'feature']);
+    const result = await check([root, '--changed'], root);
+    expect(result.code).toBe(2);
+    expect(result.err).toContain('fetch-depth: 0');
+    expect(result.err).toContain('--since <ref>');
+  });
+
+  it('exits 2 with a hint in a detached checkout with no base branch', async () => {
+    const root = clone(['--depth', '1', '--branch', 'feature']);
+    git(root, 'checkout', '-q', '--detach');
+    git(root, 'branch', '-q', '-D', 'feature');
+    const result = await check([root, '--changed'], root);
+    expect(result.code).toBe(2);
+  });
+
+  it('still works with --since', async () => {
+    const root = clone(['--depth', '1', '--branch', 'feature']);
+    write(root, '.nuxt/types/imports.d.ts', 'export {}\ndeclare global {}\n');
+    write(root, '.nuxt/components.d.ts', '\n');
+    const result = await check([root, '--since', 'HEAD', '--format', 'json'], root);
+    expect(result.err).toContain('No changed source files');
+    expect(result.code).toBe(0);
   });
 });
