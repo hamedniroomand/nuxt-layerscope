@@ -22,6 +22,7 @@ export default defineConfig({
   },
   ignore: ['**/*.stories.ts'],
   globals: ['$analytics', 'VueDatePicker'],
+  typeImports: 'check',
 });
 ```
 
@@ -51,7 +52,7 @@ The module records them in the registry on `nuxi prepare`, `dev` and `build`, so
 plugin and the DevTools tab read them without loading Nuxt, and values computed from environment
 variables are resolved as Nuxt resolved them. After changing them, run `nuxi prepare` again (or
 restart `nuxi dev`); until then layerscope prints a note that `nuxt.config` is newer than the
-registry. Setting `layers`, `rules`, `ignore` or `globals` both there and in
+registry. Setting `layers`, `rules`, `ignore`, `globals` or `typeImports` both there and in
 `layerscope.config.ts` is an error; `buildDir` only works in the file.
 
 ## `layers`
@@ -220,6 +221,61 @@ components registered by a plugin.
 
 JavaScript, browser and Node.js globals, Vue's SFC macros (`defineProps`, `defineModel`, …) and
 `RouterLink` / `RouterView` are known already.
+
+## `typeImports`
+
+- Type: `'check' | 'ignore'`
+- Default: `'check'`
+
+Sets how layerscope treats an import that only has types. A type-only import is removed at build
+time, so it adds no code from the other layer to the bundle.
+
+- `'check'`: a type-only import is a dependency, like any other import.
+- `'ignore'`: a type-only import makes no dependency. No rule reports it: not
+  [`layer-boundary`](./rules#layer-boundary), not [`layer-internal`](./rules#layer-internal) and
+  not [`layer-cycle`](./rules#layer-cycle). It is not in the graph, and it does not count in the
+  edges of a suggestion.
+
+```ts
+typeImports: 'ignore',
+```
+
+These imports are type-only:
+
+| Form                                   | Type-only |
+| -------------------------------------- | --------- |
+| `import type { A } from '...'`         | yes       |
+| `import type A from '...'`             | yes       |
+| `import { type A, type B } from '...'` | yes       |
+| `export type { A } from '...'`         | yes       |
+| `export { type A } from '...'`         | yes       |
+| `export type * from '...'`             | yes       |
+| `import type x = require('...')`       | yes       |
+| `import { a, type B } from '...'`      | no        |
+| `import A, { type B } from '...'`      | no        |
+| `import '...'`, `import {} from '...'` | no        |
+
+An import with both kinds of name is a value import. With `'ignore'`, only the value names are in
+the dependency, so [`expose`](#layers) and `only` lists check `a` and not `B`. `import A, { type B }`
+has the name `A`. A re-export with both kinds works in the same way.
+
+An import with a `type` keyword on every name is type-only, also when you write it with braces:
+`import { type A } from '...'`. With TypeScript `verbatimModuleSyntax`, this form stays in the
+output as `import '...'`, which loads the module. layerscope still ignores it. Write
+`import type { A } from '...'` if you want it to count as an import without a side effect.
+
+Other things to know:
+
+- A path that does not exist is still reported by
+  [`unresolved-reference`](./rules#unresolved-reference), also for a type-only import.
+- Types in a `.vue` file come from the same imports, for example `defineProps<Props>()` with an
+  imported `Props`. The `<script>` and `<script setup>` blocks follow the same rule.
+- `import('...').Type` and `typeof import('...')` are never counted, with either value.
+- [`layerscope unused`](./cli#layerscope-unused) counts only dependencies. With `'ignore'`, a
+  component or auto-import that other layers use only through a type-only import can show as
+  unused. Do not delete it before you check the types.
+- Change this value and layerscope reads the files again. `check --watch`, the DevTools tab and
+  `layerscope mcp` do this when the config file changes.
 
 ## `buildDir`
 

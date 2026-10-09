@@ -36,6 +36,30 @@ describe('effectiveConfig', () => {
   });
 });
 
+describe('typeImports in the config', () => {
+  it('takes the value from nuxt.config and keeps it in the project keys', () => {
+    expect(effectiveConfig({}, { typeImports: 'ignore' })).toEqual({ typeImports: 'ignore' });
+    expect(pickProjectConfig({ typeImports: 'ignore', buildDir: 'x' })).toEqual({
+      typeImports: 'ignore',
+    });
+    expect(hasProjectConfig({ typeImports: 'check' })).toBe(true);
+  });
+
+  it('rejects a value that is not check or ignore', () => {
+    const invalid = { typeImports: 'skip' } as unknown as LayerscopeConfig;
+    expect(() => effectiveConfig({}, invalid)).toThrow(
+      'nuxt.config (layerscope): typeImports must be "check" or "ignore", got "skip"',
+    );
+  });
+});
+
+describe('typeImports of another type', () => {
+  it.each([[['ignore']], [true], [1]])('rejects %j', value => {
+    const invalid = { typeImports: value } as unknown as LayerscopeConfig;
+    expect(() => effectiveConfig({}, invalid)).toThrow('typeImports must be "check" or "ignore"');
+  });
+});
+
 describe('pickProjectConfig', () => {
   it('keeps only project keys that are set', () => {
     expect(

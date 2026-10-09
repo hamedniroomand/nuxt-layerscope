@@ -3,7 +3,7 @@ import type { ScopeTracker, ScopeTrackerNode, WalkerThisContextEnter } from 'oxc
 import { isReferenceIdentifier } from 'oxc-walker';
 
 import { importedName, reexportedName, requiredNames, stringLiteral } from './ast.ts';
-import type { FileScan, OffsetMapper } from './types.ts';
+import type { FileScan, ImportRef, OffsetMapper } from './types.ts';
 
 export interface VisitContext {
   scan: FileScan;
@@ -34,14 +34,46 @@ function isRequireCall(name: string, { tracker, requireBindings }: VisitContext)
   return requireBindings.has(declaration);
 }
 
+interface Specifier {
+  name: string;
+  type: boolean;
+}
+
+/** `typeOnly` and `typeNames` of a statement, from its `type` keyword and the keywords of its names. */
+function typeInfo(
+  declaredType: boolean,
+  names: string[],
+  specifiers: Specifier[],
+): Pick<ImportRef, 'typeOnly' | 'typeNames'> {
+  if (declaredType) {
+    return { typeOnly: true, typeNames: names };
+  }
+  const values = new Set(specifiers.filter(spec => !spec.type).map(spec => spec.name));
+  return {
+    typeOnly: specifiers.length > 0 && specifiers.every(spec => spec.type),
+    typeNames: specifiers
+      .filter(spec => spec.type && !values.has(spec.name))
+      .map(spec => spec.name),
+  };
+}
+
 export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
   ImportDeclaration(node, _parent, { scan, mapOffset }) {
     if (node.type !== 'ImportDeclaration') {
       return;
     }
+    const names = node.specifiers.length > 0 ? node.specifiers.map(importedName) : ['*'];
     scan.imports.push({
       specifier: node.source.value,
-      names: node.specifiers.length > 0 ? node.specifiers.map(importedName) : ['*'],
+      names,
+      ...typeInfo(
+        node.importKind === 'type',
+        names,
+        node.specifiers.map(spec => ({
+          name: importedName(spec),
+          type: spec.type === 'ImportSpecifier' && spec.importKind === 'type',
+        })),
+      ),
       offset: mapOffset(node.source.start),
     });
     this.skip();
@@ -51,9 +83,18 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
     if (node.type !== 'ExportNamedDeclaration' || !node.source) {
       return;
     }
+    const names = node.specifiers.map(reexportedName);
     scan.imports.push({
       specifier: node.source.value,
-      names: node.specifiers.map(reexportedName),
+      names,
+      ...typeInfo(
+        node.exportKind === 'type',
+        names,
+        node.specifiers.map(spec => ({
+          name: reexportedName(spec),
+          type: spec.exportKind === 'type',
+        })),
+      ),
       offset: mapOffset(node.source.start),
     });
     this.skip();
@@ -65,6 +106,7 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
     scan.imports.push({
       specifier: node.source.value,
       names: ['*'],
+      ...typeInfo(node.exportKind === 'type', ['*'], []),
       offset: mapOffset(node.source.start),
     });
     this.skip();
@@ -75,7 +117,13 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
     }
     const specifier = stringLiteral(node.source);
     if (specifier !== null) {
-      scan.imports.push({ specifier, names: ['*'], offset: mapOffset(node.source.start) });
+      scan.imports.push({
+        specifier,
+        names: ['*'],
+        typeOnly: false,
+        typeNames: [],
+        offset: mapOffset(node.source.start),
+      });
     }
   },
   TSModuleDeclaration: skip,
@@ -89,8 +137,8 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
   TSCallSignatureDeclaration: skip,
   TSConstructSignatureDeclaration: skip,
   TSImportEqualsDeclaration(node, _parent, { scan, mapOffset }) {
-    // `import x = require('./y')`, the import form of a `.cts` file. A type-only one counts too,
-    // as `import type` does.
+    // `import x = require('./y')`, the import form of a `.cts` file. `import type x = require()`
+    // is type-only.
     if (
       node.type !== 'TSImportEqualsDeclaration' ||
       node.moduleReference.type !== 'TSExternalModuleReference'
@@ -102,6 +150,7 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
       scan.imports.push({
         specifier,
         names: ['*'],
+        ...typeInfo(node.importKind === 'type', ['*'], []),
         offset: mapOffset(node.moduleReference.expression.start),
       });
     }
@@ -119,6 +168,8 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
         scan.imports.push({
           specifier,
           names: requiredNames(parent, node),
+          typeOnly: false,
+          typeNames: [],
           offset: mapOffset(arg.start),
         });
       }

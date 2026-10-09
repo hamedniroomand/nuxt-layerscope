@@ -5,6 +5,7 @@ import { isPreset } from './presets.ts';
 import { isRuleName, RESERVED_RULES, SEVERITIES } from './rules.ts';
 
 const SCOPED_KEYS = new Set(['layer', 'only']);
+const TYPE_IMPORTS = new Set(['check', 'ignore']);
 const PRESET_KEYS = new Set(['name', 'base']);
 
 function isNames(value: unknown): value is string[] {
@@ -101,6 +102,14 @@ function validatePreset(preset: unknown, file: string): void {
 
 export function validateConfig(config: LayerscopeConfig, file: string): void {
   validatePreset(config.preset, file);
+  if (
+    config.typeImports !== undefined &&
+    (typeof config.typeImports !== 'string' || !TYPE_IMPORTS.has(config.typeImports))
+  ) {
+    throw new LayerscopeError(
+      `${file}: typeImports must be "check" or "ignore", got ${JSON.stringify(config.typeImports)}`,
+    );
+  }
   for (const [rule, severity] of Object.entries(config.rules ?? {})) {
     if (!isRuleName(rule) && !RESERVED_RULES.has(rule)) {
       throw new LayerscopeError(`${file}: unknown rule "${rule}"`);

@@ -69,6 +69,6 @@ type is exported from `nuxt-layerscope/api`.
 | `shadowedComponents` | Components that lost to a higher-priority one of the same name and a compatible mode (`all`, `client`, `server`).     |
 | `componentDirs`      | Every dir Nuxt scanned for components, with the glob it used and the files it matched.                                |
 | `imports`            | Auto-imports per context: `name` as used in code, `from` as an absolute path once aliases are resolved, or a package. |
-| `config`             | Optional. The `layers`, `rules`, `ignore` and `globals` set under `layerscope` in `nuxt.config`.                      |
+| `config`             | Optional. The `layers`, `rules`, `ignore`, `globals` and `typeImports` set under `layerscope` in `nuxt.config`.       |
 
 Paths are absolute to the machine that wrote the file, which is why it lives in the build dir.

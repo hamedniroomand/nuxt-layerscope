@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
 import { scanFile } from '#src/scan/index.ts';
-import type { FileScan } from '#src/scan/types.ts';
+import type { FileScan, ImportRef } from '#src/scan/types.ts';
 import type {
   Context,
   Edge,
@@ -11,6 +11,7 @@ import type {
   Reference,
   ReferenceKind,
   Severity,
+  TypeImports,
 } from '#src/types.ts';
 import { lineColumn } from '#src/utils/position.ts';
 
@@ -25,7 +26,16 @@ export interface AnalysisEnv extends ImportEnv {
   ownerOf: OwnerLookup;
   identifiers: Set<string>;
   components: Set<string>;
+  typeImports: TypeImports;
   unresolvedSeverity: Severity;
+}
+
+/**
+ * A type-only statement, or for a virtual module such as `#imports` (one outcome for each name,
+ * in the symbol as `#imports:Name`) a name that only a `type` keyword brings in.
+ */
+function isIgnored(ref: ImportRef, symbol: string): boolean {
+  return ref.typeOnly || ref.typeNames.some(name => symbol === `${ref.specifier}:${name}`);
 }
 
 /** Turns one file's scan into dependency edges and unresolved-reference findings. */
@@ -120,12 +130,17 @@ export class FileAnalysis {
   }
 
   private addImports(scan: FileScan): void {
+    const ignoreTypes = this.env.typeImports === 'ignore';
     for (const ref of scan.imports) {
+      // An unresolved path is reported even when the import is type-only.
       for (const outcome of resolveImportRef(ref, this.file, this.context, this.env)) {
-        if (outcome.resolved) {
-          this.addEdge('import', outcome.symbol, ref.offset, outcome.target, outcome.names);
-        } else {
+        if (!outcome.resolved) {
           this.addUnresolved(ref.specifier, ref.offset, outcome.message);
+        } else if (!ignoreTypes) {
+          this.addEdge('import', outcome.symbol, ref.offset, outcome.target, outcome.names);
+        } else if (!isIgnored(ref, outcome.symbol)) {
+          const names = outcome.names?.filter(name => !ref.typeNames.includes(name));
+          this.addEdge('import', outcome.symbol, ref.offset, outcome.target, names);
         }
       }
     }

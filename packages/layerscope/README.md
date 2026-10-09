@@ -226,7 +226,8 @@ module records them on `nuxi prepare`, `dev` and `build`; use one place or the o
   or `source` (the `extends` string, such as `github:acme/console`) to name a remote layer.
 - A layer missing from `layers` is unrestricted. Edges within a layer are always allowed.
 - `ignore` adds globs to skip, and `globals` lists identifiers or components registered at runtime
-  (for example by a plugin) so they are not reported as unresolved.
+  (for example by a plugin) so they are not reported as unresolved. `typeImports: 'ignore'` leaves
+  type-only imports out of every check.
 
 ## Rules
 

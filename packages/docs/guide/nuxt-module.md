@@ -55,13 +55,13 @@ export default defineNuxtConfig({
     enabled: true,
     // Set to false to remove the Nuxt DevTools tab; { static: true } also publishes a snapshot.
     devtools: true,
-    // Layers, rules, ignore and globals, as in layerscope.config.ts.
+    // Layers, rules, ignore, globals and typeImports, as in layerscope.config.ts.
     layers: { admin: { allow: ['shared'] } },
   },
 });
 ```
 
-`layers`, `rules`, `ignore` and `globals` work here exactly as in
+`layers`, `rules`, `ignore`, `globals` and `typeImports` work here exactly as in
 [`layerscope.config.ts`](../reference/config#in-nuxt-config); use one place or the other.
 
 The module records them in the registry on `nuxi prepare`, `dev` and `build`. After editing

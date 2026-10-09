@@ -120,7 +120,7 @@ export default defineConfig({
       { text: 'Reference', link: '/reference/cli', activeMatch: '/reference/' },
       { text: 'Contributing', link: '/contributing/development', activeMatch: '/contributing/' },
       {
-        text: 'v0.3.0',
+        text: 'v0.4.0',
         items: [
           { text: 'Changelog', link: `${REPOSITORY}/blob/main/packages/layerscope/CHANGELOG.md` },
           { text: 'Releases', link: `${REPOSITORY}/releases` },

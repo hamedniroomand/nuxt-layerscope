@@ -21,6 +21,10 @@ export interface ImportRef {
   specifier: string;
   /** Export names, with `default` and `*` for default and namespace imports. */
   names: string[];
+  /** The statement has no runtime effect: `import type`, or a `type` keyword on every name. */
+  typeOnly: boolean;
+  /** The names in `names` that only a `type` keyword brings in; a name that a value also brings is not in it. */
+  typeNames: string[];
   offset: number;
 }
 
