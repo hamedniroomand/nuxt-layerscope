@@ -45,19 +45,22 @@ the edges you want.
 ## `layerscope check`
 
 ```bash
-layerscope check [root] [options]
+layerscope check [root] [files...] [options]
 ```
 
-| Option              | Default                    | Description                                                                               |
-| ------------------- | -------------------------- | ----------------------------------------------------------------------------------------- |
-| `--format <format>` | `text`                     | [Output format](./output): `text`, `github`, `json`, `sarif` or `gitlab`                  |
-| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                                            |
-| `--prepare`         |                            | Run `nuxi prepare` before checking                                                        |
-| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                                   |
-| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                  |
-| `--update-baseline` |                            | Write every current finding to the baseline file and exit `0`                             |
-| `--watch`           |                            | Check again after each change, until Ctrl+C. See [Watch mode](../guide/editor#watch-mode) |
-| `--verbose`         |                            | Print where symbols were read from                                                        |
+| Option              | Default                    | Description                                                                                 |
+| ------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
+| `--format <format>` | `text`                     | [Output format](./output): `text`, `github`, `json`, `sarif` or `gitlab`                    |
+| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                                              |
+| `--prepare`         |                            | Run `nuxi prepare` before checking                                                          |
+| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                                     |
+| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                    |
+| `--update-baseline` |                            | Write every current finding to the baseline file and exit `0`                               |
+| `--watch`           |                            | Check again after each change, until Ctrl+C. See [Watch mode](../guide/editor#watch-mode)   |
+| `--staged`          |                            | Check only the files staged for commit. See [Git hooks](../guide/ci#git-hooks)              |
+| `--changed`         |                            | Check only the files that changed since the default branch, and untracked files             |
+| `--since <ref>`     |                            | Check only the files that changed since the merge base with a git ref (implies `--changed`) |
+| `--verbose`         |                            | Print where symbols were read from                                                          |
 
 ```bash
 layerscope check                                  # current directory
@@ -65,7 +68,48 @@ layerscope check apps/shop --format github        # another root, GitHub annotat
 layerscope check --prepare --source registry      # regenerate, and require the module
 layerscope check --update-baseline                # accept the current findings
 layerscope check --watch                          # check again after each save
+layerscope check --staged                         # only what is staged for commit
+layerscope check --since origin/main              # only what changed since a ref
+layerscope check src/a.ts src/b.vue               # only these files
+layerscope check apps/web apps/web/src/a.ts       # a root first, then files
 ```
+
+### Checking some files
+
+`--staged`, `--changed`, `--since` and file arguments select files. layerscope still loads the
+whole project to resolve symbols, but it reads only the selected files, and reports only the
+findings in them. That is much less work than a full check, which makes it fit for a pre-commit
+hook.
+
+- **Arguments.** A first argument that is a directory is the root, as before, and the rest are
+  files. When no argument is a directory, all arguments are files and the root is the working
+  directory; this is how `lint-staged` calls a command. Paths may be relative to the working
+  directory or absolute.
+- **`--staged`** takes the files that are added, copied, modified or renamed in the index.
+  **`--changed`** takes the files that differ from the merge base with the default branch
+  (`origin/HEAD`, else `main`, else `master`) in the working tree, committed or not, and the
+  untracked files. On the default branch itself it takes the uncommitted work and the commits that are not on `origin` yet, so it also fits a pre-push hook. Without a remote it takes only the uncommitted work. **`--since <ref>`**
+  uses another ref: the files that differ from the merge base of `HEAD` and the ref, so work that
+  landed on the ref after your branch left it is not checked. Without a merge base, the ref itself
+  is used. Before the first commit, every file in the index is new. In a repository with several projects, `git` is asked from the project root,
+  so only files of that project are selected.
+- **A shallow checkout.** `--changed` needs the default branch in the clone. When no default
+  branch has a merge base with `HEAD`, as in a CI checkout with `fetch-depth: 1`, the command exits
+  `2` with a hint and does not guess. Fetch the base branch (`actions/checkout` with
+  `fetch-depth: 0`), or pass `--since <ref>`.
+- **Skipped files.** A selected file that is not a source file of a layer (outside the project, in
+  no layer, ignored) is skipped, and a note on stderr counts them. Nothing selected exits `0` at
+  once with a short message, before the project loads; `--format json`, `sarif` and `gitlab` still
+  print a valid, empty report.
+- **The baseline** applies. A fixed baseline entry is reported only for a selected file, because a
+  check of some files cannot tell whether the entries of other files are fixed.
+- **What it does not see.** A use of a symbol that changed, in a file that is not selected, is not
+  found; a full `layerscope check` (in CI) covers it. A check of some files gives no fix
+  suggestions either, because they need the dependencies of every file. With the
+  [`layer-cycle`](./rules#layer-cycle) rule on, every file is scanned, because a cycle needs every
+  dependency, and only the findings in the selected files are shown.
+- **Exit codes** are those of a full check. `--staged`, `--changed`, `--since` and file arguments
+  cannot be combined with each other, with `--update-baseline` or with `--watch`.
 
 ## `layerscope drift`
 

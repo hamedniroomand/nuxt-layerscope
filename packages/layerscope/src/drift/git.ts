@@ -1,12 +1,7 @@
-import { execFileSync } from 'node:child_process';
-
 import type { Baseline } from '#src/baseline/index.ts';
 import { parseBaseline } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
-
-function git(rootDir: string, ...args: string[]): string {
-  return execFileSync('git', ['-C', rootDir, ...args], { encoding: 'utf8', stdio: 'pipe' });
-}
+import { git } from '#src/utils/git.ts';
 
 function assertRef(rootDir: string, ref: string): void {
   try {

@@ -1,14 +1,14 @@
-import { relative, resolve } from 'pathe';
-
 import { analyze } from '#src/analyze/index.ts';
-import { BASELINE_FILE, createBaseline, writeBaseline } from '#src/baseline/index.ts';
+import { BASELINE_FILE } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatResult, isOutputFormat, OUTPUT_FORMATS } from '#src/report/index.ts';
 import type { OutputFormat } from '#src/report/index.ts';
 import { repoRoot } from '#src/report/paths.ts';
-import { plural } from '#src/utils/strings.ts';
 import { paintFor } from '#src/utils/style.ts';
 
+import { updateBaseline } from './check-baseline.ts';
+import { deletedNote, selectTarget } from './check-files.ts';
+import { checkNothing } from './check-nothing.ts';
 import type { Cli, CommonFlags } from './shared.ts';
 import { EXIT_CLEAN, EXIT_VIOLATIONS, toSource, withCommonOptions, writeNotes } from './shared.ts';
 
@@ -16,21 +16,9 @@ export interface CheckFlags extends CommonFlags {
   baseline: string;
   updateBaseline?: boolean;
   watch?: boolean;
-}
-
-async function updateBaseline(rootDir: string, flags: CheckFlags): Promise<number> {
-  const result = await analyze({
-    rootDir,
-    configFile: flags.config,
-    prepare: flags.prepare,
-    source: toSource(flags.source),
-  });
-  const file = resolve(rootDir, flags.baseline);
-  writeBaseline(file, createBaseline(result.findings, rootDir));
-  const count = plural(result.findings.length, 'finding');
-  process.stdout.write(`✔ Wrote ${count} to ${relative(process.cwd(), file)}\n`);
-  writeNotes(result, flags.verbose === true);
-  return EXIT_CLEAN;
+  staged?: boolean;
+  changed?: boolean;
+  since?: string;
 }
 
 async function watch(rootDir: string, format: OutputFormat, flags: CheckFlags): Promise<number> {
@@ -68,7 +56,11 @@ async function watch(rootDir: string, format: OutputFormat, flags: CheckFlags): 
   }
 }
 
-export async function check(root: string | undefined, flags: CheckFlags): Promise<number> {
+export async function check(
+  root: string | undefined,
+  files: string[],
+  flags: CheckFlags,
+): Promise<number> {
   const { format } = flags;
   if (!isOutputFormat(format)) {
     throw new LayerscopeError(`Unknown format "${format}". Use ${OUTPUT_FORMATS.join(', ')}.`);
@@ -76,12 +68,15 @@ export async function check(root: string | undefined, flags: CheckFlags): Promis
   if (flags.watch === true && flags.updateBaseline === true) {
     throw new LayerscopeError('--watch cannot be used with --update-baseline.');
   }
-  const rootDir = resolve(root ?? process.cwd());
+  const { rootDir, selection } = selectTarget(root, files, flags);
   if (flags.updateBaseline === true) {
     return updateBaseline(rootDir, flags);
   }
   if (flags.watch === true) {
     return watch(rootDir, format, flags);
+  }
+  if (selection?.files.length === 0) {
+    return checkNothing(rootDir, selection, format, flags);
   }
   const result = await analyze({
     rootDir,
@@ -89,7 +84,12 @@ export async function check(root: string | undefined, flags: CheckFlags): Promis
     prepare: flags.prepare,
     source: toSource(flags.source),
     baseline: flags.baseline,
+    ...(selection === undefined ? {} : { only: selection.files }),
   });
+  const deleted = selection === undefined ? null : deletedNote(selection);
+  if (deleted !== null) {
+    result.notes.push(deleted);
+  }
   // Only `sarif` and `gitlab` read the repository root; the others do not run git.
   const repository = format === 'sarif' || format === 'gitlab' ? repoRoot(rootDir) : rootDir;
   process.stdout.write(
@@ -105,7 +105,7 @@ export async function check(root: string | undefined, flags: CheckFlags): Promis
 export function registerCheck(cli: Cli): void {
   withCommonOptions(
     cli
-      .command('check [root]', 'Check layer boundaries, including auto-imports')
+      .command('check [root] [...files]', 'Check layer boundaries, including auto-imports')
       .option('--format <format>', `Output format: ${OUTPUT_FORMATS.join(', ')}`, {
         default: 'text',
       })
@@ -113,6 +113,12 @@ export function registerCheck(cli: Cli): void {
         default: BASELINE_FILE,
       })
       .option('--update-baseline', 'Write every current finding to the baseline file')
+      .option('--staged', 'Check only the files staged for commit')
+      .option('--changed', 'Check only the files that changed since the default branch')
+      .option(
+        '--since <ref>',
+        'Check only the files that changed since the merge base with a git ref (implies --changed)',
+      )
       .option('--watch', 'Check again after each change, until Ctrl+C'),
   ).action(check);
 }
