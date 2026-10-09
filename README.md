@@ -20,7 +20,7 @@
   <a href="https://layerscope.kitdev.space/guide/devtools">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="./packages/docs/public/devtools/hero-dark.webp">
-      <img src="./packages/docs/public/devtools/hero-light.webp" width="1600" height="611" alt="The Layerscope tab in Nuxt DevTools: the layer graph of five layers with three violations, the ui to shop edge selected, with useCart in the side panel">
+      <img src="./packages/docs/public/devtools/hero-light.webp" width="1600" height="350" alt="The Layerscope tab in Nuxt DevTools: the layer graph of five layers with three violations, the ui to shop edge selected, with useCart in the side panel">
     </picture>
   </a>
   <br>
