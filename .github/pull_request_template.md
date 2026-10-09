@@ -10,4 +10,4 @@
 
 - [ ] `vp check` and `vp test` pass
 - [ ] Docs updated, if behavior or config changed
-- [ ] Changelog entry added, if users will notice
+- [ ] Changeset added (`pnpm changeset`), if users will notice

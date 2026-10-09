@@ -73,7 +73,8 @@ UI give the same files, so `git status` shows only the pictures that changed. Se
 - Run `vp check --fix` and `vp test` before pushing.
 - Commit messages follow [Conventional Commits](https://www.conventionalcommits.org), for
   example `fix(layerscope): resolve components in custom dirs`.
-- Add a line to `packages/layerscope/CHANGELOG.md` for anything users will notice.
+- Add a changeset with `pnpm changeset` for a user-facing change. Do not edit
+  `packages/layerscope/CHANGELOG.md` by hand; the release pull request writes it.
 
 By contributing you agree that your work is released under the [MIT license](./LICENSE) and
 that you'll follow the [code of conduct](./CODE_OF_CONDUCT.md).

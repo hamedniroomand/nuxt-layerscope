@@ -15,9 +15,13 @@
     "test": "vp test",
     "prepare": "vp config",
     "playground": "vp run nuxt-layerscope#build && vp run playground#dev",
-    "example:verify": "vp run nuxt-layerscope#build && node scripts/verify-example.mjs"
+    "example:verify": "vp run nuxt-layerscope#build && node scripts/verify-example.mjs",
+    "changeset": "changeset",
+    "changeset:version": "changeset version && node scripts/sync-example-range.mjs && vp fmt"
   },
   "devDependencies": {
+    "@changesets/changelog-github": "^1.0.1",
+    "@changesets/cli": "^3.0.3",
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
     "@vitest/coverage-v8": "catalog:",
