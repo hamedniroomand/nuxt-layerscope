@@ -27,7 +27,8 @@ A run also needs the files that Nuxt generates in `.nuxt`. `nuxi prepare` makes 
 
 Project: 3,000 source files in 10 layers (40% components, 25% composables, 15% utils, 20% server
 utils and API routes), each file using two to six symbols, 71 findings. Median of seven runs (three
-for the run with `nuxi prepare`), after one run that is not counted.
+for the run with `nuxi prepare`). The one-shot run without `nuxi prepare` has one run first that is
+not counted. The in-process rows have no such run: the first analysis is a row of its own.
 
 - layerscope 0.3.1, Node 24.18.0
 - macOS (arm64), Apple M1 Pro, 8 cores, 16 GB RAM
@@ -48,8 +49,10 @@ These are the numbers of one machine. Yours will differ; run the benchmark to se
   `--prepare`, the `nuxi prepare` child process is not included.
 - The in-process rows use the analyzer that watch mode, the MCP server and the DevTools tab share.
   Time is the analysis call; memory is the size of the process after the step.
-- Each run checks that layerscope reports the number of findings that the generated project holds,
-  so a broken run cannot pass as a fast one.
+- With the generated project, each run checks that layerscope reports the number of findings that
+  the project holds, so a broken run cannot pass as a fast one. In the in-process rows, every step
+  is checked, and the step after the file was added must count one file more. With `--project`, no
+  number of findings is known, so nothing is checked.
 
 ## What takes the time
 
@@ -77,14 +80,14 @@ The script generates the project in `packages/layerscope/bench/.project` (git-ig
 `nuxi prepare` on it, and prints a table like the one above with the machine, Node and layerscope
 version. The generator is seeded, so the same size gives the same project.
 
-| Option            | Description                                                                        |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| `--files <n>`     | Source files in the generated project. Default `3000`.                             |
-| `--runs <n>`      | Samples for each scenario. Default `7`, and at most `3` for the run with prepare.  |
-| `--only <list>`   | Scenarios to run: `A` one-shot, `B` with `nuxi prepare`, `C` in one process.       |
-| `--project <dir>` | Measure a project you prepared yourself (`nuxi prepare` done). Skips scenario `B`. |
-| `--no-generate`   | Use the project that is already generated.                                         |
-| `--json <file>`   | Write every sample to a file.                                                      |
+| Option            | Description                                                                       |
+| ----------------- | --------------------------------------------------------------------------------- |
+| `--files <n>`     | Source files in the generated project. Default `3000`.                            |
+| `--runs <n>`      | Samples for each scenario. Default `7`, and at most `3` for the run with prepare. |
+| `--only <list>`   | Scenarios to run: `A` one-shot, `B` with `nuxi prepare`, `C` in one process.      |
+| `--project <dir>` | Measure a project you prepared yourself (`nuxi prepare` done). Skips `B` and `C`. |
+| `--no-generate`   | Use the project that is already generated.                                        |
+| `--json <file>`   | Write every sample to a file.                                                     |
 
 A run on GitHub Actions is in the [Benchmark workflow](https://github.com/hamedniroomand/nuxt-layerscope/actions/workflows/bench.yml).
 It uses a small project and only reports; it does not fail on a slow run, because shared runners

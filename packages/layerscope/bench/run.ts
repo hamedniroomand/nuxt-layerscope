@@ -95,6 +95,20 @@ const LABELS: Record<string, string> = {
   'one-added': 'In one process: after one file was added',
 };
 
+/** Every step must report the same findings, and the added file must show in the file count. */
+function expectSteps(run: InProcess, expected: number | undefined): void {
+  for (const step of run.steps) {
+    expectFindings(step.findings, expected, `C ${step.name}`);
+  }
+  const first = run.steps.find(step => step.name === 'first');
+  const added = run.steps.find(step => step.name === 'one-added');
+  if (first === undefined || added === undefined || added.files !== first.files + 1) {
+    throw new Error(
+      `C one-added: expected ${(first?.files ?? Number.NaN) + 1} files, got ${added?.files}`,
+    );
+  }
+}
+
 function scenarioC(project: string, runs: number, expected: number | undefined): Row[] {
   const samples = Array.from({ length: runs }, () => {
     const result = spawnSync(process.execPath, [IN_PROCESS, project], {
@@ -105,7 +119,7 @@ function scenarioC(project: string, runs: number, expected: number | undefined):
       throw new Error(`in-process run failed:\n${result.stderr}`);
     }
     const run = JSON.parse(result.stdout) as InProcess;
-    expectFindings(run.steps[0]?.findings ?? -1, expected, 'C');
+    expectSteps(run, expected);
     return run;
   });
   return Object.keys(LABELS).map(name => {
@@ -157,7 +171,7 @@ function main(): void {
   if (only.has('A')) {
     rows.push(scenarioA(project, args.runs ?? 7, expected));
   }
-  if (only.has('C')) {
+  if (only.has('C') && args.project === undefined) {
     rows.push(...scenarioC(project, args.runs ?? 7, expected));
   }
   if (only.has('B') && args.project === undefined) {
