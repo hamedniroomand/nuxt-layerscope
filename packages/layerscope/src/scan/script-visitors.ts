@@ -1,14 +1,16 @@
 import type { Node } from 'oxc-parser';
-import type { ScopeTracker, WalkerThisContextEnter } from 'oxc-walker';
+import type { ScopeTracker, ScopeTrackerNode, WalkerThisContextEnter } from 'oxc-walker';
 import { isReferenceIdentifier } from 'oxc-walker';
 
-import { importedName, reexportedName, stringLiteral } from './ast.ts';
+import { importedName, reexportedName, requiredNames, stringLiteral } from './ast.ts';
 import type { FileScan, OffsetMapper } from './types.ts';
 
 export interface VisitContext {
   scan: FileScan;
   tracker: ScopeTracker;
   mapOffset: OffsetMapper;
+  /** Declarations of the names that `createRequire(...)` was assigned to. */
+  requireBindings: Set<ScopeTrackerNode>;
 }
 
 type Visitor = (
@@ -20,6 +22,16 @@ type Visitor = (
 
 function skip(this: WalkerThisContextEnter): void {
   this.skip();
+}
+
+/** The global `require`, or a name that `createRequire(...)` was assigned to. */
+function isRequireCall(name: string, { tracker, requireBindings }: VisitContext): boolean {
+  const declaration = tracker.getDeclaration(name);
+  if (declaration === null) {
+    return name === 'require';
+  }
+  // The name must resolve to the binding of `createRequire(...)` here, not to another one.
+  return requireBindings.has(declaration);
 }
 
 export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
@@ -76,11 +88,42 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
   TSMethodSignature: skip,
   TSCallSignatureDeclaration: skip,
   TSConstructSignatureDeclaration: skip,
-  CallExpression(node, _parent, { scan, mapOffset }) {
+  TSImportEqualsDeclaration(node, _parent, { scan, mapOffset }) {
+    // `import x = require('./y')`, the import form of a `.cts` file. A type-only one counts too,
+    // as `import type` does.
+    if (
+      node.type !== 'TSImportEqualsDeclaration' ||
+      node.moduleReference.type !== 'TSExternalModuleReference'
+    ) {
+      return;
+    }
+    const specifier = stringLiteral(node.moduleReference.expression);
+    if (specifier !== null) {
+      scan.imports.push({
+        specifier,
+        names: ['*'],
+        offset: mapOffset(node.moduleReference.expression.start),
+      });
+    }
+    this.skip();
+  },
+  CallExpression(node, parent, ctx) {
+    const { scan, mapOffset } = ctx;
     if (node.type !== 'CallExpression' || node.callee.type !== 'Identifier') {
       return;
     }
     const [arg] = node.arguments as (Node | undefined)[];
+    if (isRequireCall(node.callee.name, ctx)) {
+      const specifier = stringLiteral(arg);
+      if (arg !== undefined && specifier !== null) {
+        scan.imports.push({
+          specifier,
+          names: requiredNames(parent, node),
+          offset: mapOffset(arg.start),
+        });
+      }
+      return;
+    }
     if (node.callee.name !== 'resolveComponent' || arg === undefined) {
       return;
     }

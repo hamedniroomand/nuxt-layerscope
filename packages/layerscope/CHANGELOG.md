@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- `require('...')` calls are scanned, also through `createRequire(...)`, and so are `.cjs` and
+  `.cts` files. Before, a boundary break through CommonJS code was skipped with no finding. A
+  destructured `require` takes the names as a named import does, so `expose` and `only` lists
+  apply. `require.resolve(...)` and a `require()` with a value that is not a string literal are
+  not counted. `check --staged`, `--changed` and file arguments select `.cjs` and `.cts` files.
 - A `layerscope.config.mjs` or `.js` is read again when its content changes in a long-running
   process: `check --watch`, the DevTools tab and `layerscope mcp`. Before, Node kept the first
   copy until the process restarted. A file that the config imports is still read once.
@@ -12,7 +17,7 @@
   fits today's dependencies. The MCP `layers` tool now returns `preset` as `{ name, base }` and not
   as a name.
 - A guide for moving from eslint-plugin-nuxt-layers: how to convert the layer map, how to run both
-  tools, and what differs, including that `require()` calls are not scanned yet.
+  tools, and what differs.
 - `layerscope check --staged`, `--changed`, `--since <ref>` and file arguments check only some
   files: the project loads as always, but only the selected files are read and reported. It fits a
   pre-commit hook, with `lint-staged` (file names are read as files) or `--staged`. A file outside

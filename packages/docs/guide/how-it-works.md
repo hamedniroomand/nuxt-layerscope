@@ -66,8 +66,8 @@ report stale files that are not.
 
 Every source file of every checked layer is parsed:
 
-- **Scripts** (`.ts`, `.js`, `.tsx`, `.jsx`, `.mts`, `.mjs`, and `<script>` blocks of `.vue`
-  files) are parsed with [oxc-parser](https://oxc.rs) and scope-tracked. An identifier that is not
+- **Scripts** (`.ts`, `.js`, `.tsx`, `.jsx`, `.mts`, `.cts`, `.mjs`, `.cjs`, and `<script>` blocks of
+  `.vue` files) are parsed with [oxc-parser](https://oxc.rs) and scope-tracked. An identifier that is not
   declared, imported or a known global is a _free_ identifier: it is either auto-imported or
   unresolved. A local `const useCart = ...` shadows the auto-import of the same name, just as it
   does at runtime.

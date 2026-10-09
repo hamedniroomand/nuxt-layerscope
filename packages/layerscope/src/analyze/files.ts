@@ -8,7 +8,7 @@ import type { OwnerLookup } from '#src/nuxt/owner.ts';
 import type { Context, Layer } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
-const SOURCE_GLOB = '**/*.{vue,ts,tsx,mts,js,jsx,mjs}';
+const SOURCE_GLOB = '**/*.{vue,ts,tsx,mts,cts,js,jsx,mjs,cjs}';
 const DEFAULT_IGNORE = [
   '**/node_modules/**',
   '**/.nuxt/**',
@@ -16,6 +16,7 @@ const DEFAULT_IGNORE = [
   '**/dist/**',
   '**/*.d.ts',
   '**/*.d.mts',
+  '**/*.d.cts',
   '**/nuxt.config.*',
   '**/.config/**',
   '**/*.{test,spec}.*',
