@@ -22,10 +22,15 @@ export function edgeName(edge: Edge): string {
   return match === null ? edge.symbol : match[1];
 }
 
+/**
+ * The name Nuxt gives a file: without its last extension (`cart.item.ts` is `cart.item`), and for
+ * a component also without a `.client`, `.server` or `.global` mode suffix.
+ */
 function baseName(file: string): string {
   const name = file.slice(file.lastIndexOf('/') + 1);
-  const dot = name.indexOf('.');
-  return dot > 0 ? name.slice(0, dot) : name;
+  const dot = name.lastIndexOf('.');
+  const stem = dot > 0 ? name.slice(0, dot) : name;
+  return name.endsWith('.vue') ? stem.replace(/\.(?:client|server|global)$/u, '') : stem;
 }
 
 /**

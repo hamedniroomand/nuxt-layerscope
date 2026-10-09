@@ -23,7 +23,8 @@ function snippet(layer: string, allow: AllowEntry[]): string {
 /** `allow` with the entry for `toLayer` added: whole, or scoped to `only` (joined with an old one). */
 function withEntry(allow: AllowEntry[], toLayer: string, only?: string[]): AllowEntry[] {
   if (only === undefined) {
-    return [...allow, toLayer];
+    // The whole layer replaces a scoped entry: a layer cannot be listed twice with `only`.
+    return [...allow.filter(entry => !(isScoped(entry) && entry.layer === toLayer)), toLayer];
   }
   const old = allow.find(entry => isScoped(entry) && entry.layer === toLayer);
   const merged = [...new Set([...(old !== undefined && isScoped(old) ? old.only : []), ...only])];
@@ -41,7 +42,7 @@ export function allowHint(finding: Finding, result: AnalyzeResult): AllowHint | 
   }
   // The suggestion counts findings before the baseline applies, so the files do too.
   const inPair = (other: Finding): boolean =>
-    other.fromLayer === fromLayer && other.toLayer === toLayer;
+    other.rule === 'layer-boundary' && other.fromLayer === fromLayer && other.toLayer === toLayer;
   const suppressed = (result.baseline?.suppressed ?? []).filter(other => inPair(other));
   const files = new Set(
     [...result.findings.filter(other => inPair(other)), ...suppressed].map(other => other.file),

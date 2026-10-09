@@ -2,29 +2,54 @@ import { describe, expect, it } from 'vite-plus/test';
 
 import { allowHint } from '#src/devtools/hints.ts';
 import { addSuggestions } from '#src/suggest/index.ts';
-import { MAX_ONLY, nameOfFinding, onlyNames } from '#src/suggest/scoped.ts';
-import type { Finding, LayerscopeConfig } from '#src/types.ts';
+import { MAX_ONLY, namesOfEdge, onlyNames } from '#src/suggest/scoped.ts';
+import type { Edge, Finding, LayerscopeConfig } from '#src/types.ts';
 import { makeEdge, makeFinding, makeLayer, makeResult } from '#test/factories.ts';
 
-const named = (...symbols: string[]): Finding[] =>
-  symbols.map(symbol => makeFinding({ symbol, fromLayer: 'admin', toLayer: 'web' }));
+const edges = (...symbols: string[]): Edge[] =>
+  symbols.map(symbol => makeEdge({ symbol, fromLayer: 'admin', toLayer: 'web' }));
+
+const importOf = (symbol: string, names?: string[]): Edge =>
+  makeEdge({
+    kind: 'import',
+    symbol,
+    fromLayer: 'admin',
+    toLayer: 'web',
+    ...(names === undefined ? {} : { names }),
+  });
 
 describe('onlyNames', () => {
   it('lists the names when few of them cause the findings', () => {
-    expect(onlyNames(named('b', 'a'))).toEqual(['a', 'b']);
-    expect(onlyNames(named('a', 'a'))).toEqual(['a']);
+    expect(onlyNames(edges('b', 'a'))).toEqual(['a', 'b']);
+    expect(onlyNames(edges('a', 'a'))).toEqual(['a']);
     expect(MAX_ONLY).toBe(3);
-    expect(onlyNames(named('a', 'b', 'c'))).toEqual(['a', 'b', 'c']);
+    expect(onlyNames(edges('a', 'b', 'c'))).toEqual(['a', 'b', 'c']);
   });
 
   it('keeps the whole layer above the limit', () => {
-    expect(onlyNames(named('a', 'b', 'c', 'd'))).toBeNull();
+    expect(onlyNames(edges('a', 'b', 'c', 'd'))).toBeNull();
   });
 
-  it('keeps the whole layer when an explicit import would need a glob', () => {
-    expect(onlyNames(named('a', '~/cart/useCart'))).toBeNull();
-    expect(onlyNames(named('#layers/web/app/composables/useCart'))).toBeNull();
-    expect(nameOfFinding(makeFinding({ symbol: '#imports:useCart' }))).toBe('useCart');
+  it('uses the imported names of an explicit import, never the specifier', () => {
+    expect(onlyNames([importOf('~/cart/useCart', ['useCart', 'useTotal'])])).toEqual([
+      'useCart',
+      'useTotal',
+    ]);
+    expect(namesOfEdge(importOf('#imports:useCart'))).toEqual(['useCart']);
+  });
+
+  it('keeps the whole layer for an import that has no named import, also with a bare alias', () => {
+    expect(onlyNames([importOf('cartApi')])).toBeNull();
+    expect(onlyNames([importOf('cartApi', ['default'])])).toBeNull();
+    expect(onlyNames([importOf('cartApi', ['*'])])).toBeNull();
+    expect(onlyNames([importOf('cartApi', ['a', 'default'])])).toBeNull();
+    expect(onlyNames(edges('a').concat(importOf('~/cart')))).toBeNull();
+  });
+
+  it('names a component the way a list does', () => {
+    expect(onlyNames([makeEdge({ kind: 'component', symbol: 'LazyCartSummary' })])).toEqual([
+      'CartSummary',
+    ]);
   });
 });
 
@@ -33,7 +58,9 @@ describe('scoped suggestions', () => {
   const config: LayerscopeConfig = { layers: { admin: { allow: [] } } };
 
   async function suggestionOf(symbols: string[]): Promise<Finding | undefined> {
-    const findings = named(...symbols);
+    const findings = symbols.map(symbol =>
+      makeFinding({ symbol, fromLayer: 'admin', toLayer: 'web' }),
+    );
     const edges = symbols.map(symbol =>
       makeEdge({ symbol, fromLayer: 'admin', toLayer: 'web', to: `/app/web/${symbol}.ts` }),
     );

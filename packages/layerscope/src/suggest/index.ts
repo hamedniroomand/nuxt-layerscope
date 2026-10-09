@@ -6,9 +6,9 @@ import { plural } from '#src/utils/strings.ts';
 import { createYielder } from '#src/utils/yield.ts';
 
 import type { Context } from './context.ts';
-import { createContext, isLocal, pairKey, reaches } from './context.ts';
+import { createContext, edgeOfFinding, isLocal, pairKey, reaches } from './context.ts';
 import { moveSuggestion, pickTarget } from './move.ts';
-import { nameOfFinding, onlyNames } from './scoped.ts';
+import { isExplicitImport, namesOfEdge, onlyNames } from './scoped.ts';
 
 function leaveSuggestion(from: string, to: string): Suggestion {
   return {
@@ -21,7 +21,8 @@ function leaveSuggestion(from: string, to: string): Suggestion {
 function allowSuggestion(context: Context, from: string, to: string): Suggestion {
   const pair = context.boundaryBy.get(pairKey(from, to)) ?? [];
   const fixes = pair.length;
-  const names = onlyNames(pair);
+  const edges = pair.map(finding => edgeOfFinding(context, finding));
+  const names = edges.every(edge => edge !== undefined) ? onlyNames(edges) : null;
   if (names !== null) {
     const known = (context.config.layers?.[from]?.allow ?? []).find(
       entry => isScoped(entry) && entry.layer === to,
@@ -46,9 +47,11 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
 function exposeSuggestion(context: Context, finding: Finding): Suggestion {
   const to = finding.toLayer ?? '';
   const layer = context.layers.find(candidate => candidate.name === to);
-  const name = nameOfFinding(finding);
+  const edge = edgeOfFinding(context, finding);
+  const names = edge === undefined || isExplicitImport(edge) ? null : namesOfEdge(edge);
+  // An explicit import is listed by the path of its file, which covers every name in it.
   const entry =
-    name ??
+    names?.[0] ??
     (layer === undefined || finding.target === null
       ? finding.symbol
       : relative(layer.root, finding.target));

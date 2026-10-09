@@ -109,13 +109,13 @@ describe('scoped allow on the fixture', () => {
     );
   });
 
-  it('proposes a scoped entry when few names cause the findings, and the layer when many do', async () => {
+  it('proposes a scoped entry with the names of the findings, and extends an entry', async () => {
     const few = await run({ admin: { allow: ADMIN_ALLOW } });
     const adminFindings = few.findings.filter(finding => finding.fromLayer === 'admin');
     const suggestion = adminFindings.find(finding => finding.toLayer === 'web')?.suggestion;
-    // Four findings from three names and one explicit import: a glob would be needed.
-    expect(suggestion?.only).toBeUndefined();
-    expect(suggestion?.message).toContain('allow "admin" to use "web"');
+    // Four findings from three names; the explicit import lists the name it imports, `useCart`.
+    expect(suggestion?.only).toEqual(['CartSummary', 'getCartStore', 'useCart']);
+    expect(suggestion?.message).toContain('from "web"');
     const one = await run({
       admin: { allow: [...ADMIN_ALLOW, { layer: 'web', only: ['useCart', 'CartSummary'] }] },
     });
