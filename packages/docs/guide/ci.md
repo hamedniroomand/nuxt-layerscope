@@ -51,6 +51,37 @@ The action is a thin wrapper; the command alone does the same:
 - run: npx layerscope check --prepare --format github
 ```
 
+### Code scanning
+
+The [`sarif` format](../reference/output#sarif) is stored: findings show in the Security tab of
+the repository and stay there over time. The check step writes the file and exits with `1` when
+there are errors, so the upload step runs with `if: always()`:
+
+```yaml [.github/workflows/layerscope.yml]
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  layerscope:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx layerscope check --prepare --format sarif > layerscope.sarif
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: layerscope.sarif
+```
+
+Findings that the baseline accepts are uploaded as suppressed, so code scanning does not report
+them as fixed. The GitHub Action covers the `github` format only.
+
 ### pnpm and monorepos
 
 ```yaml
@@ -70,16 +101,25 @@ The action is a thin wrapper; the command alone does the same:
 
 ## GitLab CI
 
-GitLab has no inline annotations for arbitrary tools, so use the text output, or JSON as an
-artifact:
+The [`gitlab` format](../reference/output#gitlab) is a Code Quality report. GitLab shows it in the
+merge request widget and in the diff:
 
 ```yaml [.gitlab-ci.yml]
 layerscope:
   image: node:24
   script:
     - npm ci
-    - npx layerscope check --prepare
+    - npx layerscope check --prepare --format gitlab > gl-code-quality-report.json
+  artifacts:
+    when: always
+    reports:
+      codequality: gl-code-quality-report.json
 ```
+
+`when: always` uploads the report when the job fails on an error. Paths in the report are
+relative to the repository root, also when the Nuxt project is in a subdirectory. Unlike `sarif`,
+the report leaves out findings that the baseline accepts. For the text output in the job log, run
+`npx layerscope check --prepare` alone.
 
 ## Other CI systems
 

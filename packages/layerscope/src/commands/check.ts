@@ -4,6 +4,7 @@ import { analyze } from '#src/analyze/index.ts';
 import { BASELINE_FILE, createBaseline, writeBaseline } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatResult, isOutputFormat, OUTPUT_FORMATS } from '#src/report/index.ts';
+import { repoRoot } from '#src/report/paths.ts';
 import { plural } from '#src/utils/strings.ts';
 import { paintFor } from '#src/utils/style.ts';
 
@@ -46,7 +47,11 @@ export async function check(root: string | undefined, flags: CheckFlags): Promis
     source: toSource(flags.source),
     baseline: flags.baseline,
   });
-  process.stdout.write(formatResult(result, format, process.cwd(), paintFor(process.stdout)));
+  // Only `sarif` and `gitlab` read the repository root; the others do not run git.
+  const repository = format === 'sarif' || format === 'gitlab' ? repoRoot(rootDir) : rootDir;
+  process.stdout.write(
+    formatResult(result, format, process.cwd(), paintFor(process.stdout), repository),
+  );
   writeNotes(result, flags.verbose === true);
   // Only findings missing from the baseline fail the check.
   return result.findings.some(finding => finding.severity === 'error')

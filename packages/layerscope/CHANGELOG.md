@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- `layerscope check --format sarif` writes a SARIF 2.1.0 log for GitHub code scanning. Findings
+  that the baseline accepts are included as suppressed results.
+- `layerscope check --format gitlab` writes a GitLab Code Quality report for the merge request
+  widget. Both formats use paths relative to the git root, so a Nuxt project in a subdirectory
+  matches the files in the repository, and one fingerprint for each finding, from the baseline key.
+
 ## 0.3.1
 
 - The DevTools tab no longer keeps a `shadowed-component` finding after you delete, rename or move

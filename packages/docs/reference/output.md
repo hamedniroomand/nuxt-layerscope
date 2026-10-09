@@ -1,6 +1,7 @@
 # Output formats
 
-Choose a format with `--format`. Paths are relative to the current directory.
+Choose a format with `--format`. Paths are relative to the current directory, except in `sarif`
+and `gitlab`, where they are relative to the repository root.
 
 ## `text`
 
@@ -107,6 +108,61 @@ Finding fields:
 | `allowed`                | For `layer-boundary`: the layers `fromLayer` may use                                                           |
 | `suggestion`             | For `layer-boundary`: `action` (`move`, `allow`, `leave`), `message`, `impact`; `move` adds `layer` and `file` |
 | `message`                | Human-readable description                                                                                     |
+
+## `sarif`
+
+A [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html) log, which
+GitHub code scanning and other dashboards read. Findings stay in the Security tab of the
+repository over time and are not limited by the annotation count of a job.
+
+```bash
+layerscope check --format sarif > layerscope.sarif
+```
+
+- One `run`. `tool.driver` has the name, the version and one entry in `rules` for each rule, with
+  a short description, the severity the rule has in your config as `defaultConfiguration.level`
+  (`none` when the rule is `off`) and `helpUri`, a link to the [rule](./rules).
+- Each finding is a `result` with `ruleId`, `ruleIndex`, `level` (`error` or `warning`),
+  `message` and a location with a 1-based line and column. A finding with a target, such as the
+  file a `layer-boundary` finding resolves to, has it as a related location.
+- The location URI is relative to the repository root, the git root of the project, with
+  `uriBaseId` set to `%SRCROOT%`. Without git it is relative to the project root.
+- `partialFingerprints` has `layerscope/v1`, a sha256 hash of the [baseline](../guide/baseline)
+  key: rule, file, symbol and target layer, without the line. Code scanning uses it to match the
+  same finding across runs, so a finding that moves down a file stays the same alert. Findings
+  with the same key in one file get an occurrence number, counted in report order.
+- Findings that the baseline accepts are included with
+  `suppressions: [{ "kind": "external", "justification": "layerscope baseline" }]`, so code
+  scanning shows them as suppressed and not as fixed.
+
+## `gitlab`
+
+A [GitLab Code Quality](https://docs.gitlab.com/ci/testing/code_quality/) report: a JSON array
+that GitLab shows in the merge request widget and in the diff.
+
+```bash
+layerscope check --format gitlab > gl-code-quality-report.json
+```
+
+```json
+[
+  {
+    "description": "Auto-import \"useCart\" crosses from layer \"admin\" into \"web\"",
+    "check_name": "layer-boundary",
+    "fingerprint": "9f2c…",
+    "severity": "major",
+    "location": { "path": "layers/admin/app/components/AdminPanel.vue", "lines": { "begin": 2 } }
+  }
+]
+```
+
+- `severity` is `major` for an error and `minor` for a warning.
+- `location.path` is relative to the repository root, the git root of the project, which GitLab
+  needs when the Nuxt project is in a subdirectory. Without git it is relative to the project
+  root.
+- `fingerprint` is the same value as `partialFingerprints` in `sarif`.
+- Unlike `sarif`, the report leaves out findings that the baseline accepts: Code Quality has no
+  suppression state.
 
 ## `why` output
 
