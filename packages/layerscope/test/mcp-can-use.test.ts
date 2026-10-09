@@ -7,7 +7,7 @@ import { ProjectSession } from '#src/mcp/session.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
 
 import type { CanUseData } from './mcp-helpers.ts';
-import { callTool, dataOf, sessionFor } from './mcp-helpers.ts';
+import { callTool, dataOf, request, sessionFor } from './mcp-helpers.ts';
 import { tempDir } from './watch-project.ts';
 
 function withLayers(layers: string): ProjectSession {
@@ -58,6 +58,43 @@ describe('can_use between layers', () => {
 
   it('refuses a name that is neither a layer nor a symbol', async () => {
     expect(await failure('admin', 'nothing')).toContain('not a layer or a known symbol');
+  });
+});
+
+describe('the status of a layer pair', () => {
+  it('keeps same-layer, unrestricted and allowed apart', async () => {
+    const session = withLayers("{ admin: { allow: ['shared'] }, web: {} }");
+    expect(await canUse('admin', 'admin', session)).toMatchObject({
+      status: 'same-layer',
+      allowed: true,
+    });
+    expect(await canUse('admin', 'shared', session)).toMatchObject({
+      status: 'allowed',
+      allowed: true,
+    });
+    // `web` has no config entry, so it has no allow list.
+    const open = await canUse('web', 'shared', session);
+    expect(open).toMatchObject({ status: 'unrestricted', allowed: true });
+    expect(open.reason).toContain('no allow list');
+  });
+
+  it('lists every status in the output schema', async () => {
+    interface ToolInfo {
+      name: string;
+      outputSchema: { properties: { status: { enum: string[] } } };
+    }
+    const reply = await request('tools/list');
+    const tools = (reply.result?.tools ?? []) as ToolInfo[];
+    const tool = tools.find(candidate => candidate.name === 'can_use');
+    expect(tool?.outputSchema.properties.status.enum).toEqual([
+      'same-layer',
+      'external',
+      'unrestricted',
+      'allowed',
+      'partial',
+      'not-allowed',
+      'not-exposed',
+    ]);
   });
 });
 

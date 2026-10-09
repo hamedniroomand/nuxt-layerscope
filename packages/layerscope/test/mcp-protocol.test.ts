@@ -138,3 +138,25 @@ describe('framing of long and batched input', () => {
     expect((JSON.parse(line) as Reply[]).map(reply => reply.id)).toEqual([1, 2]);
   });
 });
+
+describe('requests that are not valid', () => {
+  it('answers an empty batch with one invalid request error', async () => {
+    const [line] = await exchange(['[]\n']);
+    const reply = JSON.parse(line) as Reply;
+    expect(reply.error?.code).toBe(-32_600);
+    expect(reply.id).toBeNull();
+  });
+
+  it.each(['true', '{}', '[]', '"x".length'])('refuses the id %s', async id => {
+    const raw = id === '"x".length' ? '{"x":1}' : id;
+    const [line] = await exchange([`{"jsonrpc":"2.0","id":${raw},"method":"ping"}\n`]);
+    expect(JSON.parse(line) as Reply).toMatchObject({ id: null, error: { code: -32_600 } });
+  });
+
+  it('accepts a string, a number and a null id', async () => {
+    const lines = await exchange(
+      ['"a"', '7', 'null'].map(id => `{"jsonrpc":"2.0","id":${id},"method":"ping"}\n`),
+    );
+    expect(lines.map(line => (JSON.parse(line) as Reply).id)).toEqual(['a', 7, null]);
+  });
+});

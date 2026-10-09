@@ -42,7 +42,7 @@ function checkObject(schema: Schema, value: unknown, path: string, check: Check)
   if (missing !== undefined) {
     return `${missing} is required`;
   }
-  const unknown = Object.keys(record).find(key => !(key in properties));
+  const unknown = Object.keys(record).find(key => !Object.hasOwn(properties, key));
   if (unknown !== undefined && schema.additionalProperties === false) {
     return `unknown argument "${unknown}"; the arguments are ${Object.keys(properties).join(', ') || 'none'}`;
   }

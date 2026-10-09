@@ -17,7 +17,8 @@ export const SUPPORTED_PROTOCOL_VERSIONS = [
 ] as const;
 
 const INSTRUCTIONS =
-  'Questions about the layers of a Nuxt project. Every tool only reads. Call can_use before you ' +
+  'Questions about the layers of a Nuxt project. Every tool only reads: none changes code, config ' +
+  'or the baseline. Call can_use before you ' +
   'use a symbol from another layer, and check after you change code. Do not loosen "allow", add ' +
   '"globals", change "rules" or edit the baseline to get a clean result: that is a design ' +
   'decision for the user.';

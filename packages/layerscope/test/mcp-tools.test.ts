@@ -22,6 +22,8 @@ function withLayers(layers: string): ProjectSession {
   });
 }
 
+const json = (text: string): Record<string, unknown> => JSON.parse(text) as Record<string, unknown>;
+
 describe('tool results', () => {
   it('give the data as structured content and as one text block with the same JSON', async () => {
     const result = await callTool('layers');
@@ -45,6 +47,18 @@ describe('input validation', () => {
     ['a missing to', 'can_use', { from: 'admin' }, 'to is required'],
     ['a level that does not exist', 'graph', { level: 'pixel' }, 'level must be one of'],
     ['an argument for a tool without any', 'layers', { x: 1 }, 'unknown argument "x"'],
+    [
+      'an inherited name as an argument',
+      'layers',
+      json('{"toString":1}'),
+      'unknown argument "toString"',
+    ],
+    [
+      'a __proto__ key as an argument',
+      'layers',
+      json('{"__proto__":1}'),
+      'unknown argument "__proto__"',
+    ],
   ])('refuses %s as a result with isError', async (_name, tool, args, message) => {
     const result = await callTool(tool, args);
     expect(result.isError).toBe(true);

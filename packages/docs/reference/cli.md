@@ -139,13 +139,13 @@ Starts an [MCP server](../guide/coding-tools#mcp-server) over stdio for coding a
 JSON-RPC from stdin and writes only JSON-RPC to stdout; notes and errors go to stderr. It ends when
 stdin closes or on `SIGINT` and `SIGTERM`, with exit code `0`.
 
-| Option              | Default                    | Description                                              |
-| ------------------- | -------------------------- | -------------------------------------------------------- |
-| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory           |
-| `--prepare`         |                            | Run `nuxi prepare` once, before the server starts        |
-| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`  |
-| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root |
-| `--verbose`         |                            | Print where symbols were read from                       |
+| Option              | Default                    | Description                                                                              |
+| ------------------- | -------------------------- | ---------------------------------------------------------------------------------------- |
+| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                                           |
+| `--prepare`         |                            | Run `nuxi prepare` once, before the server starts; it writes the generated `.nuxt` files |
+| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                                  |
+| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                 |
+| `--verbose`         |                            | Print where symbols were read from                                                       |
 
 A problem with the project (a config error, a missing registry) does not stop the server: the
 tool call that hits it returns the message, and the next call tries again.

@@ -24,10 +24,18 @@ export const INTERNAL_ERROR = -32_603;
 
 export type Handler = (method: string, params: unknown) => Promise<unknown>;
 
+/** An id is a string, a number or null; a request without one is a notification. */
+function hasValidId(id: unknown): boolean {
+  return id === undefined || id === null || typeof id === 'string' || typeof id === 'number';
+}
+
 function isRequest(value: unknown): value is RpcRequest {
   const message = value as Partial<RpcRequest> | null;
   return (
-    typeof message === 'object' && message?.jsonrpc === '2.0' && typeof message.method === 'string'
+    typeof message === 'object' &&
+    message?.jsonrpc === '2.0' &&
+    typeof message.method === 'string' &&
+    hasValidId(message.id)
   );
 }
 
@@ -62,6 +70,9 @@ async function replyToLine(line: string, handle: Handler): Promise<string | null
     return JSON.stringify(failure(null, PARSE_ERROR, 'Invalid JSON'));
   }
   if (Array.isArray(message)) {
+    if (message.length === 0) {
+      return JSON.stringify(failure(null, INVALID_REQUEST, 'An empty batch is not a request'));
+    }
     const replies = (
       await Promise.all(
         message.map(async item => {

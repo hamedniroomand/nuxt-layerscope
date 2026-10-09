@@ -99,17 +99,19 @@ takes the same `--config`, `--source`, `--baseline` and `--prepare` options as
 [`check`](../reference/cli#layerscope-check). Assistants add the server name in front of a tool
 name, so `can_use` may show as `layerscope.can_use`.
 
-| Tool      | Use it to                                                                                |
-| --------- | ---------------------------------------------------------------------------------------- |
-| `check`   | Get the findings, with a suggestion each. Filter by file, layer, rule or severity.       |
-| `why`     | See every use of a symbol, the layer that owns it, and whether each use is allowed.      |
-| `layers`  | See the layers, what each may use (`allow`) and what it makes public (`expose`).         |
-| `can_use` | Ask whether a layer or a file may use a layer or a symbol, and why not.                  |
-| `suggest` | Get the suggested fix for the findings in a file, for a move with the imports to update. |
-| `graph`   | See which layer depends on which, at layer or file level.                                |
+| Tool      | Use it to                                                                                                                                                                                                                   |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `check`   | Get the findings, with a suggestion each. Filter by file, layer, rule or severity.                                                                                                                                          |
+| `why`     | See every use of a symbol, the layer that owns it, and whether each use is allowed.                                                                                                                                         |
+| `layers`  | See the layers, what each may use (`allow`) and what it makes public (`expose`).                                                                                                                                            |
+| `can_use` | Ask whether a layer or a file may use a layer or a symbol, and why not. The `status` is `same-layer`, `external`, `unrestricted` (no allow list), `allowed`, `partial` (only some symbols), `not-allowed` or `not-exposed`. |
+| `suggest` | Get the suggested fix for the findings in a file, for a move with the imports to update.                                                                                                                                    |
+| `graph`   | See which layer depends on which, at layer or file level.                                                                                                                                                                   |
 
-Every tool only reads. The server never writes a file, edits `allow` or the baseline, and it
-refuses a path outside the project root. The rules above still hold: an assistant must not loosen
+Every tool only reads. The tools never write a file or edit `allow` or the baseline, and the server
+refuses a path outside the project root. The one write is the option `--prepare`, which runs
+`nuxi prepare` once when the server starts, and that writes the generated files in `.nuxt`; it is
+off by default. The rules above still hold: an assistant must not loosen
 `allow` to get a clean result, and `can_use` says to ask the user. `check` and `graph` cut a long
 answer at `limit` (50 by default, 500 at most) and say so.
 
