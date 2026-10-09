@@ -7,14 +7,18 @@ adds [provenance](https://docs.npmjs.com/generating-provenance-statements).
 
 ## Release
 
-1. Update `version` in `packages/layerscope/package.json` and rename the `## Unreleased` section
-   of `packages/layerscope/CHANGELOG.md` to `## <version>`. Changes merged between releases add
-   their line under `## Unreleased`. If the DevTools tab changed, run `vp run docs#screenshots`
-   and commit the pictures; `packages/docs/public/devtools/manifest.json` shows the version they
-   were made for. If the new version leaves the range of `nuxt-layerscope` in
-   `examples/shop/package.json` (a caret range on 0.x stops at the next minor), update the range.
-   `vp run example:verify` fails when the example no longer links the local package.
-2. Merge that to `main`.
+1. Merge pull requests as usual. A pull request with a change that users will notice adds a
+   changeset (see [Add a changeset](#add-a-changeset)). When changesets are on `main`, the
+   [Release PR workflow](https://github.com/hamedniroomand/nuxt-layerscope/blob/main/.github/workflows/changesets.yml)
+   opens one pull request, "chore(release): version packages". It sets `version` in
+   `packages/layerscope/package.json` and writes the new section of
+   `packages/layerscope/CHANGELOG.md`. It does not publish and it does not make a tag.
+   It also sets the range of `nuxt-layerscope` in `examples/shop/package.json` to the new version
+   (`scripts/sync-example-range.mjs`) and updates the lockfile, so the example keeps linking the
+   local package. If the DevTools tab changed, run `vp run docs#screenshots` and commit the
+   pictures to that pull request; `packages/docs/public/devtools/manifest.json` shows the version
+   they were made for.
+2. Merge the version pull request to `main`.
 3. Tag `main` and push the tag:
 
    ```bash
@@ -34,6 +38,21 @@ and marked as a pre-release on GitHub.
 
 The GitHub Action is referenced by tag (`hamedniroomand/nuxt-layerscope@v0.3.0`), so every
 release needs its tag.
+
+## Add a changeset
+
+For a change that users will notice, run this in your branch and commit the file it makes:
+
+```bash
+pnpm changeset
+```
+
+Choose the bump (patch, minor or major) for `nuxt-layerscope`, and write one or two sentences
+for the changelog. Docs, tests, CI and refactors need no changeset.
+
+The Release PR workflow runs with `GITHUB_TOKEN` by default, and a pull request that it opens does
+not start CI. Set the `RELEASE_PR_TOKEN` secret (a fine-grained token with contents and pull
+requests: write) to get CI on that pull request. Without it, close and reopen the pull request.
 
 ## Try a change before it is released
 
