@@ -75,7 +75,13 @@
       ],
       "properties": {
         "rule": {
-          "enum": ["layer-boundary", "layer-cycle", "unresolved-reference", "shadowed-component"]
+          "enum": [
+            "layer-boundary",
+            "layer-cycle",
+            "layer-internal",
+            "unresolved-reference",
+            "shadowed-component"
+          ]
         },
         "severity": { "enum": ["error", "warn"] },
         "file": { "type": "string", "description": "Relative to the working directory." },
@@ -96,7 +102,25 @@
         },
         "allowed": {
           "type": "array",
-          "description": "layer-boundary only: the layers fromLayer may use.",
+          "description": "layer-boundary only: the layers fromLayer may use whole.",
+          "items": { "type": "string" }
+        },
+        "scoped": {
+          "type": "array",
+          "description": "layer-boundary only: the layers fromLayer may use in part.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["layer", "only"],
+            "properties": {
+              "layer": { "type": "string" },
+              "only": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "exposed": {
+          "type": "array",
+          "description": "layer-internal only: what toLayer makes public.",
           "items": { "type": "string" }
         },
         "suggestion": { "$ref": "#/$defs/suggestion" },
@@ -105,13 +129,22 @@
     },
     "suggestion": {
       "type": "object",
-      "description": "layer-boundary only.",
+      "description": "layer-boundary and layer-internal only.",
       "additionalProperties": false,
       "required": ["action", "message", "impact"],
       "properties": {
-        "action": { "enum": ["move", "allow", "leave"] },
+        "action": { "enum": ["move", "allow", "expose", "leave"] },
         "message": { "type": "string" },
         "layer": { "type": "string", "description": "move: the layer to move the file to." },
+        "only": {
+          "type": "array",
+          "description": "allow: the names of a scoped entry, when the whole layer is not needed.",
+          "items": { "type": "string" }
+        },
+        "expose": {
+          "type": "string",
+          "description": "expose: the name or glob to add to the expose list of the layer."
+        },
         "file": {
           "type": "string",
           "description": "move: where the file lands, relative to the working directory."
@@ -135,7 +168,13 @@
       "required": ["rule", "file", "symbol", "toLayer"],
       "properties": {
         "rule": {
-          "enum": ["layer-boundary", "layer-cycle", "unresolved-reference", "shadowed-component"]
+          "enum": [
+            "layer-boundary",
+            "layer-cycle",
+            "layer-internal",
+            "unresolved-reference",
+            "shadowed-component"
+          ]
         },
         "file": { "type": "string" },
         "symbol": { "type": "string" },

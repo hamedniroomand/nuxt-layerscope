@@ -96,18 +96,20 @@ changes; new fields can be added without it, so ignore fields you do not know.
 
 Finding fields:
 
-| Field                    | Description                                                                                                    |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `rule`                   | `layer-boundary`, `layer-cycle`, `unresolved-reference` or `shadowed-component`                                |
-| `severity`               | `error` or `warn`                                                                                              |
-| `file`, `line`, `column` | Where the reference is; 1-based                                                                                |
-| `symbol`                 | Identifier, component name or import specifier                                                                 |
-| `fromLayer`              | Layer of the file                                                                                              |
-| `toLayer`                | Layer the symbol resolves to, or `null` for packages and unresolved references                                 |
-| `target`                 | File the symbol resolves to, when known                                                                        |
-| `allowed`                | For `layer-boundary`: the layers `fromLayer` may use                                                           |
-| `suggestion`             | For `layer-boundary`: `action` (`move`, `allow`, `leave`), `message`, `impact`; `move` adds `layer` and `file` |
-| `message`                | Human-readable description                                                                                     |
+| Field                    | Description                                                                                                                                                                                           |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rule`                   | `layer-boundary`, `layer-cycle`, `layer-internal`, `unresolved-reference` or `shadowed-component`                                                                                                     |
+| `severity`               | `error` or `warn`                                                                                                                                                                                     |
+| `file`, `line`, `column` | Where the reference is; 1-based                                                                                                                                                                       |
+| `symbol`                 | Identifier, component name or import specifier                                                                                                                                                        |
+| `fromLayer`              | Layer of the file                                                                                                                                                                                     |
+| `toLayer`                | Layer the symbol resolves to, or `null` for packages and unresolved references                                                                                                                        |
+| `target`                 | File the symbol resolves to, when known                                                                                                                                                               |
+| `allowed`                | For `layer-boundary`: the layers `fromLayer` may use whole                                                                                                                                            |
+| `scoped`                 | For `layer-boundary`: the layers `fromLayer` may use in part, as `{ layer, only }` entries                                                                                                            |
+| `exposed`                | For `layer-internal`: what the layer of the symbol makes public, from its `expose` list                                                                                                               |
+| `suggestion`             | For `layer-boundary` and `layer-internal`: `action` (`move`, `allow`, `expose`, `leave`), `message`, `impact`; `move` adds `layer` and `file`, `allow` can add `only`, `expose` adds the entry to add |
+| `message`                | Human-readable description                                                                                                                                                                            |
 
 ## `sarif`
 
@@ -196,4 +198,5 @@ layerscope check --format gitlab > gl-code-quality-report.json
 ```
 
 `kind` is `auto-import`, `component` or `import`; `status` is `same-layer`, `external`,
-`unrestricted`, `allowed` or `not-allowed`.
+`unrestricted`, `allowed`, `not-allowed` or `not-exposed`. Each target also has `exposure`: `exposed`
+or `internal` when its layer sets [`expose`](./config#expose), and `all` when it does not.

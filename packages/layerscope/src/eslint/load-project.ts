@@ -7,12 +7,13 @@ import { loadConfigSync } from '#src/config/load.ts';
 import { nameLayers } from '#src/nuxt/layers.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import { readRegistry, tableFromRegistry } from '#src/registry/read.ts';
-import type { LayerscopeConfig } from '#src/types.ts';
+import type { Layer, LayerscopeConfig } from '#src/types.ts';
 
 export interface Project {
   rootDir: string;
   config: LayerscopeConfig;
   env: AnalysisEnv;
+  layers: Layer[];
 }
 
 export type ProjectLoad = { ok: true; project: Project } | { ok: false; message: string };
@@ -34,8 +35,13 @@ export function loadProject(rootDir: string): ProjectLoad {
   // Every finding is computed; ESLint's own rule severities decide what is reported.
   const lintConfig: LayerscopeConfig = {
     ...config,
-    rules: { ...config.rules, 'layer-boundary': 'error', 'unresolved-reference': 'warn' },
+    rules: {
+      ...config.rules,
+      'layer-boundary': 'error',
+      'layer-internal': 'error',
+      'unresolved-reference': 'warn',
+    },
   };
   const env = createAnalysisEnv(table, createOwnerLookup(layers), buildDir, lintConfig);
-  return { ok: true, project: { rootDir, config: lintConfig, env } };
+  return { ok: true, project: { rootDir, config: lintConfig, env, layers } };
 }

@@ -15,6 +15,7 @@ export const STATUS_LABELS: Record<UseStatus, string> = {
   unrestricted: '✔ unrestricted',
   allowed: '✔ allowed',
   'not-allowed': '✖ not allowed',
+  'not-exposed': '✖ not exposed',
 };
 
 export function isWhyFormat(value: string): value is WhyFormat {
@@ -25,7 +26,8 @@ function describeTarget(target: SymbolTarget, cwd: string): string {
   if (target.file === null) {
     return `${target.external ?? 'unknown'} (external)`;
   }
-  return `${relative(cwd, target.file)} (${target.layer ?? 'no layer'})`;
+  const tag = target.exposure === 'all' ? '' : `, ${target.exposure}`;
+  return `${relative(cwd, target.file)} (${target.layer ?? 'no layer'}${tag})`;
 }
 
 function formatTargetText(target: SymbolTarget, cwd: string): string {
@@ -62,6 +64,8 @@ export interface WhyTargetRow {
   absFile?: string | null;
   layer: string | null;
   external: string | null;
+  /** `exposed` or `internal` when the layer sets `expose`; `all` when it does not. */
+  exposure: SymbolTarget['exposure'];
   uses: WhyUseRow[];
 }
 
@@ -101,6 +105,7 @@ export function toWhyReport(
       ...(absolute && { absFile: target.file }),
       layer: target.layer,
       external: target.external,
+      exposure: target.exposure,
       uses: target.uses.map(use => useRow(use, cwd, absolute)),
     })),
   };

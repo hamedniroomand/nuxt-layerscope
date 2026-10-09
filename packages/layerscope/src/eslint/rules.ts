@@ -22,14 +22,22 @@ const OPTIONS_SCHEMA = [
 ];
 
 function describeFinding(finding: Finding, rootDir: string): string {
-  if (finding.rule !== 'layer-boundary' || finding.target === null) {
+  if (finding.target === null) {
     return finding.message;
   }
-  const allowed =
-    finding.allowed === undefined || finding.allowed.length === 0
-      ? 'no other layers'
-      : finding.allowed.join(', ');
-  return `${finding.message}: ${finding.symbol} → ${relative(rootDir, finding.target)} (allowed for "${finding.fromLayer}": ${allowed})`;
+  const where = `${finding.symbol} → ${relative(rootDir, finding.target)}`;
+  if (finding.rule === 'layer-internal') {
+    return `${finding.message}: ${where} (exposed by "${finding.toLayer}": ${finding.exposed?.join(', ') ?? ''})`;
+  }
+  if (finding.rule !== 'layer-boundary') {
+    return finding.message;
+  }
+  const scoped = (finding.scoped ?? []).map(
+    entry => `${entry.layer} (only ${entry.only.join(', ')})`,
+  );
+  const all = [...(finding.allowed ?? []), ...scoped];
+  const allowed = all.length === 0 ? 'no other layers' : all.join(', ');
+  return `${finding.message}: ${where} (allowed for "${finding.fromLayer}": ${allowed})`;
 }
 
 function createRule(
@@ -80,6 +88,11 @@ export const rules: Record<string, Rule.RuleModule> = {
     'Disallow dependencies, including auto-imports, into layers this layer may not use',
     lint => lint.boundary,
     true,
+  ),
+  'layer-internal': createRule(
+    'Disallow uses of symbols that their layer does not expose',
+    lint => lint.internal,
+    false,
   ),
   'unresolved-reference': createRule(
     'Report identifiers, components and imports that cannot be resolved',

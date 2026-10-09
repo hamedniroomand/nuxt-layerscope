@@ -16,7 +16,8 @@
     const findings = `${hint.resolves} finding${hint.resolves === 1 ? '' : 's'}`;
     const files = `${hint.files} file${hint.files === 1 ? '' : 's'}`;
     const baselined = hint.baselined === 0 ? '' : `, ${hint.baselined} already in baseline`;
-    return `Allow "${hint.layer}" to use "${hint.add}": resolves ${findings} in ${files}${baselined}`;
+    const only = hint.only === undefined ? '' : ` (only ${hint.only.join(', ')})`;
+    return `Allow "${hint.layer}" to use "${hint.add}"${only}: resolves ${findings} in ${files}${baselined}`;
   });
 </script>
 

@@ -1,7 +1,7 @@
 import { relative } from 'pathe';
 
-import type { EdgeStatus } from '#src/rules/edge-status.ts';
-import { edgeStatus } from '#src/rules/edge-status.ts';
+import type { GraphEdgeStatus } from '#src/rules/edge-status.ts';
+import { graphStatus } from '#src/rules/edge-status.ts';
 import type { AnalyzeResult, Edge, LayerscopeConfig } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
@@ -21,7 +21,7 @@ export interface GraphEdge {
   /** References behind this edge. */
   count: number;
   /** `not-allowed` when any reference behind it breaks the layer rules. */
-  status: EdgeStatus;
+  status: GraphEdgeStatus;
 }
 
 export interface Graph {
@@ -31,9 +31,9 @@ export interface Graph {
 }
 
 // Worst first, so an aggregated edge takes the status of its worst reference.
-const STATUS_ORDER: EdgeStatus[] = ['not-allowed', 'allowed', 'unrestricted', 'same-layer'];
+const STATUS_ORDER: GraphEdgeStatus[] = ['not-allowed', 'allowed', 'unrestricted', 'same-layer'];
 
-function worse(a: EdgeStatus, b: EdgeStatus): EdgeStatus {
+function worse(a: GraphEdgeStatus, b: GraphEdgeStatus): GraphEdgeStatus {
   return STATUS_ORDER.indexOf(a) <= STATUS_ORDER.indexOf(b) ? a : b;
 }
 
@@ -81,7 +81,7 @@ export function buildGraph(
     internal.push(edge);
     const [from, to] = ends;
     const key = `${from}\0${to}`;
-    const status = edgeStatus(edge, config);
+    const status = graphStatus(edge, config, result.layers);
     const existing = edges.get(key);
     edges.set(
       key,

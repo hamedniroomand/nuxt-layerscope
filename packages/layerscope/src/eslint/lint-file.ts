@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { FileAnalysis } from '#src/analyze/file-analysis.ts';
 import { isCheckedFile } from '#src/analyze/files.ts';
 import { boundaryFindings } from '#src/rules/layer-boundary.ts';
+import { internalFindings } from '#src/rules/layer-internal.ts';
 import { scanFile } from '#src/scan/index.ts';
 import type { Finding } from '#src/types.ts';
 
@@ -12,6 +13,7 @@ export interface FileLint {
   /** Text the finding positions refer to: the full file, even when the linter passed less. */
   source: string;
   boundary: Finding[];
+  internal: Finding[];
   unresolved: Finding[];
 }
 
@@ -38,12 +40,13 @@ export function lintFile(file: string, text: string, project: Project): FileLint
     return cached.lint;
   }
   const layer = project.env.ownerOf(file);
-  let lint: FileLint = { source, boundary: [], unresolved: [] };
+  let lint: FileLint = { source, boundary: [], internal: [], unresolved: [] };
   if (layer !== null && isCheckedFile(file, layer, project.config.ignore ?? [])) {
     const analysis = new FileAnalysis(file, source, layer, project.env).run(scanFile(source, file));
     lint = {
       source,
-      boundary: boundaryFindings(analysis.edges, project.config),
+      boundary: boundaryFindings(analysis.edges, project.config, project.layers),
+      internal: internalFindings(analysis.edges, project.config, project.layers),
       unresolved: analysis.unresolved,
     };
   }

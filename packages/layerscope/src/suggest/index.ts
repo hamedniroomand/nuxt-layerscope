@@ -1,3 +1,6 @@
+import { relative } from 'pathe';
+
+import { isScoped } from '#src/config/allow.ts';
 import type { Edge, Finding, Layer, LayerscopeConfig, Suggestion } from '#src/types.ts';
 import { plural } from '#src/utils/strings.ts';
 import { createYielder } from '#src/utils/yield.ts';
@@ -5,6 +8,7 @@ import { createYielder } from '#src/utils/yield.ts';
 import type { Context } from './context.ts';
 import { createContext, isLocal, pairKey, reaches } from './context.ts';
 import { moveSuggestion, pickTarget } from './move.ts';
+import { nameOfFinding, onlyNames } from './scoped.ts';
 
 function leaveSuggestion(from: string, to: string): Suggestion {
   return {
@@ -15,7 +19,23 @@ function leaveSuggestion(from: string, to: string): Suggestion {
 }
 
 function allowSuggestion(context: Context, from: string, to: string): Suggestion {
-  const fixes = context.findingsFor.get(pairKey(from, to)) ?? 0;
+  const pair = context.boundaryBy.get(pairKey(from, to)) ?? [];
+  const fixes = pair.length;
+  const names = onlyNames(pair);
+  if (names !== null) {
+    const known = (context.config.layers?.[from]?.allow ?? []).find(
+      entry => isScoped(entry) && entry.layer === to,
+    );
+    const only = [
+      ...new Set([...(known !== undefined && isScoped(known) ? known.only : []), ...names]),
+    ];
+    return {
+      action: 'allow',
+      message: `allow "${from}" to use ${only.map(name => `"${name}"`).join(', ')} from "${to}" (adds ${known === undefined ? '1 edge' : 'no edge'}, clears ${plural(fixes, 'finding')})`,
+      only,
+      impact: { fixes, edges: known === undefined ? 1 : 0 },
+    };
+  }
   return {
     action: 'allow',
     message: `allow "${from}" to use "${to}" (adds 1 edge, clears ${plural(fixes, 'finding')})`,
@@ -23,7 +43,28 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
   };
 }
 
+function exposeSuggestion(context: Context, finding: Finding): Suggestion {
+  const to = finding.toLayer ?? '';
+  const layer = context.layers.find(candidate => candidate.name === to);
+  const name = nameOfFinding(finding);
+  const entry =
+    name ??
+    (layer === undefined || finding.target === null
+      ? finding.symbol
+      : relative(layer.root, finding.target));
+  const fixes = context.internalBy.get(pairKey(to, finding.symbol))?.length ?? 1;
+  return {
+    action: 'expose',
+    message: `add "${entry}" to expose of "${to}" (clears ${plural(fixes, 'finding')})`,
+    expose: entry,
+    impact: { fixes },
+  };
+}
+
 function suggest(context: Context, finding: Finding): Suggestion {
+  if (finding.rule === 'layer-internal') {
+    return exposeSuggestion(context, finding);
+  }
   const from = finding.fromLayer;
   const to = finding.toLayer ?? '';
   const file = finding.target;
@@ -62,7 +103,13 @@ export async function addSuggestions(
   // get the same one. Each finding gets its own copy, so no two findings share an object.
   const memo = new Map<string, Suggestion>();
   const suggestionFor = (finding: Finding): Suggestion => {
-    const key = JSON.stringify([finding.fromLayer, finding.toLayer, finding.target]);
+    const key = JSON.stringify([
+      finding.rule,
+      finding.fromLayer,
+      finding.toLayer,
+      finding.target,
+      finding.symbol,
+    ]);
     const known = memo.get(key) ?? suggest(context, finding);
     memo.set(key, known);
     return { ...known, impact: { ...known.impact } };
@@ -71,7 +118,7 @@ export async function addSuggestions(
   const result: Finding[] = [];
   for (const finding of findings) {
     result.push(
-      finding.rule === 'layer-boundary'
+      finding.rule === 'layer-boundary' || finding.rule === 'layer-internal'
         ? { ...finding, suggestion: suggestionFor(finding) }
         : finding,
     );

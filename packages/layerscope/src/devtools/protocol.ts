@@ -1,7 +1,7 @@
 import type { Layout } from '#src/graph/layout.ts';
 import type { UnusedRow } from '#src/report/unused.ts';
 import type { WhyReport } from '#src/report/why.ts';
-import type { EdgeStatus } from '#src/rules/edge-status.ts';
+import type { GraphEdgeStatus } from '#src/rules/edge-status.ts';
 import type { BaselineEntry, Context, Finding, Suggestion } from '#src/types.ts';
 
 /** Copy-only fix for a boundary finding whose suggestion is to allow the target layer. */
@@ -11,6 +11,8 @@ export interface AllowHint {
   layer: string;
   /** The layer to add. */
   add: string;
+  /** Set when the entry lists only some names of the layer. */
+  only?: string[];
   /** Findings the change clears, from the analyzer's suggestion. */
   resolves: number;
   /** Files those findings are in. */
@@ -133,7 +135,7 @@ export interface GraphEdgeView {
   to: string;
   /** References behind the edge. */
   count: number;
-  status: EdgeStatus;
+  status: GraphEdgeStatus;
   /** Findings for this layer pair, as the Findings list counts them. */
   violations: number;
   /** Worst severity among them; `null` without findings. */
@@ -143,7 +145,7 @@ export interface GraphEdgeView {
 export interface MatrixCell {
   count: number;
   /** `null` on the diagonal and where no edge exists. */
-  status: EdgeStatus | null;
+  status: GraphEdgeStatus | null;
   violations: number;
 }
 
@@ -161,14 +163,14 @@ export interface EdgeRow {
   absFile: string;
   line: number;
   column: number;
-  status: EdgeStatus;
+  status: GraphEdgeStatus;
 }
 
 export interface EdgeView {
   from: string;
   to: string;
   /** Worst status of the references; `null` when there are none. */
-  status: EdgeStatus | null;
+  status: GraphEdgeStatus | null;
   total: number;
   /** References left out after the first 500. */
   truncated: number;

@@ -22,10 +22,11 @@ export default [
 With `@nuxt/eslint`, add `layerscope.configs.recommended` to the configs you pass to
 `withNuxt()`.
 
-| Rule                              | Recommended | Reports                                               |
-| --------------------------------- | ----------- | ----------------------------------------------------- |
-| `layerscope/layer-boundary`       | `error`     | [`layer-boundary`](../reference/rules) findings       |
-| `layerscope/unresolved-reference` | `warn`      | [`unresolved-reference`](../reference/rules) findings |
+| Rule                              | Recommended | Reports                                                        |
+| --------------------------------- | ----------- | -------------------------------------------------------------- |
+| `layerscope/layer-boundary`       | `error`     | [`layer-boundary`](../reference/rules) findings                |
+| `layerscope/layer-internal`       | `error`     | [`layer-internal`](../reference/rules#layer-internal) findings |
+| `layerscope/unresolved-reference` | `warn`      | [`unresolved-reference`](../reference/rules) findings          |
 
 Severities come from the ESLint config; the `rules` section of `layerscope.config.ts` does not
 apply here. Layers, `allow` lists, `ignore` and `globals` do.

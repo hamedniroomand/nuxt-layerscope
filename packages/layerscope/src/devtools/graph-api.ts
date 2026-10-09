@@ -3,7 +3,7 @@ import { relative } from 'pathe';
 import { buildGraph } from '#src/graph/index.ts';
 import type { Layout } from '#src/graph/layout.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
-import { edgeStatus } from '#src/rules/edge-status.ts';
+import { graphStatus } from '#src/rules/edge-status.ts';
 import type { AnalyzeResult, Edge, Finding } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
@@ -124,11 +124,11 @@ export function edgeView(result: AnalyzeResult, from: string, to: string): EdgeV
       absFile: edge.file,
       line: edge.line,
       column: edge.column,
-      status: edgeStatus(edge, result.config),
+      status: graphStatus(edge, result.config, result.layers),
     });
     symbols.set(name, group);
   }
-  const statuses = new Set(uses.map(edge => edgeStatus(edge, result.config)));
+  const statuses = new Set(uses.map(edge => graphStatus(edge, result.config, result.layers)));
   return {
     from,
     to,

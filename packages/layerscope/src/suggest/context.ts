@@ -1,3 +1,4 @@
+import { allowedLayers, mentionsLayer } from '#src/config/allow.ts';
 import type { Edge, Finding, Layer, LayerscopeConfig } from '#src/types.ts';
 
 /** Lookups for suggestions, indexed once so each finding costs no scan of every edge. */
@@ -15,6 +16,10 @@ export interface Context {
   findingsAt: Map<string, number>;
   /** Findings by `from\0to` layer pair. */
   findingsFor: Map<string, number>;
+  /** Boundary findings by layer pair, to see which names a scoped entry would list. */
+  boundaryBy: Map<string, Finding[]>;
+  /** Internal findings by `to\0symbol`. */
+  internalBy: Map<string, Finding[]>;
 }
 
 function group<T>(items: T[], keyOf: (item: T) => string | null): Map<string, T[]> {
@@ -72,6 +77,16 @@ export function createContext(
     findingsFor: count(findings, finding =>
       finding.toLayer === null ? null : pairKey(finding.fromLayer, finding.toLayer),
     ),
+    boundaryBy: group(findings, finding =>
+      finding.rule === 'layer-boundary' && finding.toLayer !== null
+        ? pairKey(finding.fromLayer, finding.toLayer)
+        : null,
+    ),
+    internalBy: group(findings, finding =>
+      finding.rule === 'layer-internal' && finding.toLayer !== null
+        ? pairKey(finding.toLayer, finding.symbol)
+        : null,
+    ),
   };
 }
 
@@ -81,7 +96,7 @@ export function isLocal(layer: Layer, rootDir: string): boolean {
 
 export function mayUse({ config }: Context, from: string, to: string): boolean {
   const allow = config.layers?.[from]?.allow;
-  return from === to || allow === undefined || allow.includes(to);
+  return from === to || allow === undefined || mentionsLayer(allow, to);
 }
 
 // ponytail: follows seen and configured edges only, not the ones a suggestion would add.
@@ -96,7 +111,7 @@ export function reaches(context: Context, from: string, to: string): boolean {
       visited.add(layer);
       stack.push(
         ...(context.seen.get(layer) ?? []),
-        ...(context.config.layers?.[layer]?.allow ?? []),
+        ...allowedLayers(context.config.layers?.[layer]?.allow ?? []),
       );
     }
   }

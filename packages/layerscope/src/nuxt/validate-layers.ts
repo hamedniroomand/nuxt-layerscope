@@ -1,3 +1,4 @@
+import { allowedLayers } from '#src/config/allow.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { LayerConfigError } from '#src/layer-config-error.ts';
 import type { Layer, LayerscopeConfig } from '#src/types.ts';
@@ -23,7 +24,7 @@ export function validateLayers(layers: Layer[], config: LayerscopeConfig): void 
       const known = [...names].toSorted().join(', ');
       throw new LayerConfigError(`Unknown layer "${name}" in config. Known layers: ${known}`);
     }
-    const unknown = rule.allow?.find(allowed => !names.has(allowed));
+    const unknown = allowedLayers(rule.allow ?? []).find(allowed => !names.has(allowed));
     if (unknown !== undefined) {
       throw new LayerConfigError(`layers.${name}.allow: unknown layer "${unknown}"`);
     }

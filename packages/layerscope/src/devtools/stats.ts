@@ -1,5 +1,6 @@
 import { relative } from 'pathe';
 
+import { allowedLayers } from '#src/config/allow.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import type { AnalyzeResult, Finding } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
@@ -43,6 +44,11 @@ function countBy<T>(items: T[], keyOf: (item: T) => string | null): Map<string, 
   return counts;
 }
 
+function allowedOf(result: AnalyzeResult, layer: string): string[] | null {
+  const allow = result.config.layers?.[layer]?.allow;
+  return allow === undefined ? null : allowedLayers(allow);
+}
+
 /** Per layer: root, `allow` list, file count and references across layer borders. */
 export function layerStats(result: AnalyzeResult): LayerStat[] {
   const ownerOf = createOwnerLookup(result.layers);
@@ -55,7 +61,7 @@ export function layerStats(result: AnalyzeResult): LayerStat[] {
   return result.layers.map(layer => ({
     name: layer.name,
     root: relative(result.rootDir, layer.root) || '.',
-    allow: result.config.layers?.[layer.name]?.allow ?? null,
+    allow: allowedOf(result, layer.name),
     files: files.get(layer.name) ?? 0,
     refsIn: refsIn.get(layer.name) ?? 0,
     refsOut: refsOut.get(layer.name) ?? 0,
