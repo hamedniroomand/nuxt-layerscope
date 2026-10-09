@@ -162,6 +162,11 @@ export default defineConfig({
             link('gauge', 'Performance', '/guide/performance'),
             link('life-buoy', 'Troubleshooting', '/guide/troubleshooting'),
             link('scale', 'Compared with other tools', '/guide/comparison'),
+            link(
+              'arrow-right',
+              'Migrate from eslint-plugin-nuxt-layers',
+              '/guide/migrate-from-eslint-plugin-nuxt-layers',
+            ),
             link('terminal', 'Coding assistants', '/guide/coding-tools'),
           ],
         },
