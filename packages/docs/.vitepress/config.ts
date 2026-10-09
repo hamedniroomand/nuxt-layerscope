@@ -1,10 +1,13 @@
-import { copyFileSync, mkdirSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
 
 import { defineConfig } from 'vitepress';
 import llmstxt from 'vitepress-plugin-llms';
 
 import { icon } from './icons.ts';
 
+const { version } = JSON.parse(
+  readFileSync(new URL('../../layerscope/package.json', import.meta.url), 'utf8'),
+) as { version: string };
 const REPOSITORY = 'https://github.com/hamedniroomand/nuxt-layerscope';
 const SITE = 'https://layerscope.kitdev.space/';
 const BASE = '/';
@@ -120,7 +123,7 @@ export default defineConfig({
       { text: 'Reference', link: '/reference/cli', activeMatch: '/reference/' },
       { text: 'Contributing', link: '/contributing/development', activeMatch: '/contributing/' },
       {
-        text: 'v0.4.0',
+        text: `v${version}`,
         items: [
           { text: 'Changelog', link: `${REPOSITORY}/blob/main/packages/layerscope/CHANGELOG.md` },
           { text: 'Releases', link: `${REPOSITORY}/releases` },

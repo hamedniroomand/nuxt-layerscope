@@ -30,10 +30,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx nuxi prepare
-      - uses: hamedniroomand/nuxt-layerscope@v0.1.0
+      - uses: hamedniroomand/nuxt-layerscope@v0
 ```
 
-Pin the action to a release tag. It runs the `nuxt-layerscope` your project installs, or the
+`@v0` follows the newest 0.x release. To pin a release, use a full tag such as `@v0.4.0`. The action runs the `nuxt-layerscope` your project installs, or the
 action's `version` input through `npx` when the project does not install it.
 
 ### Drift and baseline size
@@ -91,7 +91,7 @@ them as fixed. The GitHub Action covers the `github` format only.
     node-version: 24
     cache: pnpm
 - run: pnpm install --frozen-lockfile
-- uses: hamedniroomand/nuxt-layerscope@v0.1.0
+- uses: hamedniroomand/nuxt-layerscope@v0
   with:
     root: apps/shop
     prepare: true

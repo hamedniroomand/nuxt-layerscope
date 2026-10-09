@@ -1,6 +1,8 @@
 name: Release
 
-# Publishes nuxt-layerscope to npm when a `v*` tag is pushed. It uses npm trusted publishing
+# Publishes nuxt-layerscope to npm when a `v<major>.<minor>.<patch>` tag is pushed (a pre-release
+# suffix such as `-beta.1` is allowed). The moving major tag that this workflow makes at the end
+# (`v0`) does not match the pattern, so it does not start a release. It uses npm trusted publishing
 # (OIDC), so no npm token is stored in the repository, and npm adds provenance on its own once
 # the repository is public. npm only accepts it after the package exists and this workflow is
 # registered as its trusted publisher: publish the first version by hand, see
@@ -8,7 +10,7 @@ name: Release
 
 on:
   push:
-    tags: ['v*']
+    tags: ['v*.*.*']
 
 permissions:
   contents: read
@@ -72,3 +74,19 @@ jobs:
           case "$GITHUB_REF_NAME" in *-*) prerelease=(--prerelease) ;; esac
           gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
             --title "$GITHUB_REF_NAME" --notes-file "$RUNNER_TEMP/notes.md" "${prerelease[@]}"
+      # Moves the major tag (`v0`) to the released commit, so `nuxt-layerscope@v0` in a workflow
+      # follows the newest release. A pre-release does not move it.
+      - name: Move the major tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          case "$GITHUB_REF_NAME" in *-*) exit 0 ;; esac
+          major="${GITHUB_REF_NAME%%.*}"
+          sha="$(git rev-parse HEAD)"
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$major" > /dev/null 2>&1; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$major" \
+              -f sha="$sha" -F force=true
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/tags/$major" -f sha="$sha"
+          fi
