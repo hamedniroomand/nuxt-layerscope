@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
 
 - `require('...')` calls are scanned, also through `createRequire(...)`, and so are `.cjs` and
   `.cts` files. Before, a boundary break through CommonJS code was skipped with no finding. A
