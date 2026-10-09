@@ -88,13 +88,14 @@ async function withoutEsmTypeWarning<T>(task: () => Promise<T>): Promise<T> {
  * without an attribute, a package that only the alias of this package finds).
  */
 export async function importNative(file: string): Promise<{ value: unknown } | { error: unknown }> {
-  forgetCommonJs(file);
-  const hash = createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 12);
   try {
+    forgetCommonJs(file);
+    const hash = createHash('sha1').update(readFileSync(file)).digest('hex').slice(0, 12);
     const module = await withoutEsmTypeWarning(
-      async () => (await import(`${pathToFileURL(file).href}?v=${hash}`)) as { default?: unknown },
+      async () => (await import(`${pathToFileURL(file).href}?v=${hash}`)) as object,
     );
-    return { value: module.default ?? module };
+    // `export default null` is a default export that is not a config: it must reach the check.
+    return { value: 'default' in module ? module.default : module };
   } catch (error) {
     return { error };
   }

@@ -137,6 +137,21 @@ describe('a config that only jiti can load', () => {
   });
 });
 
+describe('a config that cannot be read or is not a config', () => {
+  it('reports a config path that is a directory as a failed load', async () => {
+    const { dir } = project('module');
+    const folder = join(dir, 'config.mjs');
+    mkdirSync(folder);
+    await expect(loadConfig(dir, folder)).rejects.toThrow(/Failed to load .*config\.mjs/u);
+  });
+
+  it('reports a default export of null as not a config object', async () => {
+    const { dir, write } = project('module');
+    write('layerscope.config.mjs', 'export default null;\n');
+    await expect(loadConfig(dir)).rejects.toThrow('must default-export a config object');
+  });
+});
+
 describe('a CommonJS config', () => {
   it('reloads when it is reached through a symlink', async () => {
     const { dir, write } = project('commonjs');
