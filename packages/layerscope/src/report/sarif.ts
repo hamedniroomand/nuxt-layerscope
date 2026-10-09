@@ -14,6 +14,7 @@ const SCHEMA = 'https://json.schemastore.org/sarif-2.1.0.json';
 const DESCRIPTIONS: Record<RuleName, string> = {
   'layer-boundary': 'A file uses a layer that its own layer does not allow.',
   'layer-cycle': 'Layers depend on each other in a cycle.',
+  'layer-internal': 'A file uses a symbol that its layer does not expose.',
   'unresolved-reference':
     'A reference cannot be resolved: an unknown identifier, component or import, a dynamic component, or a file that cannot be parsed.',
   'shadowed-component': 'A component is replaced by a component of the same name in another layer.',

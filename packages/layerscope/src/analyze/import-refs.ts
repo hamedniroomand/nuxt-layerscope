@@ -11,7 +11,7 @@ export interface ImportTarget {
 }
 
 export type ImportOutcome =
-  | { resolved: true; symbol: string; target: ImportTarget }
+  | { resolved: true; symbol: string; target: ImportTarget; names?: string[] }
   | { resolved: false; message: string };
 
 export interface ImportEnv {
@@ -55,5 +55,5 @@ export function resolveImportRef(
     resolution.kind === 'file'
       ? { to: resolution.file, external: resolution.module }
       : { to: null, external: resolution.module };
-  return [{ resolved: true, symbol: ref.specifier, target }];
+  return [{ resolved: true, symbol: ref.specifier, target, names: ref.names }];
 }

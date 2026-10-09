@@ -14,10 +14,13 @@ export function isUnusedFormat(value: string): value is UnusedFormat {
 }
 
 function describe(symbol: UnusedSymbol): string {
+  const exposed = symbol.exposed ? ', exposed' : '';
   if (symbol.kind === 'component') {
-    return symbol.possiblyUsed ? 'component (possibly used at runtime)' : 'component';
+    return symbol.possiblyUsed
+      ? `component (possibly used at runtime${exposed})`
+      : `component${symbol.exposed ? ' (exposed)' : ''}`;
   }
-  return `auto-import (${symbol.context ?? 'app'})`;
+  return `auto-import (${symbol.context ?? 'app'}${exposed})`;
 }
 
 function formatUnusedText(unused: UnusedSymbol[], cwd: string): string {

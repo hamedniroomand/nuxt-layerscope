@@ -61,7 +61,7 @@ describe('resolveImportRef', () => {
 
   it('treats packages as external and missing relatives as unresolved', () => {
     expect(resolveImportRef(ref('vue', ['ref']), '/app/a.ts', 'app', env)).toEqual([
-      { resolved: true, symbol: 'vue', target: { to: null, external: 'vue' } },
+      { resolved: true, symbol: 'vue', target: { to: null, external: 'vue' }, names: ['ref'] },
     ]);
     expect(resolveImportRef(ref('./missing', ['x']), '/app/a.ts', 'app', env)).toEqual([
       { resolved: false, message: 'Cannot resolve import "./missing"' },

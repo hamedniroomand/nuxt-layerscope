@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- A layer can allow only part of another layer: an entry of `allow` can be `{ layer: 'web', only: ['useCart'] }`.
+  `only` takes names and globs on the file path. Any other use of that layer is a `layer-boundary`
+  finding that names the entry. The suggestion of a boundary finding proposes a scoped entry when up to
+  three names cause the findings. For TypeScript users: `allow` in the config type is now
+  `(string | { layer: string; only: string[] })[]`.
+- A layer can list its public API in `expose`, with names and globs. The new rule `layer-internal`
+  (default `error`) reports a use of any other symbol from another layer, for every kind of
+  dependency: auto-imports, components, server utils, shared utils, explicit imports and `#imports`.
+  It only looks at layers that set `expose`. The ESLint plugin has the matching rule, and
+  `layerscope why` and `unused` show whether a symbol is exposed. Findings of the JSON report have
+  the new optional fields `scoped` and `exposed`, and a suggestion can have `only` and `expose`.
 - `layerscope check --watch` checks again after each change and shows what is new and what is
   fixed. It analyzes only the changed file, and runs in full when files are added or deleted or
   when a config file or the Nuxt registry changes. It works with every output format and never

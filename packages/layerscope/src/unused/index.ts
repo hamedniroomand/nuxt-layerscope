@@ -1,5 +1,6 @@
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import type { SymbolMap, SymbolTarget } from '#src/nuxt/symbols.ts';
+import { exposureOf } from '#src/rules/layer-internal.ts';
 import type { AnalyzeResult, Context, Edge } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
@@ -12,6 +13,8 @@ export interface UnusedSymbol {
   context: Context | null;
   file: string;
   layer: string;
+  /** The layer lists the symbol in `expose`: removing it changes what other layers can use. */
+  exposed: boolean;
   /**
    * The project renders components chosen at runtime, so a component may still be used
    * without any static reference.
@@ -68,6 +71,27 @@ function shortestName(names: string[]): string {
   return names.toSorted((a, b) => a.length - b.length || compareStrings(a, b))[0];
 }
 
+function isExposedSymbol(
+  result: AnalyzeResult,
+  layer: string,
+  file: string,
+  name: string,
+  kind: 'component' | 'auto-import',
+): boolean {
+  const edge: Edge = {
+    file: '',
+    line: 1,
+    column: 1,
+    kind,
+    symbol: name,
+    fromLayer: '',
+    to: file,
+    toLayer: layer,
+    external: null,
+  };
+  return exposureOf(edge, result.config, result.layers) === 'exposed';
+}
+
 /**
  * Components and auto-imports registered by the project's own layers that nothing references.
  * Layers installed as packages are not checked, so their symbols are never reported.
@@ -85,7 +109,8 @@ export function findUnused(result: AnalyzeResult): UnusedSymbol[] {
     const layer = checked({ file, module: null });
     if (layer !== null && !isUsed(uses, file, names)) {
       const name = shortestName(names);
-      unused.push({ name, kind: 'component', context: null, file, layer, possiblyUsed });
+      const exposed = isExposedSymbol(result, layer, file, name, 'component');
+      unused.push({ name, kind: 'component', context: null, file, layer, exposed, possiblyUsed });
     }
   }
   const seen = new Set<string>();
@@ -99,7 +124,16 @@ export function findUnused(result: AnalyzeResult): UnusedSymbol[] {
       seen.add(key);
       if (!isUsed(uses, target.file, [name])) {
         const { file } = target;
-        unused.push({ name, kind: 'auto-import', context, file, layer, possiblyUsed: false });
+        const exposed = isExposedSymbol(result, layer, file, name, 'auto-import');
+        unused.push({
+          name,
+          kind: 'auto-import',
+          context,
+          file,
+          layer,
+          exposed,
+          possiblyUsed: false,
+        });
       }
     }
   }

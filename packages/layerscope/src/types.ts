@@ -5,6 +5,7 @@ export type Severity = 'off' | 'warn' | 'error';
 export type RuleName =
   | 'layer-boundary'
   | 'layer-cycle'
+  | 'layer-internal'
   | 'unresolved-reference'
   | 'shadowed-component';
 
@@ -41,9 +42,11 @@ export interface Edge extends Reference {
   toLayer: string | null;
   /** Package or virtual module name for targets outside every layer. */
   external: string | null;
+  /** `import` edges: the names the statement imports, with `default` and `*` as written. */
+  names?: string[];
 }
 
-export type SuggestionAction = 'move' | 'allow' | 'leave';
+export type SuggestionAction = 'move' | 'allow' | 'expose' | 'leave';
 
 /** What a suggestion changes, in counts that `check` can confirm. */
 export interface SuggestionImpact {
@@ -63,6 +66,10 @@ export interface Suggestion {
   /** move: the layer to move the file to, and where it lands. */
   layer?: string;
   file?: string;
+  /** allow: the names a scoped entry would list, when the whole layer is not needed. */
+  only?: string[];
+  /** expose: the entry to add to the `expose` list of the layer. */
+  expose?: string;
   impact: SuggestionImpact;
 }
 
@@ -77,16 +84,30 @@ export interface Finding {
   toLayer: string | null;
   /** File the symbol resolves to, when known. */
   target: string | null;
-  /** Layers `fromLayer` may depend on, for `layer-boundary` findings. */
+  /** Layers `fromLayer` may use whole, for `layer-boundary` findings. */
   allowed?: string[];
+  /** Layers `fromLayer` may use only in part, for `layer-boundary` findings. */
+  scoped?: ScopedAllow[];
+  /** What `toLayer` makes public, for `layer-internal` findings. */
+  exposed?: string[];
   message: string;
   /** Set on `layer-boundary` findings. */
   suggestion?: Suggestion;
 }
 
+/** A layer that may be used only in part: names, or globs on the file path in the layer. */
+export interface ScopedAllow {
+  layer: string;
+  only: string[];
+}
+
+export type AllowEntry = string | ScopedAllow;
+
 export interface LayerRule {
   /** Layers this layer may depend on. Layers missing from config are unrestricted. */
-  allow?: string[];
+  allow?: AllowEntry[];
+  /** What other layers may use of this layer: names or globs. Without it, all of it is public. */
+  expose?: string[];
   /** Layer root relative to the project root; names a layer or declares it without @nuxt/kit. */
   path?: string;
   /** The `extends` source of a remote layer (`github:org/repo`); names the layer c12 cloned from it. */

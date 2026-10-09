@@ -6,8 +6,8 @@ import type { Edge, Finding, Layer, LayerscopeConfig } from '#src/types.ts';
 import { yieldTurn } from '#src/utils/yield.ts';
 
 import { compareByPosition } from './compare.ts';
-import { boundaryFindings } from './layer-boundary.ts';
 import { cycleFindings } from './layer-cycle.ts';
+import { edgeFindings } from './layer-rules.ts';
 import { SHADOWED_NEEDS_REGISTRY, shadowedFindings } from './shadowed-component.ts';
 
 export interface RuleInput {
@@ -32,7 +32,7 @@ export async function runRules(
   }
   const found = [
     ...input.unresolved,
-    ...boundaryFindings(input.edges, config),
+    ...edgeFindings(input.edges, config, input.layers),
     ...cycleFindings(input.edges, config),
     ...(registry === null ? [] : shadowedFindings(registry, input.ownerOf, config)),
   ].toSorted(compareByPosition);

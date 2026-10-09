@@ -4,20 +4,23 @@ import type { Edge, Layer, Suggestion, SuggestionImpact } from '#src/types.ts';
 import { compareStrings, plural } from '#src/utils/strings.ts';
 
 import type { Context } from './context.ts';
-import { isLocal, mayUse } from './context.ts';
+import { isLocal, permits } from './context.ts';
 
 function moveTargets(context: Context, file: string, owner: Layer, uses: Edge[]): Layer[] {
-  const users = new Set(uses.map(edge => edge.fromLayer));
   const dependencies = context.edgesFrom.get(file) ?? [];
-  return context.layers.filter(
-    layer =>
-      layer.name !== owner.name &&
-      isLocal(layer, context.rootDir) &&
-      [...users].every(user => mayUse(context, user, layer.name)) &&
-      dependencies.every(
-        edge => edge.toLayer === null || mayUse(context, layer.name, edge.toLayer),
-      ),
-  );
+  return context.layers.filter(layer => {
+    const moved = join(layer.root, relative(owner.root, file));
+    // The users would point into the candidate layer, and the file would use from inside it.
+    const usersFit = uses.every(edge =>
+      permits(context, { ...edge, to: moved, toLayer: layer.name }),
+    );
+    const dependenciesFit = dependencies.every(edge =>
+      permits(context, { ...edge, fromLayer: layer.name }),
+    );
+    return (
+      layer.name !== owner.name && isLocal(layer, context.rootDir) && usersFit && dependenciesFit
+    );
+  });
 }
 
 // ponytail: the layer with the shortest `allow` list wins; weigh by import distance if it misleads.

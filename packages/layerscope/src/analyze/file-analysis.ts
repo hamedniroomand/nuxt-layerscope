@@ -123,7 +123,7 @@ export class FileAnalysis {
     for (const ref of scan.imports) {
       for (const outcome of resolveImportRef(ref, this.file, this.context, this.env)) {
         if (outcome.resolved) {
-          this.addEdge('import', outcome.symbol, ref.offset, outcome.target);
+          this.addEdge('import', outcome.symbol, ref.offset, outcome.target, outcome.names);
         } else {
           this.addUnresolved(ref.specifier, ref.offset, outcome.message);
         }
@@ -144,8 +144,19 @@ export class FileAnalysis {
     return true;
   }
 
-  private addEdge(kind: ReferenceKind, symbol: string, offset: number, target: ImportTarget): void {
+  private addEdge(
+    kind: ReferenceKind,
+    symbol: string,
+    offset: number,
+    target: ImportTarget,
+    names?: string[],
+  ): void {
     if (!this.firstSeen(`${kind}\0${symbol}`)) {
+      // A second import of the same file adds its names to the edge that stands for both.
+      const known = this.edges.find(edge => edge.kind === kind && edge.symbol === symbol);
+      if (known?.names !== undefined && names !== undefined) {
+        known.names = [...new Set([...known.names, ...names])];
+      }
       return;
     }
     // Ownership first: a layer installed from npm owns its files under node_modules.
@@ -157,6 +168,7 @@ export class FileAnalysis {
       to: isPackage ? null : target.to,
       toLayer: toLayer?.name ?? null,
       external: toLayer === null ? (target.external ?? 'unknown') : null,
+      ...(names === undefined ? {} : { names }),
     });
   }
 

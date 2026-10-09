@@ -10,6 +10,7 @@ export function createRecommended(plugin: ESLint.Plugin, cwd?: string): Linter.C
     settings: { layerscope: { stamp: projectStamp(cwd) } },
     rules: {
       'layerscope/layer-boundary': 'error',
+      'layerscope/layer-internal': 'error',
       'layerscope/unresolved-reference': 'warn',
     },
   };

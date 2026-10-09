@@ -75,6 +75,6 @@ describe('edgeStatus', () => {
     ['allowed', makeEdge({ toLayer: 'shared' }), 'allowed'],
     ['not allowed', makeEdge({ toLayer: 'shop' }), 'not-allowed'],
   ])('classifies %s', (_name, edge, status) => {
-    expect(edgeStatus(edge, config)).toBe(status);
+    expect(edgeStatus(edge, config, [])).toBe(status);
   });
 });

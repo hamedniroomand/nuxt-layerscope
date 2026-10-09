@@ -6,7 +6,13 @@ Rules are configured in [`rules`](./config#rules) with `off`, `warn` or `error`.
 
 - Default: `error`
 
-A file depends on a layer its own layer does not [`allow`](./config#allow).
+A file depends on a layer its own layer does not [`allow`](./config#allow). When the entry in
+`allow` has an [`only` list](./config#allow), a use of any other symbol of that layer is a finding
+as well, and the message names the list:
+
+```text
+Auto-import "useCartStorage" crosses from layer "admin" into "web" (allowed: only useCart)
+```
 
 ```text
 layers/admin/app/components/AdminPanel.vue
@@ -58,6 +64,29 @@ It looks at every dependency that exists, not at `allow`, so it also catches cyc
 unrestricted layers. One cycle is reported per lowest layer in it, and fixing it can reveal
 another. The rule is opt-in because most existing projects have a cycle somewhere. Turn it on with
 `rules: { 'layer-cycle': 'error' }` and accept today's cycles in a [baseline](../guide/baseline).
+
+## `layer-internal`
+
+- Default: `error`
+
+A file uses a symbol that its layer does not list in [`expose`](./config#expose). The rule only
+looks at layers that set `expose`, so turning it on changes nothing for a layer that does not. Turn
+it on as `warn` first with `rules: { 'layer-internal': 'warn' }`, and accept today's uses in a
+[baseline](../guide/baseline).
+
+```text
+layers/admin/app/pages/orders.vue
+  4:9     error  Auto-import "useCartStorage" is internal to layer "web"  layer-internal
+                 useCartStorage → layers/web/app/composables/useCartStorage.ts
+                 exposed by "web": useCart, CartSummary
+                 suggestion: add "useCartStorage" to expose of "web" (clears 1 finding)
+```
+
+It checks every kind of dependency that `layer-boundary` checks: auto-imports, components,
+Nitro server utils, shared utils, explicit imports, and `#imports` and `#components`. A use that
+`allow` does not reach is a `layer-boundary` finding only, and a use inside the layer is never a
+finding. [`layerscope why`](./cli#layerscope-why) says whether the layer exposes a symbol, and
+[`layerscope unused`](./cli#layerscope-unused) marks unused symbols that it exposes.
 
 ## `unresolved-reference`
 

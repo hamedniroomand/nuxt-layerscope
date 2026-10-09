@@ -108,6 +108,32 @@ export default defineNuxtConfig({
 });
 ```
 
+## Public API of a layer
+
+By default every symbol of an allowed layer is public. To keep some of them internal, list the
+public ones in [`expose`](../reference/config#expose):
+
+```ts [layerscope.config.ts]
+export default defineConfig({
+  layers: {
+    shared: { allow: [] },
+    web: { allow: ['shared'], expose: ['useCart', 'CartSummary'] },
+    admin: { allow: ['shared', 'web'] },
+  },
+});
+```
+
+`admin` may use `useCart` and `<CartSummary>`. If it uses `useCartStorage` from `web`, that is a
+[`layer-internal`](../reference/rules#layer-internal) finding, and the suggestion says what to add
+to `expose`. Use [`expose`](../reference/config#expose) when the layer decides, and an
+[`only` list](../reference/config#allow) when the using layer records one known exception:
+
+```ts [layerscope.config.ts]
+admin: { allow: ['shared', { layer: 'web', only: ['useCart'] }] },
+```
+
+Both apply together. `only` never reaches a symbol that the layer does not expose.
+
 ## Layer priority
 
 When two layers provide the same component or auto-import, Nuxt uses the one from the

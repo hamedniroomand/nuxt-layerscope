@@ -9,8 +9,17 @@ export function findingDetails(finding: Finding, cwd: string): string[] {
     details.push(`${finding.symbol} → ${relative(cwd, finding.target)}`);
   }
   if (finding.allowed !== undefined) {
-    const allowed = finding.allowed.length > 0 ? finding.allowed.join(', ') : 'no other layers';
-    details.push(`allowed for "${finding.fromLayer}": ${allowed}`);
+    const scoped = (finding.scoped ?? []).map(
+      entry => `${entry.layer} (only ${entry.only.join(', ')})`,
+    );
+    const all = [...finding.allowed, ...scoped];
+    details.push(
+      `allowed for "${finding.fromLayer}": ${all.length > 0 ? all.join(', ') : 'no other layers'}`,
+    );
+  }
+  if (finding.exposed !== undefined) {
+    const exposed = finding.exposed.length > 0 ? finding.exposed.join(', ') : 'nothing';
+    details.push(`exposed by "${finding.toLayer}": ${exposed}`);
   }
   if (finding.suggestion !== undefined) {
     details.push(`suggestion: ${finding.suggestion.message}`);

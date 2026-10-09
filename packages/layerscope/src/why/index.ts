@@ -1,7 +1,9 @@
 import type { EdgeStatus } from '#src/rules/edge-status.ts';
 import { edgeStatus } from '#src/rules/edge-status.ts';
+import { componentName, edgeName } from '#src/rules/exposure.ts';
+import { exposureOf } from '#src/rules/layer-internal.ts';
+import type { Exposure } from '#src/rules/layer-internal.ts';
 import type { AnalyzeResult, Edge, LayerscopeConfig } from '#src/types.ts';
-import { pascalCase } from '#src/utils/strings.ts';
 
 export type UseStatus = EdgeStatus;
 
@@ -18,18 +20,8 @@ export interface SymbolTarget {
   layer: string | null;
   external: string | null;
   uses: SymbolUse[];
-}
-
-/** `LazyBaseButton` and `base-button` both name `BaseButton`. */
-function componentName(name: string): string {
-  const pascal = pascalCase(name);
-  return /^Lazy[A-Z]/u.test(pascal) ? pascal.slice('Lazy'.length) : pascal;
-}
-
-/** The name an edge is known by: `#imports:useCart` is `useCart`. */
-function edgeName(edge: Edge): string {
-  const match = /^#(?:imports|components):(.+)$/u.exec(edge.symbol);
-  return match === null ? edge.symbol : match[1];
+  /** What the layer that holds the symbol says: nothing set, public, or internal. */
+  exposure: Exposure;
 }
 
 function matches(edge: Edge, query: string): boolean {
@@ -61,10 +53,11 @@ export function findUses(
         layer: edge.toLayer,
         external: edge.external,
         uses: [],
+        exposure: exposureOf(edge, config, result.layers),
       };
       targets.set(key, target);
     }
-    target.uses.push({ edge, status: edgeStatus(edge, config) });
+    target.uses.push({ edge, status: edgeStatus(edge, config, result.layers) });
   }
   return [...targets.values()];
 }

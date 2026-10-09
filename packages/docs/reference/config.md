@@ -56,7 +56,7 @@ registry. Setting `layers`, `rules`, `ignore` or `globals` both there and in
 
 ## `layers`
 
-- Type: `Record<string, { allow?: string[]; path?: string; source?: string }>`
+- Type: `Record<string, { allow?: (string | { layer: string; only: string[] })[]; expose?: string[]; path?: string; source?: string }>`
 
 Keys are [layer names](../guide/layers#layer-names). Every key and every name in an `allow` list
 must be a layer of the project, otherwise layerscope exits with `2` and lists the known names.
@@ -72,6 +72,52 @@ The layers this layer may depend on.
 
 `allow` is not transitive: if `shop` allows `auth` and `auth` allows `shared`, `shop` may still not
 use `shared` unless it lists it.
+
+An entry can also be an object that allows only part of a layer:
+
+```ts [layerscope.config.ts]
+layers: {
+  admin: { allow: ['shared', { layer: 'web', only: ['useCart', 'CartSummary'] }] },
+}
+```
+
+Here `admin` may use `useCart` and `<CartSummary>` from `web`. Any other use of `web` from `admin`
+is a [`layer-boundary`](./rules#layer-boundary) finding that names the entry. `only` takes
+[names and globs](#names-and-globs). A scoped entry is a real dependency, so
+[`layer-cycle`](./rules#layer-cycle) and the graph count it. Each layer can have one entry in the
+list when that entry has `only`; the same layer twice as plain names is fine.
+
+### `expose`
+
+The public API of this layer. Layers that may use it can use only what `expose` lists:
+
+```ts [layerscope.config.ts]
+layers: {
+  web: { allow: ['shared'], expose: ['useCart', 'CartSummary'] },
+  admin: { allow: ['shared', 'web'] },
+}
+```
+
+Here `admin` may use `useCart` and `<CartSummary>`. A use of `useCartStorage` from `web` is a
+[`layer-internal`](./rules#layer-internal) finding. Without `expose`, all of a layer is public, as
+before, and uses inside the layer are never findings. `expose: []` makes nothing public.
+
+`expose` and `allow` both apply: a use must be reachable through `allow` of the using layer
+(`only` narrows it) and public through `expose` of the used layer. An `only` entry cannot reach a
+symbol that the layer keeps internal: the layer that owns the code decides what is public.
+
+### Names and globs
+
+Entries of `expose` and `only` are names or globs.
+
+- A **name** is an identifier. It matches an auto-import or a Nitro server util by name, and a
+  component by its PascalCase name, without a `Lazy` prefix: `CartSummary` also covers
+  `<LazyCartSummary>` and `<cart-summary>`. For an explicit import it matches each name that the
+  statement imports (`import { useCart } from '...'`). For a default or a namespace import it
+  matches the file name without its extension, as Nuxt names a composable.
+- A **glob** is anything else, such as `app/composables/cart/**`. It matches the path of the file
+  in the layer, relative to the layer root, with forward slashes. `*` and `?` stay inside one
+  folder, `**` crosses folders, and every other character is literal.
 
 ### `path`
 
@@ -95,7 +141,7 @@ the ref, so `github:acme/console#v2` names the same layer. A layer sets either `
 - Type: `'layered' | 'stacked'`
 
 Fills `allow` for every layer that does not set it. `root` is left unrestricted, and a layer's own
-`allow` always wins over the preset.
+`allow` always wins over the preset. A preset does not touch `expose`, so the two work together.
 
 | Preset    | Shape                                                                                     | Fits                                         |
 | --------- | ----------------------------------------------------------------------------------------- | -------------------------------------------- |
@@ -119,6 +165,7 @@ export default defineConfig({
 | ------------------------------------------------------ | ------- |
 | [`layer-boundary`](./rules#layer-boundary)             | `error` |
 | [`layer-cycle`](./rules#layer-cycle)                   | `off`   |
+| [`layer-internal`](./rules#layer-internal)             | `error` |
 | [`unresolved-reference`](./rules#unresolved-reference) | `warn`  |
 | [`shadowed-component`](./rules#shadowed-component)     | `warn`  |
 

@@ -12,6 +12,7 @@ const targets: SymbolTarget[] = [
     file: '/app/layers/shop/composables/useCart.ts',
     layer: 'shop',
     external: null,
+    exposure: 'all',
     uses: [
       { edge: makeEdge(), status: 'not-allowed' },
       { edge: makeEdge({ file: '/app/pages/cart.vue', line: 12 }), status: 'allowed' },
@@ -22,6 +23,7 @@ const targets: SymbolTarget[] = [
     file: null,
     layer: null,
     external: 'vue',
+    exposure: 'all',
     uses: [{ edge: makeEdge({ toLayer: null, to: null, external: 'vue' }), status: 'external' }],
   },
 ];
