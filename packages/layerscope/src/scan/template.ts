@@ -4,6 +4,7 @@ import { parseAndWalk, walk } from 'oxc-walker';
 
 import { escapeRegExp } from '#src/utils/strings.ts';
 
+import type { ElementProps } from './element-props.ts';
 import type { Bindings, RenderContext } from './render-visitors.ts';
 import { visitRenderCall, visitRenderMember } from './render-visitors.ts';
 import type { TemplateIndex, VueAstNode } from './template-index.ts';
@@ -31,6 +32,7 @@ export function scanTemplate(
   source: string,
   bindings: Bindings,
   scan: FileScan,
+  elementProps: () => ElementProps,
 ): void {
   const { template } = descriptor;
   if (!template?.ast || (template.lang !== undefined && template.lang !== 'html')) {
@@ -55,6 +57,7 @@ export function scanTemplate(
   const ctx: RenderContext = {
     scan,
     bindings,
+    elementProps,
     elementOffset: predicate => index.elements.find(predicate)?.offset ?? templateStart,
     identOffset: name => firstIdentOffset(name, source, index) ?? templateStart,
   };
