@@ -21,6 +21,8 @@ export interface RuleInput {
   rootDir: string;
   /** Off for a run on some files: suggestions need the edges of every file. */
   suggest?: boolean;
+  /** Layers whose `allow` a preset filled. */
+  presetLayers?: string[];
 }
 
 /** Every rule's findings in report order, and notes on rules that could not run. */
@@ -43,6 +45,13 @@ export async function runRules(
   const findings =
     input.suggest === false
       ? found
-      : await addSuggestions(found, input.edges, input.layers, config, input.rootDir);
+      : await addSuggestions(
+          found,
+          input.edges,
+          input.layers,
+          config,
+          input.rootDir,
+          input.presetLayers,
+        );
   return { findings, notes };
 }

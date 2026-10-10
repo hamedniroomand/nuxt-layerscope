@@ -23,6 +23,8 @@ export interface Context {
   boundaryBy: Map<string, Finding[]>;
   /** Internal findings by `to\0symbol`. */
   internalBy: Map<string, Finding[]>;
+  /** Layers whose `allow` the preset gave, because the config gave them none. */
+  presetLayers: Set<string>;
 }
 
 function group<T>(items: T[], keyOf: (item: T) => string | null): Map<string, T[]> {
@@ -71,6 +73,7 @@ export function createContext(
   layers: Layer[],
   config: LayerscopeConfig,
   rootDir: string,
+  presetLayers: string[] = [],
 ): Context {
   const seen = new Map<string, Set<string>>();
   for (const { fromLayer, toLayer } of edges) {
@@ -82,6 +85,7 @@ export function createContext(
     rootDir,
     config,
     layers,
+    presetLayers: new Set(presetLayers),
     seen,
     usesOf: group(edges, edge => edge.to),
     edgesFrom: group(edges, edge => edge.file),

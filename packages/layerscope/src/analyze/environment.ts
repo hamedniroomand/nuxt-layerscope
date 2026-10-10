@@ -1,4 +1,9 @@
-import { applyPreset, effectiveConfig, labelConfigError } from '#src/config/effective.ts';
+import {
+  applyPreset,
+  effectiveConfig,
+  labelConfigError,
+  layersFilledByPreset,
+} from '#src/config/effective.ts';
 import type { ProjectConfig } from '#src/config/effective.ts';
 import { readRegistry } from '#src/registry/read.ts';
 import type { Registry } from '#src/registry/schema.ts';
@@ -21,6 +26,8 @@ export interface EnvironmentOptions {
 export interface Environment {
   /** From `layerscope.config.*` or the `layerscope` key of `nuxt.config`. */
   config: LayerscopeConfig;
+  /** Layers whose `allow` the preset filled. */
+  presetLayers: string[];
   source: ResolutionSource;
   sourceFile: string;
   /** `null` with the `.d.ts` fallback, which only lists the winning components. */
@@ -64,11 +71,13 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
     },
   );
   const config = presetApplied(effective, layers, recorded);
+  const presetLayers = layersFilledByPreset(effective, config);
   const stale = registry === null ? null : staleConfigNote(rootDir, symbols.sourceFile);
   await (registry === null ? assertFresh(table, layers) : assertRegistryFresh(table, registry));
   return {
     ...symbols,
     config,
+    presetLayers,
     notes: [...symbols.notes, ...notes, ...(stale === null ? [] : [stale])],
     registry,
     layers,

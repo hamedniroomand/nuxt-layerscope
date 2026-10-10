@@ -1,12 +1,14 @@
 import { relative } from 'pathe';
 
 import { isScoped, mentionsLayer } from '#src/config/allow.ts';
+import { describePreset, resolvePreset } from '#src/config/presets.ts';
 import type {
   AnalyzeResult,
   Edge,
   Finding,
   Layer,
   LayerscopeConfig,
+  PresetName,
   Suggestion,
 } from '#src/types.ts';
 import { plural } from '#src/utils/strings.ts';
@@ -33,9 +35,48 @@ function needsRootHint(config: LayerscopeConfig, from: string, to: string): bool
   return to === 'root' && !mentionsLayer(config.layers?.[from]?.allow ?? [], 'root');
 }
 
-/** The first sentence of a root hint. It says what `root` is, then the fix. */
-function rootLayerSentence(from: string): string {
-  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code,`;
+interface PresetBase {
+  name: PresetName;
+  base: string[];
+}
+
+/**
+ * The fix for a layer whose `allow` the preset gave. `root` goes into the base, which needs a
+ * `features` shape when `layered` already has its one base layer. `stacked` takes no base, so
+ * its layer gets an `allow` list instead, with the list the preset gave and `root` added.
+ */
+function presetFixText(
+  from: string,
+  preset: PresetBase,
+  config: LayerscopeConfig,
+  layers: Layer[],
+): string {
+  if (preset.name === 'stacked') {
+    const names = layers.map(layer => layer.name).filter(name => name !== 'root');
+    const given = resolvePreset('stacked', names).allow[names.indexOf(from)] ?? [];
+    const list = [...given, 'root'].map(layer => `'${layer}'`).join(', ');
+    return `set allow for "${from}" to [${list}], which replaces its preset list`;
+  }
+  // `layered` holds exactly one base layer, so a second one needs `features`.
+  const shape = preset.name === 'layered' && preset.base.length > 0 ? 'features' : preset.name;
+  const base = ['root', ...preset.base].map(layer => `'${layer}'`).join(', ');
+  return `add 'root' to the preset base: preset: { name: '${shape}', base: [${base}] }`;
+}
+
+/** The allow hint for a layer whose `allow` the user wrote. `root` goes into that list. */
+function rootAllowText(from: string, fixes: number): string {
+  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code, add 'root' to its allow list (adds 1 edge, clears ${plural(fixes, 'finding')})`;
+}
+
+/** The hint for a layer whose `allow` the preset gave: `root` goes into the preset base. */
+function rootPresetText(
+  from: string,
+  fixes: number,
+  preset: PresetBase,
+  config: LayerscopeConfig,
+  layers: Layer[],
+): string {
+  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code, ${presetFixText(from, preset, config, layers)} (clears ${plural(fixes, 'finding')})`;
 }
 
 function allowSuggestion(context: Context, from: string, to: string): Suggestion {
@@ -44,6 +85,19 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
   const edges = pair.map(finding => edgeOfFinding(context, finding));
   const names = edges.every(edge => edge !== undefined) ? onlyNames(edges) : null;
   const hint = needsRootHint(context.config, from, to);
+  // A preset base has no scoped entry, so the preset hint names the whole base, never `only`.
+  if (hint && context.presetLayers.has(from)) {
+    const preset = describePreset(context.config, context.layers);
+    if (preset !== null) {
+      return {
+        action: 'allow',
+        message: rootPresetText(from, fixes, preset, context.config, context.layers),
+        // A stacked layer gets one list, which is one edge. A base change adds root to every layer
+        // that the preset filled; the layers that keep their own `allow` do not change.
+        impact: { fixes, edges: preset.name === 'stacked' ? 1 : context.presetLayers.size },
+      };
+    }
+  }
   if (names !== null) {
     const known = (context.config.layers?.[from]?.allow ?? []).find(
       entry => isScoped(entry) && entry.layer === to,
@@ -62,7 +116,7 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
   return {
     action: 'allow',
     message: hint
-      ? `${rootLayerSentence(from)} add 'root' to its allow list (adds 1 edge, clears ${plural(fixes, 'finding')})`
+      ? rootAllowText(from, fixes)
       : `allow "${from}" to use "${to}" (adds 1 edge, clears ${plural(fixes, 'finding')})`,
     impact: { fixes, edges: 1 },
   };
@@ -71,9 +125,15 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
 /**
  * One note per layer whose `allow` suggestions name `root` and that does not list `root`. The
  * note gives the hint once, where the per-finding suggestion repeats it. A cycle gets `leave`,
- * so its findings add no count. The counts are the findings given.
+ * so its findings add no count. A preset layer gets the preset wording. The counts are the
+ * findings given.
  */
-export function rootAllowNotes(findings: Finding[], config: LayerscopeConfig): string[] {
+export function rootAllowNotes(
+  findings: Finding[],
+  config: LayerscopeConfig,
+  layers: Layer[] = [],
+  presetLayers: string[] = [],
+): string[] {
   const counts = new Map<string, number>();
   for (const finding of findings) {
     if (
@@ -85,10 +145,15 @@ export function rootAllowNotes(findings: Finding[], config: LayerscopeConfig): s
       counts.set(finding.fromLayer, (counts.get(finding.fromLayer) ?? 0) + 1);
     }
   }
-  return [...counts].map(
-    ([from, fixes]) =>
-      `"root" is a layer too, and it is not in the allow list of "${from}". To let "${from}" use the project's own app/ and shared/ code, add 'root' to its allow list (clears ${plural(fixes, 'finding')}).`,
-  );
+  const preset = describePreset(config, layers);
+  return [...counts].map(([from, fixes]) => {
+    const lead = `"root" is a layer too, and it is not in the allow list of "${from}".`;
+    const fix = `To let "${from}" use the project's own app/ and shared/ code,`;
+    const count = `(clears ${plural(fixes, 'finding')}).`;
+    return presetLayers.includes(from) && preset !== null
+      ? `${lead} ${fix} ${presetFixText(from, preset, config, layers)} ${count}`
+      : `${lead} ${fix} add 'root' to its allow list ${count}`;
+  });
 }
 
 function exposeSuggestion(context: Context, finding: Finding): Suggestion {
@@ -147,8 +212,9 @@ export async function addSuggestions(
   layers: Layer[],
   config: LayerscopeConfig,
   rootDir: string,
+  presetLayers: string[] = [],
 ): Promise<Finding[]> {
-  const context = createContext(findings, edges, layers, config, rootDir);
+  const context = createContext(findings, edges, layers, config, rootDir, presetLayers);
   // A suggestion reads only the layer pair and the target file, so findings that share them
   // get the same one. Each finding gets its own copy, so no two findings share an object.
   const memo = new Map<string, Suggestion>();
@@ -183,6 +249,11 @@ export async function addSuggestions(
  * it, so a command that shows no findings does not show a root note.
  */
 export function withRootNotes(result: AnalyzeResult): AnalyzeResult {
-  const notes = rootAllowNotes(result.findings, result.config);
+  const notes = rootAllowNotes(
+    result.findings,
+    result.config,
+    result.layers,
+    result.presetLayers ?? [],
+  );
   return notes.length === 0 ? result : { ...result, notes: [...result.notes, ...notes] };
 }

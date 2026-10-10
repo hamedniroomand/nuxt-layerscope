@@ -137,8 +137,9 @@ Both apply together. `only` never reaches a symbol that the layer does not expos
 ## Root and `shared/`
 
 The project itself is the layer `root`. Its `app/` folder and its `shared/` folder belong to
-`root`. A feature layer in `layers/*` can use that code only when its `allow` list names `root`.
-See [`allow`](../reference/config#root-and-shared) for the rules and an example.
+`root`. A feature layer in `layers/*` can use that code only when its `allow` list names `root`, or
+when the base of its preset does. See [`allow`](../reference/config#root-and-shared) for the rules
+and an example.
 
 ## Layer priority
 

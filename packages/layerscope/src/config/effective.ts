@@ -63,4 +63,4 @@ export function labelConfigError(error: unknown, recorded?: ProjectConfig): unkn
   return error;
 }
 
-export { applyPreset } from './presets.ts';
+export { applyPreset, layersFilledByPreset } from './presets.ts';

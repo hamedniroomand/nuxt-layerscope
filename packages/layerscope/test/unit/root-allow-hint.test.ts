@@ -75,3 +75,40 @@ describe('root allow suggestion', () => {
     expect(message).toBe('allow "website" to use "root" (adds 1 edge, clears 1 finding)');
   });
 });
+
+describe('root hint impact under a preset', () => {
+  const layers = ['a', 'b', 'c', 'core'].map(name => makeLayer(name, `/app/layers/${name}`));
+  layers.push(makeLayer('root', '/app'));
+
+  async function impactOf(
+    config: LayerscopeConfig,
+    presetLayers: string[],
+  ): Promise<Finding['suggestion']> {
+    const [finding] = await addSuggestions(
+      [rootFinding('a')],
+      [],
+      layers,
+      config,
+      '/app',
+      presetLayers,
+    );
+    return finding.suggestion;
+  }
+
+  it('counts the layers that a base change gives root, not every layer', async () => {
+    // b and c keep their own allow, so only a and core, filled by the preset, get root.
+    const config: LayerscopeConfig = {
+      preset: 'features',
+      layers: { b: { allow: [] }, c: { allow: ['a'] } },
+    };
+    const suggestion = await impactOf(config, ['a', 'core']);
+    expect(suggestion?.impact.edges).toBe(2);
+    expect(suggestion?.message).toContain("add 'root' to the preset base");
+  });
+
+  it('counts a stacked allow list as one edge', async () => {
+    const suggestion = await impactOf({ preset: 'stacked' }, ['a']);
+    expect(suggestion?.impact.edges).toBe(1);
+    expect(suggestion?.message).toContain('replaces its preset list');
+  });
+});
