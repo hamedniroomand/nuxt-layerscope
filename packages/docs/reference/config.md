@@ -109,7 +109,7 @@ note gives the full text once for each layer, and each finding has a short messa
 the full text on each finding.
 
 Under a preset with `root` in its base, root code that uses a feature layer is reported. The fix is
-to move that code to root, or to remove the use.
+to move the feature code that root uses into root, or to remove the use.
 
 The usual shape has shared code in root and features in `layers/*`. Each feature may use root, and
 no feature may use another feature, and root may not use a feature. Put `root` in the base of the
