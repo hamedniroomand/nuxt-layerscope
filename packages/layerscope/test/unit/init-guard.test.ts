@@ -37,7 +37,29 @@ describe('assertNoNuxtConfigLayers', () => {
   it('refuses layers in the nuxt.config key when there is no config file', () => {
     expect(() => {
       assertNoNuxtConfigLayers(withLayers, false);
-    }).toThrow('already set in the "layerscope" key of nuxt.config');
+    }).toThrow('"layers" is set in the "layerscope" key of nuxt.config');
+  });
+
+  it('names only the keys that are set, and says to run init --prepare', () => {
+    const onlyPreset = { config: { preset: 'layered' } } as unknown as AnalyzeResult;
+    let message = '';
+    try {
+      assertNoNuxtConfigLayers(onlyPreset, false);
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).toContain('"preset" is set');
+    expect(message).not.toContain('"layers"');
+    expect(message).toContain('then run init --prepare');
+  });
+
+  it('uses the plural for several keys', () => {
+    const both = {
+      config: { layers: {}, rules: {} },
+    } as unknown as AnalyzeResult;
+    expect(() => {
+      assertNoNuxtConfigLayers(both, false);
+    }).toThrow('"layers", "rules" are set');
   });
 
   it('accepts them when there is a config file', () => {

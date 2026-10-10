@@ -48,6 +48,10 @@ Also takes `--prepare`, `--source` and `--verbose`. Without `--force`, `init` ex
 config already exists, or a baseline with `--baseline`. It does not merge: use `--dry-run` and copy
 the edges you want.
 
+`init` also exits `2` when the `layerscope` key of `nuxt.config` sets options, and it names the keys.
+It reads the data that Nuxt recorded in `.nuxt`, so after you remove the key, run
+`layerscope init --prepare` to read the project again.
+
 ## `layerscope check`
 
 ```bash
