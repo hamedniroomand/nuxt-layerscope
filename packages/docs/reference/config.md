@@ -98,15 +98,17 @@ any other layer.
 - A layer with no `allow` key may use every layer, root too.
 - `allow: []` blocks `root` too. To let the layer use the project's code, list `'root'`.
 - Files in the `shared/` folder of root belong to `root`. Nothing else owns them.
-- A preset does not restrict `root`, but a `root` entry with `allow` still applies. Put `root` in the
-  preset base to let the layers use it, as shown below. A user `allow` replaces the list that a
-  preset gives, so if you write `allow` for a layer, list the base layers too, for example
-  `allow: ['core', 'root']`.
+- A preset does not restrict `root`, unless `root` is in the preset base. Then `root` is the lowest
+  base layer, so it may use no other layer. A `root` entry with `allow` replaces that, as for any
+  other layer. Put `root` in the preset base to let the layers use it, as shown below. A user `allow`
+  replaces the list that a preset gives, so if you write `allow` for a layer, list the base layers
+  too, for example `allow: ['core', 'root']`.
 
 The hint and the note show in a full check, not in a check of changed files.
 
 The usual shape has shared code in root and features in `layers/*`. Each feature may use root, and
-no feature may use another feature. Put `root` in the base of the preset:
+no feature may use another feature, and root may not use a feature. Put `root` in the base of the
+preset:
 
 ```ts [layerscope.config.ts]
 export default defineConfig({
@@ -130,13 +132,6 @@ its base. `layered` holds one base layer, so with a base the hint suggests `feat
 that layer as its base, which keeps what `layered` allowed and adds `root`. `stacked` takes no base, so
 its hint gives the layer an `allow` list: the list the preset gave, with `root` added. That list replaces
 the preset list for the layer.
-
-With this shape, set `layer-cycle` to `error`. It is the only rule that finds root code that uses a
-feature layer:
-
-```ts [layerscope.config.ts]
-rules: { 'layer-cycle': 'error' },
-```
 
 ### `expose`
 
@@ -191,7 +186,8 @@ the ref, so `github:acme/console#v2` names the same layer. A layer sets either `
 
 - Type: `'layered' | 'stacked' | 'features' | { name, base? }`
 
-Fills `allow` for every layer that does not set it. `root` is left unrestricted, and a layer's own
+Fills `allow` for every layer that does not set it. `root` is left unrestricted, unless it is in the
+base of the preset (see [Root and `shared/`](#root-and-shared)), and a layer's own
 `allow` always wins over the preset. A preset does not touch `expose` or `rules`, so they work
 together. To turn on a rule, set it in [`rules`](#rules).
 

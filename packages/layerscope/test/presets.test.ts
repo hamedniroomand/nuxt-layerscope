@@ -1,13 +1,40 @@
 import { describe, expect, it } from 'vite-plus/test';
 
-import { resolvePreset } from '#src/config/presets.ts';
+import { applyPreset, resolvePreset } from '#src/config/presets.ts';
 import { validateConfig } from '#src/config/validate.ts';
 import { fittingPreset } from '#src/init/preset.ts';
 import type { AllowedEdge } from '#src/init/types.ts';
 import type { LayerscopeConfig, PresetOptions } from '#src/types.ts';
+import { makeLayer } from '#test/factories.ts';
 
 const allowOf = (preset: Parameters<typeof resolvePreset>[0], names: string[]): string[][] =>
   resolvePreset(preset, names).allow;
+
+describe('applyPreset with root in the base', () => {
+  const layers = ['root', 'a', 'b'].map(name => makeLayer(name, `/app/${name}`));
+  const rootAllow = (config: LayerscopeConfig): unknown => {
+    const applied = applyPreset(config, layers).layers ?? {};
+    return Object.hasOwn(applied, 'root') ? applied.root.allow : undefined;
+  };
+
+  it('lets root use no other layer, as the lowest base layer', () => {
+    expect(rootAllow({ preset: { name: 'features', base: ['root'] } })).toEqual([]);
+    expect(rootAllow({ preset: { name: 'layered', base: ['root'] } })).toEqual([]);
+  });
+
+  it('lets a root entry in the config win', () => {
+    const config: LayerscopeConfig = {
+      preset: { name: 'features', base: ['root'] },
+      layers: { root: { allow: ['a'] } },
+    };
+    expect(rootAllow(config)).toEqual(['a']);
+  });
+
+  it('leaves root without an entry when root is not in the base', () => {
+    expect(rootAllow({ preset: 'features' })).toBeUndefined();
+    expect(rootAllow({ preset: 'stacked' })).toBeUndefined();
+  });
+});
 
 describe('root as a base layer', () => {
   it('lets every other layer use root, and gives root no entry', () => {
@@ -143,7 +170,12 @@ describe('the preset that init suggests', () => {
       name: 'layered',
       base: ['shared'],
     });
-    expect(fittingPreset([edge('shop', 'root')], ['root', 'shop', 'shared'])).toBeNull();
+    // A layer that uses root now fits a preset with root as its base.
+    expect(fittingPreset([edge('shop', 'root')], ['root', 'shop', 'shared'])).toEqual({
+      name: 'features',
+      base: ['root'],
+      object: true,
+    });
   });
 
   it('suggests nothing when the only dependencies are those of root', () => {

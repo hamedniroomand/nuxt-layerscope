@@ -1,5 +1,5 @@
 import { LayerConfigError } from '#src/layer-config-error.ts';
-import type { Layer, LayerscopeConfig, PresetName, PresetOptions } from '#src/types.ts';
+import type { Layer, LayerRule, LayerscopeConfig, PresetName, PresetOptions } from '#src/types.ts';
 
 export const PRESETS: readonly PresetName[] = ['layered', 'stacked', 'features'];
 
@@ -84,17 +84,25 @@ export function resolvePreset(preset: PresetName | PresetOptions, names: string[
   return { name, base, allow: onBase(names, base) };
 }
 
-/** `root` composes the other layers, so it stays unrestricted unless the config says otherwise. */
+/**
+ * `root` composes the other layers, so it stays unrestricted unless the config says otherwise. The
+ * exception is a preset that has `root` in its base. There `root` is the lowest base layer, so it
+ * may use no other layer, as the lowest base layer of any preset. A `root` entry in the config
+ * still wins, as for every other layer.
+ */
 export function applyPreset(config: LayerscopeConfig, layers: Layer[]): LayerscopeConfig {
   if (config.preset === undefined) {
     return config;
   }
   const names = layers.map(layer => layer.name).filter(name => name !== 'root');
-  const { allow } = resolvePreset(config.preset, names);
+  const { base, allow } = resolvePreset(config.preset, names);
   const filled = Object.fromEntries(
     names.map((name, index) => [name, { allow: allow[index], ...config.layers?.[name] }]),
   );
-  return { ...config, layers: { ...config.layers, ...filled } };
+  const root: Record<string, LayerRule> = base.includes('root')
+    ? { root: { allow: [], ...config.layers?.root } }
+    : {};
+  return { ...config, layers: { ...config.layers, ...filled, ...root } };
 }
 
 /** The preset of a config as it was resolved, or `null` without one. Shown in `layers` and `init`. */

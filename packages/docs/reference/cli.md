@@ -31,6 +31,12 @@ passes. It prints the layers, every allowed edge and a readiness report: how man
 not be resolved and where they cluster. Project code is never changed. See
 [Getting started](../guide/getting-started#generate-a-starting-config).
 
+When a [preset](./config#preset) allows every dependency that exists, `init` also names it. It can
+suggest a preset with `root` as its base, for example `preset: { name: 'features', base: ['root'] }`,
+for the usual shape: shared code in root, and feature layers that use only root. Root is restricted
+under such a preset, so it fits only when root uses no other layer. When a plain preset
+fits, `init` suggests it, because it is stricter.
+
 | Option            | Default                | Description                                                  |
 | ----------------- | ---------------------- | ------------------------------------------------------------ |
 | `--config <file>` | `layerscope.config.ts` | Where to write the config, relative to the current directory |
