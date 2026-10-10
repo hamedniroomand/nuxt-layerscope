@@ -121,8 +121,11 @@ layers: {
 
 When a layer's `allow` does not name `root`, for example `allow: []` or `allow: ['shared']`, and
 that layer uses root, `check` reports the `layer-boundary` findings with a hint that names `root`.
-When the preset gave the layer its `allow`, the hint names the preset base instead. The hint is
-shown once for each layer. It is not shown when the change would make a cycle.
+When the preset gave the layer its `allow`, the hint changes the preset instead. `features` adds `root` to
+its base. `layered` holds one base layer, so with a base the hint suggests `features` with `root` and
+that layer as its base, which keeps what `layered` allowed and adds `root`. `stacked` takes no base, so
+its hint gives the layer an `allow` list: the list the preset gave, with `root` added. That list replaces
+the preset list for the layer.
 
 With this shape, set `layer-cycle` to `error`. It is the only rule that finds root code that uses a
 feature layer:

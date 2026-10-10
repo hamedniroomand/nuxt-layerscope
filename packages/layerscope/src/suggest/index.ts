@@ -1,7 +1,7 @@
 import { relative } from 'pathe';
 
 import { isScoped, mentionsLayer } from '#src/config/allow.ts';
-import { describePreset } from '#src/config/presets.ts';
+import { describePreset, resolvePreset } from '#src/config/presets.ts';
 import type {
   AnalyzeResult,
   Edge,
@@ -40,10 +40,27 @@ interface PresetBase {
   base: string[];
 }
 
-/** The preset line that adds `root` to the base. `layered` has one base layer, so `root` replaces it. */
-function presetBaseText(preset: PresetBase): string {
-  const base = preset.name === 'layered' ? ['root'] : ['root', ...preset.base];
-  return `preset: { name: '${preset.name}', base: [${base.map(layer => `'${layer}'`).join(', ')}] }`;
+/**
+ * The fix for a layer whose `allow` the preset gave. `root` goes into the base, which needs a
+ * `features` shape when `layered` already has its one base layer. `stacked` takes no base, so
+ * its layer gets an `allow` list instead, with the list the preset gave and `root` added.
+ */
+function presetFixText(
+  from: string,
+  preset: PresetBase,
+  config: LayerscopeConfig,
+  layers: Layer[],
+): string {
+  if (preset.name === 'stacked') {
+    const names = layers.map(layer => layer.name).filter(name => name !== 'root');
+    const given = resolvePreset('stacked', names).allow[names.indexOf(from)] ?? [];
+    const list = [...given, 'root'].map(layer => `'${layer}'`).join(', ');
+    return `set allow for "${from}" to [${list}], which replaces its preset list`;
+  }
+  // `layered` holds exactly one base layer, so a second one needs `features`.
+  const shape = preset.name === 'layered' && preset.base.length > 0 ? 'features' : preset.name;
+  const base = ['root', ...preset.base].map(layer => `'${layer}'`).join(', ');
+  return `add 'root' to the preset base: preset: { name: '${shape}', base: [${base}] }`;
 }
 
 /** The allow hint for a layer whose `allow` the user wrote. `root` goes into that list. */
@@ -52,8 +69,14 @@ function rootAllowText(from: string, fixes: number): string {
 }
 
 /** The hint for a layer whose `allow` the preset gave: `root` goes into the preset base. */
-function rootPresetText(from: string, fixes: number, preset: PresetBase): string {
-  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code, add 'root' to the preset base: ${presetBaseText(preset)} (clears ${plural(fixes, 'finding')})`;
+function rootPresetText(
+  from: string,
+  fixes: number,
+  preset: PresetBase,
+  config: LayerscopeConfig,
+  layers: Layer[],
+): string {
+  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code, ${presetFixText(from, preset, config, layers)} (clears ${plural(fixes, 'finding')})`;
 }
 
 function allowSuggestion(context: Context, from: string, to: string): Suggestion {
@@ -68,8 +91,10 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
     if (preset !== null) {
       return {
         action: 'allow',
-        message: rootPresetText(from, fixes, preset),
-        impact: { fixes, edges: context.layers.filter(layer => layer.name !== 'root').length },
+        message: rootPresetText(from, fixes, preset, context.config, context.layers),
+        // A stacked layer gets one list, which is one edge. A base change adds root to every layer
+        // that the preset filled; the layers that keep their own `allow` do not change.
+        impact: { fixes, edges: preset.name === 'stacked' ? 1 : context.presetLayers.size },
       };
     }
   }
@@ -126,7 +151,7 @@ export function rootAllowNotes(
     const fix = `To let "${from}" use the project's own app/ and shared/ code,`;
     const count = `(clears ${plural(fixes, 'finding')}).`;
     return presetLayers.includes(from) && preset !== null
-      ? `${lead} ${fix} add 'root' to the preset base: ${presetBaseText(preset)} ${count}`
+      ? `${lead} ${fix} ${presetFixText(from, preset, config, layers)} ${count}`
       : `${lead} ${fix} add 'root' to its allow list ${count}`;
   });
 }

@@ -18,6 +18,8 @@ function page(...lines: string[]): string {
 interface Shape {
   /** A `core` layer, the base of the `features` preset when it is set. */
   core?: boolean;
+  /** A `shared` layer, the one base layer of `layered`. */
+  shared?: boolean;
   /** Root uses `website`, which makes a cycle with `website` using root. */
   rootUsesWebsite?: boolean;
   /** `website` also uses `admin`, to check that a real boundary still fails. */
@@ -53,6 +55,7 @@ function project(extra: string, shape: Shape = {}): string {
     `website: { path: 'layers/website'${shape.allowWebsite === undefined ? '' : `, ${shape.allowWebsite}`} }`,
     "admin: { path: 'layers/admin' }",
     ...(shape.core === true ? ["core: { path: 'layers/core' }"] : []),
+    ...(shape.shared === true ? ["shared: { path: 'layers/shared' }"] : []),
   ];
   write(
     root,
@@ -113,6 +116,21 @@ describe('a preset whose base is root', () => {
     );
     expect(code).toBe(EXIT_VIOLATIONS);
     expect(out).toContain('layer-cycle');
+  });
+});
+
+describe('the root hint under the layered and stacked presets', () => {
+  it('moves shared into a features base with root, so the layer keeps shared', async () => {
+    const { out } = await check(project("preset: 'layered'", { shared: true }));
+    expect(out).toContain("preset: { name: 'features', base: ['root', 'shared'] }");
+    expect(out).not.toContain("base: ['root']");
+  });
+
+  it('gives a stacked layer its full allow list with root, not a stacked base', async () => {
+    const { out } = await check(project("preset: 'stacked'"));
+    expect(out).toContain('replaces its preset list');
+    expect(out).toMatch(/set allow for "(website|admin)" to \[[^\]]*'root'\]/u);
+    expect(out).not.toContain("name: 'stacked'");
   });
 });
 
