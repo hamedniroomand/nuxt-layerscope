@@ -100,6 +100,7 @@ describe('root hint in a check', () => {
   it('shortens the message of each finding that a note covers', async () => {
     const { out } = await cli('check', project('[]'));
     expect(count(out, 'root is a layer, see the note')).toBe(2);
+    expect(out).not.toContain('see the note (clears');
     expect(count(out, 'To let "website" use the project\'s own app/')).toBe(1);
   });
 

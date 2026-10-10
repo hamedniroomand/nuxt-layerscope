@@ -83,7 +83,7 @@ export function rootIsBase(context: Context): boolean {
 export function rootBaseSuggestion(finding: Finding): Suggestion {
   return {
     action: 'leave',
-    message: `move "${finding.symbol}" to root, or remove this use: root is the base layer and may not use feature layers`,
+    message: `move "${finding.symbol}" to root, or remove this use: root is the base layer and may not use other layers`,
     impact: { fixes: 0 },
   };
 }
@@ -152,7 +152,7 @@ export function withRootNotes(result: AnalyzeResult): AnalyzeResult {
           ...finding,
           suggestion: {
             ...finding.suggestion,
-            message: `"${finding.fromLayer}" may not use "root": root is a layer, see the note (clears ${plural(finding.suggestion.impact.fixes, 'finding')})`,
+            message: `"${finding.fromLayer}" may not use "root": root is a layer, see the note`,
           },
         }
       : finding,
