@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://layerscope.kitdev.space/sitemap.xml
