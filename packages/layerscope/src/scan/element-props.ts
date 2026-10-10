@@ -43,6 +43,13 @@ export function isElementName(name: string): boolean {
  */
 export type ElementPropKind = 'names' | 'default';
 
+export interface ElementProps {
+  /** The kind of each element-only prop, by name. */
+  kinds: Map<string, ElementPropKind>;
+  /** Names of variables that hold the props, as in `const props = defineProps(...)`. */
+  holders: Set<string>;
+}
+
 interface PropsCall {
   /** The type argument of `defineProps<...>()`. */
   type: Loose | undefined;
@@ -196,11 +203,12 @@ function addElementOnly(
  * component. A literal union of element names does. A `string` prop does when its default is an
  * element name. A `string` prop with no such default, and any type that is not read here, does not.
  */
-export function elementOnlyProps(code: string, lang: Lang): Map<string, ElementPropKind> {
-  const result = new Map<string, ElementPropKind>();
+export function elementOnlyProps(code: string, lang: Lang): ElementProps {
+  const kinds = new Map<string, ElementPropKind>();
+  const holders = new Set<string>();
   const { program, errors } = parseSync(`file.${lang}`, code, { lang });
   if (errors.length > 0) {
-    return result;
+    return { kinds, holders };
   }
   const body = childrenOf(program as unknown as Loose, 'body');
   const declared = declaredTypes(body);
@@ -208,14 +216,20 @@ export function elementOnlyProps(code: string, lang: Lang): Map<string, ElementP
     const declarators = childrenOf(statement, 'declarations');
     for (const declarator of declarators) {
       const call = propsCallOf(child(declarator, 'init'));
+      const id = child(declarator, 'id');
       if (call !== null) {
-        addElementOnly(call, child(declarator, 'id'), declared, result);
+        addElementOnly(call, id, declared, kinds);
+        // `const props = defineProps(...)`: the template reads `props.tag`. A destructure has no name.
+        const holder = id?.type === 'Identifier' ? nameOf(id) : null;
+        if (holder !== null) {
+          holders.add(holder);
+        }
       }
     }
     const call = propsCallOf(child(statement, 'expression'));
     if (call !== null) {
-      addElementOnly(call, undefined, declared, result);
+      addElementOnly(call, undefined, declared, kinds);
     }
   }
-  return result;
+  return { kinds, holders };
 }
