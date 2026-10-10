@@ -1,11 +1,12 @@
 import { resolve } from 'pathe';
 
-import { Analyzer } from '#src/devtools/analyzer.ts';
 import { computeEnvKey } from '#src/devtools/env-key.ts';
 import { countKeys, diffKeys } from '#src/devtools/finding-keys.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult, SourceOption } from '#src/types.ts';
 
+import type { WatchAnalyzer } from './analyzer.ts';
+import { createWatchAnalyzer } from './analyzer.ts';
 import { isConfigChange } from './ignore.ts';
 import { buildDirOf, buildDirOrDefault, configPathOf, prepareProject } from './project.ts';
 import { Trigger } from './trigger.ts';
@@ -67,7 +68,7 @@ function outputKey(result: AnalyzeResult): string {
 class WatchRun {
   private readonly options: WatchOptions;
   private readonly rootDir: string;
-  private readonly analyzer: Analyzer;
+  private readonly analyzer: WatchAnalyzer;
   // Raised when a config file changes: it is part of the key, so the next run starts from scratch.
   private epoch = 0;
   private last: AnalyzeResult | undefined;
@@ -77,7 +78,7 @@ class WatchRun {
   public constructor(options: WatchOptions) {
     this.options = options;
     this.rootDir = resolve(options.rootDir);
-    this.analyzer = new Analyzer({
+    this.analyzer = createWatchAnalyzer({
       rootDir: this.rootDir,
       baseline: options.baseline,
       analyze: { configFile: options.configFile, source: options.source },

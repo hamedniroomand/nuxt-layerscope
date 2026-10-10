@@ -3,6 +3,7 @@ import type { Tool } from '#src/mcp/types.ts';
 import { ToolError } from '#src/mcp/types.ts';
 import { relativeFinding } from '#src/report/json.ts';
 import { summarize } from '#src/report/summary.ts';
+import { withRootNotes } from '#src/suggest/index.ts';
 import type { Finding } from '#src/types.ts';
 import { matchesGlob } from '#src/utils/glob.ts';
 
@@ -82,7 +83,7 @@ export const checkTool: Tool = {
     },
   },
   async run(args, session) {
-    const result = await session.result();
+    const result = withRootNotes(await session.result());
     const matching = filterFindings(result.findings, args, session);
     const limit = typeof args.limit === 'number' ? args.limit : DEFAULT_LIMIT;
     const shown = matching.slice(0, limit);

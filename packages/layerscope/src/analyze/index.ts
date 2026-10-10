@@ -3,6 +3,7 @@ import { resolve } from 'pathe';
 import { applyBaselineFile } from '#src/baseline/index.ts';
 import { compareByPosition } from '#src/rules/compare.ts';
 import { runRules } from '#src/rules/index.ts';
+import { withRootNotes } from '#src/suggest/index.ts';
 import type { AnalyzeResult, LayerscopeConfig, SourceOption } from '#src/types.ts';
 
 import { analyzeFiles } from './cache.ts';
@@ -80,4 +81,9 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
   return options.baseline === undefined
     ? result
     : applyBaselineFile(result, resolve(rootDir, options.baseline), scope?.hasRelative);
+}
+
+/** `analyze` for the commands and tools that report findings. They add the root notes. */
+export async function analyzeReport(options: AnalyzeOptions = {}): Promise<AnalyzeResult> {
+  return withRootNotes(await analyze(options));
 }
