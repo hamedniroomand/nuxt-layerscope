@@ -170,6 +170,8 @@ export interface BaselineResult {
 
 export interface AnalyzeResult {
   rootDir: string;
+  /** Layers whose `allow` the preset gave, because the config gave them none. */
+  presetLayers?: string[];
   /** The config that applied: `layerscope.config.*` or the `layerscope` key of `nuxt.config`. */
   config: LayerscopeConfig;
   source: ResolutionSource;

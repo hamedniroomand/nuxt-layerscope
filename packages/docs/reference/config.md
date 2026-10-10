@@ -97,11 +97,20 @@ any other layer.
 - A layer with no `allow` key may use every layer, root too.
 - `allow: []` blocks `root` too. To let the layer use the project's code, list `'root'`.
 - Files in the `shared/` folder of root belong to `root`. Nothing else owns them.
-- Presets keep `root` unrestricted. A user `allow` replaces the list that a preset gives, so list
-  the base layers too, for example `allow: ['core', 'root']`.
+- Presets keep `root` unrestricted. Put `root` in the preset base to let the layers use it, as shown
+  below. A user `allow` replaces the list that a preset gives, so if you write `allow` for a layer,
+  list the base layers too, for example `allow: ['core', 'root']`.
 
 The usual shape has shared code in root and features in `layers/*`. Each feature may use root, and
-no feature may use another feature:
+no feature may use another feature. Put `root` in the base of the preset:
+
+```ts [layerscope.config.ts]
+export default defineConfig({
+  preset: { name: 'features', base: ['root'] },
+});
+```
+
+Without a preset, give each feature layer its own list:
 
 ```ts [layerscope.config.ts]
 layers: {
@@ -112,7 +121,8 @@ layers: {
 
 When a layer's `allow` does not name `root`, for example `allow: []` or `allow: ['shared']`, and
 that layer uses root, `check` reports the `layer-boundary` findings with a hint that names `root`.
-The hint is shown once for each layer. It is not shown when the change would make a cycle.
+When the preset gave the layer its `allow`, the hint names the preset base instead. The hint is
+shown once for each layer. It is not shown when the change would make a cycle.
 
 With this shape, set `layer-cycle` to `error`. It is the only rule that finds root code that uses a
 feature layer:
@@ -201,8 +211,9 @@ export default defineConfig({
   `design-system`, and it may use the first. A name that does not exist is skipped.
 
 Use the object form to name the base layers yourself. `base` lists them, lowest first, and every
-name must be a layer, and `root` cannot be one. A name may appear once. For `layered` it holds
-exactly one name. For `features`, `base: []` means no base layers. `stacked` takes no `base`.
+name must be a layer. `root` may be a base layer. It is always the lowest one, so `base: ['ui', 'root']`
+works the same as `base: ['root', 'ui']`. A name may appear once. For `layered` it holds exactly
+one name. For `features`, `base: []` means no base layers. `stacked` takes no `base`.
 
 ```ts [layerscope.config.ts]
 export default defineConfig({

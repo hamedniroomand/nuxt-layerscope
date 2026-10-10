@@ -9,6 +9,36 @@ import type { LayerscopeConfig, PresetOptions } from '#src/types.ts';
 const allowOf = (preset: Parameters<typeof resolvePreset>[0], names: string[]): string[][] =>
   resolvePreset(preset, names).allow;
 
+describe('root as a base layer', () => {
+  it('lets every other layer use root, and gives root no entry', () => {
+    expect(resolvePreset({ name: 'features', base: ['root'] }, ['a', 'b'])).toEqual({
+      name: 'features',
+      base: ['root'],
+      allow: [['root'], ['root']],
+    });
+  });
+
+  it('works for layered too, where root replaces the one base layer', () => {
+    expect(allowOf({ name: 'layered', base: ['root'] }, ['a', 'b'])).toEqual([['root'], ['root']]);
+  });
+
+  it('keeps root the lowest base, whatever the order of base', () => {
+    const names = ['ui', 'app'];
+    const first = resolvePreset({ name: 'features', base: ['ui', 'root'] }, names);
+    const second = resolvePreset({ name: 'features', base: ['root', 'ui'] }, names);
+    expect(first).toEqual(second);
+    expect(first.base).toEqual(['root', 'ui']);
+    // `ui` may use root, and every other layer may use both.
+    expect(first.allow).toEqual([['root'], ['root', 'ui']]);
+  });
+
+  it('still rejects a base name that is not a layer', () => {
+    expect(() => resolvePreset({ name: 'features', base: ['nope'] }, ['a'])).toThrow(
+      'base layer "nope" is not a layer',
+    );
+  });
+});
+
 describe('features', () => {
   const names = ['articles', 'shop', 'ui', 'core'];
 
@@ -31,12 +61,6 @@ describe('features', () => {
   it('takes the base layers from the option, lowest first', () => {
     const preset: PresetOptions = { name: 'features', base: ['tokens', 'kit'] };
     expect(allowOf(preset, ['a', 'kit', 'tokens'])).toEqual([['tokens', 'kit'], ['tokens'], []]);
-  });
-
-  it('says that root cannot be a base layer', () => {
-    expect(() => resolvePreset({ name: 'features', base: ['root'] }, ['a'])).toThrow(
-      '"root" cannot be a base layer',
-    );
   });
 
   it('takes an empty base to mean no base layers', () => {

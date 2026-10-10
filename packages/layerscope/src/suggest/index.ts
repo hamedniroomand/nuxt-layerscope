@@ -1,12 +1,14 @@
 import { relative } from 'pathe';
 
 import { isScoped, mentionsLayer } from '#src/config/allow.ts';
+import { describePreset } from '#src/config/presets.ts';
 import type {
   AnalyzeResult,
   Edge,
   Finding,
   Layer,
   LayerscopeConfig,
+  PresetName,
   Suggestion,
 } from '#src/types.ts';
 import { plural } from '#src/utils/strings.ts';
@@ -33,9 +35,25 @@ function needsRootHint(config: LayerscopeConfig, from: string, to: string): bool
   return to === 'root' && !mentionsLayer(config.layers?.[from]?.allow ?? [], 'root');
 }
 
-/** The first sentence of a root hint. It says what `root` is, then the fix. */
-function rootLayerSentence(from: string): string {
-  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code,`;
+interface PresetBase {
+  name: PresetName;
+  base: string[];
+}
+
+/** The preset line that adds `root` to the base. `layered` has one base layer, so `root` replaces it. */
+function presetBaseText(preset: PresetBase): string {
+  const base = preset.name === 'layered' ? ['root'] : ['root', ...preset.base];
+  return `preset: { name: '${preset.name}', base: [${base.map(layer => `'${layer}'`).join(', ')}] }`;
+}
+
+/** The allow hint for a layer whose `allow` the user wrote. `root` goes into that list. */
+function rootAllowText(from: string, fixes: number): string {
+  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code, add 'root' to its allow list (adds 1 edge, clears ${plural(fixes, 'finding')})`;
+}
+
+/** The hint for a layer whose `allow` the preset gave: `root` goes into the preset base. */
+function rootPresetText(from: string, fixes: number, preset: PresetBase): string {
+  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code, add 'root' to the preset base: ${presetBaseText(preset)} (clears ${plural(fixes, 'finding')})`;
 }
 
 function allowSuggestion(context: Context, from: string, to: string): Suggestion {
@@ -44,6 +62,17 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
   const edges = pair.map(finding => edgeOfFinding(context, finding));
   const names = edges.every(edge => edge !== undefined) ? onlyNames(edges) : null;
   const hint = needsRootHint(context.config, from, to);
+  // A preset base has no scoped entry, so the preset hint names the whole base, never `only`.
+  if (hint && context.presetLayers.has(from)) {
+    const preset = describePreset(context.config, context.layers);
+    if (preset !== null) {
+      return {
+        action: 'allow',
+        message: rootPresetText(from, fixes, preset),
+        impact: { fixes, edges: context.layers.filter(layer => layer.name !== 'root').length },
+      };
+    }
+  }
   if (names !== null) {
     const known = (context.config.layers?.[from]?.allow ?? []).find(
       entry => isScoped(entry) && entry.layer === to,
@@ -62,7 +91,7 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
   return {
     action: 'allow',
     message: hint
-      ? `${rootLayerSentence(from)} add 'root' to its allow list (adds 1 edge, clears ${plural(fixes, 'finding')})`
+      ? rootAllowText(from, fixes)
       : `allow "${from}" to use "${to}" (adds 1 edge, clears ${plural(fixes, 'finding')})`,
     impact: { fixes, edges: 1 },
   };
@@ -71,9 +100,15 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
 /**
  * One note per layer whose `allow` suggestions name `root` and that does not list `root`. The
  * note gives the hint once, where the per-finding suggestion repeats it. A cycle gets `leave`,
- * so its findings add no count. The counts are the findings given.
+ * so its findings add no count. A preset layer gets the preset wording. The counts are the
+ * findings given.
  */
-export function rootAllowNotes(findings: Finding[], config: LayerscopeConfig): string[] {
+export function rootAllowNotes(
+  findings: Finding[],
+  config: LayerscopeConfig,
+  layers: Layer[] = [],
+  presetLayers: string[] = [],
+): string[] {
   const counts = new Map<string, number>();
   for (const finding of findings) {
     if (
@@ -85,10 +120,15 @@ export function rootAllowNotes(findings: Finding[], config: LayerscopeConfig): s
       counts.set(finding.fromLayer, (counts.get(finding.fromLayer) ?? 0) + 1);
     }
   }
-  return [...counts].map(
-    ([from, fixes]) =>
-      `"root" is a layer too, and it is not in the allow list of "${from}". To let "${from}" use the project's own app/ and shared/ code, add 'root' to its allow list (clears ${plural(fixes, 'finding')}).`,
-  );
+  const preset = describePreset(config, layers);
+  return [...counts].map(([from, fixes]) => {
+    const lead = `"root" is a layer too, and it is not in the allow list of "${from}".`;
+    const fix = `To let "${from}" use the project's own app/ and shared/ code,`;
+    const count = `(clears ${plural(fixes, 'finding')}).`;
+    return presetLayers.includes(from) && preset !== null
+      ? `${lead} ${fix} add 'root' to the preset base: ${presetBaseText(preset)} ${count}`
+      : `${lead} ${fix} add 'root' to its allow list ${count}`;
+  });
 }
 
 function exposeSuggestion(context: Context, finding: Finding): Suggestion {
@@ -147,8 +187,9 @@ export async function addSuggestions(
   layers: Layer[],
   config: LayerscopeConfig,
   rootDir: string,
+  presetLayers: string[] = [],
 ): Promise<Finding[]> {
-  const context = createContext(findings, edges, layers, config, rootDir);
+  const context = createContext(findings, edges, layers, config, rootDir, presetLayers);
   // A suggestion reads only the layer pair and the target file, so findings that share them
   // get the same one. Each finding gets its own copy, so no two findings share an object.
   const memo = new Map<string, Suggestion>();
@@ -183,6 +224,11 @@ export async function addSuggestions(
  * it, so a command that shows no findings does not show a root note.
  */
 export function withRootNotes(result: AnalyzeResult): AnalyzeResult {
-  const notes = rootAllowNotes(result.findings, result.config);
+  const notes = rootAllowNotes(
+    result.findings,
+    result.config,
+    result.layers,
+    result.presetLayers ?? [],
+  );
   return notes.length === 0 ? result : { ...result, notes: [...result.notes, ...notes] };
 }

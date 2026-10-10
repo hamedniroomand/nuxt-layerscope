@@ -38,7 +38,11 @@ function defaultBase(name: PresetName, names: string[]): string[] {
   return FEATURES_BASE_CANDIDATES.flatMap(candidates => firstOf(candidates, names));
 }
 
-/** The base layer of `layered` and the base layers of `features`, from `base` or the defaults. */
+/**
+ * The base layer of `layered` and the base layers of `features`, from `base` or the defaults.
+ * `root` may be a base layer. It is always the lowest one, so it goes first whatever the order
+ * of `base`.
+ */
 function baseOf(preset: PresetName | PresetOptions, names: string[]): string[] {
   const name = presetName(preset);
   const given = typeof preset === 'string' ? undefined : preset.base;
@@ -46,18 +50,13 @@ function baseOf(preset: PresetName | PresetOptions, names: string[]): string[] {
     return defaultBase(name, names);
   }
   for (const layer of given) {
-    if (layer === 'root') {
-      throw new LayerConfigError(
-        `preset "${name}": "root" cannot be a base layer. It composes the other layers, so a preset leaves it unrestricted`,
-      );
-    }
-    if (!names.includes(layer)) {
+    if (layer !== 'root' && !names.includes(layer)) {
       throw new LayerConfigError(
         `preset "${name}": base layer "${layer}" is not a layer. Known layers: ${names.join(', ')}`,
       );
     }
   }
-  return given;
+  return given.includes('root') ? ['root', ...given.filter(layer => layer !== 'root')] : given;
 }
 
 /**
@@ -109,4 +108,17 @@ export function describePreset(
   const names = layers.map(layer => layer.name).filter(name => name !== 'root');
   const { name, base } = resolvePreset(config.preset, names);
   return { name, base };
+}
+
+/**
+ * The layers whose `allow` the preset filled, because the config gave them none. A hint reads
+ * this to know that the preset base, not an `allow` list, is what the user must change.
+ */
+export function layersFilledByPreset(before: LayerscopeConfig, after: LayerscopeConfig): string[] {
+  if (after.preset === undefined) {
+    return [];
+  }
+  return Object.keys(after.layers ?? {}).filter(
+    name => name !== 'root' && before.layers?.[name]?.allow === undefined,
+  );
 }
