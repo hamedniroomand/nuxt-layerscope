@@ -80,6 +80,17 @@ describe('the preset line of init', () => {
     expect(text).toContain("Use preset: 'features'");
   });
 
+  it('shows the object form when the base is not the default one', async () => {
+    const result = await analyze({ rootDir: NUXT4_ROOT, config: {} });
+    const rootBase = {
+      ...proposal,
+      preset: { name: 'features' as const, base: ['root'], object: true },
+    };
+    const text = formatInit(result, rootBase, options);
+    expect(text).toContain('A preset fits these dependencies: features (base: root).');
+    expect(text).toContain("Use preset: { name: 'features', base: ['root'] }");
+  });
+
   it('says nothing when no preset fits', async () => {
     const result = await analyze({ rootDir: NUXT4_ROOT, config: {} });
     expect(formatInit(result, { ...proposal, preset: null }, options)).not.toContain('A preset');

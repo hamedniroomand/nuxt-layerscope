@@ -41,10 +41,15 @@ function presetLines({ preset, edges }: Proposal): string[] {
     return [];
   }
   const base = preset.base.length === 0 ? '' : ` (base: ${preset.base.join(', ')})`;
+  // The object form is needed when the base is not the default one of the preset.
+  const value =
+    preset.object === true
+      ? `{ name: '${preset.name}', base: [${preset.base.map(layer => `'${layer}'`).join(', ')}] }`
+      : `'${preset.name}'`;
   return [
     '',
     `A preset fits these dependencies: ${preset.name}${base}.`,
-    `Use preset: '${preset.name}' instead of the allowed edges above, if you want the shape and not the list.`,
+    `Use preset: ${value} instead of the allowed edges above, if you want the shape and not the list.`,
   ];
 }
 

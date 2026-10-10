@@ -25,6 +25,8 @@ export interface PresetFit {
   name: PresetName;
   /** The base layers that it picked, lowest first. */
   base: string[];
+  /** True when the preset needs the object form, because its base is not the default one. */
+  object?: boolean;
 }
 
 export interface Proposal {

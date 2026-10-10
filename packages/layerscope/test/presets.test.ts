@@ -170,7 +170,12 @@ describe('the preset that init suggests', () => {
       name: 'layered',
       base: ['shared'],
     });
-    expect(fittingPreset([edge('shop', 'root')], ['root', 'shop', 'shared'])).toBeNull();
+    // A layer that uses root now fits a preset with root as its base.
+    expect(fittingPreset([edge('shop', 'root')], ['root', 'shop', 'shared'])).toEqual({
+      name: 'features',
+      base: ['root'],
+      object: true,
+    });
   });
 
   it('suggests nothing when the only dependencies are those of root', () => {
