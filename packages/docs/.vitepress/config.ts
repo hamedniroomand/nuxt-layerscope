@@ -29,6 +29,20 @@ export default defineConfig({
   lastUpdated: true,
   sitemap: { hostname: SITE },
 
+  transformPageData(pageData) {
+    if (pageData.isNotFound === true) {
+      return;
+    }
+    // Same URL form as the sitemap: no `.html`, folder index pages end with a slash.
+    const path = pageData.relativePath.replace(/(?:^|\/)index\.md$/u, '/').replace(/\.md$/u, '');
+    const url = new URL(path.replace(/^\//u, ''), SITE).href;
+    pageData.frontmatter.head ??= [];
+    (pageData.frontmatter.head as unknown[]).push(
+      ['link', { rel: 'canonical', href: url }],
+      ['meta', { property: 'og:url', content: url }],
+    );
+  },
+
   buildEnd({ outDir }) {
     const schema = new URL('../../layerscope/schema/report-1.json', import.meta.url);
     mkdirSync(`${outDir}/schema`, { recursive: true });
@@ -62,7 +76,6 @@ export default defineConfig({
     ['meta', { property: 'og:site_name', content: TITLE }],
     ['meta', { property: 'og:title', content: 'layerscope · Layer boundaries for Nuxt' }],
     ['meta', { property: 'og:description', content: DESCRIPTION }],
-    ['meta', { property: 'og:url', content: SITE }],
     ['meta', { property: 'og:image', content: `${SITE}og-image.png` }],
     ['meta', { property: 'og:image:width', content: '1200' }],
     ['meta', { property: 'og:image:height', content: '630' }],
