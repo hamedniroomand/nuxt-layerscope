@@ -26,6 +26,8 @@ interface Shape {
   crossing?: boolean;
   /** The `allow` of `website`, as config text. Left out, the preset decides it. */
   allowWebsite?: string;
+  /** The `allow` of `root`, as config text. Left out, the preset decides it. */
+  allowRoot?: string;
 }
 
 /** `extra` is more config text. The layers are declared by path, so no Nuxt install is needed. */
@@ -56,6 +58,7 @@ function project(extra: string, shape: Shape = {}): string {
     "admin: { path: 'layers/admin' }",
     ...(shape.core === true ? ["core: { path: 'layers/core' }"] : []),
     ...(shape.shared === true ? ["shared: { path: 'layers/shared' }"] : []),
+    ...(shape.allowRoot === undefined ? [] : [`root: { ${shape.allowRoot} }`]),
   ];
   write(
     root,
@@ -108,14 +111,30 @@ describe('a preset whose base is root', () => {
     expect(out).toContain('crosses from layer "website" into "admin"');
   });
 
-  it('reports root code that uses a feature as a cycle, when layer-cycle is on', async () => {
+  it('restricts root, so root code that uses a feature is reported without layer-cycle', async () => {
     const { code, out } = await check(
-      project("preset: { name: 'features', base: ['root'] }, rules: { 'layer-cycle': 'error' }", {
-        rootUsesWebsite: true,
-      }),
+      project("preset: { name: 'features', base: ['root'] }", { rootUsesWebsite: true }),
     );
     expect(code).toBe(EXIT_VIOLATIONS);
-    expect(out).toContain('layer-cycle');
+    expect(out).toContain('crosses from layer "root" into "website"');
+  });
+
+  it('lets a root entry in the config clear that finding', async () => {
+    const { code, out } = await check(
+      project("preset: { name: 'features', base: ['root'] }", {
+        rootUsesWebsite: true,
+        allowRoot: "allow: ['website']",
+      }),
+    );
+    expect(code).toBe(EXIT_CLEAN);
+    expect(out).not.toContain('from layer "root"');
+  });
+
+  it('leaves root unrestricted when root is not in the preset base', async () => {
+    const { out } = await check(
+      project("preset: 'features'", { core: true, rootUsesWebsite: true }),
+    );
+    expect(out).not.toContain('from layer "root"');
   });
 });
 
