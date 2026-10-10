@@ -31,6 +31,7 @@ export function scanTemplate(
   source: string,
   bindings: Bindings,
   scan: FileScan,
+  elementProps: () => Set<string>,
 ): void {
   const { template } = descriptor;
   if (!template?.ast || (template.lang !== undefined && template.lang !== 'html')) {
@@ -55,6 +56,7 @@ export function scanTemplate(
   const ctx: RenderContext = {
     scan,
     bindings,
+    elementProps,
     elementOffset: predicate => index.elements.find(predicate)?.offset ?? templateStart,
     identOffset: name => firstIdentOffset(name, source, index) ?? templateStart,
   };

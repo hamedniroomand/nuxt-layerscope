@@ -53,7 +53,8 @@ export default defineConfig({
 
 A dynamic component bound to a runtime value cannot be resolved statically. Resolve the
 component explicitly, for example with `resolveComponent('X')` or an imported component, or
-accept the warning.
+accept the warning. A value that can only be an HTML or SVG element name is not reported; see
+[`unresolved-reference`](../reference/rules#unresolved-reference).
 
 ## "Two layers are named …"
 
