@@ -255,6 +255,9 @@ importers:
       '@vue/compiler-sfc':
         specifier: ^3.5.43
         version: 3.5.43
+      '@vue/shared':
+        specifier: 3.5.43
+        version: 3.5.43
       cac:
         specifier: ^7.0.0
         version: 7.0.0

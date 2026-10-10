@@ -115,7 +115,12 @@ Something could not be resolved, so layerscope will not call it safe:
   context,
 - a component tag Nuxt has not registered,
 - an import path that does not exist, or a name `#imports` / `#components` does not export,
-- `<component :is>` bound to a runtime value,
+- `<component :is>` bound to a runtime value. A value that can only be a native HTML or SVG element
+  name is not reported: a string literal, a ternary of them, or a prop typed as a union of element
+  names, or a `string` prop whose default is an element name. Vue renders such a name as that
+  element, unless a global component has the same name. A `string` prop can reach a global component
+  by its name, and layerscope cannot follow a global name to a file, so that prop is not reported.
+  A `string` prop with no default, or with a default that is not an element name, is still reported.
 - a file that could not be parsed.
 
 ```text
