@@ -93,12 +93,16 @@ list when that entry has `only`; the same layer twice as plain names is fine.
 `root` is the project itself, and it is a layer name. You can put `root` in an `allow` list like
 any other layer.
 
-- `root` itself is not restricted: root code may use any layer.
+- By default `root` is not restricted: root code may use any layer. A `root` entry with `allow`
+  restricts it like any other layer.
 - A layer with no `allow` key may use every layer, root too.
 - `allow: []` blocks `root` too. To let the layer use the project's code, list `'root'`.
 - Files in the `shared/` folder of root belong to `root`. Nothing else owns them.
-- Presets keep `root` unrestricted. A user `allow` replaces the list that a preset gives, so list
-  the base layers too, for example `allow: ['core', 'root']`.
+- A preset does not restrict `root`, but a `root` entry with `allow` still applies. A user `allow`
+  replaces the list that a preset gives, so list the base layers too, for example
+  `allow: ['core', 'root']`.
+
+The hint and the note show in a full check, not in a check of changed files.
 
 The usual shape has shared code in root and features in `layers/*`. Each feature may use root, and
 no feature may use another feature:
