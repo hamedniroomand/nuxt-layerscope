@@ -37,6 +37,12 @@ export function isElementName(name: string): boolean {
   return isHTMLTag(name) || isSVGTag(name);
 }
 
+/**
+ * `names`: the prop is a literal union of element names, so no parent can pass a component name.
+ * `default`: a `string` prop with an element default. A parent can still pass a global name.
+ */
+export type ElementPropKind = 'names' | 'default';
+
 interface PropsCall {
   /** The type argument of `defineProps<...>()`. */
   type: Loose | undefined;
@@ -157,7 +163,7 @@ function addElementOnly(
   call: PropsCall,
   pattern: Loose | undefined,
   declared: Declared,
-  result: Set<string>,
+  result: Map<string, ElementPropKind>,
 ): void {
   // A destructure default and a withDefaults default are read the same way.
   const defaults = new Map([
@@ -174,13 +180,13 @@ function addElementOnly(
       continue;
     }
     if (names !== null && names.length > 0 && names.every(entry => isElementName(entry))) {
-      result.add(name);
+      result.set(name, 'names');
     } else if (
       type?.type === 'TSStringKeyword' &&
       fallback !== undefined &&
       isElementName(fallback)
     ) {
-      result.add(name);
+      result.set(name, 'default');
     }
   }
 }
@@ -190,8 +196,8 @@ function addElementOnly(
  * component. A literal union of element names does. A `string` prop does when its default is an
  * element name. A `string` prop with no such default, and any type that is not read here, does not.
  */
-export function elementOnlyProps(code: string, lang: Lang): Set<string> {
-  const result = new Set<string>();
+export function elementOnlyProps(code: string, lang: Lang): Map<string, ElementPropKind> {
+  const result = new Map<string, ElementPropKind>();
   const { program, errors } = parseSync(`file.${lang}`, code, { lang });
   if (errors.length > 0) {
     return result;

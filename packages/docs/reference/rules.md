@@ -120,6 +120,7 @@ Something could not be resolved, so layerscope will not call it safe:
   names, or a `string` prop whose default is an element name. Vue renders such a name as that
   element, unless a global component has the same name. A `string` prop can reach a global component
   by its name, and layerscope cannot follow a global name to a file, so that prop is not reported.
+  `unused` still treats such a file as one that can use a component by name.
   A `string` prop with no default, or with a default that is not an element name, is still reported.
 - a file that could not be parsed.
 

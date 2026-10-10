@@ -7,6 +7,11 @@ export interface FileScan {
   components: Named[];
   /** Offsets of `<component :is>` bound to a runtime value. */
   dynamicComponents: number[];
+  /**
+   * Offsets of `<component :is>` bound to a `string` prop with an element default. These give no
+   * finding, but a parent can still pass a global component name, so the file counts as a user.
+   */
+  quietDynamicComponents: number[];
   imports: ImportRef[];
   /** Set when the file could not be parsed; nothing else in it was analyzed. */
   error: { message: string; offset: number } | null;
@@ -42,6 +47,7 @@ export function emptyScan(): FileScan {
     templateIdents: [],
     components: [],
     dynamicComponents: [],
+    quietDynamicComponents: [],
     imports: [],
     error: null,
   };

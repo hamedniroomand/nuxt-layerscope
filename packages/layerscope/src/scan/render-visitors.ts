@@ -3,6 +3,7 @@ import type { Node } from 'oxc-parser';
 import { pascalCase } from '#src/utils/strings.ts';
 
 import { stringLiteral } from './ast.ts';
+import type { ElementPropKind } from './element-props.ts';
 import { isElementName } from './element-props.ts';
 import type { TemplateElement } from './template-index.ts';
 import type { FileScan } from './types.ts';
@@ -13,7 +14,7 @@ export interface RenderContext {
   scan: FileScan;
   bindings: Bindings;
   /** Props whose value can only be a native element name. Read on first use. */
-  elementProps: () => Set<string>;
+  elementProps: () => Map<string, ElementPropKind>;
   elementOffset: (predicate: (el: TemplateElement) => boolean) => number;
   identOffset: (name: string) => number;
 }
@@ -34,40 +35,55 @@ function isSetupConst(arg: Node | undefined, bindings: Bindings): boolean {
 }
 
 /** `$props.X` of a prop in `props`, the way the render function reads a prop. */
-function isElementProp(node: Node, props: () => Set<string>): boolean {
-  return (
-    node.type === 'MemberExpression' &&
-    !node.computed &&
-    node.object.type === 'Identifier' &&
-    (node.object.name === '$props' || node.object.name === '__props') &&
-    node.property.type === 'Identifier' &&
-    props().has(node.property.name)
-  );
+function propKind(node: Node, props: Map<string, ElementPropKind>): ElementPropKind | null {
+  if (
+    node.type !== 'MemberExpression' ||
+    node.computed ||
+    node.object.type !== 'Identifier' ||
+    (node.object.name !== '$props' && node.object.name !== '__props') ||
+    node.property.type !== 'Identifier'
+  ) {
+    return null;
+  }
+  return props.get(node.property.name) ?? null;
 }
 
 /**
- * True when the bound value of `<component :is>` can only be a native HTML or SVG element name.
- * Vue renders such a name as that element, unless a global component has the same name. Nuxt
- * components are not registered globally by default. layerscope cannot follow a global name to a
- * file, so the value gives the user nothing to act on.
+ * What the bound value of `<component :is>` can be, when it can only be a native HTML or SVG
+ * element name: `names` for a literal or a union, `default` for a `string` prop with an element
+ * default. `null` for any other value. Vue renders an element name as that element, unless a
+ * global component has the same name. Nuxt components are not registered globally by default.
  */
-function isElementOnly(node: Node | undefined, props: () => Set<string>): boolean {
+function elementKind(
+  node: Node | undefined,
+  props: () => Map<string, ElementPropKind>,
+): ElementPropKind | null {
   if (node === undefined) {
-    return false;
+    return null;
   }
   if (node.type === 'Literal') {
-    return typeof node.value === 'string' && isElementName(node.value);
+    return typeof node.value === 'string' && isElementName(node.value) ? 'names' : null;
   }
   if (node.type === 'ConditionalExpression') {
-    return (
-      isElementOnly(node.consequent as Node, props) && isElementOnly(node.alternate as Node, props)
-    );
+    const kinds = [
+      elementKind(node.consequent as Node, props),
+      elementKind(node.alternate as Node, props),
+    ];
+    if (kinds.some(kind => kind === null)) {
+      return null;
+    }
+    return kinds.some(kind => kind === 'default') ? 'default' : 'names';
   }
-  return isElementProp(node, props);
+  return propKind(node, props());
 }
 
 function visitDynamicComponent(arg: Node | undefined, ctx: RenderContext): void {
-  if (isElementOnly(arg, ctx.elementProps)) {
+  const kind = elementKind(arg, ctx.elementProps);
+  if (kind === 'names') {
+    return;
+  }
+  if (kind === 'default') {
+    ctx.scan.quietDynamicComponents.push(ctx.elementOffset(el => el.dynamicIs));
     return;
   }
   const literal = stringLiteral(arg);

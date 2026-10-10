@@ -119,7 +119,8 @@ export class FileAnalysis {
         );
       }
     }
-    this.hasDynamicComponent = scan.dynamicComponents.length > 0;
+    this.hasDynamicComponent =
+      scan.dynamicComponents.length > 0 || scan.quietDynamicComponents.length > 0;
     for (const offset of scan.dynamicComponents) {
       this.addUnresolved(
         '<component :is>',
