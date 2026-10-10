@@ -1,4 +1,4 @@
-import { analyze } from '#src/analyze/index.ts';
+import { analyzeReport } from '#src/analyze/index.ts';
 import { BASELINE_FILE } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatResult, isOutputFormat, OUTPUT_FORMATS } from '#src/report/index.ts';
@@ -78,7 +78,7 @@ export async function check(
   if (selection?.files.length === 0) {
     return checkNothing(rootDir, selection, format, flags);
   }
-  const result = await analyze({
+  const result = await analyzeReport({
     rootDir,
     configFile: flags.config,
     prepare: flags.prepare,

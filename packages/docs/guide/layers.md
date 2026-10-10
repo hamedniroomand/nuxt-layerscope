@@ -134,6 +134,12 @@ admin: { allow: ['shared', { layer: 'web', only: ['useCart'] }] },
 
 Both apply together. `only` never reaches a symbol that the layer does not expose.
 
+## Root and `shared/`
+
+The project itself is the layer `root`. Its `app/` folder and its `shared/` folder belong to
+`root`. A feature layer in `layers/*` can use that code only when its `allow` list names `root`.
+See [`allow`](../reference/config#root-and-shared) for the rules and an example.
+
 ## Layer priority
 
 When two layers provide the same component or auto-import, Nuxt uses the one from the

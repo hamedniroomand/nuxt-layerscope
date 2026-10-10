@@ -1,7 +1,14 @@
 import { relative } from 'pathe';
 
-import { isScoped } from '#src/config/allow.ts';
-import type { Edge, Finding, Layer, LayerscopeConfig, Suggestion } from '#src/types.ts';
+import { isScoped, mentionsLayer } from '#src/config/allow.ts';
+import type {
+  AnalyzeResult,
+  Edge,
+  Finding,
+  Layer,
+  LayerscopeConfig,
+  Suggestion,
+} from '#src/types.ts';
 import { plural } from '#src/utils/strings.ts';
 import { createYielder } from '#src/utils/yield.ts';
 
@@ -18,11 +25,25 @@ function leaveSuggestion(from: string, to: string): Suggestion {
   };
 }
 
+/**
+ * True when `root` is a target that `from` does not name in `allow`, whole or scoped. A scoped
+ * `root` entry already shows that the user knows `root` is a layer, so it gets no hint.
+ */
+function needsRootHint(config: LayerscopeConfig, from: string, to: string): boolean {
+  return to === 'root' && !mentionsLayer(config.layers?.[from]?.allow ?? [], 'root');
+}
+
+/** The first sentence of a root hint. It says what `root` is, then the fix. */
+function rootLayerSentence(from: string): string {
+  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code,`;
+}
+
 function allowSuggestion(context: Context, from: string, to: string): Suggestion {
   const pair = context.boundaryBy.get(pairKey(from, to)) ?? [];
   const fixes = pair.length;
   const edges = pair.map(finding => edgeOfFinding(context, finding));
   const names = edges.every(edge => edge !== undefined) ? onlyNames(edges) : null;
+  const hint = needsRootHint(context.config, from, to);
   if (names !== null) {
     const known = (context.config.layers?.[from]?.allow ?? []).find(
       entry => isScoped(entry) && entry.layer === to,
@@ -30,18 +51,44 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
     const only = [
       ...new Set([...(known !== undefined && isScoped(known) ? known.only : []), ...names]),
     ];
+    const allow = `allow "${from}" to use ${only.map(name => `"${name}"`).join(', ')} from "${to}" (adds ${known === undefined ? '1 edge' : 'no edge'}, clears ${plural(fixes, 'finding')})`;
     return {
       action: 'allow',
-      message: `allow "${from}" to use ${only.map(name => `"${name}"`).join(', ')} from "${to}" (adds ${known === undefined ? '1 edge' : 'no edge'}, clears ${plural(fixes, 'finding')})`,
+      message: hint ? `"root" is a layer too. ${allow}` : allow,
       only,
       impact: { fixes, edges: known === undefined ? 1 : 0 },
     };
   }
   return {
     action: 'allow',
-    message: `allow "${from}" to use "${to}" (adds 1 edge, clears ${plural(fixes, 'finding')})`,
+    message: hint
+      ? `${rootLayerSentence(from)} add 'root' to its allow list (adds 1 edge, clears ${plural(fixes, 'finding')})`
+      : `allow "${from}" to use "${to}" (adds 1 edge, clears ${plural(fixes, 'finding')})`,
     impact: { fixes, edges: 1 },
   };
+}
+
+/**
+ * One note per layer whose `allow` suggestions name `root` and that does not list `root`. The
+ * note gives the hint once, where the per-finding suggestion repeats it. A cycle gets `leave`,
+ * so its findings add no count. The counts are the findings given.
+ */
+export function rootAllowNotes(findings: Finding[], config: LayerscopeConfig): string[] {
+  const counts = new Map<string, number>();
+  for (const finding of findings) {
+    if (
+      finding.rule === 'layer-boundary' &&
+      finding.toLayer === 'root' &&
+      finding.suggestion?.action === 'allow' &&
+      needsRootHint(config, finding.fromLayer, 'root')
+    ) {
+      counts.set(finding.fromLayer, (counts.get(finding.fromLayer) ?? 0) + 1);
+    }
+  }
+  return [...counts].map(
+    ([from, fixes]) =>
+      `"root" is a layer too, and it is not in the allow list of "${from}". To let "${from}" use the project's own app/ and shared/ code, add 'root' to its allow list (clears ${plural(fixes, 'finding')}).`,
+  );
 }
 
 function exposeSuggestion(context: Context, finding: Finding): Suggestion {
@@ -129,4 +176,13 @@ export async function addSuggestions(
     await pause();
   }
   return result;
+}
+
+/**
+ * The result with the root notes added. Only the commands and tools that report findings call
+ * it, so a command that shows no findings does not show a root note.
+ */
+export function withRootNotes(result: AnalyzeResult): AnalyzeResult {
+  const notes = rootAllowNotes(result.findings, result.config);
+  return notes.length === 0 ? result : { ...result, notes: [...result.notes, ...notes] };
 }
