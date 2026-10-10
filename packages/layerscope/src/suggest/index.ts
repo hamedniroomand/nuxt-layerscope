@@ -1,104 +1,27 @@
 import { relative } from 'pathe';
 
-import { isScoped, mentionsLayer } from '#src/config/allow.ts';
-import { describePreset, resolvePreset } from '#src/config/presets.ts';
-import type {
-  AnalyzeResult,
-  Edge,
-  Finding,
-  Layer,
-  LayerscopeConfig,
-  PresetName,
-  Suggestion,
-} from '#src/types.ts';
+import { isScoped } from '#src/config/allow.ts';
+import { describePreset } from '#src/config/presets.ts';
+import type { Edge, Finding, Layer, LayerscopeConfig, Suggestion } from '#src/types.ts';
 import { plural } from '#src/utils/strings.ts';
 import { createYielder } from '#src/utils/yield.ts';
 
 import type { Context } from './context.ts';
 import { createContext, edgeOfFinding, isLocal, pairKey, reaches } from './context.ts';
 import { moveSuggestion, pickTarget } from './move.ts';
+import {
+  needsRootHint,
+  rootAllowText,
+  rootBaseSuggestion,
+  rootIsBase,
+  rootPresetText,
+} from './root-hint.ts';
 import { isExplicitImport, namesOfEdge, onlyNames } from './scoped.ts';
 
 function leaveSuggestion(from: string, to: string): Suggestion {
   return {
     action: 'leave',
     message: `leave it: allowing "${from}" to use "${to}" would create a cycle, and no layer every user may depend on can hold it`,
-    impact: { fixes: 0 },
-  };
-}
-
-/**
- * True when `root` is a target that `from` does not name in `allow`, whole or scoped. A scoped
- * `root` entry already shows that the user knows `root` is a layer, so it gets no hint.
- */
-function needsRootHint(config: LayerscopeConfig, from: string, to: string): boolean {
-  return to === 'root' && !mentionsLayer(config.layers?.[from]?.allow ?? [], 'root');
-}
-
-interface PresetBase {
-  name: PresetName;
-  base: string[];
-}
-
-/**
- * The fix for a layer whose `allow` the preset gave. `root` goes into the base, which needs a
- * `features` shape when `layered` already has its one base layer. `stacked` takes no base, so
- * its layer gets an `allow` list instead, with the list the preset gave and `root` added.
- */
-function presetFixText(
-  from: string,
-  preset: PresetBase,
-  config: LayerscopeConfig,
-  layers: Layer[],
-): string {
-  if (preset.name === 'stacked') {
-    const names = layers.map(layer => layer.name).filter(name => name !== 'root');
-    const given = resolvePreset('stacked', names).allow[names.indexOf(from)] ?? [];
-    const list = [...given, 'root'].map(layer => `'${layer}'`).join(', ');
-    return `set allow for "${from}" to [${list}], which replaces its preset list`;
-  }
-  // `layered` holds exactly one base layer, so a second one needs `features`.
-  const shape = preset.name === 'layered' && preset.base.length > 0 ? 'features' : preset.name;
-  const base = ['root', ...preset.base].map(layer => `'${layer}'`).join(', ');
-  return `add 'root' to the preset base: preset: { name: '${shape}', base: [${base}] }`;
-}
-
-/** The allow hint for a layer whose `allow` the user wrote. `root` goes into that list. */
-function rootAllowText(from: string, fixes: number): string {
-  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code, add 'root' to its allow list (adds 1 edge, clears ${plural(fixes, 'finding')})`;
-}
-
-/** The hint for a layer whose `allow` the preset gave: `root` goes into the preset base. */
-function rootPresetText(
-  from: string,
-  fixes: number,
-  preset: PresetBase,
-  config: LayerscopeConfig,
-  layers: Layer[],
-): string {
-  return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code, ${presetFixText(from, preset, config, layers)} (clears ${plural(fixes, 'finding')})`;
-}
-
-/**
- * True when `root` is in the base of the preset and its `allow` is the empty list that the preset
- * gives. Then `root` is the lowest base layer, and it may not use any feature layer.
- */
-function rootIsBase(context: Context): boolean {
-  const preset = describePreset(context.config, context.layers);
-  const layers = context.config.layers ?? {};
-  const allow = Object.hasOwn(layers, 'root') ? layers.root.allow : undefined;
-  return preset?.base.includes('root') === true && allow?.length === 0;
-}
-
-/**
- * What to do with a use of a feature layer by `root`, under a preset with `root` as its base. The
- * action is `leave`: the fix is a change of the code, which layerscope does not move by itself.
- * The text names the symbol, and the memo of `addSuggestions` already has the symbol in its key.
- */
-function rootBaseSuggestion(finding: Finding): Suggestion {
-  return {
-    action: 'leave',
-    message: `move "${finding.symbol}" to root, or remove this use: root is the base layer and may not use feature layers`,
     impact: { fixes: 0 },
   };
 }
@@ -144,40 +67,6 @@ function allowSuggestion(context: Context, from: string, to: string): Suggestion
       : `allow "${from}" to use "${to}" (adds 1 edge, clears ${plural(fixes, 'finding')})`,
     impact: { fixes, edges: 1 },
   };
-}
-
-/**
- * One note per layer whose `allow` suggestions name `root` and that does not list `root`. The
- * note gives the hint once, where the per-finding suggestion repeats it. A cycle gets `leave`,
- * so its findings add no count. A preset layer gets the preset wording. The counts are the
- * findings given.
- */
-export function rootAllowNotes(
-  findings: Finding[],
-  config: LayerscopeConfig,
-  layers: Layer[] = [],
-  presetLayers: string[] = [],
-): string[] {
-  const counts = new Map<string, number>();
-  for (const finding of findings) {
-    if (
-      finding.rule === 'layer-boundary' &&
-      finding.toLayer === 'root' &&
-      finding.suggestion?.action === 'allow' &&
-      needsRootHint(config, finding.fromLayer, 'root')
-    ) {
-      counts.set(finding.fromLayer, (counts.get(finding.fromLayer) ?? 0) + 1);
-    }
-  }
-  const preset = describePreset(config, layers);
-  return [...counts].map(([from, fixes]) => {
-    const lead = `"root" is a layer too, and it is not in the allow list of "${from}".`;
-    const fix = `To let "${from}" use the project's own app/ and shared/ code,`;
-    const count = `(clears ${plural(fixes, 'finding')}).`;
-    return presetLayers.includes(from) && preset !== null
-      ? `${lead} ${fix} ${presetFixText(from, preset, config, layers)} ${count}`
-      : `${lead} ${fix} add 'root' to its allow list ${count}`;
-  });
 }
 
 function exposeSuggestion(context: Context, finding: Finding): Suggestion {
@@ -271,16 +160,4 @@ export async function addSuggestions(
   return result;
 }
 
-/**
- * The result with the root notes added. Only the commands and tools that report findings call
- * it, so a command that shows no findings does not show a root note.
- */
-export function withRootNotes(result: AnalyzeResult): AnalyzeResult {
-  const notes = rootAllowNotes(
-    result.findings,
-    result.config,
-    result.layers,
-    result.presetLayers ?? [],
-  );
-  return notes.length === 0 ? result : { ...result, notes: [...result.notes, ...notes] };
-}
+export { rootAllowNotes, withRootNotes } from './root-hint.ts';

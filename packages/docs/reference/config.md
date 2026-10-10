@@ -104,7 +104,12 @@ any other layer.
   replaces the list that a preset gives, so if you write `allow` for a layer, list the base layers
   too, for example `allow: ['core', 'root']`.
 
-The hint and the note show in a full check, not in a check of changed files.
+The hint and the note show in a full check, not in a check of changed files. In a full check, the
+note gives the full text once for each layer, and each finding has a short message. DevTools shows
+the full text on each finding.
+
+Under a preset with `root` in its base, root code that uses a feature layer is reported. The fix is
+to move that code to root, or to remove the use.
 
 The usual shape has shared code in root and features in `layers/*`. Each feature may use root, and
 no feature may use another feature, and root may not use a feature. Put `root` in the base of the
