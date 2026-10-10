@@ -1,6 +1,7 @@
 import type { SFCDescriptor, SFCScriptBlock } from '@vue/compiler-sfc';
 import { compileScript, parse as parseSfc } from '@vue/compiler-sfc';
 
+import type { ElementPropKind } from './element-props.ts';
 import { elementOnlyProps } from './element-props.ts';
 import type { Bindings } from './render-visitors.ts';
 import { collectTopLevelNames, scanScript } from './script.ts';
@@ -60,7 +61,7 @@ export function scanVue(source: string, file: string): FileScan {
   const blocks = [descriptor.script, descriptor.scriptSetup].filter(block => block !== null);
   let bindings: Bindings = {};
   // Read once, and only when the template has a `<component :is>` that needs it.
-  let elementProps: (() => Set<string>) | undefined;
+  let elementProps: (() => Map<string, ElementPropKind>) | undefined;
   if (blocks.length > 0) {
     const script = combineScripts(blocks, descriptor);
     scanScript(script.code, script.lang, script.mapOffset, scan);
@@ -70,7 +71,7 @@ export function scanVue(source: string, file: string): FileScan {
     bindings = templateBindings(descriptor, script);
     elementProps = memoize(() => elementOnlyProps(script.code, script.lang));
   }
-  const none = (): Set<string> => new Set();
+  const none = (): Map<string, ElementPropKind> => new Map();
   scanTemplate(descriptor, source, bindings, scan, elementProps ?? none);
   return scan;
 }

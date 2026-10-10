@@ -55,12 +55,16 @@ describe('<component :is> with a native element name', () => {
 
   it('gives no warning for a string prop whose withDefaults default is an element', () => {
     const script = "withDefaults(defineProps<{ tag?: string }>(), { tag: 'span' });";
-    expect(scanOf(script, 'tag').dynamicComponents).toEqual([]);
+    const scan = scanOf(script, 'tag');
+    expect(scan.dynamicComponents).toEqual([]);
+    expect(scan.quietDynamicComponents).toHaveLength(1);
   });
 
   it('gives no warning for a string prop whose destructured default is an element', () => {
     const script = "const { tag = 'span' } = defineProps<{ tag?: string }>();";
-    expect(scanOf(script, 'tag').dynamicComponents).toEqual([]);
+    const scan = scanOf(script, 'tag');
+    expect(scan.dynamicComponents).toEqual([]);
+    expect(scan.quietDynamicComponents).toHaveLength(1);
   });
 
   it('keeps the warning for a string prop with no default', () => {
@@ -93,7 +97,10 @@ describe('elementOnlyProps', () => {
       "defineProps<{ a?: 'h1' | 'p'; b?: string; c?: 'MyCard' }>();\nwithDefaults(defineProps<{ d?: string }>(), { d: 'span' });",
       'ts',
     );
-    expect([...props].toSorted()).toEqual(['a', 'd']);
+    expect([...props.entries()].toSorted(([a], [b]) => a.localeCompare(b))).toEqual([
+      ['a', 'names'],
+      ['d', 'default'],
+    ]);
   });
 
   it('reads nothing from a script that does not parse', () => {
