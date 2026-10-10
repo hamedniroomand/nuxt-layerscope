@@ -3,7 +3,7 @@ import type { Node } from 'oxc-parser';
 import { pascalCase } from '#src/utils/strings.ts';
 
 import { stringLiteral } from './ast.ts';
-import type { ElementPropKind } from './element-props.ts';
+import type { ElementProps, ElementPropKind } from './element-props.ts';
 import { isElementName } from './element-props.ts';
 import type { TemplateElement } from './template-index.ts';
 import type { FileScan } from './types.ts';
@@ -14,7 +14,7 @@ export interface RenderContext {
   scan: FileScan;
   bindings: Bindings;
   /** Props whose value can only be a native element name. Read on first use. */
-  elementProps: () => Map<string, ElementPropKind>;
+  elementProps: () => ElementProps;
   elementOffset: (predicate: (el: TemplateElement) => boolean) => number;
   identOffset: (name: string) => number;
 }
@@ -34,18 +34,31 @@ function isSetupConst(arg: Node | undefined, bindings: Bindings): boolean {
   return key !== null && bindings[key] === 'setup-const';
 }
 
-/** `$props.X` of a prop in `props`, the way the render function reads a prop. */
-function propKind(node: Node, props: Map<string, ElementPropKind>): ElementPropKind | null {
-  if (
-    node.type !== 'MemberExpression' ||
-    node.computed ||
-    node.object.type !== 'Identifier' ||
-    (node.object.name !== '$props' && node.object.name !== '__props') ||
-    node.property.type !== 'Identifier'
-  ) {
+/** The name of a member that is not computed, such as `tag` in `$props.tag`. */
+function memberName(node: Node): string | null {
+  return node.type === 'MemberExpression' && !node.computed && node.property.type === 'Identifier'
+    ? node.property.name
+    : null;
+}
+
+/**
+ * The kind of an element-only prop, read the way the render function reads a prop: `$props.X`,
+ * or `$setup.props.X` when a variable holds the props (`const props = defineProps(...)`).
+ */
+function propKind(node: Node, props: ElementProps): ElementPropKind | null {
+  const name = memberName(node);
+  if (node.type !== 'MemberExpression' || name === null) {
     return null;
   }
-  return props.get(node.property.name) ?? null;
+  const { object } = node;
+  const direct =
+    object.type === 'Identifier' && (object.name === '$props' || object.name === '__props');
+  const holder =
+    object.type === 'MemberExpression' &&
+    object.object.type === 'Identifier' &&
+    object.object.name === '$setup' &&
+    props.holders.has(memberName(object) ?? '');
+  return direct || holder ? (props.kinds.get(name) ?? null) : null;
 }
 
 /**
@@ -54,10 +67,7 @@ function propKind(node: Node, props: Map<string, ElementPropKind>): ElementPropK
  * default. `null` for any other value. Vue renders an element name as that element, unless a
  * global component has the same name. Nuxt components are not registered globally by default.
  */
-function elementKind(
-  node: Node | undefined,
-  props: () => Map<string, ElementPropKind>,
-): ElementPropKind | null {
+function elementKind(node: Node | undefined, props: () => ElementProps): ElementPropKind | null {
   if (node === undefined) {
     return null;
   }

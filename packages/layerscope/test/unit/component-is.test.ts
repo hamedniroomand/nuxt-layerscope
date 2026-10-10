@@ -91,19 +91,43 @@ describe('<component :is> with a native element name', () => {
   });
 });
 
+describe('<component :is> on a prop read through a variable', () => {
+  it('gives no warning for a literal union read as props.tag', () => {
+    const script = "const props = defineProps<{ tag?: 'h1' | 'p' }>();";
+    expect(scanOf(script, 'props.tag').dynamicComponents).toEqual([]);
+  });
+
+  it('keeps a string prop with an element default quiet, read as props.tag', () => {
+    const script = "const props = withDefaults(defineProps<{ tag?: string }>(), { tag: 'span' });";
+    const scan = scanOf(script, 'props.tag');
+    expect(scan.dynamicComponents).toEqual([]);
+    expect(scan.quietDynamicComponents).toHaveLength(1);
+  });
+
+  it('works under any variable name', () => {
+    const script = "const p = defineProps<{ tag?: 'h1' | 'p' }>();";
+    expect(scanOf(script, 'p.tag').dynamicComponents).toEqual([]);
+  });
+
+  it('keeps the warning for a prop that is not element-only', () => {
+    const script = "const props = defineProps<{ tag?: 'h1' | 'p'; other?: string }>();";
+    expect(scanOf(script, 'props.other').dynamicComponents).toHaveLength(1);
+  });
+});
+
 describe('elementOnlyProps', () => {
   it('reads the element-only props of a script', () => {
     const props = elementOnlyProps(
       "defineProps<{ a?: 'h1' | 'p'; b?: string; c?: 'MyCard' }>();\nwithDefaults(defineProps<{ d?: string }>(), { d: 'span' });",
       'ts',
     );
-    expect([...props.entries()].toSorted(([a], [b]) => a.localeCompare(b))).toEqual([
+    expect([...props.kinds.entries()].toSorted(([a], [b]) => a.localeCompare(b))).toEqual([
       ['a', 'names'],
       ['d', 'default'],
     ]);
   });
 
   it('reads nothing from a script that does not parse', () => {
-    expect(elementOnlyProps('defineProps<{ a?: ', 'ts').size).toBe(0);
+    expect(elementOnlyProps('defineProps<{ a?: ', 'ts').kinds.size).toBe(0);
   });
 });
