@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.6.0
+
+### Minor Changes
+
+- [#88](https://github.com/hamedniroomand/nuxt-layerscope/pull/88) [`2f785bc`](https://github.com/hamedniroomand/nuxt-layerscope/commit/2f785bc54599aa0961fd96ce699519ec4f9d005e) - `layerscope init` can suggest a preset with `root` as its base, such as `preset: { name: 'features', base: ['root'] }`, when shared code is in root and the feature layers use only root. The suggestion shows the object form when the base is not the default one.
+
+- [#83](https://github.com/hamedniroomand/nuxt-layerscope/pull/83) [`f33f116`](https://github.com/hamedniroomand/nuxt-layerscope/commit/f33f1168eaebde305cb424d8142bed0885d38f36) - Explain `root` in the `allow` hint. When a layer's `allow` does not list `root`, the suggestion says that `root` is a layer, and `check` and `watch` add one note per layer. The docs describe `root` and `shared/`.
+
+- [#85](https://github.com/hamedniroomand/nuxt-layerscope/pull/85) [`3a749a0`](https://github.com/hamedniroomand/nuxt-layerscope/commit/3a749a0f04f6633a3b77415992f90f3df2aa015a) - Allow `root` as a base layer of a preset, for example `preset: { name: 'features', base: ['root'] }`, so feature layers can use the project's own code without a hand-written `allow`. `root` is always the lowest base layer. Under that preset, `root` may use no other layer unless `layers.root.allow` says so. The allow hint names the preset base when the preset gave the layer its `allow`.
+
+### Patch Changes
+
+- [#87](https://github.com/hamedniroomand/nuxt-layerscope/pull/87) [`d518257`](https://github.com/hamedniroomand/nuxt-layerscope/commit/d5182575306e2e7e366bb3e626572fc373ebb2aa) - Do not report `<component :is>` when the bound value can only be a native HTML or SVG element name, such as a string literal, a ternary of them, or a prop typed as element names or defaulting to one.
+
 ## 0.5.0
 
 ### Minor Changes
