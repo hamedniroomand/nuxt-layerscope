@@ -79,6 +79,30 @@ function rootPresetText(
   return `"root" is a layer too. To let "${from}" use the project's own app/ and shared/ code, ${presetFixText(from, preset, config, layers)} (clears ${plural(fixes, 'finding')})`;
 }
 
+/**
+ * True when `root` is in the base of the preset and its `allow` is the empty list that the preset
+ * gives. Then `root` is the lowest base layer, and it may not use any feature layer.
+ */
+function rootIsBase(context: Context): boolean {
+  const preset = describePreset(context.config, context.layers);
+  const layers = context.config.layers ?? {};
+  const allow = Object.hasOwn(layers, 'root') ? layers.root.allow : undefined;
+  return preset?.base.includes('root') === true && allow?.length === 0;
+}
+
+/**
+ * What to do with a use of a feature layer by `root`, under a preset with `root` as its base. The
+ * action is `leave`: the fix is a change of the code, which layerscope does not move by itself.
+ * The text names the symbol, and the memo of `addSuggestions` already has the symbol in its key.
+ */
+function rootBaseSuggestion(finding: Finding): Suggestion {
+  return {
+    action: 'leave',
+    message: `move "${finding.symbol}" to root, or remove this use: root is the base layer and may not use feature layers`,
+    impact: { fixes: 0 },
+  };
+}
+
 function allowSuggestion(context: Context, from: string, to: string): Suggestion {
   const pair = context.boundaryBy.get(pairKey(from, to)) ?? [];
   const fixes = pair.length;
@@ -179,6 +203,9 @@ function exposeSuggestion(context: Context, finding: Finding): Suggestion {
 function suggest(context: Context, finding: Finding): Suggestion {
   if (finding.rule === 'layer-internal') {
     return exposeSuggestion(context, finding);
+  }
+  if (finding.fromLayer === 'root' && rootIsBase(context)) {
+    return rootBaseSuggestion(finding);
   }
   const from = finding.fromLayer;
   const to = finding.toLayer ?? '';

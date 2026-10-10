@@ -112,3 +112,43 @@ describe('root hint impact under a preset', () => {
     expect(suggestion?.message).toContain('replaces its preset list');
   });
 });
+
+describe('root code that uses a feature layer, with root in the preset base', () => {
+  const layers = ['root', 'website'].map(name => makeLayer(name, `/app/${name}`));
+  const useOfWebsite = (): Finding =>
+    makeFinding({
+      fromLayer: 'root',
+      toLayer: 'website',
+      symbol: 'usePageSeo',
+      suggestion: undefined,
+    });
+
+  async function suggestionOf(config: LayerscopeConfig): Promise<Finding['suggestion']> {
+    const [finding] = await addSuggestions([useOfWebsite()], [], layers, config, '/app');
+    return finding.suggestion;
+  }
+
+  it('says to move the code to root or remove the use, and does not allow root to use it', async () => {
+    const suggestion = await suggestionOf({
+      preset: { name: 'features', base: ['root'] },
+      layers: { root: { allow: [] }, website: { allow: ['root'] } },
+    });
+    expect(suggestion?.action).toBe('leave');
+    expect(suggestion?.message).toBe(
+      'move "usePageSeo" to root, or remove this use: root is the base layer and may not use feature layers',
+    );
+  });
+
+  it('keeps the normal suggestion without root in the preset base', async () => {
+    const suggestion = await suggestionOf({ layers: { root: { allow: [] } } });
+    expect(suggestion?.action).toBe('allow');
+  });
+
+  it('keeps the normal suggestion when the config gives root its own allow list', async () => {
+    const suggestion = await suggestionOf({
+      preset: { name: 'features', base: ['root'] },
+      layers: { root: { allow: ['other'] } },
+    });
+    expect(suggestion?.action).toBe('allow');
+  });
+});
