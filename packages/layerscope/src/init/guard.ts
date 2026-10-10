@@ -31,7 +31,8 @@ export function assertWritable(
 
 export function assertNoNuxtConfigLayers(result: AnalyzeResult, hasConfigFile: boolean): void {
   if (!hasConfigFile && hasProjectConfig(result.config)) {
-    const keys = keysSet(result.config);
+    // `result.config` has the `layers` that a preset adds, so the keys come from the declared config.
+    const keys = keysSet(result.declaredConfig ?? result.config);
     const many = keys.includes(', ');
     // `init` reads the .nuxt data, so a key that was removed from nuxt.config can still show here.
     throw new LayerscopeError(

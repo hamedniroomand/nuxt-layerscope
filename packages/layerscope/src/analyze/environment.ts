@@ -3,6 +3,7 @@ import {
   effectiveConfig,
   labelConfigError,
   layersFilledByPreset,
+  pickProjectConfig,
 } from '#src/config/effective.ts';
 import type { ProjectConfig } from '#src/config/effective.ts';
 import { readRegistry } from '#src/registry/read.ts';
@@ -28,6 +29,8 @@ export interface Environment {
   config: LayerscopeConfig;
   /** Layers whose `allow` the preset filled. */
   presetLayers: string[];
+  /** The project options as the config set them, before the preset is applied. */
+  declaredConfig: ProjectConfig;
   source: ResolutionSource;
   sourceFile: string;
   /** `null` with the `.d.ts` fallback, which only lists the winning components. */
@@ -78,6 +81,7 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
     ...symbols,
     config,
     presetLayers,
+    declaredConfig: pickProjectConfig(effective),
     notes: [...symbols.notes, ...notes, ...(stale === null ? [] : [stale])],
     registry,
     layers,

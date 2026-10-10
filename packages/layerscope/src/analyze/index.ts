@@ -45,7 +45,7 @@ export interface AnalyzeOptions {
 export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResult> {
   const rootDir = resolve(options.rootDir ?? process.cwd());
   const environment = await loadProject({ ...options, rootDir });
-  const { layers, env, registry, config, presetLayers } = environment;
+  const { layers, env, registry, config, presetLayers, declaredConfig } = environment;
   // Collecting reads the file system, so the event loop gets a turn after the environment loads.
   const collected = await collectFiles(layers, env.ownerOf, config.ignore ?? []);
   const plan = planScan(options.only, collected, config, rootDir);
@@ -76,6 +76,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     notes: [...environment.notes, ...notes],
     symbols: env.table,
     presetLayers,
+    declaredConfig,
     dynamicComponentFiles: analyses
       .filter(analysis => analysis.hasDynamicComponent)
       .map(analysis => analysis.file),
