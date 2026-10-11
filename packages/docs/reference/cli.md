@@ -41,12 +41,19 @@ fits, `init` suggests it, because it is stricter.
 | ----------------- | ---------------------- | ------------------------------------------------------------ |
 | `--config <file>` | `layerscope.config.ts` | Where to write the config, relative to the current directory |
 | `--baseline`      |                        | Also write a baseline of the findings still reported         |
-| `--force`         |                        | Replace an existing config or baseline                       |
+| `--force`         |                        | Replace the existing config file or baseline                 |
 | `--dry-run`       |                        | Print the proposal and write nothing                         |
 
 Also takes `--prepare`, `--source` and `--verbose`. Without `--force`, `init` exits `2` when a
 config already exists, or a baseline with `--baseline`. It does not merge: use `--dry-run` and copy
 the edges you want.
+
+With `--force`, `init` replaces the config file that exists, whatever its name. It does not write a
+second config.
+
+`init` reads Nuxt's data from the build directory. It takes `buildDir` from the layerscope config if
+there is one, then from `nuxt.config`, and uses `.nuxt` if neither sets it. When the build directory
+is not `.nuxt`, the new config sets `buildDir`, so `check` reads the same place.
 
 `init` also exits `2` when the `layerscope` key of `nuxt.config` sets options, and it names the keys.
 It reads the data that Nuxt recorded in `.nuxt`. After you move the keys to `layerscope.config.ts`
