@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
-import { EXIT_CLEAN, run } from '#src/cli.ts';
+import { EXIT_CLEAN, EXIT_ERROR, run } from '#src/cli.ts';
 import { moduleNote } from '#src/commands/init.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
@@ -12,11 +12,12 @@ import { NUXT4_ROOT } from '#test/fixtures.ts';
 /** The start of the note, with the registry path as `init` shows it: relative to the cwd. */
 function noteFor(root: string): string {
   const registry = relative(process.cwd(), join(root, '.nuxt/layerscope/registry.json'));
-  return `layerscope found no data from its Nuxt module (${registry}), so it reads symbols from the types that Nuxt generates. The findings are the same, but the \`shadowed-component\` rule and the full stale check need the module.`;
+  return `layerscope found no data from its Nuxt module (${registry}), so it reads symbols from the types that Nuxt generates. The boundary findings are the same, but some checks need the module (see the shadowed-component note).`;
 }
 const NOTE_START = 'layerscope found no data from its Nuxt module';
 const INSTALL = 'npx nuxi module add nuxt-layerscope --dev';
-const RERUN = 'layerscope init --prepare';
+const ENABLE = 'If it is installed, enable it';
+const RERUN = 'run `npx nuxi prepare`, then run layerscope again.';
 
 function write(root: string, path: string, content: string): void {
   mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -60,7 +61,9 @@ describe('init when the Nuxt module is not installed', () => {
     expect(code).toBe(EXIT_CLEAN);
     expect(stderr).toContain(noteFor(root));
     expect(stderr).toContain(INSTALL);
+    expect(stderr).toContain(ENABLE);
     expect(stderr).toContain(RERUN);
+    expect(stderr).not.toContain('init --prepare');
     expect(stdout).not.toContain(NOTE_START);
     expect(stdout).toContain('Allowed edges');
   });
@@ -88,12 +91,38 @@ describe('init when the Nuxt module is not installed', () => {
   });
 });
 
+describe('init with a registry file that exists', () => {
+  it('prints no module note when the registry has another schema version', async () => {
+    const root = withoutRegistry();
+    write(root, '.nuxt/layerscope/registry.json', '{ "version": 999 }\n');
+    const { code, stderr } = await init(root);
+    expect(code).toBe(EXIT_CLEAN);
+    expect(stderr).toContain('schema version 999');
+    expect(stderr).not.toContain(NOTE_START);
+  });
+});
+
+describe('the advice of the note after a real write', () => {
+  it('does not tell the user to run init again, which would refuse to replace the config', async () => {
+    const root = withoutRegistry();
+    const out = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
+    const err = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+    expect(await run(['node', 'layerscope', 'init', root])).toBe(EXIT_CLEAN);
+    const first = err.mock.calls.map(call => String(call[0])).join('');
+    expect(first).toContain(NOTE_START);
+    expect(first).not.toMatch(/layerscope init/u);
+    expect(await run(['node', 'layerscope', 'init', root])).toBe(EXIT_ERROR);
+    expect(out).toHaveBeenCalled();
+  });
+});
+
 describe('the wording of the note', () => {
   const types = { source: 'types' } as AnalyzeResult;
 
   it('gives only the install step with --prepare, because Nuxt just ran', () => {
     const [note] = moduleNote(types, { source: 'auto', prepare: true });
     expect(note).toContain(INSTALL);
+    expect(note).toContain(ENABLE);
     expect(note).not.toContain(RERUN);
   });
 
