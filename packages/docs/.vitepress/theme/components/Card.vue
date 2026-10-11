@@ -4,7 +4,17 @@
 
   import { icon as renderIcon } from '#theme/icons.ts';
 
-  const props = defineProps<{ title?: string; icon?: string; to?: string }>();
+  /**
+   * In a `bento` or `tiles` group, `wide` makes the card take two columns. `tone="brand"` tints the
+   * card.
+   */
+  const props = defineProps<{
+    title?: string;
+    icon?: string;
+    to?: string;
+    wide?: boolean;
+    tone?: 'brand';
+  }>();
 
   const glyph = computed(() => (props.icon === undefined ? '' : renderIcon(props.icon)));
   const arrow = renderIcon('arrow-right');
@@ -20,7 +30,7 @@
   <component
     :is="href ? 'a' : 'div'"
     class="ls-card"
-    :class="{ 'ls-card-link': href }"
+    :class="{ 'ls-card-link': href, 'ls-card-wide': wide, 'ls-card-brand': tone === 'brand' }"
     :href="href ?? undefined"
   >
     <span

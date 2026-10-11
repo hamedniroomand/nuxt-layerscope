@@ -1,10 +1,10 @@
 <template>
   <svg
-    class="image-src ls-hero-logo"
+    class="ls-hero-logo"
     viewBox="0 0 64 64"
     fill="none"
-    role="img"
-    aria-label="layerscope"
+    aria-hidden="true"
+    focusable="false"
   >
     <defs>
       <linearGradient
