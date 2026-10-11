@@ -386,6 +386,12 @@ kbd {
   font-weight: 400;
 }
 
+/* VitePress moves the h2 anchor down by the 24px top padding of its h2. These headings have no
+   top padding, so the anchor goes back to the first line of the heading. */
+.vp-doc h2 .header-anchor {
+  top: 0;
+}
+
 .vp-doc p,
 .vp-doc li {
   line-height: 1.75;
@@ -1253,6 +1259,11 @@ kbd {
   border-radius: 11px;
   background: var(--vp-c-bg);
   aspect-ratio: 1200 / 720;
+}
+
+/* The stage clips overflow, so the focus ring of the panel goes inside its edge. */
+.ls-tour-panel:focus-visible {
+  outline-offset: -2px;
 }
 
 .ls-tour-panel img {
