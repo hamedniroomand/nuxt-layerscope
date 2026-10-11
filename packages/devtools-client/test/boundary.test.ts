@@ -99,16 +99,31 @@ describe('the specifier pattern', () => {
   });
 });
 
-/** Core modules that `contract.ts` re-exports as values. The client bundles them. */
-const CONTRACT_VALUE_MODULES = [
-  '../layerscope/src/devtools/static-paths.ts',
-  '../layerscope/src/graph/layout-size.ts',
-  '../layerscope/src/report/why-labels.ts',
-];
+const CORE_SRC = join(PACKAGE, '../layerscope/src/');
+const CONTRACT = join(CORE_SRC, 'devtools/contract.ts');
+
+/**
+ * The core modules that `contract.ts` re-exports as values (an `export` that is not `export type`).
+ * The client bundles them. A `#src/` path is in the core `src` folder.
+ */
+function contractValueModules(): string[] {
+  const text = readFileSync(CONTRACT, 'utf8');
+  return [...text.matchAll(/^export\s+(?!type\b)[^;]*?\bfrom\s+'([^']+)';/gmu)].map(match =>
+    match[1].startsWith('#src/')
+      ? join(CORE_SRC, match[1].slice('#src/'.length))
+      : resolve(dirname(CONTRACT), match[1]),
+  );
+}
+
+const CONTRACT_VALUE_MODULES = contractValueModules();
 
 describe('the values of the contract', () => {
+  it('finds the value re-exports', () => {
+    expect(CONTRACT_VALUE_MODULES.length).toBeGreaterThan(0);
+  });
+
   it.each(CONTRACT_VALUE_MODULES)('%s has no import at run time', path => {
-    const text = readFileSync(join(PACKAGE, path), 'utf8');
+    const text = readFileSync(path, 'utf8');
     const runtime = text.replaceAll(/^(?:import|export)\s+type\b[^;]*;/gmu, '');
     expect(specifiers(runtime)).toEqual([]);
   });
