@@ -26,9 +26,18 @@ export interface InitFlags extends Omit<CommonFlags, 'format'> {
 
 const CONFIG_NAME = 'layerscope.config.ts';
 
-/** The path as one shell word: plain paths stay as they are, others get single quotes. */
-function shellQuote(path: string): string {
-  return /^[\w./@%+=:,-]+$/u.test(path) ? path : `'${path.replaceAll("'", String.raw`'\''`)}'`;
+/**
+ * The path as one shell word. A path that starts with `-` gets `./` first, or the command reads it
+ * as an option. Plain paths stay as they are, and others get double quotes, which keep a space or an
+ * apostrophe in bash, zsh, PowerShell and cmd. A path with `"`, `$` or a backtick stays unquoted:
+ * no quote style is safe in every shell for it, and such a root is rare.
+ */
+function shellWord(path: string): string {
+  const word = path.startsWith('-') ? `./${path}` : path;
+  if (/^[\w./@%+=:,-]+$/u.test(word) || /["$`]/u.test(word)) {
+    return word;
+  }
+  return `"${word}"`;
 }
 
 /**
@@ -46,10 +55,10 @@ export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
   }
   const root = relative(process.cwd(), result.rootDir);
   // `module add` has no folder argument, only `--cwd`. `prepare` takes the folder as an argument.
-  const install = `npx nuxi module add nuxt-layerscope --dev${root === '' ? '' : ` --cwd ${shellQuote(root)}`}`;
-  const prepare = `npx nuxi prepare${root === '' ? '' : ` ${shellQuote(root)}`}`;
+  const install = `npx nuxi module add nuxt-layerscope --dev${root === '' ? '' : ` --cwd ${shellWord(root)}`}`;
+  const prepare = `npx nuxi prepare${root === '' ? '' : ` ${shellWord(root)}`}`;
   return [
-    `layerscope found no data from its Nuxt module (${relative(process.cwd(), registryFile)}), so it reads symbols from the types that Nuxt generates. The boundary findings are the same, but some checks need the module (see the shadowed-component note). To use the module, install it with \`${install}\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`${prepare}\` and run layerscope again.`,
+    `layerscope found no data from its Nuxt module (${relative(process.cwd(), registryFile)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, install it with \`${install}\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`${prepare}\` and run layerscope again.`,
   ];
 }
 

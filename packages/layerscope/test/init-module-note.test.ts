@@ -12,10 +12,10 @@ import { NUXT4_ROOT } from '#test/fixtures.ts';
 /** The note as `init` prints it: the registry path and the root are relative to the cwd. */
 function noteFor(root: string, registry = join(root, '.nuxt/layerscope/registry.json')): string {
   const folder = relative(process.cwd(), root);
-  const word = /^[\w./@%+=:,-]+$/u.test(folder) ? folder : `'${folder}'`;
+  const word = /^[\w./@%+=:,-]+$/u.test(folder) ? folder : `"${folder}"`;
   const install = `npx nuxi module add nuxt-layerscope --dev${folder === '' ? '' : ` --cwd ${word}`}`;
   const prepare = `npx nuxi prepare${folder === '' ? '' : ` ${word}`}`;
-  return `layerscope found no data from its Nuxt module (${relative(process.cwd(), registry)}), so it reads symbols from the types that Nuxt generates. The boundary findings are the same, but some checks need the module (see the shadowed-component note). To use the module, install it with \`${install}\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`${prepare}\` and run layerscope again.`;
+  return `layerscope found no data from its Nuxt module (${relative(process.cwd(), registry)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, install it with \`${install}\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`${prepare}\` and run layerscope again.`;
 }
 const NOTE_START = 'layerscope found no data from its Nuxt module';
 
@@ -168,9 +168,25 @@ describe('the commands of the note', () => {
     const root = join(tempRoot(), 'apps/my web');
     const [note] = moduleNote(typesIn(root), { source: 'auto' });
     const folder = relative(process.cwd(), root);
-    expect(note).toContain(`--dev --cwd '${folder}'\``);
-    expect(note).toContain(`npx nuxi prepare '${folder}'\``);
+    expect(note).toContain(`--dev --cwd "${folder}"\``);
+    expect(note).toContain(`npx nuxi prepare "${folder}"\``);
     expect(note).toBe(noteFor(root));
+  });
+
+  it('keeps an apostrophe inside double quotes', () => {
+    const [note] = moduleNote(typesIn(join(process.cwd(), "my app's")), { source: 'auto' });
+    expect(note).toContain('npx nuxi prepare "my app\'s"`');
+  });
+
+  it('starts a root that begins with a dash with ./, so it is not read as an option', () => {
+    const [note] = moduleNote(typesIn(join(process.cwd(), '-app')), { source: 'auto' });
+    expect(note).toContain('--dev --cwd ./-app`');
+    expect(note).toContain('npx nuxi prepare ./-app`');
+  });
+
+  it('prints a root with a dollar sign, a double quote or a backtick without quotes', () => {
+    const [note] = moduleNote(typesIn(join(process.cwd(), 'a$b')), { source: 'auto' });
+    expect(note).toContain('npx nuxi prepare a$b`');
   });
 
   it('leaves the root out of the prepare command when the root is the cwd', () => {
