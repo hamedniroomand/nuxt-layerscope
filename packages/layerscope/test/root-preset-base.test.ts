@@ -117,6 +117,7 @@ describe('a preset whose base is root', () => {
     );
     expect(code).toBe(EXIT_VIOLATIONS);
     expect(out).toContain('crosses from layer "root" into "website"');
+    expect(out).toContain('move "useWeb" to root, or remove this use');
   });
 
   it('lets a root entry in the config clear that finding', async () => {

@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
+import { analyze } from '#src/analyze/index.ts';
 import { EXIT_CLEAN, EXIT_VIOLATIONS, run } from '#src/cli.ts';
 
 const HINT = 'is a layer too, and it is not in the allow list of';
@@ -96,6 +97,21 @@ describe('root hint in a check', () => {
     expect(count(out, `${HINT} "admin"`)).toBe(1);
   });
 
+  it('shortens the message of each finding that a note covers', async () => {
+    const { out } = await cli('check', project('[]'));
+    expect(count(out, 'root is a layer, see the note')).toBe(2);
+    expect(out).not.toContain('see the note (clears');
+    expect(count(out, 'To let "website" use the project\'s own app/')).toBe(1);
+  });
+
+  it('keeps the full message in analyze, which DevTools reads', async () => {
+    const result = await analyze({ rootDir: project('[]') });
+    const messages = result.findings.map(finding => finding.suggestion?.message ?? '');
+    expect(messages).toHaveLength(2);
+    expect(messages.every(message => message.startsWith('"root" is a layer too.'))).toBe(true);
+    expect(result.notes.join('')).not.toContain('is a layer too, and');
+  });
+
   it('gives no hint and no finding when each layer lists root', async () => {
     const { code, out } = await cli('check', project("['root']"));
     expect(code).toBe(EXIT_CLEAN);
@@ -120,7 +136,9 @@ describe('root hint in a check', () => {
     const { out } = await cli('graph', project('[]'));
     expect(out).not.toContain(HINT);
   });
+});
 
+describe('root hint with other findings', () => {
   it('keeps the feature-to-feature error with the hint', async () => {
     const { code, out } = await cli('check', project('[]', { crossing: true }));
     expect(code).toBe(EXIT_VIOLATIONS);

@@ -29,7 +29,8 @@ export function pickProjectConfig(config: LayerscopeConfig): ProjectConfig {
   );
 }
 
-function keysSet(config: ProjectConfig): string {
+/** The names of the project keys that `config` sets, quoted and joined: `"preset", "rules"`. */
+export function keysSet(config: ProjectConfig): string {
   return PROJECT_CONFIG_KEYS.filter(key => config[key] !== undefined)
     .map(key => `"${key}"`)
     .join(', ');

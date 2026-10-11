@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { relative, resolve } from 'pathe';
 
 import { BASELINE_FILE } from '#src/baseline/index.ts';
-import { hasProjectConfig } from '#src/config/effective.ts';
+import { hasProjectConfig, keysSet } from '#src/config/effective.ts';
 import { findConfigFile } from '#src/config/load.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult } from '#src/types.ts';
@@ -31,8 +31,12 @@ export function assertWritable(
 
 export function assertNoNuxtConfigLayers(result: AnalyzeResult, hasConfigFile: boolean): void {
   if (!hasConfigFile && hasProjectConfig(result.config)) {
+    // `result.config` has the `layers` that a preset adds, so the keys come from the declared config.
+    const keys = keysSet(result.declaredConfig ?? result.config);
+    const many = keys.includes(', ');
+    // `init` reads the .nuxt data, so a key that was removed from nuxt.config can still show here.
     throw new LayerscopeError(
-      'Layers or rules are already set in the "layerscope" key of nuxt.config. Move them to layerscope.config.ts, or remove the key and run init again.',
+      `${keys} ${many ? 'are' : 'is'} set in the "layerscope" key of nuxt.config (read from the .nuxt data of the last Nuxt run). Move ${many ? 'them' : 'it'} to layerscope.config.ts and remove the key, then run init --prepare.`,
     );
   }
 }
