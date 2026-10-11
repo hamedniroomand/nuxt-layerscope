@@ -25,7 +25,7 @@ jobs:
           cache: true
           run-install: true
       - run: vp check
-      - run: vp run nuxt-layerscope#check:client
+      - run: vp run @layerscope/devtools-client#check
       - run: vp test --coverage
       - run: vp run -r build
       - name: Check the package (publint, are-the-types-wrong)

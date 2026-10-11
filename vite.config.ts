@@ -117,16 +117,13 @@ export default defineConfig({
         },
       },
       {
-        files: ['packages/layerscope/src/devtools/client/**', 'packages/layerscope/test/client/**'],
+        files: ['packages/devtools-client/**'],
         env: { browser: true },
         globals: { defineProps: 'readonly', defineEmits: 'readonly', defineExpose: 'readonly' },
         rules: { 'vue/max-props': 'off' },
       },
       {
-        files: [
-          'packages/layerscope/src/devtools/client/**/*.vue',
-          'packages/layerscope/src/devtools/client/shims.d.ts',
-        ],
+        files: ['packages/devtools-client/src/**/*.vue', 'packages/devtools-client/src/shims.d.ts'],
         rules: { 'import/unambiguous': 'off' },
       },
       {
@@ -145,7 +142,7 @@ export default defineConfig({
   test: {
     projects: ['packages/*'],
     coverage: {
-      include: ['packages/layerscope/src/**/*.ts'],
+      include: ['packages/layerscope/src/**/*.ts', 'packages/devtools-client/src/**/*.ts'],
       exclude: [
         // CLI process.exitCode entry; no logic beyond run().
         'packages/layerscope/src/bin.ts',
@@ -156,8 +153,8 @@ export default defineConfig({
         // DevTools Nuxt registration; handler/page/analyzer stay covered.
         'packages/layerscope/src/devtools/index.ts',
         // Browser entry of the DevTools client; it only mounts the app.
-        'packages/layerscope/src/devtools/client/main.ts',
-        'packages/layerscope/src/devtools/client/shims.d.ts',
+        'packages/devtools-client/src/main.ts',
+        'packages/devtools-client/src/shims.d.ts',
       ],
       reporter: ['text', 'html', 'clover', 'json', 'lcov'],
       thresholds: { statements: 90, branches: 80, functions: 90, lines: 90 },

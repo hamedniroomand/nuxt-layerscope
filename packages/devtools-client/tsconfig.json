@@ -1,0 +1,19 @@
+{
+  // vue-tsc 3 needs TypeScript 6. The typescript-eslint devDependency keeps that peer at 6.
+  "compilerOptions": {
+    "noEmit": true,
+    "strict": true,
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "lib": ["es2024", "dom", "dom.iterable"],
+    "types": ["node"],
+    "skipLibCheck": true,
+    "paths": {
+      "#contract": ["../layerscope/src/devtools/contract.ts"],
+      "#contract-testing": ["../layerscope/test/contract-testing.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.vue", "test/**/*.ts"]
+}

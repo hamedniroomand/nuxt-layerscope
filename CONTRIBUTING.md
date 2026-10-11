@@ -44,8 +44,13 @@ small app with four layers and a few findings on purpose. Open the printed URL, 
 in the <kbd>⋮</kbd> menu, where you can pin it. You can also open `/__layerscope` directly. Save a
 file under `layers/` to see a live update.
 
-- The dev server serves the built tab, so run `vp run nuxt-layerscope#build` again after you change
-  the client, then reload.
+- The dev server serves the built tab from `packages/layerscope/dist/devtools`. The tab client is in
+  `packages/devtools-client`. This private package is not published. The `nuxt-layerscope` build
+  builds it first and copies it there. Run `vp run nuxt-layerscope#build` before you run
+  `playground#dev` directly, and after each change to the client, then reload. The client package
+  has `typescript-eslint` as a devDependency only to keep `vue-tsc` on TypeScript 6, because
+  `vue-tsc` 3 does not work with TypeScript 7. If `vp run @layerscope/devtools-client#check` fails
+  with `ERR_PACKAGE_PATH_NOT_EXPORTED`, the dependency was removed or no longer holds that pin.
 - Nuxt runs one dev server per project: stop the playground before `vp run docs#screenshots`.
 - Ignore and Undo write `layerscope-baseline.json` in the playground. Restore it with
   `git checkout` when you are done.

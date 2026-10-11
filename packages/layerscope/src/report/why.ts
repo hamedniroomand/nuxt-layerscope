@@ -4,19 +4,13 @@ import type { Edge } from '#src/types.ts';
 import type { SymbolTarget, SymbolUse, UseStatus } from '#src/why/index.ts';
 
 import { JSON_REPORT_VERSION } from './json.ts';
+import { STATUS_LABELS } from './why-labels.ts';
+
+export { STATUS_LABELS };
 
 export const WHY_FORMATS = ['text', 'json'] as const;
 
 export type WhyFormat = (typeof WHY_FORMATS)[number];
-
-export const STATUS_LABELS: Record<UseStatus, string> = {
-  'same-layer': '✔ same layer',
-  external: '✔ external',
-  unrestricted: '✔ unrestricted',
-  allowed: '✔ allowed',
-  'not-allowed': '✖ not allowed',
-  'not-exposed': '✖ not exposed',
-};
 
 export function isWhyFormat(value: string): value is WhyFormat {
   return (WHY_FORMATS as readonly string[]).includes(value);
