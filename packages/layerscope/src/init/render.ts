@@ -3,8 +3,16 @@ import { plural } from '#src/utils/strings.ts';
 import { DEFAULT_BUILD_DIR } from './build-dir.ts';
 import type { AllowedEdge } from './types.ts';
 
-function quote(text: string): string {
-  return `'${text.replaceAll('\\', '\\\\').replaceAll("'", String.raw`\'`)}'`;
+/** Escapes the line terminators too, which cannot stand inside a string literal. */
+export function quote(text: string): string {
+  const escaped = text
+    .replaceAll('\\', '\\\\')
+    .replaceAll("'", String.raw`\'`)
+    .replaceAll('\n', String.raw`\n`)
+    .replaceAll('\r', String.raw`\r`)
+    .replaceAll('\u2028', String.raw`\u2028`)
+    .replaceAll('\u2029', String.raw`\u2029`);
+  return `'${escaped}'`;
 }
 
 function property(name: string): string {

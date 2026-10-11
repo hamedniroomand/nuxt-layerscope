@@ -41,7 +41,9 @@ describe('init and the Nuxt build directory, first run', () => {
     vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     expect(await run(['node', 'layerscope', 'check', root])).toBe(EXIT_CLEAN);
   });
+});
 
+describe('init and the Nuxt build directory, the path in the new config', () => {
   it('keeps an absolute buildDir outside the root absolute, not a ../ path', async () => {
     const outside = tempFolder();
     write(outside, 'types/imports.d.ts', 'export {}\n');
@@ -52,6 +54,13 @@ describe('init and the Nuxt build directory, first run', () => {
     const config = read(root, 'layerscope.config.ts');
     expect(config).toContain(`  buildDir: '${outside}',`);
     expect(config).not.toContain('../');
+  });
+
+  it('keeps a folder inside the root that starts with two dots relative', async () => {
+    const root = project({ nuxtBuildDir: '..generated', dataIn: ['..generated'] });
+    const { code } = await init(root);
+    expect(code).toBe(EXIT_CLEAN);
+    expect(read(root, 'layerscope.config.ts')).toContain("  buildDir: '..generated',");
   });
 
   it('writes no buildDir line for the default folder', async () => {
@@ -105,6 +114,17 @@ describe('init and the Nuxt build directory, with an existing config', () => {
     );
     expect(code).toBe(EXIT_CLEAN);
     expect(stderr).toContain(readFrom(root, '.cache-x'));
+  });
+});
+
+describe('init and an existing config that gives no usable buildDir', () => {
+  it('treats a buildDir of null in the existing config as unset', async () => {
+    const root = project({
+      files: [['layerscope.config.mjs', 'export default { buildDir: null };\n']],
+    });
+    const { code } = await init(root, '--force');
+    expect(code).toBe(EXIT_CLEAN);
+    expect(read(root, 'layerscope.config.mjs')).not.toContain('buildDir');
   });
 
   it('replaces a config that does not load, with --force', async () => {

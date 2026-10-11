@@ -16,7 +16,8 @@ export async function initBuildDir(
 ): Promise<string> {
   const config =
     existingConfig === null ? {} : await loadConfig(rootDir, existingConfig).catch(() => ({}));
-  if (config.buildDir !== undefined) {
+  // A `.js` config can set `null`, which `loadProject` treats as unset, so this does too.
+  if (typeof config.buildDir === 'string') {
     return config.buildDir;
   }
   const nuxt = await nuxtBuildDir(rootDir);
@@ -25,5 +26,7 @@ export async function initBuildDir(
   }
   const folder = relative(rootDir, nuxt);
   // A path outside the root stays absolute: a `../..` path works only at the same folder depth.
-  return folder.startsWith('..') ? nuxt : folder || DEFAULT_BUILD_DIR;
+  // A folder inside the root that starts with two dots, such as `..generated`, stays relative.
+  const outside = folder === '..' || folder.startsWith('../');
+  return outside ? nuxt : folder || DEFAULT_BUILD_DIR;
 }
