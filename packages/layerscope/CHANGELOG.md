@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.3
+
+### Patch Changes
+
+- [#101](https://github.com/hamedniroomand/nuxt-layerscope/pull/101) [`11f0229`](https://github.com/hamedniroomand/nuxt-layerscope/commit/11f022934aa6d6b133d087e1587c4d26c1bab7e2) - `init` uses the Nuxt build directory and treats every layerscope config file name the same.
+
+- [#99](https://github.com/hamedniroomand/nuxt-layerscope/pull/99) [`30e2465`](https://github.com/hamedniroomand/nuxt-layerscope/commit/30e2465b33dc023dcd932e6d3db9297778006134) - `init` says when it found no data from the Nuxt module and reads symbols from the generated types.
+
 ## 0.6.2
 
 ### Patch Changes
