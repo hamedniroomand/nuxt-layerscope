@@ -1,4 +1,5 @@
 {
+  // vue-tsc 3 needs TypeScript 6. The typescript-eslint devDependency keeps that peer at 6.
   "compilerOptions": {
     "noEmit": true,
     "strict": true,

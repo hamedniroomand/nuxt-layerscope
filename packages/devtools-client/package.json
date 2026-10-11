@@ -18,7 +18,7 @@
     "axe-core": "^4.13.0",
     "happy-dom": "^20.14.5",
     "pathe": "^2.0.3",
-    "typescript": "6.0.3",
+    "typescript-eslint": "^8.71.0",
     "vite-plus": "catalog:",
     "vue": "3.5.43",
     "vue-tsc": "^3.3.12"
