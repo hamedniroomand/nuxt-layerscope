@@ -77,6 +77,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     symbols: env.table,
     presetLayers,
     declaredConfig,
+    recordedFile: environment.recordedFile,
     dynamicComponentFiles: analyses
       .filter(analysis => analysis.hasDynamicComponent)
       .map(analysis => analysis.file),

@@ -1,4 +1,4 @@
-import { utimesSync } from 'node:fs';
+import { mkdirSync, utimesSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
@@ -97,7 +97,15 @@ function withAges(registryAge: number, configAge: number): AnalyzeResult {
   const now = Date.now() / 1000;
   utimesSync(registry, now - registryAge, now - registryAge);
   utimesSync(join(root, 'nuxt.config.ts'), now - configAge, now - configAge);
-  return { config: { preset: 'layered' }, rootDir: root, sourceFile: registry } as AnalyzeResult;
+  // With `--source types`, the symbols come from a directory that is older than both files.
+  mkdirSync(join(root, '.nuxt/types'), { recursive: true });
+  utimesSync(join(root, '.nuxt/types'), now - 1000, now - 1000);
+  return {
+    config: { preset: 'layered' },
+    rootDir: root,
+    sourceFile: join(root, '.nuxt/types'),
+    recordedFile: registry,
+  } as AnalyzeResult;
 }
 
 describe('assertNoNuxtConfigLayers with a changed nuxt.config', () => {
@@ -107,7 +115,7 @@ describe('assertNoNuxtConfigLayers with a changed nuxt.config', () => {
     );
   });
 
-  it('keeps the move message when the .nuxt data is newer', () => {
+  it('compares with the registry file, not with the types directory of --source types', () => {
     expect(refusalOf(withAges(10, 100))).toContain('Move it to layerscope.config.ts');
   });
 });
