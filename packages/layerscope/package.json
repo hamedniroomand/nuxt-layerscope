@@ -56,7 +56,7 @@
   "scripts": {
     "bench": "node bench/run.ts",
     "bench:generate": "node bench/generate.ts",
-    "build": "vp run @layerscope/devtools-client#bundle && vp pack",
+    "build": "node -e \"require('node:fs').rmSync('../devtools-client/dist', { recursive: true, force: true })\" && vp run @layerscope/devtools-client#bundle && vp pack",
     "test": "vp test",
     "tarball": "vp run build && vp pm pack --pack-destination ../../.release"
   },
