@@ -1,9 +1,84 @@
 import { execFileSync } from 'node:child_process';
+import { realpathSync } from 'node:fs';
+
+import { dirname, resolve } from 'pathe';
+
+/** The variables that make git use one repository, whatever `-C` says. */
+export const LOCAL_GIT_ENV = [
+  'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+  'GIT_COMMON_DIR',
+  'GIT_CONFIG',
+  'GIT_CONFIG_COUNT',
+  'GIT_CONFIG_PARAMETERS',
+  'GIT_DIR',
+  'GIT_GRAFT_FILE',
+  'GIT_IMPLICIT_WORK_TREE',
+  'GIT_INDEX_FILE',
+  'GIT_INTERNAL_SUPER_PREFIX',
+  'GIT_NAMESPACE',
+  'GIT_NO_REPLACE_OBJECTS',
+  'GIT_OBJECT_DIRECTORY',
+  'GIT_PREFIX',
+  'GIT_REPLACE_REF_BASE',
+  'GIT_SHALLOW_FILE',
+  'GIT_WORK_TREE',
+];
+
+/**
+ * The environment without the variables that point git at one repository. A git hook sets some of
+ * them, for example `GIT_DIR` and `GIT_INDEX_FILE`. They make `git -C <dir>` use the hook's
+ * repository, not the repository of `<dir>`.
+ */
+export function cleanGitEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  const clean = { ...env };
+  for (const name of LOCAL_GIT_ENV) {
+    Reflect.deleteProperty(clean, name);
+  }
+  return clean;
+}
+
+/**
+ * Whether the index file is directly in `gitDir`, as every index file of a hook is. A folder below
+ * it is the git directory of a linked worktree or a submodule, which is another index. The file can
+ * be a lock file that git has not made yet.
+ */
+function indexInGitDir(index: string, gitDir: string): boolean {
+  const folder = realpathSync(dirname(resolve(process.cwd(), index)));
+  return folder === gitDir;
+}
+
+/**
+ * The environment for `git -C <rootDir>`. A pre-commit hook points `GIT_INDEX_FILE` at the index
+ * that will be committed (`index.lock`, `next-index-*.lock`), so `--staged` must read it. The other
+ * local git variables point at the repository of the hook, so they are removed. The index variable
+ * stays only when it is directly in the git directory of `rootDir`.
+ */
+export function gitEnv(rootDir: string): NodeJS.ProcessEnv {
+  const env = cleanGitEnv();
+  const index = process.env.GIT_INDEX_FILE;
+  if (index === undefined || index === '') {
+    return env;
+  }
+  try {
+    const out = execFileSync('git', ['-C', rootDir, 'rev-parse', '--absolute-git-dir'], {
+      encoding: 'utf8',
+      env,
+      stdio: 'pipe',
+    });
+    if (indexInGitDir(index, realpathSync(out.trim()))) {
+      env.GIT_INDEX_FILE = resolve(process.cwd(), index);
+    }
+  } catch {
+    // Git fails or the folder is missing: the safe choice is to read no index variable.
+  }
+  return env;
+}
 
 /** Runs `git -C <rootDir> ...` and returns its output. Throws when git fails or is missing. */
 export function git(rootDir: string, ...args: string[]): string {
   return execFileSync('git', ['-C', rootDir, ...args], {
     encoding: 'utf8',
+    env: gitEnv(rootDir),
     stdio: 'pipe',
     maxBuffer: 256 * 1024 * 1024,
   });

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
@@ -98,5 +99,23 @@ describe('sarif format', () => {
     expect(validateSarif(log), JSON.stringify(validateSarif.errors)).toBe(true);
     expect(results.length).toBeGreaterThan(0);
     expect(results.every(result => result.suppressions?.length === 1)).toBe(true);
+  });
+});
+
+describe('sarif format in a git hook', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('finds the git root when a git hook sets GIT_DIR to a git directory', async () => {
+    // A linked worktree hook sets an absolute `GIT_DIR` and no `GIT_WORK_TREE`.
+    const gitDir = execFileSync('git', ['-C', NUXT4_ROOT, 'rev-parse', '--absolute-git-dir'], {
+      encoding: 'utf8',
+    }).trim();
+    vi.stubEnv('GIT_DIR', gitDir);
+    const [run1] = (await sarif(NUXT4_ROOT)).runs;
+    const base = run1.originalUriBaseIds['%SRCROOT%']?.uri;
+    expect(pathToFileURL(NUXT4_ROOT).href.startsWith(base)).toBe(true);
+    expect(base.endsWith('/nuxt4/')).toBe(false);
   });
 });
