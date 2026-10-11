@@ -31,6 +31,8 @@ export interface Environment {
   presetLayers: string[];
   /** The project options as the config set them, before the preset is applied. */
   declaredConfig: ProjectConfig;
+  /** The registry file that the `nuxt.config` options were read from, when there is one. */
+  recordedFile?: string;
   source: ResolutionSource;
   sourceFile: string;
   /** `null` with the `.d.ts` fallback, which only lists the winning components. */
@@ -41,12 +43,18 @@ export interface Environment {
 }
 
 /** Read even when symbols come from the `.d.ts` files, so `nuxt.config` options still apply. */
-function recordedConfig(buildDir: string, registry: Registry | null): ProjectConfig | undefined {
+function recordedConfig(
+  buildDir: string,
+  registry: Registry | null,
+  sourceFile: string,
+): { config: ProjectConfig | undefined; file: string | undefined } {
   if (registry !== null) {
-    return registry.config;
+    return { config: registry.config, file: sourceFile };
   }
   const read = readRegistry(buildDir);
-  return read.kind === 'ok' ? read.registry.config : undefined;
+  return read.kind === 'ok'
+    ? { config: read.registry.config, file: read.file }
+    : { config: undefined, file: undefined };
 }
 
 /** A preset that names a layer which does not exist is an error of the config that holds it. */
@@ -66,7 +74,11 @@ function presetApplied(
 export async function loadEnvironment(options: EnvironmentOptions): Promise<Environment> {
   const { rootDir, buildDir } = options;
   const { registry, table, ...symbols } = loadSymbols(buildDir, options.source);
-  const recorded = recordedConfig(buildDir, registry);
+  const { config: recorded, file: recordedFile } = recordedConfig(
+    buildDir,
+    registry,
+    symbols.sourceFile,
+  );
   const effective = effectiveConfig(options.config, recorded);
   const { layers, ownerOf, notes } = await loadLayers(rootDir, effective, registry?.layers).catch(
     (error: unknown) => {
@@ -75,13 +87,14 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
   );
   const config = presetApplied(effective, layers, recorded);
   const presetLayers = layersFilledByPreset(effective, config);
-  const stale = registry === null ? null : staleConfigNote(rootDir, symbols.sourceFile);
+  const stale = recordedFile === undefined ? null : staleConfigNote(rootDir, recordedFile);
   await (registry === null ? assertFresh(table, layers) : assertRegistryFresh(table, registry));
   return {
     ...symbols,
     config,
     presetLayers,
     declaredConfig: pickProjectConfig(effective),
+    recordedFile,
     notes: [...symbols.notes, ...notes, ...(stale === null ? [] : [stale])],
     registry,
     layers,

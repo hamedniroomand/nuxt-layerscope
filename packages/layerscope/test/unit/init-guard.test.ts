@@ -1,3 +1,6 @@
+import { mkdirSync, utimesSync } from 'node:fs';
+
+import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { analyze } from '#src/analyze/index.ts';
@@ -82,5 +85,37 @@ describe('assertNoNuxtConfigLayers', () => {
     expect(() => {
       assertNoNuxtConfigLayers(withLayers, true);
     }).not.toThrow();
+  });
+});
+
+/** A project whose registry file and nuxt.config have the given ages, in seconds. */
+function withAges(registryAge: number, configAge: number): AnalyzeResult {
+  const root = tempDir();
+  const registry = join(root, '.nuxt/layerscope/registry.json');
+  write(root, 'nuxt.config.ts', 'export default {};\n');
+  write(root, '.nuxt/layerscope/registry.json', '{}');
+  const now = Date.now() / 1000;
+  utimesSync(registry, now - registryAge, now - registryAge);
+  utimesSync(join(root, 'nuxt.config.ts'), now - configAge, now - configAge);
+  // With `--source types`, the symbols come from a directory that is older than both files.
+  mkdirSync(join(root, '.nuxt/types'), { recursive: true });
+  utimesSync(join(root, '.nuxt/types'), now - 1000, now - 1000);
+  return {
+    config: { preset: 'layered' },
+    rootDir: root,
+    sourceFile: join(root, '.nuxt/types'),
+    recordedFile: registry,
+  } as AnalyzeResult;
+}
+
+describe('assertNoNuxtConfigLayers with a changed nuxt.config', () => {
+  it('says the data may be out of date when nuxt.config is newer', () => {
+    expect(refusalOf(withAges(100, 10))).toBe(
+      '"preset" is set in the .nuxt data, but nuxt.config changed after the last Nuxt run, so this data may be out of date. Run init --prepare.',
+    );
+  });
+
+  it('compares with the registry file, not with the types directory of --source types', () => {
+    expect(refusalOf(withAges(10, 100))).toContain('Move it to layerscope.config.ts');
   });
 });

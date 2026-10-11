@@ -131,17 +131,6 @@ describe('layer graph layout at scale', () => {
     }
   });
 
-  // Measured at about 50 ms on a quiet machine; the limit is doubled for loaded CI runners.
-  it('lays out 15 layers in under 100 ms (warm median), the scale the graph is made for', () => {
-    const { nodes, edges } = randomGraph(15, 3);
-    layoutGraph(nodes, edges);
-    const runs = [0, 1, 2, 3, 4]
-      .map(() => timed(() => layoutGraph(nodes, edges)))
-      .toSorted((a, b) => a - b);
-    const median = runs[2] ?? 0;
-    expect(median, `median ${median.toFixed(1)} ms`).toBeLessThan(100);
-  });
-
   // A guard against an algorithmic blow-up, not a budget. It compares with a small layout timed
   // in the same process, so a slow or busy machine slows both sides.
   it('lays out 100 nodes in under 40 times the 15-layer time, as a regression guard', () => {

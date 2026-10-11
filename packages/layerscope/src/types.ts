@@ -174,6 +174,8 @@ export interface AnalyzeResult {
   presetLayers?: string[];
   /** The project options as the config set them, before a preset adds its own `layers`. */
   declaredConfig?: Partial<LayerscopeConfig>;
+  /** The registry file that the `nuxt.config` options were read from, when there is one. */
+  recordedFile?: string;
   /** The config that applied: `layerscope.config.*` or the `layerscope` key of `nuxt.config`. */
   config: LayerscopeConfig;
   source: ResolutionSource;
