@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.2
+
+### Patch Changes
+
+- [#93](https://github.com/hamedniroomand/nuxt-layerscope/pull/93) [`556c358`](https://github.com/hamedniroomand/nuxt-layerscope/commit/556c3581bb25503cc2c991dc31072b36aa6e1cf2) - layerscope runs git correctly from a git hook in a linked worktree.
+
+- [#93](https://github.com/hamedniroomand/nuxt-layerscope/pull/93) [`dfa80ff`](https://github.com/hamedniroomand/nuxt-layerscope/commit/dfa80ff65abceb35db8856db688758f8c7d636b3) - `init` says when the .nuxt data may be older than nuxt.config.
+
 ## 0.6.1
 
 ### Patch Changes
