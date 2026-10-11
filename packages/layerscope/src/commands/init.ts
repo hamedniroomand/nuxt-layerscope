@@ -26,6 +26,11 @@ export interface InitFlags extends Omit<CommonFlags, 'format'> {
 
 const CONFIG_NAME = 'layerscope.config.ts';
 
+/** The path as one shell word: plain paths stay as they are, others get single quotes. */
+function shellQuote(path: string): string {
+  return /^[\w./@%+=:,-]+$/u.test(path) ? path : `'${path.replaceAll("'", String.raw`'\''`)}'`;
+}
+
 /**
  * Says when `init` ran in auto mode and found no registry file. Three causes are possible: the
  * module is not installed, it is installed with `enabled: false`, or Nuxt did not run after it was
@@ -40,9 +45,11 @@ export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
     return [];
   }
   const root = relative(process.cwd(), result.rootDir);
-  const prepare = `npx nuxi prepare${root === '' ? '' : ` ${root}`}`;
+  // `module add` has no folder argument, only `--cwd`. `prepare` takes the folder as an argument.
+  const install = `npx nuxi module add nuxt-layerscope --dev${root === '' ? '' : ` --cwd ${shellQuote(root)}`}`;
+  const prepare = `npx nuxi prepare${root === '' ? '' : ` ${shellQuote(root)}`}`;
   return [
-    `layerscope found no data from its Nuxt module (${relative(process.cwd(), registryFile)}), so it reads symbols from the types that Nuxt generates. The boundary findings are the same, but some checks need the module (see the shadowed-component note). To use the module, install it with \`npx nuxi module add nuxt-layerscope --dev\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`${prepare}\` and run layerscope again.`,
+    `layerscope found no data from its Nuxt module (${relative(process.cwd(), registryFile)}), so it reads symbols from the types that Nuxt generates. The boundary findings are the same, but some checks need the module (see the shadowed-component note). To use the module, install it with \`${install}\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`${prepare}\` and run layerscope again.`,
   ];
 }
 
