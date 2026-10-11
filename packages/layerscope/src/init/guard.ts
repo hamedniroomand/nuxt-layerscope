@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 
 import { relative, resolve } from 'pathe';
 
+import { isConfigNewer } from '#src/analyze/config-freshness.ts';
 import { BASELINE_FILE } from '#src/baseline/index.ts';
 import { hasProjectConfig, keysSet } from '#src/config/effective.ts';
 import { findConfigFile } from '#src/config/load.ts';
@@ -35,6 +36,11 @@ export function assertNoNuxtConfigLayers(result: AnalyzeResult, hasConfigFile: b
     const keys = keysSet(result.declaredConfig ?? result.config);
     const many = keys.includes(', ');
     // `init` reads the .nuxt data, so a key that was removed from nuxt.config can still show here.
+    if (isConfigNewer(result.rootDir, result.sourceFile)) {
+      throw new LayerscopeError(
+        `${keys} ${many ? 'are' : 'is'} set in the .nuxt data, but nuxt.config changed after the last Nuxt run, so this data may be out of date. Run init --prepare.`,
+      );
+    }
     throw new LayerscopeError(
       `${keys} ${many ? 'are' : 'is'} set in the "layerscope" key of nuxt.config (read from the .nuxt data of the last Nuxt run). Move ${many ? 'them' : 'it'} to layerscope.config.ts and remove the key, then run init --prepare.`,
     );

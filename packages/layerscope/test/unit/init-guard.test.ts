@@ -1,3 +1,6 @@
+import { utimesSync } from 'node:fs';
+
+import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { analyze } from '#src/analyze/index.ts';
@@ -82,5 +85,29 @@ describe('assertNoNuxtConfigLayers', () => {
     expect(() => {
       assertNoNuxtConfigLayers(withLayers, true);
     }).not.toThrow();
+  });
+});
+
+/** A project whose registry file and nuxt.config have the given ages, in seconds. */
+function withAges(registryAge: number, configAge: number): AnalyzeResult {
+  const root = tempDir();
+  const registry = join(root, '.nuxt/layerscope/registry.json');
+  write(root, 'nuxt.config.ts', 'export default {};\n');
+  write(root, '.nuxt/layerscope/registry.json', '{}');
+  const now = Date.now() / 1000;
+  utimesSync(registry, now - registryAge, now - registryAge);
+  utimesSync(join(root, 'nuxt.config.ts'), now - configAge, now - configAge);
+  return { config: { preset: 'layered' }, rootDir: root, sourceFile: registry } as AnalyzeResult;
+}
+
+describe('assertNoNuxtConfigLayers with a changed nuxt.config', () => {
+  it('says the data may be out of date when nuxt.config is newer', () => {
+    expect(refusalOf(withAges(100, 10))).toBe(
+      '"preset" is set in the .nuxt data, but nuxt.config changed after the last Nuxt run, so this data may be out of date. Run init --prepare.',
+    );
+  });
+
+  it('keeps the move message when the .nuxt data is newer', () => {
+    expect(refusalOf(withAges(10, 100))).toContain('Move it to layerscope.config.ts');
   });
 });
