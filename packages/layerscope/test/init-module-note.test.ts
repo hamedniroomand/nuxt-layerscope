@@ -12,10 +12,8 @@ import { NUXT4_ROOT } from '#test/fixtures.ts';
 /** The note as `init` prints it: the registry path and the root are relative to the cwd. */
 function noteFor(root: string, registry = join(root, '.nuxt/layerscope/registry.json')): string {
   const folder = relative(process.cwd(), root);
-  const word = /^[\w./@%+=:,-]+$/u.test(folder) ? folder : `"${folder}"`;
-  const install = `npx nuxi module add nuxt-layerscope --dev${folder === '' ? '' : ` --cwd ${word}`}`;
-  const prepare = `npx nuxi prepare${folder === '' ? '' : ` ${word}`}`;
-  return `layerscope found no data from its Nuxt module (${relative(process.cwd(), registry)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, install it with \`${install}\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`${prepare}\` and run layerscope again.`;
+  const where = folder === '' ? 'run' : `run these commands in ${folder}:`;
+  return `layerscope found no data from its Nuxt module (${relative(process.cwd(), registry)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, ${where} \`npx nuxi module add nuxt-layerscope --dev\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`npx nuxi prepare\` and run layerscope again.`;
 }
 const NOTE_START = 'layerscope found no data from its Nuxt module';
 
@@ -155,41 +153,9 @@ describe('the wording of the note', () => {
 });
 
 describe('the commands of the note', () => {
-  it('names the root in both commands, with --cwd for the install', () => {
-    const root = tempRoot();
-    const [note] = moduleNote(typesIn(root), { source: 'auto' });
-    const folder = relative(process.cwd(), root);
-    expect(note).toContain(`npx nuxi module add nuxt-layerscope --dev --cwd ${folder}\``);
-    expect(note).toContain(`npx nuxi prepare ${folder}\``);
-    expect(note).toBe(noteFor(root));
-  });
+  const COMMANDS = 'run `npx nuxi module add nuxt-layerscope --dev`, or remove';
 
-  it('quotes a root with a space in both commands', () => {
-    const root = join(tempRoot(), 'apps/my web');
-    const [note] = moduleNote(typesIn(root), { source: 'auto' });
-    const folder = relative(process.cwd(), root);
-    expect(note).toContain(`--dev --cwd "${folder}"\``);
-    expect(note).toContain(`npx nuxi prepare "${folder}"\``);
-    expect(note).toBe(noteFor(root));
-  });
-
-  it('keeps an apostrophe inside double quotes', () => {
-    const [note] = moduleNote(typesIn(join(process.cwd(), "my app's")), { source: 'auto' });
-    expect(note).toContain('npx nuxi prepare "my app\'s"`');
-  });
-
-  it('starts a root that begins with a dash with ./, so it is not read as an option', () => {
-    const [note] = moduleNote(typesIn(join(process.cwd(), '-app')), { source: 'auto' });
-    expect(note).toContain('--dev --cwd ./-app`');
-    expect(note).toContain('npx nuxi prepare ./-app`');
-  });
-
-  it('prints a root with a dollar sign, a double quote or a backtick without quotes', () => {
-    const [note] = moduleNote(typesIn(join(process.cwd(), 'a$b')), { source: 'auto' });
-    expect(note).toContain('npx nuxi prepare a$b`');
-  });
-
-  it('leaves the root out of the prepare command when the root is the cwd', () => {
+  it('names no folder when the root is the cwd', () => {
     const [note] = moduleNote(
       {
         source: 'types',
@@ -198,7 +164,25 @@ describe('the commands of the note', () => {
       } as AnalyzeResult,
       { source: 'auto' },
     );
+    expect(note).toContain(`To use the module, ${COMMANDS}`);
+    expect(note).not.toContain('run these commands in');
+  });
+
+  it('names the folder as text when the root is not the cwd, and puts no path in a command', () => {
+    const root = tempRoot();
+    const [note] = moduleNote(typesIn(root), { source: 'auto' });
+    const folder = relative(process.cwd(), root);
+    expect(note).toContain(`run these commands in ${folder}: \`npx nuxi module add`);
     expect(note).toContain('Then run `npx nuxi prepare` and run layerscope again.');
-    expect(note).toContain('`npx nuxi module add nuxt-layerscope --dev`');
+    expect(note).not.toContain('--cwd');
+    expect(note).toBe(noteFor(root));
+  });
+
+  it('names a root with a space as text, unchanged', () => {
+    const root = join(tempRoot(), 'apps/my web');
+    const [note] = moduleNote(typesIn(root), { source: 'auto' });
+    expect(note).toContain(`run these commands in ${relative(process.cwd(), root)}: \``);
+    expect(note).not.toContain('"');
+    expect(note).toBe(noteFor(root));
   });
 });
