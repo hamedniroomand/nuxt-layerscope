@@ -31,7 +31,7 @@ const CONFIG_NAME = 'layerscope.config.ts';
  * module is not installed, it is installed with `enabled: false`, or Nuxt did not run after it was
  * added. Each one ends with a Nuxt run, so the text is the same with `--prepare`: an install or an
  * enable still needs a new run. The note does not tell the user to run `init` again, because the
- * config that `init` wrote stays valid and `init` would refuse to replace it. A registry file that
+ * config that `init` wrote stays valid in most projects and `init` would refuse to replace it. A registry file that
  * exists but is not read has its own note.
  */
 export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
@@ -41,9 +41,9 @@ export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
   }
   // The folder is plain text, not part of a command, so it needs no quotes for any shell.
   const root = relative(process.cwd(), result.rootDir);
-  const where = root === '' ? 'run' : `run these commands in ${root}:`;
+  const where = root === '' ? 'run' : `in ${root}, run`;
   return [
-    `layerscope found no data from its Nuxt module (${relative(process.cwd(), registryFile)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, ${where} \`npx nuxi module add nuxt-layerscope --dev\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`npx nuxi prepare\` and run layerscope again.`,
+    `layerscope found no data from its Nuxt module (${relative(process.cwd(), registryFile)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, ${where} \`npx nuxi module add nuxt-layerscope --dev\` (or remove \`enabled: false\` from its \`layerscope\` options), then run \`npx nuxi prepare\`. Then run layerscope again.`,
   ];
 }
 

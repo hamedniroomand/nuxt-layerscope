@@ -56,7 +56,8 @@ need. Do not use `--force` for this: it replaces the config, and the keys that y
 With `--source auto` (the default), `init` prints a note on stderr after the summary when it finds
 no registry file in Nuxt's build directory (by default `.nuxt/layerscope/registry.json`). The module
 is not installed or not enabled, or Nuxt did not run since it was added. In most projects both
-sources give the same boundary findings, so the config that `init` wrote stays valid. See
+sources give the same boundary findings, so the config that `init` wrote stays valid. If the
+findings change after you install the module, run `layerscope init --dry-run` and compare. See
 [Why use it](../guide/nuxt-module#why-use-it).
 
 ## `layerscope check`

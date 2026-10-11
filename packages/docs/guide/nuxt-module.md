@@ -12,8 +12,9 @@ export default defineNuxtConfig({
 ## Why use it
 
 layerscope works without the module by reading the types Nuxt generates (`.nuxt/components.d.ts`,
-`.nuxt/types/imports.d.ts` and friends). Both give the same boundary findings, but the module is
-better in three ways:
+`.nuxt/types/imports.d.ts` and friends). In most projects both give the same boundary findings. On
+Nuxt 3 they can differ in the shared context (see the "Shared context on Nuxt 3" row below). The
+module is better in three ways:
 
 |                                                               | With the module                                                              | Without it                                                |
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------- |
