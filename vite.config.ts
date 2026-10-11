@@ -117,16 +117,13 @@ export default defineConfig({
         },
       },
       {
-        files: ['packages/layerscope/src/devtools/client/**', 'packages/layerscope/test/client/**'],
+        files: ['packages/devtools-client/**'],
         env: { browser: true },
         globals: { defineProps: 'readonly', defineEmits: 'readonly', defineExpose: 'readonly' },
         rules: { 'vue/max-props': 'off' },
       },
       {
-        files: [
-          'packages/layerscope/src/devtools/client/**/*.vue',
-          'packages/layerscope/src/devtools/client/shims.d.ts',
-        ],
+        files: ['packages/devtools-client/src/**/*.vue', 'packages/devtools-client/src/shims.d.ts'],
         rules: { 'import/unambiguous': 'off' },
       },
       {

@@ -1,8 +1,6 @@
-import vue from '@vitejs/plugin-vue';
 import { defineConfig } from 'vite-plus';
 
 export default defineConfig({
-  plugins: [vue()],
   pack: {
     deps: {
       // tsdown <0.23 compatibility: resolve external dependency subpaths.
@@ -20,6 +18,8 @@ export default defineConfig({
     dts: true,
     format: ['esm'],
     platform: 'node',
+    // The DevTools tab client, built by @layerscope/devtools-client before this task.
+    copy: [{ from: '../devtools-client/dist/*', to: 'dist/devtools' }],
   },
   test: {
     include: ['test/**/*.test.ts'],
