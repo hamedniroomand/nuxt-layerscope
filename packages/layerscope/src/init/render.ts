@@ -15,6 +15,11 @@ export function quote(text: string): string {
   return `'${escaped}'`;
 }
 
+/** A line terminator would end a `//` comment, and the rest of the line would be code. */
+function oneLine(text: string): string {
+  return text.replaceAll(/[\n\r\u2028\u2029]/gu, ' ');
+}
+
 function property(name: string): string {
   return /^[A-Za-z_$][\w$]*$/u.test(name) ? name : quote(name);
 }
@@ -28,7 +33,7 @@ function layerLines(layer: string, edges: AllowedEdge[]): string[] {
     '      allow: [',
     ...edges.map(
       edge =>
-        `        ${quote(edge.to)}, // ${plural(edge.count, 'reference')}, e.g. ${edge.example}`,
+        `        ${quote(edge.to)}, // ${plural(edge.count, 'reference')}, e.g. ${oneLine(edge.example)}`,
     ),
     '      ],',
     '    },',
