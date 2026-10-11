@@ -124,7 +124,11 @@ export default defineConfig({
           ? html
           : html
               .replace(/^<div class="language-/u, '<div class="ls-titled language-')
-              .replace(/<span class="lang">.*?<\/span>/u, `<span class="lang">${title}</span>`);
+              // Escape the title, and v-pre stops Vue from reading `{{ }}` in it as a template.
+              .replace(
+                /<span class="lang">.*?<\/span>/u,
+                () => `<span class="lang" v-pre>${md.utils.escapeHtml(title)}</span>`,
+              );
       };
     },
   },

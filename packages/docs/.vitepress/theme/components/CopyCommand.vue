@@ -1,25 +1,33 @@
 <script setup lang="ts">
-  import { ref } from 'vue';
+  import { computed, ref } from 'vue';
 
   import { icon } from '#theme/icons.ts';
 
   const props = defineProps<{ command: string }>();
 
-  const copied = ref(false);
+  // The clipboard API is not available on an insecure origin, and the browser can refuse it.
+  // Then the live region tells the user to copy the command by hand.
+  const status = ref<'idle' | 'copied' | 'failed'>('idle');
   const copyIcon = icon('copy');
   const checkIcon = icon('check');
+  const message = computed(
+    () =>
+      ({ idle: '', copied: 'Copied', failed: 'Copy failed. Select the command and copy it.' })[
+        status.value
+      ],
+  );
   let timer: ReturnType<typeof setTimeout> | undefined;
 
   async function copy(): Promise<void> {
     try {
       await navigator.clipboard.writeText(props.command);
+      status.value = 'copied';
     } catch {
-      return;
+      status.value = 'failed';
     }
-    copied.value = true;
     clearTimeout(timer);
     timer = setTimeout(() => {
-      copied.value = false;
+      status.value = 'idle';
     }, 1600);
   }
 </script>
@@ -40,14 +48,14 @@
     >
       <span
         class="ls-command-icon"
-        :class="{ 'is-copied': copied }"
-        v-html="copied ? checkIcon : copyIcon"
+        :class="{ 'is-copied': status === 'copied' }"
+        v-html="status === 'copied' ? checkIcon : copyIcon"
       />
     </button>
     <span
       class="visually-hidden"
       aria-live="polite"
-      >{{ copied ? 'Copied' : '' }}</span
+      >{{ message }}</span
     >
   </div>
 </template>

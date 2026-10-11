@@ -39,7 +39,6 @@
   ] as const;
 
   const active = ref(0);
-  const tabs = ref<HTMLButtonElement[]>([]);
 
   // Arrow, Home and End keys move between the tabs, as the WAI-ARIA tabs pattern describes.
   function onKey(event: KeyboardEvent): void {
@@ -55,7 +54,8 @@
     }
     event.preventDefault();
     active.value = next;
-    tabs.value[active.value]?.focus();
+    // By ID, because Vue does not keep the order of refs in a v-for.
+    document.querySelector<HTMLElement>(`#ls-tour-tab-${views[next].name}`)?.focus();
   }
 </script>
 
@@ -71,7 +71,6 @@
         v-for="(view, index) in views"
         :id="`ls-tour-tab-${view.name}`"
         :key="view.name"
-        ref="tabs"
         type="button"
         role="tab"
         class="ls-tour-tab"
@@ -91,6 +90,7 @@
         :id="`ls-tour-panel-${view.name}`"
         :key="view.name"
         role="tabpanel"
+        tabindex="0"
         class="ls-tour-panel"
         :aria-labelledby="`ls-tour-tab-${view.name}`"
       >
