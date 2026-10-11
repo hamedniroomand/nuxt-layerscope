@@ -42,7 +42,7 @@ export function assertNoNuxtConfigLayers(result: AnalyzeResult, hasConfigFile: b
       );
     }
     throw new LayerscopeError(
-      `${keys} ${many ? 'are' : 'is'} set in the "layerscope" key of nuxt.config (read from the .nuxt data of the last Nuxt run). Move ${many ? 'them' : 'it'} to layerscope.config.ts and remove the key, then run init --prepare.`,
+      `${keys} ${many ? 'are' : 'is'} set in the "layerscope" key of nuxt.config (read from the .nuxt data of the last Nuxt run). Move ${many ? 'them' : 'it'} to layerscope.config.ts and remove the key. Then run init --prepare --dry-run and copy the layers and edges you need, because init does not replace an existing config.`,
     );
   }
 }

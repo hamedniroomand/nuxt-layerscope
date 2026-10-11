@@ -1,6 +1,6 @@
 import { existsSync, writeFileSync } from 'node:fs';
 
-import { relative, resolve } from 'pathe';
+import { dirname, join, relative, resolve } from 'pathe';
 
 import { analyze } from '#src/analyze/index.ts';
 import { BASELINE_FILE, createBaseline, writeBaseline } from '#src/baseline/index.ts';
@@ -10,7 +10,9 @@ import {
   propose,
   renderConfig,
 } from '#src/init/index.ts';
+import { REGISTRY_FILE } from '#src/registry/schema.ts';
 import { formatInit } from '#src/report/init.ts';
+import type { AnalyzeResult } from '#src/types.ts';
 import { paintFor } from '#src/utils/style.ts';
 
 import type { Cli, CommonFlags } from './shared.ts';
@@ -23,6 +25,27 @@ export interface InitFlags extends Omit<CommonFlags, 'format'> {
 }
 
 const CONFIG_NAME = 'layerscope.config.ts';
+
+/**
+ * Says when `init` ran in auto mode and found no registry file. Three causes are possible: the
+ * module is not installed, it is installed with `enabled: false`, or Nuxt did not run after it was
+ * added. Each one ends with a Nuxt run, so the text is the same with `--prepare`: an install or an
+ * enable still needs a new run. The note does not tell the user to run `init` again, because the
+ * config that `init` wrote stays valid in most projects and `init` would refuse to replace it. A registry file that
+ * exists but is not read has its own note.
+ */
+export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
+  const registryFile = join(dirname(result.sourceFile), REGISTRY_FILE);
+  if (flags.source !== 'auto' || result.source !== 'types' || existsSync(registryFile)) {
+    return [];
+  }
+  // The folder is plain text, not part of a command, so it needs no quotes for any shell.
+  const root = relative(process.cwd(), result.rootDir);
+  const where = root === '' ? 'run' : `in ${root}, run`;
+  return [
+    `layerscope found no data from its Nuxt module (${relative(process.cwd(), registryFile)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, ${where} \`npx nuxi module add nuxt-layerscope --dev\` (or remove \`enabled: false\` from its \`layerscope\` options), then run \`npx nuxi prepare\`. Then run layerscope again.`,
+  ];
+}
 
 export async function init(root: string | undefined, flags: InitFlags): Promise<number> {
   const rootDir = resolve(root ?? process.cwd());
@@ -63,7 +86,10 @@ export async function init(root: string | undefined, flags: InitFlags): Promise<
       paint: paintFor(process.stdout),
     }),
   );
-  writeNotes(result, flags.verbose === true);
+  writeNotes(
+    { ...result, notes: [...result.notes, ...moduleNote(result, flags)] },
+    flags.verbose === true,
+  );
   return EXIT_CLEAN;
 }
 
