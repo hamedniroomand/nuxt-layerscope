@@ -54,9 +54,10 @@ and remove the key, run `layerscope init --prepare --dry-run` and copy the layer
 need. Do not use `--force` for this: it replaces the config, and the keys that you moved are lost.
 
 With `--source auto` (the default), `init` prints a note on stderr after the summary when it finds
-no `.nuxt/layerscope/registry.json`. The module is not installed or not enabled, or Nuxt did not run
-since it was added. The config that `init` wrote stays valid, because both sources give the same
-boundary findings. See [Why use it](../guide/nuxt-module#why-use-it).
+no registry file in Nuxt's build directory (by default `.nuxt/layerscope/registry.json`). The module
+is not installed or not enabled, or Nuxt did not run since it was added. In most projects both
+sources give the same boundary findings, so the config that `init` wrote stays valid. See
+[Why use it](../guide/nuxt-module#why-use-it).
 
 ## `layerscope check`
 
