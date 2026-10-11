@@ -11,6 +11,7 @@ import {
   renderConfig,
 } from '#src/init/index.ts';
 import { formatInit } from '#src/report/init.ts';
+import type { AnalyzeResult } from '#src/types.ts';
 import { paintFor } from '#src/utils/style.ts';
 
 import type { Cli, CommonFlags } from './shared.ts';
@@ -23,6 +24,22 @@ export interface InitFlags extends Omit<CommonFlags, 'format'> {
 }
 
 const CONFIG_NAME = 'layerscope.config.ts';
+
+const MODULE_NOTE =
+  'No layerscope registry in .nuxt, so symbols come from the generated types. To install the Nuxt module, run `npx nuxi module add nuxt-layerscope --dev`.';
+
+/**
+ * Says when `init` ran in auto mode and found no registry: the module is not installed, or Nuxt did
+ * not run after it was added. With `--prepare` Nuxt just ran, so the second cause cannot apply.
+ */
+export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
+  if (flags.source !== 'auto' || result.source !== 'types') {
+    return [];
+  }
+  const rerun =
+    flags.prepare === true ? '' : ' If it is installed, run `layerscope init --prepare`.';
+  return [`${MODULE_NOTE}${rerun}`];
+}
 
 export async function init(root: string | undefined, flags: InitFlags): Promise<number> {
   const rootDir = resolve(root ?? process.cwd());
@@ -63,7 +80,10 @@ export async function init(root: string | undefined, flags: InitFlags): Promise<
       paint: paintFor(process.stdout),
     }),
   );
-  writeNotes(result, flags.verbose === true);
+  writeNotes(
+    { ...result, notes: [...result.notes, ...moduleNote(result, flags)] },
+    flags.verbose === true,
+  );
   return EXIT_CLEAN;
 }
 
