@@ -48,3 +48,6 @@ packages/layerscope/bench/.project
 coverage
 
 .vitest/
+
+# Playwright MCP output (snapshots and screenshots)
+.playwright-mcp/
