@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
-import { dirname, join } from 'pathe';
+import { dirname, join, relative } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { EXIT_CLEAN, run } from '#src/cli.ts';
@@ -9,7 +9,12 @@ import { moduleNote } from '#src/commands/init.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
 
-const NOTE = 'No layerscope registry in .nuxt, so symbols come from the generated types.';
+/** The start of the note, with the registry path as `init` shows it: relative to the cwd. */
+function noteFor(root: string): string {
+  const registry = relative(process.cwd(), join(root, '.nuxt/layerscope/registry.json'));
+  return `layerscope found no data from its Nuxt module (${registry}), so it reads symbols from the types that Nuxt generates, which is less exact.`;
+}
+const NOTE_START = 'layerscope found no data from its Nuxt module';
 const INSTALL = 'npx nuxi module add nuxt-layerscope --dev';
 const RERUN = 'layerscope init --prepare';
 
@@ -50,35 +55,36 @@ afterEach(() => {
 
 describe('init when the Nuxt module is not installed', () => {
   it('prints the note to stderr, after the summary, and keeps the exit code', async () => {
-    const { code, stdout, stderr } = await init(withoutRegistry());
+    const root = withoutRegistry();
+    const { code, stdout, stderr } = await init(root);
     expect(code).toBe(EXIT_CLEAN);
-    expect(stderr).toContain(NOTE);
+    expect(stderr).toContain(noteFor(root));
     expect(stderr).toContain(INSTALL);
     expect(stderr).toContain(RERUN);
-    expect(stdout).not.toContain(NOTE);
+    expect(stdout).not.toContain(NOTE_START);
     expect(stdout).toContain('Allowed edges');
   });
 
   it('prints the note once, also with --verbose', async () => {
     const { stderr } = await init(withoutRegistry(), '--verbose');
-    expect(stderr.split(NOTE)).toHaveLength(2);
+    expect(stderr.split(NOTE_START)).toHaveLength(2);
   });
 
   it('prints no note when a registry exists', async () => {
     const { code, stderr } = await init(NUXT4_ROOT);
     expect(code).toBe(EXIT_CLEAN);
-    expect(stderr).not.toContain(NOTE);
+    expect(stderr).not.toContain(NOTE_START);
   });
 
   it('prints no note with --source types, because the user chose types', async () => {
     const { code, stderr } = await init(withoutRegistry(), '--source', 'types');
     expect(code).toBe(EXIT_CLEAN);
-    expect(stderr).not.toContain(NOTE);
+    expect(stderr).not.toContain(NOTE_START);
   });
 
   it('prints no note with --source types when a registry exists', async () => {
     const { stderr } = await init(NUXT4_ROOT, '--source', 'types');
-    expect(stderr).not.toContain(NOTE);
+    expect(stderr).not.toContain(NOTE_START);
   });
 });
 
@@ -93,5 +99,11 @@ describe('the wording of the note', () => {
 
   it('gives no note when the registry was read', () => {
     expect(moduleNote({ source: 'registry' } as AnalyzeResult, { source: 'auto' })).toEqual([]);
+  });
+
+  it('shows the registry path of a custom build directory, relative to the cwd', () => {
+    const sourceFile = join(process.cwd(), 'build/nuxt/types');
+    const [note] = moduleNote({ source: 'types', sourceFile } as AnalyzeResult, { source: 'auto' });
+    expect(note).toContain('(build/nuxt/layerscope/registry.json)');
   });
 });
