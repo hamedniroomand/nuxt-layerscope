@@ -21,7 +21,7 @@ const CONFIG = fileURLToPath(new URL('../vite.config.ts', import.meta.url));
 let sizes = new Map<string, number>();
 
 beforeAll(async () => {
-  // Builds from the real config, so the test measures what `build` ships.
+  // Builds from the real config, so the test measures what the `nuxt-layerscope` build ships.
   const outDir = mkdtempSync(join(tmpdir(), 'layerscope-client-'));
   await build({ configFile: CONFIG, logLevel: 'silent', build: { outDir, emptyOutDir: true } });
   sizes = new Map(

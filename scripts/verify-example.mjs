@@ -22,7 +22,9 @@ const client = join(
   'client.js',
 );
 if (!existsSync(client)) {
-  throw new Error('dist/devtools/client.js is missing. Run "vp run nuxt-layerscope#build" first.');
+  throw new Error(
+    'packages/layerscope/dist/devtools/client.js is missing. Run "vp run nuxt-layerscope#build" first.',
+  );
 }
 const exampleDir = join(import.meta.dirname, '..', 'examples', 'shop');
 const bin = join(exampleDir, 'node_modules', 'nuxt-layerscope', 'dist', 'bin.mjs');

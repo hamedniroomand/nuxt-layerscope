@@ -46,8 +46,8 @@ file under `layers/` to see a live update.
 
 - The dev server serves the built tab from `packages/layerscope/dist/devtools`. The tab client is in
   `packages/devtools-client`. This private package is not published. The `nuxt-layerscope` build
-  builds it first and copies it there. Run `vp run nuxt-layerscope#build` before the first run and
-  again after you change the client, then reload.
+  builds it first and copies it there. Run `vp run nuxt-layerscope#build` again after you change the
+  client, or before you run `playground#dev` directly, then reload.
 - Nuxt runs one dev server per project: stop the playground before `vp run docs#screenshots`.
 - Ignore and Undo write `layerscope-baseline.json` in the playground. Restore it with
   `git checkout` when you are done.

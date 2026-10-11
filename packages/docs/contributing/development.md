@@ -18,20 +18,22 @@ vp run ready      # format, lint, type check, test and build everything
 | `packages/layerscope/src/scan`      | Script and template parsing                             |
 | `packages/layerscope/src/rules`     | The rules                                               |
 | `packages/layerscope/test/fixtures` | Nuxt projects the tests run against                     |
+| `packages/devtools-client`          | The DevTools tab client (Vue), a private package        |
 | `packages/docs`                     | This site (VitePress)                                   |
 | `action.yml`                        | The GitHub Action                                       |
 
 ## Commands
 
-| Command             | What it does                                               |
-| ------------------- | ---------------------------------------------------------- |
-| `vp check`          | Format check, lint and type check (`vp check --fix` fixes) |
-| `vp test`           | All tests                                                  |
-| `vp test -u`        | Update snapshots                                           |
-| `vp run build`      | Build the package                                          |
-| `vp run tarball`    | Build and pack the package into `.release/`                |
-| `vp run dev`        | Run this site locally                                      |
-| `vp run docs:build` | Build this site                                            |
+| Command                                    | What it does                                               |
+| ------------------------------------------ | ---------------------------------------------------------- |
+| `vp check`                                 | Format check, lint and type check (`vp check --fix` fixes) |
+| `vp run @layerscope/devtools-client#check` | Type check the `.vue` files of the tab client              |
+| `vp test`                                  | All tests                                                  |
+| `vp test -u`                               | Update snapshots                                           |
+| `vp run build`                             | Build the package                                          |
+| `vp run tarball`                           | Build and pack the package into `.release/`                |
+| `vp run dev`                               | Run this site locally                                      |
+| `vp run docs:build`                        | Build this site                                            |
 
 `vp run tarball` gives you a `.tgz` you can install in another project to try a change before it
 is released. Pull requests also get a preview build; see [Releasing](./releasing).
