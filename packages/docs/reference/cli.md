@@ -50,7 +50,12 @@ the edges you want.
 
 `init` also exits `2` when the `layerscope` key of `nuxt.config` sets options, and it names the keys.
 It reads the data that Nuxt recorded in `.nuxt`, so after you remove the key, run
-`layerscope init --prepare` to read the project again.
+`layerscope init --prepare` to read the project again. Add `--force` when a config already exists.
+
+With `--source auto` (the default), `init` prints a note on stderr after the summary when it finds
+no `.nuxt/layerscope/registry.json`. The module is not installed or not enabled, or Nuxt did not run
+since it was added. The config that `init` wrote stays valid, because both sources give the same
+boundary findings. See [Why use it](../guide/nuxt-module#why-use-it).
 
 ## `layerscope check`
 

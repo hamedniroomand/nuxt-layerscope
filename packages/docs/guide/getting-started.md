@@ -45,8 +45,7 @@ export default defineNuxtConfig({
 ```
 
 The module gives layerscope its data straight from Nuxt. layerscope also works without it, and
-gives the same boundary findings. But the `shadowed-component` rule, the full stale check, the
-DevTools tab and the ESLint plugin need the module. See [Why use it](./nuxt-module#why-use-it).
+gives the same boundary findings. But some features need the module: the [`shadowed-component`](../reference/rules#shadowed-component) rule, which reports a component that a layer with a higher priority overrides; the stale check of custom component folders; the DevTools tab; and the ESLint plugin. See [Why use it](./nuxt-module#why-use-it).
 
 ### Generate a starting config
 
