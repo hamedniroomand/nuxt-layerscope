@@ -782,6 +782,11 @@ kbd {
   border-radius: var(--ls-radius-control) !important;
 }
 
+/* The search bar shows focus with its brand border, so the input does not also get the ring. */
+.VPLocalSearchBox .search-input:focus-visible {
+  outline: none;
+}
+
 .VPLocalSearchBox .result {
   border-radius: var(--ls-radius-control) !important;
 }
