@@ -55,12 +55,15 @@ describe('assertNoNuxtConfigLayers', () => {
     }).toThrow('"layers" is set in the "layerscope" key of nuxt.config');
   });
 
-  it('names only the keys that are set, and says to run init --prepare', () => {
+  it('names only the keys that are set, and says to copy from a dry run, not to replace the config', () => {
     const onlyPreset = { config: { preset: 'layered' } } as unknown as AnalyzeResult;
     const message = refusalOf(onlyPreset);
     expect(message).toContain('"preset" is set');
     expect(message).not.toContain('"layers"');
-    expect(message).toContain('then run init --prepare');
+    expect(message).toContain(
+      'Then run init --prepare --dry-run and copy the layers and edges you need',
+    );
+    expect(message).not.toContain('--force');
   });
 
   it('names only preset after a real analysis, where the preset adds its own layers', async () => {

@@ -9,15 +9,13 @@ import { moduleNote } from '#src/commands/init.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
 
-/** The start of the note, with the registry path as `init` shows it: relative to the cwd. */
-function noteFor(root: string): string {
-  const registry = relative(process.cwd(), join(root, '.nuxt/layerscope/registry.json'));
-  return `layerscope found no data from its Nuxt module (${registry}), so it reads symbols from the types that Nuxt generates. The boundary findings are the same, but some checks need the module (see the shadowed-component note).`;
+/** The note as `init` prints it: the registry path and the root are relative to the cwd. */
+function noteFor(root: string, registry = join(root, '.nuxt/layerscope/registry.json')): string {
+  const folder = relative(process.cwd(), root);
+  const prepare = `npx nuxi prepare${folder === '' ? '' : ` ${folder}`}`;
+  return `layerscope found no data from its Nuxt module (${relative(process.cwd(), registry)}), so it reads symbols from the types that Nuxt generates. The boundary findings are the same, but some checks need the module (see the shadowed-component note). To use the module, install it with \`npx nuxi module add nuxt-layerscope --dev\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`${prepare}\` and run layerscope again.`;
 }
 const NOTE_START = 'layerscope found no data from its Nuxt module';
-const INSTALL = 'npx nuxi module add nuxt-layerscope --dev';
-const ENABLE = 'If it is installed, enable it';
-const RERUN = 'run `npx nuxi prepare`, then run layerscope again.';
 
 function write(root: string, path: string, content: string): void {
   mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -60,9 +58,6 @@ describe('init when the Nuxt module is not installed', () => {
     const { code, stdout, stderr } = await init(root);
     expect(code).toBe(EXIT_CLEAN);
     expect(stderr).toContain(noteFor(root));
-    expect(stderr).toContain(INSTALL);
-    expect(stderr).toContain(ENABLE);
-    expect(stderr).toContain(RERUN);
     expect(stderr).not.toContain('init --prepare');
     expect(stdout).not.toContain(NOTE_START);
     expect(stdout).toContain('Allowed edges');
@@ -108,22 +103,48 @@ describe('the advice of the note after a real write', () => {
     const out = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
     const err = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     expect(await run(['node', 'layerscope', 'init', root])).toBe(EXIT_CLEAN);
+    expect(out.mock.calls.map(call => String(call[0])).join('')).toContain('Allowed edges');
     const first = err.mock.calls.map(call => String(call[0])).join('');
     expect(first).toContain(NOTE_START);
     expect(first).not.toMatch(/layerscope init/u);
     expect(await run(['node', 'layerscope', 'init', root])).toBe(EXIT_ERROR);
-    expect(out).toHaveBeenCalled();
   });
 });
 
 describe('the wording of the note', () => {
-  const types = { source: 'types' } as AnalyzeResult;
+  /** A result that read the types of a build dir in a temp folder, so no file depends on the cwd. */
+  function typesIn(root: string): AnalyzeResult {
+    return {
+      source: 'types',
+      rootDir: root,
+      sourceFile: join(root, '.nuxt/types'),
+    } as AnalyzeResult;
+  }
 
-  it('gives only the install step with --prepare, because Nuxt just ran', () => {
-    const [note] = moduleNote(types, { source: 'auto', prepare: true });
-    expect(note).toContain(INSTALL);
-    expect(note).toContain(ENABLE);
-    expect(note).not.toContain(RERUN);
+  it('is the same with --prepare, because an install or an enable needs a new Nuxt run', () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-init-note-')));
+    expect(moduleNote(typesIn(root), { source: 'auto', prepare: true })).toEqual(
+      moduleNote(typesIn(root), { source: 'auto' }),
+    );
+  });
+
+  it('names the root in the prepare command when the root is not the cwd', () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-init-note-')));
+    const [note] = moduleNote(typesIn(root), { source: 'auto' });
+    expect(note).toBe(noteFor(root));
+    expect(note).toContain(`npx nuxi prepare ${relative(process.cwd(), root)}\``);
+  });
+
+  it('leaves the root out of the prepare command when the root is the cwd', () => {
+    const [note] = moduleNote(
+      {
+        source: 'types',
+        rootDir: process.cwd(),
+        sourceFile: join(process.cwd(), '.nuxt/types'),
+      } as AnalyzeResult,
+      { source: 'auto' },
+    );
+    expect(note).toContain('Then run `npx nuxi prepare` and run layerscope again.');
   });
 
   it('gives no note when the registry was read', () => {
@@ -131,8 +152,9 @@ describe('the wording of the note', () => {
   });
 
   it('shows the registry path of a custom build directory, relative to the cwd', () => {
-    const sourceFile = join(process.cwd(), 'build/nuxt/types');
-    const [note] = moduleNote({ source: 'types', sourceFile } as AnalyzeResult, { source: 'auto' });
-    expect(note).toContain('(build/nuxt/layerscope/registry.json)');
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-init-note-')));
+    const result = { ...typesIn(root), sourceFile: join(root, 'build/nuxt/types') };
+    const [note] = moduleNote(result as AnalyzeResult, { source: 'auto' });
+    expect(note).toBe(noteFor(root, join(root, 'build/nuxt/layerscope/registry.json')));
   });
 });

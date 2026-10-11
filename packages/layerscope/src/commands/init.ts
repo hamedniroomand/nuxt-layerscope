@@ -29,22 +29,21 @@ const CONFIG_NAME = 'layerscope.config.ts';
 /**
  * Says when `init` ran in auto mode and found no registry file. Three causes are possible: the
  * module is not installed, it is installed with `enabled: false`, or Nuxt did not run after it was
- * added. The note does not tell the user to run `init` again, because the config that `init` wrote
- * stays valid and `init` would refuse to replace it. With `--prepare` Nuxt just ran, so the last
- * cause cannot apply. A registry file that exists but is not read has its own note.
+ * added. Each one ends with a Nuxt run, so the text is the same with `--prepare`: an install or an
+ * enable still needs a new run. The note does not tell the user to run `init` again, because the
+ * config that `init` wrote stays valid and `init` would refuse to replace it. A registry file that
+ * exists but is not read has its own note.
  */
 export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
   const registryFile = join(dirname(result.sourceFile), REGISTRY_FILE);
   if (flags.source !== 'auto' || result.source !== 'types' || existsSync(registryFile)) {
     return [];
   }
-  const found = `layerscope found no data from its Nuxt module (${relative(process.cwd(), registryFile)}), so it reads symbols from the types that Nuxt generates. The boundary findings are the same, but some checks need the module (see the shadowed-component note).`;
-  const install = 'To install it, run `npx nuxi module add nuxt-layerscope --dev`.';
-  const enable =
-    flags.prepare === true
-      ? 'If it is installed, enable it.'
-      : 'If it is installed, enable it, run `npx nuxi prepare`, then run layerscope again.';
-  return [`${found} ${install} ${enable}`];
+  const root = relative(process.cwd(), result.rootDir);
+  const prepare = `npx nuxi prepare${root === '' ? '' : ` ${root}`}`;
+  return [
+    `layerscope found no data from its Nuxt module (${relative(process.cwd(), registryFile)}), so it reads symbols from the types that Nuxt generates. The boundary findings are the same, but some checks need the module (see the shadowed-component note). To use the module, install it with \`npx nuxi module add nuxt-layerscope --dev\`, or remove \`enabled: false\` from its \`layerscope\` options. Then run \`${prepare}\` and run layerscope again.`,
+  ];
 }
 
 export async function init(root: string | undefined, flags: InitFlags): Promise<number> {
