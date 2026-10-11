@@ -2,12 +2,28 @@
 // the files in `violations/` make exactly the expected rules fail. Both runs use a copy in a
 // temporary folder, so the working tree stays as it is. Run `vp run nuxt-layerscope#build` first.
 import { execFile } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { cp, mkdtemp, realpath, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
 
 const run = promisify(execFile);
+
+// The DevTools tab is built by @layerscope/devtools-client and copied by the core build. Without it,
+// the package would ship a tab with no client, and no test of the example would notice.
+const client = join(
+  import.meta.dirname,
+  '..',
+  'packages',
+  'layerscope',
+  'dist',
+  'devtools',
+  'client.js',
+);
+if (!existsSync(client)) {
+  throw new Error('dist/devtools/client.js is missing. Run "vp run nuxt-layerscope#build" first.');
+}
 const exampleDir = join(import.meta.dirname, '..', 'examples', 'shop');
 const bin = join(exampleDir, 'node_modules', 'nuxt-layerscope', 'dist', 'bin.mjs');
 
