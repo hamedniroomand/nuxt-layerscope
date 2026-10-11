@@ -1,5 +1,4 @@
-import type { GraphEdgeView, GraphView } from '#src/devtools/protocol.ts';
-import type { Layout } from '#src/graph/layout.ts';
+import type { GraphEdgeView, GraphView, Layout } from '#src/devtools/contract.ts';
 
 /** A graph payload that carries its layout, as the canvas needs. */
 export type LaidOutGraph = GraphView & { layout: Layout };

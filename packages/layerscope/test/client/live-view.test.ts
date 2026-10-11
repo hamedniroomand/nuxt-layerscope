@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vite-plus/test';
 import { filterFindings, rowIds } from '#src/devtools/client/lib/filters.ts';
 import { describeEvent } from '#src/devtools/client/lib/live-view.ts';
 import { emptyQuery } from '#src/devtools/client/lib/router.ts';
-import type { LiveEvent } from '#src/devtools/live.ts';
+import type { LiveEvent } from '#src/devtools/contract.ts';
 import { tabFinding } from '#test/client/fixtures.ts';
 
 function event(overrides: Partial<LiveEvent>): LiveEvent {

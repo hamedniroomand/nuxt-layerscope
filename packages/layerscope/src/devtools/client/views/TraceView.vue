@@ -7,8 +7,8 @@
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import { useViewData } from '#src/devtools/client/lib/view-data.ts';
   import { traceGroups, useCount } from '#src/devtools/client/lib/view-groups.ts';
-  import type { SymbolEntry } from '#src/devtools/protocol.ts';
-  import { STATUS_LABELS } from '#src/report/why.ts';
+  import type { SymbolEntry } from '#src/devtools/contract.ts';
+  import { STATUS_LABELS } from '#src/devtools/contract.ts';
 
   const context = useTab();
   const { api, nav } = context;

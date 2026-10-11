@@ -1,6 +1,10 @@
-import type { TraceView, UnusedView } from '#src/devtools/protocol.ts';
-import type { UnusedRow } from '#src/report/unused.ts';
-import type { WhyTargetRow, WhyUseRow } from '#src/report/why.ts';
+import type {
+  TraceView,
+  UnusedView,
+  UnusedRow,
+  WhyTargetRow,
+  WhyUseRow,
+} from '#src/devtools/contract.ts';
 
 export interface TraceUse extends WhyUseRow {
   /** What the symbol resolved to for this use. */

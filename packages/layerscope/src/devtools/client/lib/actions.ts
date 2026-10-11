@@ -1,7 +1,7 @@
 import type { Ref, ShallowRef } from 'vue';
 import { shallowRef } from 'vue';
 
-import type { BaselineEntry } from '#src/types.ts';
+import type { BaselineEntry } from '#src/devtools/contract.ts';
 
 import type { Api } from './api.ts';
 import { ApiError } from './api.ts';

@@ -4,10 +4,9 @@ import { flushPromises } from '@vue/test-utils';
 import axe from 'axe-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
-import { edgeView, graphView } from '#src/devtools/graph-api.ts';
 import { reportResponse, sampleFindings } from '#test/client/fixtures.ts';
 import { mountApp, press } from '#test/client/mount.ts';
-import { makeEdge, makeFinding, makeResult } from '#test/factories.ts';
+import { edgeView, graphView, makeEdge, makeFinding, makeResult } from '#test/contract-testing.ts';
 
 let mounted: VueWrapper | undefined;
 

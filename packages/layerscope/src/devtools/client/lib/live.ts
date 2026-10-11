@@ -1,7 +1,7 @@
 import type { ShallowRef } from 'vue';
 import { shallowRef } from 'vue';
 
-import type { LiveEvent, LiveState } from '#src/devtools/live.ts';
+import type { LiveEvent, LiveState } from '#src/devtools/contract.ts';
 
 /** `polling`: the event stream failed twice; the state is polled and there is no live dot. */
 export type LiveStatus = 'connecting' | 'live' | 'reconnecting' | 'paused' | 'polling';

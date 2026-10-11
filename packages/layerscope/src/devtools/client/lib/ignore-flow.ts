@@ -1,7 +1,7 @@
 import type { ShallowRef } from 'vue';
 import { onBeforeUnmount, shallowRef } from 'vue';
 
-import type { TabFinding } from '#src/devtools/protocol.ts';
+import type { TabFinding } from '#src/devtools/contract.ts';
 
 import type { TabContext } from './context.ts';
 import type { FindingsView } from './findings-view.ts';

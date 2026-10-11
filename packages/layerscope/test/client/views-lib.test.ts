@@ -4,7 +4,7 @@ import { suggestSymbols } from '#src/devtools/client/lib/autocomplete.ts';
 import { copyText } from '#src/devtools/client/lib/clipboard.ts';
 import { emptyQuery, formatHash, parseHash } from '#src/devtools/client/lib/router.ts';
 import { traceGroups, unusedGroups, useCount } from '#src/devtools/client/lib/view-groups.ts';
-import type { SymbolEntry, TraceView } from '#src/devtools/protocol.ts';
+import type { SymbolEntry, TraceView } from '#src/devtools/contract.ts';
 
 describe('trace route', () => {
   it('keeps the symbol in the path', () => {

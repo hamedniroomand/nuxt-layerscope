@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 
 import { ApiError } from '#src/devtools/client/lib/api.ts';
 import { createNavigation } from '#src/devtools/client/lib/navigation.ts';
-import { THEME_SCRIPT } from '#src/devtools/shell.ts';
 import { mountApp, press, withFindings } from '#test/client/mount.ts';
+import { THEME_SCRIPT } from '#test/contract-testing.ts';
 
 let mounted: VueWrapper | undefined;
 

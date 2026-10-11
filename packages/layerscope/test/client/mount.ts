@@ -6,7 +6,7 @@ import App from '#src/devtools/client/App.vue';
 import type { Api } from '#src/devtools/client/lib/api.ts';
 import { createTabContext } from '#src/devtools/client/lib/app.ts';
 import { TAB_CONTEXT } from '#src/devtools/client/lib/context.ts';
-import type { ReportResponse } from '#src/devtools/protocol.ts';
+import type { ReportResponse } from '#src/devtools/contract.ts';
 import { reportResponse, sampleFindings } from '#test/client/fixtures.ts';
 
 export interface Mounted {

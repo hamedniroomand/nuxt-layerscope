@@ -1,4 +1,4 @@
-import type { SymbolEntry } from '#src/devtools/protocol.ts';
+import type { SymbolEntry } from '#src/devtools/contract.ts';
 
 const MAX_ROWS = 12;
 

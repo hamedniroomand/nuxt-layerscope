@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vite-plus/test';
 import { ref } from 'vue';
 
-import { keyOf } from '#src/baseline/index.ts';
 import type { Toast } from '#src/devtools/client/lib/actions.ts';
 import { createActions, entryKey } from '#src/devtools/client/lib/actions.ts';
 import { ApiError } from '#src/devtools/client/lib/api.ts';
@@ -10,6 +9,7 @@ import { createMultiSelection } from '#src/devtools/client/lib/selection.ts';
 import { createStore } from '#src/devtools/client/lib/store.ts';
 import { reportResponse, sampleFindings } from '#test/client/fixtures.ts';
 import { fakeApi } from '#test/client/mount.ts';
+import { keyOf } from '#test/contract-testing.ts';
 
 describe('ignore plan and picks', () => {
   it('counts entries, findings and files before writing', () => {

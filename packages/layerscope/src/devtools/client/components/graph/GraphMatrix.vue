@@ -3,7 +3,7 @@
 
   import type { GraphSelection } from '#src/devtools/client/lib/graph-model.ts';
   import { cellShade } from '#src/devtools/client/lib/graph-model.ts';
-  import type { GraphView } from '#src/devtools/protocol.ts';
+  import type { GraphView } from '#src/devtools/contract.ts';
 
   const props = defineProps<{ view: GraphView; selection: GraphSelection }>();
   const emit = defineEmits<{ select: [selection: GraphSelection] }>();

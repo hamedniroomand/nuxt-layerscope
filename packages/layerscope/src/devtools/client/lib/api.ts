@@ -1,5 +1,5 @@
-import type { LiveState } from '#src/devtools/live.ts';
 import type {
+  LiveState,
   BaselineView,
   EdgeView,
   GraphView,
@@ -11,7 +11,7 @@ import type {
   TraceView,
   UnusedView,
   WriteResponse,
-} from '#src/devtools/protocol.ts';
+} from '#src/devtools/contract.ts';
 
 /** The config the shell embeds; defaults keep the client usable in tests. */
 export function readConfig(doc: Document = document): ShellConfig {

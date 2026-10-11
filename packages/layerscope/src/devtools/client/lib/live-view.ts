@@ -1,8 +1,7 @@
 import type { ComputedRef, Ref, ShallowRef } from 'vue';
 import { computed, onBeforeUnmount, onMounted, shallowRef, watch } from 'vue';
 
-import type { FindingDelta } from '#src/devtools/finding-keys.ts';
-import type { LiveEvent } from '#src/devtools/live.ts';
+import type { FindingDelta, LiveEvent } from '#src/devtools/contract.ts';
 
 import type { Toast } from './actions.ts';
 import type { TabContext } from './context.ts';

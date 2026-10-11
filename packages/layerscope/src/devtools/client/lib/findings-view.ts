@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 
-import type { TabFinding } from '#src/devtools/protocol.ts';
+import type { TabFinding } from '#src/devtools/contract.ts';
 
 import type { TabContext } from './context.ts';
 import type { ChipCount, FindingGroup } from './filters.ts';

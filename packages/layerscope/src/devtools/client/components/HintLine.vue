@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed } from 'vue';
 
-  import type { TabFinding } from '#src/devtools/protocol.ts';
+  import type { TabFinding } from '#src/devtools/contract.ts';
 
   import CopyButton from './CopyButton.vue';
 

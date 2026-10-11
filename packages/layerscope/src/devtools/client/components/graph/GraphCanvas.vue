@@ -14,8 +14,8 @@
     strokeWidth,
   } from '#src/devtools/client/lib/graph-model.ts';
   import { usePanZoom } from '#src/devtools/client/lib/pan-zoom.ts';
-  import type { GraphEdgeView, GraphView } from '#src/devtools/protocol.ts';
-  import { NODE_HEIGHT, NODE_WIDTH } from '#src/graph/layout-size.ts';
+  import type { GraphEdgeView, GraphView } from '#src/devtools/contract.ts';
+  import { NODE_HEIGHT, NODE_WIDTH } from '#src/devtools/contract.ts';
 
   /** Two chevron sizes, so the arrowhead stays in proportion to thin and thick lines. */
   const ARROWS = [

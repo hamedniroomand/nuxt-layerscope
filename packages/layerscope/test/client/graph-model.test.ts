@@ -12,7 +12,7 @@ import {
   visibleEdges,
 } from '#src/devtools/client/lib/graph-model.ts';
 import { zoomAround } from '#src/devtools/client/lib/pan-zoom.ts';
-import type { GraphView } from '#src/devtools/protocol.ts';
+import type { GraphView } from '#src/devtools/contract.ts';
 
 describe('graph selection in the hash', () => {
   it('reads and writes node and edge selections', () => {

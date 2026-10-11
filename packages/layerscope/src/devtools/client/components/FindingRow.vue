@@ -2,7 +2,7 @@
   import FileLocation from '#src/devtools/client/components/FileLocation.vue';
   import { useTab } from '#src/devtools/client/lib/context.ts';
   import { location } from '#src/devtools/client/lib/format.ts';
-  import type { TabFinding } from '#src/devtools/protocol.ts';
+  import type { TabFinding } from '#src/devtools/contract.ts';
 
   import HintLine from './HintLine.vue';
   import SeverityGlyph from './SeverityGlyph.vue';

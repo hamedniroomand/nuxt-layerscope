@@ -6,7 +6,7 @@
   import type { GraphSelection } from '#src/devtools/client/lib/graph-model.ts';
   import { symbolLabel } from '#src/devtools/client/lib/graph-model.ts';
   import { usePanel } from '#src/devtools/client/lib/graph-panel.ts';
-  import type { GraphView } from '#src/devtools/protocol.ts';
+  import type { GraphView } from '#src/devtools/contract.ts';
 
   const props = defineProps<{ view: GraphView; selection: GraphSelection }>();
   defineEmits<{ close: [] }>();

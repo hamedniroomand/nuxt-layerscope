@@ -2,7 +2,7 @@
   import { computed, ref } from 'vue';
 
   import { suggestSymbols } from '#src/devtools/client/lib/autocomplete.ts';
-  import type { SymbolEntry } from '#src/devtools/protocol.ts';
+  import type { SymbolEntry } from '#src/devtools/contract.ts';
 
   const props = defineProps<{ symbols: SymbolEntry[]; initial: string }>();
   const emit = defineEmits<{ pick: [name: string]; focus: [] }>();

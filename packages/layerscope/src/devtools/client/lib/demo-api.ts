@@ -1,12 +1,12 @@
-import type { LiveState } from '#src/devtools/live.ts';
 import type {
+  LiveState,
   EdgeView,
   NodeView,
   ReportResponse,
   ShellConfig,
   TraceView,
-} from '#src/devtools/protocol.ts';
-import { STATIC_PATHS, edgePath, nodePath, traceUrl } from '#src/devtools/static-paths.ts';
+} from '#src/devtools/contract.ts';
+import { STATIC_PATHS, edgePath, nodePath, traceUrl } from '#src/devtools/contract.ts';
 
 import type { Api, StateResponse } from './api.ts';
 import { ApiError } from './api.ts';

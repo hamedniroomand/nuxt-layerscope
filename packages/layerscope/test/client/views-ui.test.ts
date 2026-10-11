@@ -3,7 +3,7 @@ import type { VueWrapper } from '@vue/test-utils';
 import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
-import type { TraceView } from '#src/devtools/protocol.ts';
+import type { TraceView } from '#src/devtools/contract.ts';
 import { reportResponse, sampleFindings } from '#test/client/fixtures.ts';
 import { mountApp, press } from '#test/client/mount.ts';
 

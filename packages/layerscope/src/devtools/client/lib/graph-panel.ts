@@ -1,7 +1,7 @@
 import type { ShallowRef } from 'vue';
 import { shallowRef, watch } from 'vue';
 
-import type { EdgeView, NodeView } from '#src/devtools/protocol.ts';
+import type { EdgeView, NodeView } from '#src/devtools/contract.ts';
 
 import type { TabContext } from './context.ts';
 import type { GraphSelection } from './graph-model.ts';

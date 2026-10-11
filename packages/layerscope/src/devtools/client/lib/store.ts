@@ -1,7 +1,6 @@
 import { reactive } from 'vue';
 
-import type { LiveEvent } from '#src/devtools/live.ts';
-import type { ReportResponse } from '#src/devtools/protocol.ts';
+import type { LiveEvent, ReportResponse } from '#src/devtools/contract.ts';
 
 import type { Api } from './api.ts';
 import { ApiError } from './api.ts';

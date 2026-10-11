@@ -3,9 +3,15 @@ import type { VueWrapper } from '@vue/test-utils';
 import { flushPromises } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
-import { edgeView, graphView, nodeView } from '#src/devtools/graph-api.ts';
 import { mountApp, press } from '#test/client/mount.ts';
-import { makeEdge, makeLayer, makeResult } from '#test/factories.ts';
+import {
+  edgeView,
+  graphView,
+  nodeView,
+  makeEdge,
+  makeLayer,
+  makeResult,
+} from '#test/contract-testing.ts';
 
 let mounted: VueWrapper | undefined;
 

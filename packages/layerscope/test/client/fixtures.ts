@@ -1,5 +1,5 @@
-import type { ReportResponse, TabFinding, TabReport } from '#src/devtools/protocol.ts';
-import { makeFinding } from '#test/factories.ts';
+import type { ReportResponse, TabFinding, TabReport } from '#src/devtools/contract.ts';
+import { makeFinding } from '#test/contract-testing.ts';
 
 export function tabFinding(overrides: Partial<TabFinding> = {}): TabFinding {
   const finding = makeFinding();
