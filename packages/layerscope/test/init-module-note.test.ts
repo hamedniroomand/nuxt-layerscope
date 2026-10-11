@@ -12,7 +12,7 @@ import { NUXT4_ROOT } from '#test/fixtures.ts';
 /** The start of the note, with the registry path as `init` shows it: relative to the cwd. */
 function noteFor(root: string): string {
   const registry = relative(process.cwd(), join(root, '.nuxt/layerscope/registry.json'));
-  return `layerscope found no data from its Nuxt module (${registry}), so it reads symbols from the types that Nuxt generates, which is less exact.`;
+  return `layerscope found no data from its Nuxt module (${registry}), so it reads symbols from the types that Nuxt generates. The findings are the same, but the \`shadowed-component\` rule and the full stale check need the module.`;
 }
 const NOTE_START = 'layerscope found no data from its Nuxt module';
 const INSTALL = 'npx nuxi module add nuxt-layerscope --dev';

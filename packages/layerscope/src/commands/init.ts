@@ -35,7 +35,7 @@ export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
     return [];
   }
   const registry = relative(process.cwd(), join(dirname(result.sourceFile), REGISTRY_FILE));
-  const note = `layerscope found no data from its Nuxt module (${registry}), so it reads symbols from the types that Nuxt generates, which is less exact. To install the module, run \`npx nuxi module add nuxt-layerscope --dev\`.`;
+  const note = `layerscope found no data from its Nuxt module (${registry}), so it reads symbols from the types that Nuxt generates. The findings are the same, but the \`shadowed-component\` rule and the full stale check need the module. To install it, run \`npx nuxi module add nuxt-layerscope --dev\`.`;
   return [
     flags.prepare === true
       ? note
