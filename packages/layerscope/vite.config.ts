@@ -24,6 +24,7 @@ export default defineConfig({
   test: {
     include: ['test/**/*.test.ts'],
     globalSetup: ['test/setup/prepare-fixtures.ts'],
+    setupFiles: ['test/setup/clear-git-env.ts'],
     testTimeout: 60_000,
     // CI sets FORCE_COLOR; tests compare plain output.
     env: { FORCE_COLOR: '0' },

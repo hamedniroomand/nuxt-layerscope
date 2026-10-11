@@ -2,6 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { cpSync, rmSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
+import './clear-git-env.ts';
+
 const FIXTURES = ['nuxt3', 'nuxt4', 'matrix'];
 
 /** The playground is not a fixture, but `playground.test.ts` analyzes it, so it needs a registry. */
