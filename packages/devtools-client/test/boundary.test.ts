@@ -99,32 +99,46 @@ describe('the specifier pattern', () => {
   });
 });
 
+const REPOSITORY = join(PACKAGE, '../../');
 const CORE_SRC = join(PACKAGE, '../layerscope/src/');
 const CONTRACT = join(CORE_SRC, 'devtools/contract.ts');
 
-/**
- * The core modules that `contract.ts` re-exports as values (an `export` that is not `export type`).
- * The client bundles them. A `#src/` path is in the core `src` folder.
- */
-function contractValueModules(): string[] {
-  const text = readFileSync(CONTRACT, 'utf8');
-  return [...text.matchAll(/^export\s+(?!type\b)[^;]*?\bfrom\s+'([^']+)';/gmu)].map(match =>
-    match[1].startsWith('#src/')
-      ? join(CORE_SRC, match[1].slice('#src/'.length))
-      : resolve(dirname(CONTRACT), match[1]),
-  );
+/** The module specifiers that a file imports or re-exports at run time: no `import type`. */
+function runtimeSpecifiers(file: string): string[] {
+  const text = readFileSync(file, 'utf8').replaceAll(/^(?:import|export)\s+type\b[^;]*;/gmu, '');
+  return specifiers(text);
 }
 
-const CONTRACT_VALUE_MODULES = contractValueModules();
+/** Whether the specifier is a core module, not a Node built-in or a package. */
+function isCoreSpecifier(specifier: string): boolean {
+  return specifier.startsWith('./') || specifier.startsWith('#src/');
+}
+
+/** A core module that `contract.ts` uses at run time. The client bundles it. */
+function coreModule(specifier: string): string {
+  return specifier.startsWith('#src/')
+    ? join(CORE_SRC, specifier.slice('#src/'.length))
+    : resolve(dirname(CONTRACT), specifier);
+}
+
+const CONTRACT_IMPORTS = runtimeSpecifiers(CONTRACT);
+const CONTRACT_MODULES = CONTRACT_IMPORTS.filter(specifier => isCoreSpecifier(specifier)).map(
+  specifier => coreModule(specifier),
+);
 
 describe('the values of the contract', () => {
   it('finds the value re-exports', () => {
-    expect(CONTRACT_VALUE_MODULES.length).toBeGreaterThan(0);
+    expect(CONTRACT_MODULES.length).toBeGreaterThan(0);
   });
 
-  it.each(CONTRACT_VALUE_MODULES)('%s has no import at run time', path => {
-    const text = readFileSync(path, 'utf8');
-    const runtime = text.replaceAll(/^(?:import|export)\s+type\b[^;]*;/gmu, '');
-    expect(specifiers(runtime)).toEqual([]);
+  it('uses only core modules at run time, no Node built-in and no package', () => {
+    expect(CONTRACT_IMPORTS.filter(specifier => !isCoreSpecifier(specifier))).toEqual([]);
   });
+
+  it.each(CONTRACT_MODULES.map(path => [relative(REPOSITORY, path), path]))(
+    '%s has no import at run time',
+    (_name, path) => {
+      expect(runtimeSpecifiers(path)).toEqual([]);
+    },
+  );
 });
