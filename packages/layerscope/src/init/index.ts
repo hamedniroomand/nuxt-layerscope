@@ -5,7 +5,8 @@ import { fittingPreset } from './preset.ts';
 import { measureReadiness } from './readiness.ts';
 import type { Proposal } from './types.ts';
 
-export { assertNoNuxtConfigLayers, assertWritable } from './guard.ts';
+export { assertNoNuxtConfigLayers, assertWritable, findExistingConfig } from './guard.ts';
+export { DEFAULT_BUILD_DIR, initBuildDir } from './build-dir.ts';
 export { renderConfig } from './render.ts';
 export type { AllowedEdge, Cluster, PresetFit, Proposal, Readiness } from './types.ts';
 

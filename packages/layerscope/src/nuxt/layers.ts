@@ -56,6 +56,26 @@ async function layersFromNuxt(kit: NuxtKit, rootDir: string): Promise<Layer[]> {
   return options._layers.map((layer, index) => layerFromNuxt(layer, index, dirs[index]));
 }
 
+/**
+ * The build directory that `nuxi prepare` uses, from the `nuxt.config` of the project, or `null`
+ * when the project has no `@nuxt/kit` or its config does not load. `_prepare` is what `nuxi prepare`
+ * passes: without it, kit moves the default directory to `node_modules/.cache/nuxt/.nuxt` when
+ * `.nuxt` already exists, as it does for a build.
+ */
+export async function nuxtBuildDir(rootDir: string): Promise<string | null> {
+  const kit = await loadNuxtKit(rootDir);
+  if (kit === null) {
+    return null;
+  }
+  try {
+    const options = await kit.loadNuxtConfig({ cwd: rootDir, overrides: { _prepare: true } });
+    return options.buildDir ?? null;
+  } catch {
+    // The same config fails again when the layers load, with a message that names the problem.
+    return null;
+  }
+}
+
 /** `path` in config names the Nuxt layer at that root. */
 function applyConfiguredNames(layers: Layer[], rootDir: string, config: LayerscopeConfig): Layer[] {
   const named = layers.map(layer => ({ ...layer }));

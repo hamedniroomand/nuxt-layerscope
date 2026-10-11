@@ -7,6 +7,8 @@ import { BASELINE_FILE, createBaseline, writeBaseline } from '#src/baseline/inde
 import {
   assertNoNuxtConfigLayers,
   assertWritable,
+  findExistingConfig,
+  initBuildDir,
   propose,
   renderConfig,
 } from '#src/init/index.ts';
@@ -50,7 +52,10 @@ export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
 export async function init(root: string | undefined, flags: InitFlags): Promise<number> {
   const rootDir = resolve(root ?? process.cwd());
   const customConfig = flags.config === undefined ? undefined : resolve(flags.config);
-  const configFile = customConfig ?? resolve(rootDir, CONFIG_NAME);
+  // One value for every check: the config file that exists, whatever its name. `--force` replaces
+  // that file, so a second config never appears next to it.
+  const existing = findExistingConfig(rootDir, customConfig);
+  const configFile = customConfig ?? existing ?? resolve(rootDir, CONFIG_NAME);
   const baselineFile = resolve(rootDir, BASELINE_FILE);
   const write = flags.dryRun !== true;
   if (write && flags.force !== true) {
@@ -58,18 +63,20 @@ export async function init(root: string | undefined, flags: InitFlags): Promise<
   }
 
   // Without an `allow` map every layer is unrestricted, so the edges are what exists today.
+  const buildDir = await initBuildDir(rootDir, existing);
   const result = await analyze({
     rootDir,
-    config: {},
+    config: { buildDir },
     prepare: flags.prepare,
     source: toSource(flags.source),
   });
-  assertNoNuxtConfigLayers(result, existsSync(configFile));
+  assertNoNuxtConfigLayers(result, existing !== null);
 
   const proposal = propose(result);
   const source = renderConfig(
     result.layers.map(layer => layer.name),
     proposal.edges,
+    buildDir,
   );
   if (write) {
     writeFileSync(configFile, source);

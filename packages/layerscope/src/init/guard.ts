@@ -11,8 +11,22 @@ import type { AnalyzeResult } from '#src/types.ts';
 
 function alreadyExists(file: string): LayerscopeError {
   return new LayerscopeError(
-    `${relative(process.cwd(), file)} already exists. Use --force to replace it, or --dry-run and copy what you need.`,
+    `${relative(process.cwd(), file)} already exists. To keep it, run with --dry-run and copy what you need. To replace it, run with --force.`,
   );
+}
+
+/**
+ * The config file that exists, whatever its name, or `null`. A `--config` file counts only when it
+ * exists. Every check of `init` uses this one value.
+ */
+export function findExistingConfig(
+  rootDir: string,
+  customConfig: string | undefined,
+): string | null {
+  if (customConfig === undefined) {
+    return findConfigFile(rootDir);
+  }
+  return existsSync(customConfig) ? customConfig : null;
 }
 
 export function assertWritable(
