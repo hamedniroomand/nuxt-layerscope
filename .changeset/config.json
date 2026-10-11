@@ -12,6 +12,7 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "docs",
+    "@layerscope/devtools-client",
     "playground",
     "layerscope-example-shop",
     "fixture-layer-ui",
