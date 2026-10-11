@@ -20,6 +20,8 @@ export interface NuxtLayer {
 
 export interface NuxtOptions {
   _layers: NuxtLayer[];
+  /** Absolute. Kit resolves it, so a `buildDir` of `nuxt.config` is already applied. */
+  buildDir?: string;
   serverDir?: string;
   dir?: { shared?: string };
 }
@@ -33,7 +35,10 @@ export interface LayerDirectories {
 }
 
 export interface NuxtKit {
-  loadNuxtConfig: (opts: { cwd: string }) => Promise<NuxtOptions>;
+  loadNuxtConfig: (opts: {
+    cwd: string;
+    overrides?: Record<string, unknown>;
+  }) => Promise<NuxtOptions>;
   /** Missing from older `@nuxt/kit` releases; reads only `nuxt.options`. */
   getLayerDirectories?: (nuxt: { options: NuxtOptions }) => LayerDirectories[];
 }
