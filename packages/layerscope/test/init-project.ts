@@ -17,6 +17,13 @@ import { NUXT4_ROOT } from '#test/fixtures.ts';
 
 const made: string[] = [];
 
+/** A temp folder with a real path, removed by `removeProjects`. */
+export function tempFolder(): string {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-init-dir-')));
+  made.push(root);
+  return root;
+}
+
 /** Removes the projects that `project` made. Call it from an `afterEach`. */
 export function removeProjects(): void {
   for (const root of made.splice(0)) {

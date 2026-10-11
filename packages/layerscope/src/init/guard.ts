@@ -49,14 +49,14 @@ export function assertNoNuxtConfigLayers(result: AnalyzeResult, hasConfigFile: b
     // `result.config` has the `layers` that a preset adds, so the keys come from the declared config.
     const keys = keysSet(result.declaredConfig ?? result.config);
     const many = keys.includes(', ');
-    // `init` reads the .nuxt data, so a key that was removed from nuxt.config can still show here.
+    // `init` reads the Nuxt data, so a key that was removed from nuxt.config can still show here.
     if (result.recordedFile !== undefined && isConfigNewer(result.rootDir, result.recordedFile)) {
       throw new LayerscopeError(
-        `${keys} ${many ? 'are' : 'is'} set in the .nuxt data, but nuxt.config changed after the last Nuxt run, so this data may be out of date. Run init --prepare.`,
+        `${keys} ${many ? 'are' : 'is'} set in the Nuxt data, but nuxt.config changed after the last Nuxt run, so this data may be out of date. Run init --prepare.`,
       );
     }
     throw new LayerscopeError(
-      `${keys} ${many ? 'are' : 'is'} set in the "layerscope" key of nuxt.config (read from the .nuxt data of the last Nuxt run). Move ${many ? 'them' : 'it'} to layerscope.config.ts and remove the key. Then run init --prepare --dry-run and copy the layers and edges you need, because init does not replace an existing config.`,
+      `${keys} ${many ? 'are' : 'is'} set in the "layerscope" key of nuxt.config (read from the Nuxt data of the last Nuxt run). Move ${many ? 'them' : 'it'} to layerscope.config.ts and remove the key. Then run init --prepare --dry-run and copy the layers and edges you need, because init does not replace an existing config.`,
     );
   }
 }

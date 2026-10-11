@@ -64,6 +64,8 @@ describe('assertNoNuxtConfigLayers', () => {
       'Then run init --prepare --dry-run and copy the layers and edges you need',
     );
     expect(message).not.toContain('--force');
+    expect(message).toContain('(read from the Nuxt data of the last Nuxt run)');
+    expect(message).not.toContain('.nuxt');
   });
 
   it('names only preset after a real analysis, where the preset adds its own layers', async () => {
@@ -114,7 +116,7 @@ function withAges(registryAge: number, configAge: number): AnalyzeResult {
 describe('assertNoNuxtConfigLayers with a changed nuxt.config', () => {
   it('says the data may be out of date when nuxt.config is newer', () => {
     expect(refusalOf(withAges(100, 10))).toBe(
-      '"preset" is set in the .nuxt data, but nuxt.config changed after the last Nuxt run, so this data may be out of date. Run init --prepare.',
+      '"preset" is set in the Nuxt data, but nuxt.config changed after the last Nuxt run, so this data may be out of date. Run init --prepare.',
     );
   });
 

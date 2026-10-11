@@ -3,7 +3,15 @@ import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { EXIT_CLEAN, run } from '#src/cli.ts';
 
-import { init, project, read, readFrom, removeProjects } from './init-project.ts';
+import {
+  init,
+  project,
+  read,
+  readFrom,
+  removeProjects,
+  tempFolder,
+  write,
+} from './init-project.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -32,6 +40,18 @@ describe('init and the Nuxt build directory, first run', () => {
     vi.spyOn(process.stdout, 'write').mockReturnValue(true);
     vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     expect(await run(['node', 'layerscope', 'check', root])).toBe(EXIT_CLEAN);
+  });
+
+  it('keeps an absolute buildDir outside the root absolute, not a ../ path', async () => {
+    const outside = tempFolder();
+    write(outside, 'types/imports.d.ts', 'export {}\n');
+    write(outside, 'components.d.ts', '\n');
+    const root = project({ nuxtBuildDir: outside, dataIn: [] });
+    const { code } = await init(root, '--verbose');
+    expect(code).toBe(EXIT_CLEAN);
+    const config = read(root, 'layerscope.config.ts');
+    expect(config).toContain(`  buildDir: '${outside}',`);
+    expect(config).not.toContain('../');
   });
 
   it('writes no buildDir line for the default folder', async () => {
