@@ -2,6 +2,8 @@ import type { App } from 'vue';
 
 import Card from './components/Card.vue';
 import CardGroup from './components/CardGroup.vue';
+import DevToolsTour from './components/DevToolsTour.vue';
+import HomeCta from './components/HomeCta.vue';
 import Mermaid from './components/Mermaid.vue';
 import ReadMore from './components/ReadMore.vue';
 import Screenshot from './components/Screenshot.vue';
@@ -11,6 +13,8 @@ import Steps from './components/Steps.vue';
 export function registerComponents(app: App): void {
   app.component('Card', Card);
   app.component('CardGroup', CardGroup);
+  app.component('DevToolsTour', DevToolsTour);
+  app.component('HomeCta', HomeCta);
   app.component('Mermaid', Mermaid);
   app.component('ReadMore', ReadMore);
   app.component('Screenshot', Screenshot);

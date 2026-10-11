@@ -67,7 +67,7 @@ export default defineConfig({
       'link',
       {
         rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap',
+        href: 'https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap',
       },
     ],
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${BASE}logo.svg` }],
@@ -112,7 +112,7 @@ export default defineConfig({
         }
       });
       // A ```mermaid block becomes a diagram. A ```ts [nuxt.config.ts] block shows the file
-      // name in the badge where VitePress would show the language.
+      // name where VitePress would show the language. The theme shows that name as a title bar.
       md.renderer.rules.fence = (tokens, index, options, env, self): string => {
         const token = tokens[index];
         if (token.info.trim() === 'mermaid') {
@@ -122,7 +122,13 @@ export default defineConfig({
         const title = (token.meta as { title?: string } | null)?.title;
         return title === undefined
           ? html
-          : html.replace(/<span class="lang">.*?<\/span>/u, `<span class="lang">${title}</span>`);
+          : html
+              .replace(/^<div class="language-/u, '<div class="ls-titled language-')
+              // Escape the title, and v-pre stops Vue from reading `{{ }}` in it as a template.
+              .replace(
+                /<span class="lang">.*?<\/span>/u,
+                () => `<span class="lang" v-pre>${md.utils.escapeHtml(title)}</span>`,
+              );
       };
     },
   },

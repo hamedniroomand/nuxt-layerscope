@@ -1,49 +1,31 @@
 ---
 layout: home
+title: Layer boundaries for Nuxt
+# llms.txt reads this line. The page shows the shorter `intro.tagline`.
+tagline: Split a Nuxt app into layers and keep them apart. layerscope resolves every auto-import, component and server util the way Nuxt does, and fails CI when a layer uses one it may not.
 
-hero:
-  name: layerscope
-  text: Layer boundaries for Nuxt, auto-imports included.
-  tagline: Split a Nuxt app into layers and keep them apart. layerscope resolves every auto-import, component and server util the way Nuxt does, and fails CI when a layer uses one it may not.
-  image:
-    src: /logo.svg
-    alt: layerscope
-  actions:
-    - theme: brand
-      text: Get started
-      link: /guide/getting-started
-    - theme: alt
-      text: Why layerscope
-      link: /guide/what-is-layerscope
-    - theme: alt
-      text: Live demo
-      link: https://layerscope.netlify.app/__layerscope/
-    - theme: alt
-      text: GitHub
-      link: https://github.com/hamedniroomand/nuxt-layerscope
+intro:
+  title: Layer boundaries for Nuxt, auto-imports included.
+  tagline: layerscope resolves auto-imports, components and server utils the way Nuxt does, and fails CI when a layer crosses a boundary.
+  command: npx nuxi module add nuxt-layerscope --dev
+  action:
+    text: Get started
+    link: /guide/getting-started
 ---
 
-```bash
-npx nuxi module add nuxt-layerscope --dev
-npx layerscope check --prepare
-```
-
-## See it while you code
-
-In development, the Nuxt module adds a tab to Nuxt DevTools. It shows every finding, the layer
-graph and where each symbol is used, and it updates when you save a file.
-[Open the DevTools guide](/guide/devtools).
-
-<Screenshot
-  name="overview"
-  alt="The Layerscope tab in Nuxt DevTools: the Overview view with 2 errors and 3 warnings in 5 layers, a small layer graph and the files with findings."
-/>
+<div class="ls-split">
+<div class="ls-split-text">
 
 ## The dependencies nobody imports
 
-In a Nuxt layer, most dependencies never appear as an `import`. The admin layer below uses a
+In a Nuxt layer, most dependencies never appear as an `import`. The admin layer here uses a
 composable and a component from the web layer, and nothing in the file says so. Tools that read
 import statements see a clean file.
+
+layerscope sees both. [Read why this matters](/guide/what-is-layerscope).
+
+</div>
+<div class="ls-split-code">
 
 ```vue [layers/admin/app/components/AdminPanel.vue]
 <script setup lang="ts">
@@ -56,9 +38,7 @@ import statements see a clean file.
 </template>
 ```
 
-layerscope sees both:
-
-```text
+```text [npx layerscope check]
 layers/admin/app/components/AdminPanel.vue
   2:16    error  Auto-import "useCart" crosses from layer "admin" into "web"  layer-boundary
                  useCart → layers/web/app/composables/useCart.ts
@@ -70,11 +50,14 @@ layers/admin/app/components/AdminPanel.vue
 ✖ 2 problems (2 errors, 0 warnings)
 ```
 
+</div>
+</div>
+
 ## What it checks
 
-<CardGroup :cols="2">
+<CardGroup variant="bento" :cols="3">
 
-<Card title="Auto-imported composables and utils" icon="braces">
+<Card title="Auto-imported composables and utils" icon="braces" wide tone="brand">
 
 `useCart()` in a script or <code v-pre>{{ formatPrice(total) }}</code> in a template, resolved to the file and
 layer Nuxt picked.
@@ -94,7 +77,7 @@ Nitro utils in `server/`, and the auto-imports available in `shared/`, each in i
 
 </Card>
 
-<Card title="Explicit imports" icon="code">
+<Card title="Explicit imports" icon="code" wide>
 
 `#layers/web/…`, `~/…`, relative paths, `#imports` and `#components`, through Nuxt's own alias
 map.
@@ -103,11 +86,19 @@ map.
 
 </CardGroup>
 
+## See it while you code
+
+In development, the Nuxt module adds a tab to Nuxt DevTools. It shows every finding, the layer
+graph and where each symbol is used, and it updates when you save a file.
+[Open the DevTools guide](/guide/devtools) or [try the live demo](https://layerscope.netlify.app/__layerscope/).
+
+<DevToolsTour />
+
 ## Made for teams with a real codebase
 
-<CardGroup :cols="3">
+<CardGroup variant="tiles" :cols="2">
 
-<Card title="A CI gate" icon="git-pull-request" to="/guide/ci">
+<Card title="A CI gate" icon="git-pull-request" to="/guide/ci" wide tone="brand">
 
 Exit codes, inline annotations on the pull request and a GitHub Action.
 
@@ -170,4 +161,9 @@ flowchart LR
   K --> O[Report, exit code, annotations]
 ```
 
-<ReadMore to="/guide/getting-started" title="Set it up in five minutes" />
+<HomeCta
+  title="Set it up in five minutes"
+  command="npx nuxt-layerscope init --baseline"
+  to="/guide/getting-started"
+  action="Get started"
+/>
