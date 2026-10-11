@@ -1,6 +1,6 @@
 {
   "name": "nuxt-layerscope",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Layer boundary checks for Nuxt apps that see auto-imports",
   "keywords": [
     "architecture",
