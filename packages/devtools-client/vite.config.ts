@@ -10,6 +10,7 @@ function core(path: string): string {
 
 /** The DevTools tab client: Vue runtime-only, one JS entry and one CSS file in `dist`. */
 export default defineConfig(({ command }) => ({
+  root: fileURLToPath(new URL('./', import.meta.url)),
   base: './',
   plugins: [vue()],
   resolve: {
