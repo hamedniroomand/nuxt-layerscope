@@ -52,7 +52,8 @@ function recordedConfig(
     return { config: registry.config, file: sourceFile };
   }
   const read = readRegistry(buildDir);
-  // A stale registry has no layer dirs, but its `config` is still the only copy of the options.
+  // A stale registry is not used for layers or symbols, but its `config` is the only copy of the
+  // options.
   return read.kind === 'ok' || read.kind === 'stale'
     ? { config: read.registry.config, file: read.file }
     : { config: undefined, file: undefined };

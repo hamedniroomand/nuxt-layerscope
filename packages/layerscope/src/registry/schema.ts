@@ -34,6 +34,15 @@ export interface RegistryComponentDir {
   files: string[];
 }
 
+export interface RegistryImportDir {
+  /** The dir that Nuxt or Nitro scans for auto-imports, or the glob when the user gave one. */
+  dir: string;
+  /** The absolute globs that the scan used for the dir. */
+  globs: string[];
+  /** Files that the globs matched when the registry was written, before Nuxt's ignore rules. */
+  files: string[];
+}
+
 export interface RegistryImport {
   /** Name the symbol is auto-imported as. */
   name: string;
@@ -49,6 +58,11 @@ export interface Registry {
   components: RegistryComponent[];
   shadowedComponents: ShadowedComponent[];
   componentDirs: RegistryComponentDir[];
+  /**
+   * Every dir that Nuxt or Nitro scans for auto-imports, for the stale check. `null` when the
+   * module could not read them (it printed the reason): the check is off for this file.
+   */
+  importDirs: RegistryImportDir[] | null;
   imports: Record<Context, RegistryImport[]>;
   /** The `layerscope` key of `nuxt.config`, when it sets layers or rules. Added in 0.1.0. */
   config?: ProjectConfig;

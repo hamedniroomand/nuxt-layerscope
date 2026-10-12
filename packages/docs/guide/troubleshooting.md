@@ -4,11 +4,30 @@
 
 layerscope reads files Nuxt generates. Run `npx nuxi prepare`, or pass `--prepare`.
 
-## "… no longer exists" or "… is missing from components.d.ts"
+## "… no longer exists", "… is missing from components.d.ts" or "… is missing from the layerscope registry"
 
 The generated files are older than your code: a component or composable was added, renamed or
 deleted since `nuxi prepare` last ran. Run it again, or pass `--prepare`. In CI, make sure
 `nuxi prepare` runs after checkout; restoring `.nuxt` from a cache is a common cause.
+
+"… is missing from the layerscope registry" names the new file. It comes only from the registry,
+not from the `.d.ts` files. The file can be any new file in an auto-import dir, not only a
+composable. For example, the `server/utils/**/*` pattern of Nitro also matches a `README.md` or a
+backup file such as `x.ts~`. Run `nuxi prepare` again, and the file is part of the registry.
+
+## "Could not read … (EACCES)"
+
+layerscope could not open a dir that the registry lists for auto-imports, so it cannot look for
+new files there. Fix the access to the dir, or pass `--source types` to use the generated `.d.ts`
+files, which do not check auto-import dirs.
+
+## "nuxt-layerscope could not read the auto-import dirs of Nuxt"
+
+The module printed this when `nuxi prepare`, `dev` or `build` ran. The text in brackets gives the
+reason. The module cannot list the auto-import dirs, so it writes `importDirs: null` in the
+registry. Then the stale check does not find new auto-import files, and `layerscope` shows a note
+about it. Nothing else changes. Fix the reason (for example, update the `nuxt` package in your
+lockfile), and run `nuxi prepare` again.
 
 ## An auto-import is reported as unresolved
 
@@ -84,8 +103,8 @@ The module and the CLI come from different versions of `nuxt-layerscope`, for ex
 `npx nuxt-layerscope@latest` against an older project install. Run the project's own
 `npx layerscope`, or align the versions.
 
-If the note says that the registry has no modules or public dir for its layers, an older
-nuxt-layerscope wrote it. Run `nuxi prepare` to write it again.
+If the note says that the registry is from an older nuxt-layerscope, or is damaged, and has no
+data that this release needs, run `nuxi prepare` to write it again.
 
 ## Getting help
 

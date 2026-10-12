@@ -57,7 +57,13 @@ layerscope stops with exit code `2` when they are clearly stale:
 - a component file exists that Nuxt has not registered. With the registry, every component dir
   Nuxt scanned is compared with the files recorded when it was written; with the `types` source
   the default `components/` dirs are checked (overridden and island components are expected to be
-  missing there).
+  missing there), or
+- an auto-import file exists that is not in the registry. An example is a composable that
+  overrides one of a lower layer. The registry lists the dirs that Nuxt and Nitro scan for
+  auto-imports: `composables/`, `utils/`, `shared/utils`, `shared/types`, `server/utils` and the
+  `imports.dirs` of each layer. A dir in `node_modules` is not checked. A dir that you add in
+  `nuxt.config` is checked after the next `nuxi prepare`. The `types` source does not check
+  auto-import dirs.
 
 File modification times are not used: Nuxt skips rewriting unchanged files, so they would
 report stale files that are not.

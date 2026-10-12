@@ -13,10 +13,10 @@ import type {
   ShadowedComponent,
 } from '#src/registry/schema.ts';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
-import type { Context } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 import { packageVersion } from '#src/version.ts';
 
+import { ImportDirRecorder } from './import-dirs.ts';
 import type { Component, ComponentsDir, Nitro, Nuxt, Unimport, UnimportImport } from './nuxt.ts';
 import { onNitroInit } from './nuxt.ts';
 
@@ -93,6 +93,7 @@ export class RegistryCollector {
   private registered: Component[] = [];
   private appImports: Unimport | null = null;
   private nitro: Nitro | null = null;
+  private readonly importDirs = new ImportDirRecorder();
 
   public constructor(nuxt: Nuxt, config: ProjectConfig) {
     this.config = config;
@@ -113,6 +114,10 @@ export class RegistryCollector {
       // Nuxt scans every dir before this hook, so this pass is complete.
       this.lastScan = [...this.scanned.values()];
       this.scanned.clear();
+    });
+    // Nuxt keeps this array and modules add to it, so it is read when the registry is written.
+    nuxt.hook('imports:dirs', dirs => {
+      this.importDirs.appDirs = dirs;
     });
     nuxt.hook('imports:context', context => {
       this.appImports = context;
@@ -139,7 +144,11 @@ export class RegistryCollector {
   }
 
   public async collect(): Promise<Registry> {
-    const [componentDirs, imports] = await Promise.all([this.componentDirs(), this.imports()]);
+    const [componentDirs, imports, importDirs] = await Promise.all([
+      this.componentDirs(),
+      this.imports(),
+      this.importDirs.record(this.nuxt.options.rootDir, this.nitro),
+    ]);
     // From the project's own kit, as the CLI does. The fields that layerscope reads are the same in
     // the schema type and in its own subset type.
     const { options } = this.nuxt;
@@ -156,6 +165,7 @@ export class RegistryCollector {
       components,
       shadowedComponents: this.shadowed(components),
       componentDirs,
+      importDirs,
       imports,
       ...(Object.keys(this.config).length > 0 ? { config: this.config } : {}),
     };
@@ -217,7 +227,7 @@ export class RegistryCollector {
     return dirs;
   }
 
-  private async imports(): Promise<Record<Context, RegistryImport[]>> {
+  private async imports(): Promise<Registry['imports']> {
     const serverContext = this.nitro?.unimport;
     // Nitro scans its import dirs when it writes types, which may run after this hook.
     await serverContext?.init?.();

@@ -14,8 +14,21 @@ export type RegistryRead =
   | { kind: 'missing'; file: string }
   /** Written by a layerscope release with another schema. */
   | { kind: 'incompatible'; file: string; version: unknown }
-  /** Same schema version, but a layer lacks a field that this release needs. */
+  /** Same schema version, but the file lacks a field that this release needs. */
   | { kind: 'stale'; file: string; registry: Registry };
+
+function isStrings(value: unknown): boolean {
+  return Array.isArray(value) && value.every(item => typeof item === 'string');
+}
+
+/** The check of a stored entry: the type of each field, because the file is not trusted. */
+function isImportDir(entry: unknown): boolean {
+  if (typeof entry !== 'object' || entry === null) {
+    return false;
+  }
+  const record = entry as Record<string, unknown>;
+  return typeof record.dir === 'string' && isStrings(record.globs) && isStrings(record.files);
+}
 
 export function readRegistry(buildDir: string): RegistryRead {
   const file = join(buildDir, REGISTRY_FILE);
@@ -27,15 +40,19 @@ export function readRegistry(buildDir: string): RegistryRead {
     return { kind: 'incompatible', file, version: registry.version };
   }
   const { layers } = registry as { layers?: unknown };
-  // Older releases wrote no `modulesDir` or `publicDir`. Without them, layerscope would scan the
-  // Nuxt modules and public dirs, so the layers of such a file are not used. Its other data is
-  // kept: the `layerscope` options of `nuxt.config` are only stored there.
+  // The file is stale when it lacks a field that this release needs: `modulesDir` or `publicDir`
+  // of a layer (layerscope would scan the Nuxt modules and public dirs), or `importDirs` (the
+  // stale check of auto-import files). The file can also be damaged. Its layers are not used, but
+  // its `config` is kept: the `layerscope` options of `nuxt.config` are only stored there.
+  const { importDirs } = registry as { importDirs?: unknown };
   const complete =
     Array.isArray(layers) &&
     layers.every(
       (layer: Record<string, unknown> | null) =>
         typeof layer?.modulesDir === 'string' && typeof layer.publicDir === 'string',
-    );
+    ) &&
+    (importDirs === null ||
+      (Array.isArray(importDirs) && importDirs.every(entry => isImportDir(entry))));
   return {
     kind: complete ? 'ok' : 'stale',
     file,

@@ -98,6 +98,7 @@ export async function writeOutsideRegistry(
     components: [],
     shadowedComponents: [],
     componentDirs: [],
+    importDirs: [],
     imports: { app: [], server, shared: [] },
   };
   const file = join(project.root, '.nuxt/layerscope/registry.json');

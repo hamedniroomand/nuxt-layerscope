@@ -21,7 +21,7 @@ module is better in three ways:
 | Source                                                        | Nuxt's own hooks                                                             | generated `.d.ts` files, whose format is not a public API |
 | Overridden components                                         | every scanned component, including the ones a higher-priority layer replaces | only the winner                                           |
 | [`shadowed-component`](../reference/rules#shadowed-component) | reported                                                                     | not available (layerscope says so)                        |
-| Stale check                                                   | every component dir Nuxt scanned, custom dirs included                       | only the default `components/` dirs                       |
+| Stale check                                                   | every component and auto-import dir Nuxt scanned, custom dirs included       | only the default `components/` dirs                       |
 | Shared context on Nuxt 3                                      | as Nuxt resolves it                                                          | derived from app and server imports                       |
 
 ## When it runs
@@ -36,13 +36,14 @@ It adds no code to your app and does nothing at runtime.
 
 ## What it records
 
-| Nuxt hook or API                                   | Recorded                                                                                |
-| -------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `getLayerDirectories()`                            | every layer in priority order, with its directories                                     |
-| `components:dirs` and each dir's `extendComponent` | every scanned component, including overridden ones, and the files of each component dir |
-| `components:extend`                                | the components Nuxt registered                                                          |
-| `imports:context`                                  | the app's auto-imports, with their source                                               |
-| Nitro's unimport context (`nitro:init`)            | the server's auto-imports                                                               |
+| Nuxt hook or API                                   | Recorded                                                                                 |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `getLayerDirectories()`                            | every layer in priority order, with its directories                                      |
+| `components:dirs` and each dir's `extendComponent` | every scanned component, including overridden ones, and the files of each component dir  |
+| `components:extend`                                | the components Nuxt registered                                                           |
+| `imports:context`                                  | the app's auto-imports, with their source                                                |
+| Nitro's unimport context (`nitro:init`)            | the server's auto-imports                                                                |
+| `imports:dirs` and the dirs of Nitro's scan        | the auto-import dirs of the app and of the server, with the files that their scans match |
 
 See the [registry file reference](../reference/registry) for the format.
 

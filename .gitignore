@@ -9,6 +9,8 @@ lerna-debug.log*
 
 node_modules
 dist
+# A copy of a fixture that a test makes; a killed test run can leave it.
+packages/layerscope/test/fixtures/nuxt4-private-*
 dist-ssr
 *.local
 

@@ -87,6 +87,7 @@ export function makeRegistry(
       priority: 0,
     })),
     componentDirs: [],
+    importDirs: [],
     imports: { app: [], server: [], shared: [] },
   };
 }

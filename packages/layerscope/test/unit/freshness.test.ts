@@ -26,6 +26,7 @@ function registryWith(componentDirs: RegistryComponentDir[]): Registry {
     components: [],
     shadowedComponents: [],
     componentDirs,
+    importDirs: [],
     imports: { app: [], server: [], shared: [] },
   };
 }

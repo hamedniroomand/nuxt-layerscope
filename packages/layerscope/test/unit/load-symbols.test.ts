@@ -65,7 +65,7 @@ describe('loadSymbols with a registry from an older release', () => {
     const buildDir = tempBuildDir();
     writeRegistry(buildDir, 1, [OLD_LAYER]);
     expect(() => loadSymbols(buildDir, 'registry')).toThrow(
-      `${join(buildDir, REGISTRY_FILE)} was written by an older nuxt-layerscope and has no modules or public dir for its layers. Run "nuxi prepare" to write it again.`,
+      `${join(buildDir, REGISTRY_FILE)} is from an older nuxt-layerscope, or it is damaged: it has no data that this release needs. Run "nuxi prepare" to write it again.`,
     );
   });
 
@@ -79,7 +79,7 @@ describe('loadSymbols with a registry from an older release', () => {
     expect(symbols.source).toBe('types');
     expect(symbols.registry).toBeNull();
     expect(symbols.notes).toEqual([
-      `${join(buildDir, REGISTRY_FILE)} was written by an older nuxt-layerscope and has no modules or public dir for its layers. Falling back to the generated .d.ts files. Run "nuxi prepare" to write it again.`,
+      `${join(buildDir, REGISTRY_FILE)} is from an older nuxt-layerscope, or it is damaged: it has no data that this release needs. Falling back to the generated .d.ts files. Run "nuxi prepare" to write it again.`,
     ]);
   });
 });
