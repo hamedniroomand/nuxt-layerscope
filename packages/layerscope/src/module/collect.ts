@@ -1,8 +1,8 @@
-import { getLayerDirectories } from '@nuxt/kit';
 import { isAbsolute, resolve } from 'pathe';
 
 import type { ProjectConfig } from '#src/config/effective.ts';
-import { layerFromNuxt } from '#src/nuxt/layer-factory.ts';
+import type { NuxtOptions } from '#src/nuxt/kit.ts';
+import { layersForModule } from '#src/nuxt/layers.ts';
 import { globComponents } from '#src/registry/component-files.ts';
 import type {
   ComponentMode,
@@ -13,7 +13,7 @@ import type {
   ShadowedComponent,
 } from '#src/registry/schema.ts';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
-import type { Context, Layer } from '#src/types.ts';
+import type { Context } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 import { packageVersion } from '#src/version.ts';
 
@@ -140,7 +140,10 @@ export class RegistryCollector {
 
   public async collect(): Promise<Registry> {
     const [componentDirs, imports] = await Promise.all([this.componentDirs(), this.imports()]);
-    const layers = this.layers();
+    // From the project's own kit, as the CLI does. The fields that layerscope reads are the same in
+    // the schema type and in its own subset type.
+    const { options } = this.nuxt;
+    const layers = await layersForModule(options.rootDir, options as unknown as NuxtOptions);
     const components = this.components();
     return {
       version: REGISTRY_VERSION,
@@ -156,13 +159,6 @@ export class RegistryCollector {
       imports,
       ...(Object.keys(this.config).length > 0 ? { config: this.config } : {}),
     };
-  }
-
-  private layers(): Layer[] {
-    const dirs = getLayerDirectories(this.nuxt);
-    return this.nuxt.options._layers.map((layer, index) =>
-      layerFromNuxt(layer, index, dirs[index]),
-    );
   }
 
   private toFile(path: string): string {

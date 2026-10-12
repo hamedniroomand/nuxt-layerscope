@@ -84,6 +84,9 @@ The module and the CLI come from different versions of `nuxt-layerscope`, for ex
 `npx nuxt-layerscope@latest` against an older project install. Run the project's own
 `npx layerscope`, or align the versions.
 
+If the note says that the registry has no modules or public dir for its layers, an older
+nuxt-layerscope wrote it. Run `nuxi prepare` to write it again.
+
 ## Getting help
 
 Open an issue with the output of `npx layerscope check --verbose --format json`, your

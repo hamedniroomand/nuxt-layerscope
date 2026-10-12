@@ -9,7 +9,7 @@ export interface NuxtLayerConfig {
   serverDir?: string;
   components?: unknown;
   imports?: { scan?: boolean; dirs?: unknown[] };
-  dir?: { shared?: string };
+  dir?: { shared?: string; modules?: string; public?: string };
   $meta?: { name?: string };
 }
 
@@ -33,6 +33,8 @@ export interface LayerDirectories {
   app: string;
   server: string;
   shared: string;
+  modules: string;
+  public: string;
 }
 
 export interface NuxtKit {

@@ -35,7 +35,7 @@ export function formatMoves(moves: PlannedMove[], cwd: string, notes: MoveNotes)
   const footer = [
     ...formatOthers(notes.others),
     'Move the files, update the imports, then run `layerscope check --prepare`.',
-    'layerscope does not scan test files, `nuxt.config.*`, `modules/`, files outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by hand.',
+    'layerscope does not scan test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by hand.',
     ...(notes.typeImportsIgnored
       ? ["Type-only imports are not checked (typeImports: 'ignore'), so they are not listed."]
       : []),

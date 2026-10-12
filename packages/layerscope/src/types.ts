@@ -26,6 +26,10 @@ export interface Layer {
   srcDir: string;
   serverDir: string;
   sharedDir: string;
+  /** The Nuxt `dir.modules` dir of the layer. Not scanned: Nuxt loads its files as modules. */
+  modulesDir: string;
+  /** The Nuxt `dir.public` dir of the layer. Not scanned: it holds static assets. */
+  publicDir: string;
   /** Whether the layer uses Nuxt's default `<srcDir>/components` dir. */
   defaultComponents: boolean;
   /**
