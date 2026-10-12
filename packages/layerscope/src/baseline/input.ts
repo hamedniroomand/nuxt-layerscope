@@ -1,4 +1,5 @@
-import { existsSync, statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
+import type { Stats } from 'node:fs';
 
 import { LayerscopeError } from '#src/errors.ts';
 
@@ -40,10 +41,47 @@ export function assertBaselineName(name: string): void {
   }
 }
 
+function cannotRead(file: string, error: unknown): LayerscopeError {
+  const { code } = error as NodeJS.ErrnoException;
+  return new LayerscopeError(
+    `Cannot read ${file} (${code ?? (error as Error).message}). Check the permissions of the file and of its folders.`,
+  );
+}
+
+/**
+ * The status of `file`, or `null` when it is not there: a missing file, or a missing folder or a
+ * file in place of a folder on its path. Any other error (for example no permission) is not
+ * "not there", so it stops with a message.
+ */
+function statFile(file: string): Stats | null {
+  try {
+    return statSync(file);
+  } catch (error) {
+    const { code } = error as NodeJS.ErrnoException;
+    if (code === 'ENOENT' || code === 'ENOTDIR') {
+      return null;
+    }
+    throw cannotRead(file, error);
+  }
+}
+
 /** Stops with a clear message when `file` is a directory: it cannot be read or written. */
 export function assertNotDirectory(file: string): void {
-  if (existsSync(file) && statSync(file).isDirectory()) {
+  if (statFile(file)?.isDirectory() === true) {
     throw new LayerscopeError(`${file} is a directory, not a baseline file.`);
+  }
+}
+
+/** The text of `file`, or `null` when the file is not there. */
+export function readBaselineText(file: string): string | null {
+  if (statFile(file) === null) {
+    return null;
+  }
+  assertNotDirectory(file);
+  try {
+    return readFileSync(file, 'utf8');
+  } catch (error) {
+    throw cannotRead(file, error);
   }
 }
 

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 
 import { relative } from 'pathe';
 
@@ -9,12 +9,12 @@ import { parseJson } from '#src/utils/fs.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
 import {
-  assertNotDirectory,
   BASELINE_VERSION,
   checkVersion,
   FILE_ADVICE,
   hasBadCount,
   isCount,
+  readBaselineText,
 } from './input.ts';
 
 export {
@@ -173,11 +173,8 @@ export function parseBaselineText(text: string, file: string, ref?: string): Bas
 
 /** The baseline in `file`, or `null` when the file does not exist. */
 export function readBaseline(file: string): Baseline | null {
-  if (!existsSync(file)) {
-    return null;
-  }
-  assertNotDirectory(file);
-  return parseBaselineText(readFileSync(file, 'utf8'), file);
+  const text = readBaselineText(file);
+  return text === null ? null : parseBaselineText(text, file);
 }
 
 export function baselineSize(entries: BaselineEntry[]): number {
