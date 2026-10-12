@@ -27,7 +27,11 @@ function isImportDir(entry: unknown): boolean {
     return false;
   }
   const record = entry as Record<string, unknown>;
-  return typeof record.dir === 'string' && isStrings(record.globs) && isStrings(record.files);
+  // The module always writes at least one glob, so an entry without one is damaged.
+  const hasGlobs = Array.isArray(record.globs) && record.globs.length > 0;
+  return (
+    typeof record.dir === 'string' && hasGlobs && isStrings(record.globs) && isStrings(record.files)
+  );
 }
 
 export function readRegistry(buildDir: string): RegistryRead {

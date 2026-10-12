@@ -57,6 +57,7 @@ describe('readRegistry and the auto-import dirs', () => {
     ['is not an array', { importDirs: {} }],
     ['has an entry that is not an object', { importDirs: [null] }],
     ['has an entry with no dir', { importDirs: [{ ...GOOD, dir: undefined }] }],
+    ['has an entry with no globs', { importDirs: [{ ...GOOD, globs: [] }] }],
     ['has an entry with globs that are not strings', { importDirs: [{ ...GOOD, globs: [1] }] }],
     ['has an entry with files that is not an array', { importDirs: [{ ...GOOD, files: 'a' }] }],
     ['has a file that is not a string', { importDirs: [{ ...GOOD, files: [1] }] }],
