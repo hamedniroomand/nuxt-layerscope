@@ -17,7 +17,7 @@ import {
 } from './project.ts';
 import { Trigger } from './trigger.ts';
 import type { StartWatcher, Watcher } from './watcher.ts';
-import { startWatcher } from './watcher.ts';
+import { layerDirs, startWatcher } from './watcher.ts';
 
 const CLEAR_SCREEN = '\u001B[2J\u001B[3J\u001B[H';
 const CLEAR_LINE = '\r\u001B[2K';
@@ -99,8 +99,9 @@ class WatchRun {
     this.epoch += 1;
   }
 
-  public layerRoots(): string[] {
-    return (this.last?.layers ?? []).map(layer => layer.root);
+  /** The root of each layer, and the source dirs of a layer that are outside its root. */
+  public layerDirs(): string[] {
+    return layerDirs(this.last?.layers ?? []);
   }
 
   public async buildDir(): Promise<string> {
@@ -213,10 +214,10 @@ export async function watchCheck(options: WatchOptions): Promise<number> {
   const configPath = configPathOf(rootDir, options.configFile);
   const added = new Set<string>();
   const handle: { watcher?: Watcher } = {};
-  // Layers outside the project root are known after a run, and a run can add more.
+  // Layers and source dirs outside the project root are known after a run, and a run can add more.
   const watchNewRoots = (): void => {
     const roots = watch
-      .layerRoots()
+      .layerDirs()
       .filter(root => root !== rootDir && !root.startsWith(`${rootDir}/`) && !added.has(root));
     for (const root of roots) {
       added.add(root);

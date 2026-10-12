@@ -255,15 +255,18 @@ module records them on `nuxi prepare`, `dev` and `build`; use one place or the o
    `loadNuxtConfig` for the list and names, `getLayerDirectories` for each layer's `srcDir`,
    `serverDir`, `shared` dir, `modules` dir and `public` dir. layerscope does not scan the
    `modules` and `public` dirs. Without kit, layers can be declared with `path` in the config.
-2. Each file belongs to the layer with the longest matching root, compared as real paths so
-   pnpm symlinks do not matter. Layers installed from npm or a remote source live under
-   `node_modules` and still own their files, so boundaries apply to them; their own code is
-   resolved but not checked. Anything outside every layer is external. Files under a layer's
-   server dir use the Nitro symbol table, and files under its shared dir use the shared one.
+2. Each file belongs to the layer with the longest matching dir. The dirs of a layer are its root,
+   and also its `srcDir`, `serverDir` and shared dir when one of them is outside the root. When a
+   source dir of one layer is the root of another layer, the layer with that root owns the files.
+   Paths are compared as real paths so pnpm symlinks do not matter. Layers installed from npm or a
+   remote source live under `node_modules` and still own their files, so boundaries apply to them;
+   their own code is resolved but not checked. Anything outside every layer is external. Files under
+   a layer's server dir use the Nitro symbol table, and files under its shared dir use the shared
+   one.
 3. Scripts are parsed with `oxc-parser` and scope-tracked, so a local `useCart` shadows the
    auto-imported one. Templates are compiled with `@vue/compiler-sfc`, and the render function's
-   `resolveComponent("X")` calls and `_ctx.x` reads show which components and identifiers Nuxt
-   would auto-import.
+   `resolveComponent("X")` calls and `_ctx.x` reads show which components and identifiers Nuxt would
+   auto-import.
 4. With the module, symbols come from `.nuxt/layerscope/registry.json`, recorded from Nuxt's own
    hooks: `components:dirs` and `components:extend` (every scanned component, including
    overridden ones), `imports:context` (app auto-imports), Nitro's unimport context (server

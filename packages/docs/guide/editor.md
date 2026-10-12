@@ -80,6 +80,57 @@ oxlint hands plugins only the `<script>` of a `.vue` file. layerscope reads the 
 the template too; findings in the template are reported at the start of the script, with the
 template line in the message.
 
+## Files outside the layer root
+
+A layer can keep its `srcDir`, `serverDir` or shared dir outside its root, for example
+`serverDir: '../api'` in a monorepo. The plugin checks the files in these dirs. It looks for
+`.nuxt/layerscope/registry.json` above the linted file, so for these files it finds none, and says
+so. Set the `root` option to the Nuxt project dir. The linter resolves it from the directory that
+you run the linter in, not from the config file.
+
+ESLint 10 looks for the config file above the linted file, and it does not lint a file outside the
+directory of its config file. So `eslint ../api` in the Nuxt project dir fails when `api` has no
+config file. When `api` has a config file, that run uses it, and `root` is resolved from the dir
+where you run, so it can point to the wrong dir. Run the linter in `api`. oxlint refuses a path with
+`..`.
+
+The examples are for a run in `api`, so `root` is relative to `api`.
+
+```js [api/eslint.config.js]
+import layerscope from 'nuxt-layerscope/eslint';
+import tseslint from 'typescript-eslint';
+
+const root = '../app';
+
+export default [
+  { files: ['**/*.ts'], languageOptions: { parser: tseslint.parser } },
+  layerscope.configs.recommended,
+  {
+    rules: {
+      'layerscope/layer-boundary': ['error', { root }],
+      'layerscope/layer-internal': ['error', { root }],
+      'layerscope/unresolved-reference': ['warn', { root }],
+    },
+  },
+];
+```
+
+oxlint has no `configs.recommended`, so list the same rules:
+
+```json [api/.oxlintrc.json]
+{
+  "jsPlugins": [{ "name": "layerscope", "specifier": "nuxt-layerscope/eslint" }],
+  "rules": {
+    "layerscope/layer-boundary": ["error", { "root": "../app" }],
+    "layerscope/layer-internal": ["error", { "root": "../app" }],
+    "layerscope/unresolved-reference": ["warn", { "root": "../app" }]
+  }
+}
+```
+
+Then run `eslint .` or `oxlint .` in `api`. Delete the ESLint cache after you change layers or
+config, as with any `root` option.
+
 ## Watch mode
 
 `layerscope check --watch` runs a full check, then checks again each time you save a file. It is
@@ -102,7 +153,8 @@ layerscope check --watch
 - A change to `layerscope.config.*` applies on the next run, in every config format. A local file
   that the config imports is not read again: change the config file as well (for example, add a
   comment), or start the watch again.
-- Layers in `node_modules` are not watched.
+- Layers in `node_modules` are not watched. A `srcDir`, `serverDir` or shared dir outside the
+  layer root is watched.
 - It never exits with `1`: findings are shown, not counted. Ctrl+C exits with `0`. A run that
   fails, such as a config error, is printed and the watch goes on.
 - On a terminal each run clears the screen, and a save that changes nothing only updates the

@@ -77,6 +77,7 @@ a component in one file, the entry has a `count` and that many findings are acce
 ```
 
 Entries are sorted, and paths are relative to the project root, so the file diffs well in review.
+A file outside the root has a path that starts with `../`.
 
 ## Options
 

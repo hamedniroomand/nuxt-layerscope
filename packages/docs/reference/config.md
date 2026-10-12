@@ -168,7 +168,8 @@ Entries of `expose` and `only` are names or globs.
   matches the file name without its extension, as Nuxt names a composable.
 - A **glob** is anything else, such as `app/composables/cart/**`. It matches the path of the file
   in the layer, relative to the layer root, with forward slashes. `*` and `?` stay inside one
-  folder, `**` crosses folders, and every other character is literal.
+  folder, `**` crosses folders, and every other character is literal. A file outside the layer
+  root has a path that starts with `../`, for example `../api/utils/**` for `serverDir: '../api'`.
 
 ### `path`
 

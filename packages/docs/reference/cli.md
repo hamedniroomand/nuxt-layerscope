@@ -110,6 +110,9 @@ hook.
   files. When no argument is a directory, all arguments are files and the root is the working
   directory; this is how `lint-staged` calls a command. Paths may be relative to the working
   directory or absolute.
+- **Files outside the project root.** `--staged`, `--changed` and `--since` select only files
+  inside the project root. A file in a `srcDir`, `serverDir` or shared dir outside the root is not
+  selected by them: give its path as a file argument, or run `layerscope check`.
 - **`--staged`** takes the files that are added, copied, modified or renamed in the index.
   **`--changed`** takes the files that differ from the merge base with the default branch
   (`origin/HEAD`, else `main`, else `master`) in the working tree, committed or not, and the
