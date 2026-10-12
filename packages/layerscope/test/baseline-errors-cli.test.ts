@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
@@ -12,11 +12,15 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-async function cli(args: string[]): Promise<{ code: number; err: string }> {
-  vi.spyOn(process.stdout, 'write').mockReturnValue(true);
+async function cli(args: string[]): Promise<{ code: number; out: string; err: string }> {
+  const out = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
   const err = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
   const code = await run(['node', 'layerscope', ...args]);
-  return { code, err: err.mock.calls.map(call => String(call[0])).join('') };
+  return {
+    code,
+    out: out.mock.calls.map(call => String(call[0])).join(''),
+    err: err.mock.calls.map(call => String(call[0])).join(''),
+  };
 }
 
 describe('the CLI', () => {
@@ -92,5 +96,17 @@ describe('the CLI, before it starts', () => {
     expect(result.err).toBe(
       `layerscope: ${join(repo.root, 'dir')} is a directory, not a baseline file.\n`,
     );
+  });
+
+  it('exits 2 for drift when the object of the baseline is missing, and reports nothing as added', async () => {
+    const repo = gitProject();
+    repo.write(FILE, JSON.stringify({ version: 1, entries: [] }));
+    repo.commit('baseline');
+    const id = repo.git('rev-parse', `HEAD:${FILE}`).trim();
+    rmSync(join(repo.repo, '.git/objects', id.slice(0, 2), id.slice(2)));
+    const result = await cli(['drift', repo.root, '--base', 'HEAD']);
+    expect(result.code).toBe(EXIT_ERROR);
+    expect(result.err).toContain(`layerscope: Could not read ${FILE} at HEAD (`);
+    expect(result.out).toBe('');
   });
 });
