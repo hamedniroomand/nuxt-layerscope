@@ -1,13 +1,9 @@
 import type { Layer } from '#src/types.ts';
+import { isOutsideDir, rootPrefix } from '#src/utils/fs.ts';
 
 /** A layer installed as a package: its root is under `node_modules`. */
 export function isPackageLayer(layer: Layer): boolean {
   return layer.root.includes('/node_modules/');
-}
-
-/** The root with one trailing slash; the root `/` or `C:/` already has it. */
-function rootPrefix(rootDir: string): string {
-  return rootDir.endsWith('/') ? rootDir : `${rootDir}/`;
 }
 
 /** The layer root is a dir below the project root, not the project root itself. */
@@ -22,5 +18,5 @@ export function isBelowRoot(layer: Layer, rootDir: string): boolean {
  * `/p/app`.
  */
 export function isOutsideRoot(layer: Layer, rootDir: string): boolean {
-  return layer.root !== rootDir && !isBelowRoot(layer, rootDir);
+  return isOutsideDir(layer.root, rootDir);
 }

@@ -78,3 +78,13 @@ export function projectRoot(root?: string): string {
 export function currentDir(): string {
   return realPath(process.cwd());
 }
+
+/** The root with one trailing slash; the root `/` or `C:/` already has it. */
+export function rootPrefix(rootDir: string): string {
+  return rootDir.endsWith('/') ? rootDir : `${rootDir}/`;
+}
+
+/** A dir that is not the project root and not inside it. Both paths are real paths. */
+export function isOutsideDir(dir: string, rootDir: string): boolean {
+  return dir !== rootDir && !dir.startsWith(rootPrefix(rootDir));
+}

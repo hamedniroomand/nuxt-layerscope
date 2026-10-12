@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vite-plus/test';
 import { analyze } from '#src/analyze/index.ts';
 import { isBelowRoot, isOutsideRoot } from '#src/nuxt/package-layer.ts';
 import { findUnused } from '#src/unused/index.ts';
+import { isOutsideDir } from '#src/utils/fs.ts';
 
 import { makeLayer } from './factories.ts';
 import { write, writeProject } from './unused-extra-project.ts';
@@ -86,4 +87,14 @@ describe('paths that the real path settles (path edge cases)', () => {
       expect(await names(root.toUpperCase())).toEqual(['useLocalUnused']);
     },
   );
+});
+
+describe('isOutsideDir', () => {
+  it('counts no dir as outside a project root of / or C:/, and keeps the test for a normal root', () => {
+    expect(isOutsideDir('/', '/')).toBe(false);
+    expect(isOutsideDir('/srv/app', '/')).toBe(false);
+    expect(isOutsideDir('C:/work/app', 'C:/')).toBe(false);
+    expect(isOutsideDir('/p/app/layers/web', '/p/app')).toBe(false);
+    expect(isOutsideDir('/p/app-ui', '/p/app')).toBe(true);
+  });
 });
