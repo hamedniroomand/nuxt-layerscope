@@ -1,5 +1,47 @@
 # Changelog
 
+## 0.7.0
+
+### Minor Changes
+
+- [#137](https://github.com/hamedniroomand/nuxt-layerscope/pull/137) [`91a4ae1`](https://github.com/hamedniroomand/nuxt-layerscope/commit/91a4ae171c6cf6a7de1ba1c65cfa51273ac32793) - `fix --apply` makes the planned moves. It uses `git mv` for a file that git tracks, and it rewrites the relative imports in the importers and in the moved file.
+
+  Before the first change, it checks the plan again. It stops, and changes nothing, when:
+
+  - the git working tree has changes or untracked files, or the root is not in a git repository;
+  - git does not track a file to move or edit, or a file is in a submodule;
+  - a file is marked assume-unchanged or skip-worktree, a target is outside the git repository or in another repository, or two moves have the same target;
+  - a file or a target dir has a symbolic link in its path, or a file has more than one hard link;
+  - a file to edit is not UTF-8 text, or is not what the plan says;
+  - a target path exists, or two target paths differ only in letter case;
+  - git would refuse a move, for example a target outside a sparse checkout.
+
+  See the CLI reference for all checks.
+
+  `--allow-dirty` skips the git checks (repository, clean tree, tracked files, submodules). If a step fails, `fix` stops and lists what is done and what is not. It then tells you to use `git status` and `git diff` to see the changes and git to undo them. `fix` needs one of `--dry-run` and `--apply`, not both. `--allow-dirty` works only with `--apply`. `fix` also counts the baseline entries that name a moved file, because they do not match after the move.
+
+- [#125](https://github.com/hamedniroomand/nuxt-layerscope/pull/125) [`78508c0`](https://github.com/hamedniroomand/nuxt-layerscope/commit/78508c0aff89ab74a9d33a2041f61a76e057483a) - `fix` plans moves that you can trust more. The root layer can be a move target. A target must permit every user and each dependency of the file, with `allow` and `expose`. The new path is checked: no file is there, no other move uses it, and Nuxt finds the file there. A move that breaks `check` together with another move is dropped. `fix` lists only the imports that change, and keeps the extension, the query and the `index` style of each specifier. It uses the baseline, and it has the new `--baseline` option. The footer says to run `layerscope check --prepare`, and one line counts the findings that have no move. The SARIF and GitLab reports now have the suggestion of each finding. The `leave` suggestion for a use of a feature layer by `root` says to change the code.
+
+- [#122](https://github.com/hamedniroomand/nuxt-layerscope/pull/122) [`ca4f916`](https://github.com/hamedniroomand/nuxt-layerscope/commit/ca4f91656553d1e18488d40b5721d33c6b247b38) - check now reads TypeScript syntax in a template when the component has a TypeScript script. It reports code that it cannot read as unresolved-reference findings: a template that it cannot parse, a template with a lang other than HTML or with src, a dynamic import() or require(), and import.meta.glob(). It no longer drops this code silently. An import() or require() with a template literal that has no ${} is now read as a fixed path, so it can give new layer-boundary findings.
+
+- [#128](https://github.com/hamedniroomand/nuxt-layerscope/pull/128) [`3fc449a`](https://github.com/hamedniroomand/nuxt-layerscope/commit/3fc449aad7e6714f628a583c5d60cc542c4b89c8) - layerscope now checks files in dirs named `modules` that are not the Nuxt modules dir, for example `app/modules/` in Nuxt 4 and `server/modules/`. Before, it skipped a `modules/` or `public/` dir at the top of each scanned dir. Now it skips only the `modules` and `public` dirs that Nuxt uses for each layer (`dir.modules` and `dir.public`). A `layerscope.config.*` file is now skipped only in the layer root, so such a file in `app/` or `server/` is checked. layerscope can report new findings in these dirs, for example layer-boundary and unused findings. Review them, or update your baseline.
+
+  `registry.json` now stores the `modules` and `public` dirs of each layer. Run `nuxi prepare` once after you update. Until then, `check` and `unused` read the generated `.d.ts` files, `--source registry` stops with an error, and the ESLint and oxlint plugins do not load the project.
+
+- [#134](https://github.com/hamedniroomand/nuxt-layerscope/pull/134) [`c727c6d`](https://github.com/hamedniroomand/nuxt-layerscope/commit/c727c6d8ca6d3888862fec8f1c97b68948fcfdbe) - layerscope now checks the files in a `serverDir`, `srcDir` or shared dir outside the layer root, for example `serverDir: '../api'`. Before, `check`, `unused` and the ESLint and oxlint plugins skipped them with no note. An import of such a file counted as an import from outside every layer. layerscope can report new findings in these files, for example layer-boundary and unused findings. Review them, or update your baseline. `check --watch` now also watches such a dir.
+
+  A file outside the project root has a path that starts with `../` in reports and in the baseline. For a file outside its layer root, the path that the `only` and `expose` globs match starts with `../` too, for example `../api/utils/**`. A source dir that is outside its layer root but inside the project root now belongs to its layer, not to the root layer. In ESLint and oxlint, set the `root` option for files outside the project root.
+
+- [#124](https://github.com/hamedniroomand/nuxt-layerscope/pull/124) [`92ff133`](https://github.com/hamedniroomand/nuxt-layerscope/commit/92ff13379742ac5f814508ce835e4c7362f3e512) - A baselined layer cycle now stays accepted when the file of its first use changes. This is the case when you delete that file, or add a use in a file that sorts earlier. A `layer-cycle` entry in the baseline now matches by its chain of layers, not by its file. Old baselines still match, with one exception. layerscope now picks the cycle in a fixed way. When two cycles of the same length go through one layer, it always shows the same one. In that case layerscope can report a baselined cycle as new once after the upgrade. Run `layerscope check --update-baseline` to accept it. Entries for the same cycle in an old baseline are merged into one entry with a `count`. The text output no longer adds the target layer to a cycle entry. The SARIF and GitLab fingerprints of `layer-cycle` findings change once.
+
+### Patch Changes
+
+- [#132](https://github.com/hamedniroomand/nuxt-layerscope/pull/132) [`6d4db9f`](https://github.com/hamedniroomand/nuxt-layerscope/commit/6d4db9f87892df5e0860e5bcc19f5bf2aed7bb42) - layerscope now names the file in every error about an invalid baseline file: an empty file, a file that is not JSON, or a directory. A file from a newer layerscope now tells you to update layerscope, not to create the file again. `drift` now stops with an error when the baseline at the base ref is an empty file, is not JSON, or is a directory. Before, it read such a file as an empty baseline, and every finding showed as added. `--baseline ""` is refused with a clear message. A baseline file that cannot be read, for example because of its permissions, now stops the run with an error. Before, it was read as no baseline.
+
+- [#131](https://github.com/hamedniroomand/nuxt-layerscope/pull/131) [`59c4a75`](https://github.com/hamedniroomand/nuxt-layerscope/commit/59c4a750ac448a6f29ff8db4e557aadc5c3fcda0) - `fix` lists each import of a moved file, also when a file imports the same file more than once. Before, it listed only the first import. The suggestion of `check` (also `suggestion.impact.imports` in JSON output and the MCP `suggest` tool) now counts each import to update, so the number can be higher than before. `fix --dry-run` now shows the column of each import.
+
+- [`a7328a2`](https://github.com/hamedniroomand/nuxt-layerscope/commit/a7328a2e16e19a881fad5e340555b5680eaa9b8f) - `init --dry-run`, `check --update-baseline` and `fix --dry-run` now work when you write the flag before the root. Before, the flag took the root as its value, so the command did not use the root. `init --dry-run app` worked on the current dir, and it could write `layerscope.config.ts` there. `check --update-baseline app` checked the current dir and wrote no baseline. `fix --dry-run app` stopped with an error.
+
 ## 0.6.3
 
 ### Patch Changes
