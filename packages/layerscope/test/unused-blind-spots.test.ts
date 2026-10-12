@@ -77,8 +77,8 @@ describe('unused blind spots: a parse error', () => {
     expect(text).not.toContain('Every component and auto-import is referenced');
     expect(text).toBe(
       `${[
-        'No unused symbol found. 1 file could not be read, so its uses are not counted.',
-        'Files that could not be read:\n  layers/web/app/utils/broken.ts  Could not parse file',
+        'No unused symbol found. 1 file could not be read in full, so some of its uses can be missing.',
+        'Files that could not be read in full:\n  layers/web/app/utils/broken.ts  Could not parse file',
         'Not counted as uses: test files.',
       ].join('\n\n')}\n`,
     );
@@ -98,7 +98,7 @@ describe('unused blind spots: text report', () => {
     expect(text.split('\n\n')).toEqual([
       expect.stringContaining('web\n  Lonely'),
       '1 unused symbol in 1 layer',
-      'Files that could not be read:\n  layers/web/app/utils/broken.ts  Could not parse file',
+      'Files that could not be read in full:\n  layers/web/app/utils/broken.ts  Could not parse file',
       'Not counted as uses: test files.\n',
     ]);
   });
@@ -111,7 +111,7 @@ describe('unused blind spots: text report', () => {
     });
     const text = formatUnused([], 'text', root, findBlindSpots(result));
     expect(text).toContain(
-      'No unused symbol found. 2 files could not be read, so their uses are not counted.',
+      'No unused symbol found. 2 files could not be read in full, so some of their uses can be missing.',
     );
   });
 });

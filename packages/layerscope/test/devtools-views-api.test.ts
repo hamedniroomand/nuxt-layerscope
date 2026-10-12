@@ -132,7 +132,9 @@ describe('unused view', () => {
     });
     const view = await unusedView(result);
     expect(view.blindSpotLine).toBe('Not counted as uses: test files.');
-    expect(view.unreadableLine).toBe('1 file could not be read, so its uses are not counted.');
+    expect(view.unreadableLine).toBe(
+      '1 file could not be read in full, so some of its uses can be missing.',
+    );
     expect(view.blindSpots).toEqual([
       { kind: 'test-files' },
       {

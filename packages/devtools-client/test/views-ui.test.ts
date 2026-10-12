@@ -143,7 +143,7 @@ describe('unused view blind spots', () => {
         },
       ],
       blindSpotLine: 'Not counted as uses: test files.',
-      unreadableLine: '1 file could not be read, so its uses are not counted.',
+      unreadableLine: '1 file could not be read in full, so some of its uses can be missing.',
       possiblyUsed: false,
       layers: [],
     });
@@ -153,7 +153,7 @@ describe('unused view blind spots', () => {
     await flushPromises();
     const text = wrapper.text();
     expect(text).toContain('Not counted as uses: test files.');
-    expect(text).toContain('1 file could not be read, so its uses are not counted.');
+    expect(text).toContain('1 file could not be read in full, so some of its uses can be missing.');
     expect(text).toContain('app/a.vue');
     expect(text).not.toContain('Every component and auto-import is referenced');
   });

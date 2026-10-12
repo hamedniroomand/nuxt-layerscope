@@ -77,7 +77,7 @@ Every use of a component or auto-import, grouped by layer, as `layerscope why` s
 
 Components and auto-imports that nothing uses, as `layerscope unused` shows them. Press
 <kbd>4</kbd>. The view also names the uses that it does not count, and lists the files that
-layerscope could not read. A half-edited file with a parse error is one of them.
+layerscope could not read in full. A half-edited file with a parse error is one of them.
 
 <Screenshot
   name="unused"

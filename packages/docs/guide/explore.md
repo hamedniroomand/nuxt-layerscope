@@ -101,15 +101,15 @@ layers and referenced nowhere. A few rules keep it honest:
   `resolveComponent(name)`), unused components are marked **possibly used at runtime**, because
   layerscope cannot see which one is picked.
 
-`unused` cannot see all uses. It does not count uses in these places:
+`unused` cannot see all uses. It can miss uses in these places:
 
 - test files (`*.test.*`, `*.spec.*`, `__tests__/`, and any file outside the layer source dirs) and
   files that match [`ignore`](../reference/config#ignore);
 - files in layers installed under `node_modules`. These layers are dependencies, and their unused
   code is not yours to delete;
-- files that layerscope could not read: a parse error, a template that layerscope does not read (a
-  `lang` other than HTML, a `src` attribute, or an expression that does not parse), an `import()`
-  or `require()` with a path that is not a fixed string, or an `import.meta.glob()`;
+- files that layerscope could not read in full: a parse error, a template that layerscope does not
+  read (a `lang` other than HTML, a `src` attribute, or an expression that does not parse), an
+  `import()` or `require()` with a path that is not a fixed string, or an `import.meta.glob()`;
 - imports in `nuxt.config.*` and in the local `modules/` dir;
 - files in extra auto-import dirs (`imports.dirs`) and in component dirs outside the layer source
   dirs;

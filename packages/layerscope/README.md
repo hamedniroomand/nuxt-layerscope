@@ -163,8 +163,8 @@ per layer. Explicit imports of a file count as using everything it exports. When
 renders components chosen at runtime (`<component :is>` bound to a value, `resolveComponent(x)`),
 unused components are marked "possibly used at runtime". `unused` does not count uses in test files,
 in files that match `ignore`, or in layers installed as packages. It lists the files that it could
-not read: a parse error, a template that layerscope does not read (a `lang` other than HTML, a `src`
-attribute, or an expression that does not parse), a dynamic `import()` or `require()`, or an
+not read in full: a parse error, a template that layerscope does not read (a `lang` other than HTML,
+a `src` attribute, or an expression that does not parse), a dynamic `import()` or `require()`, or an
 `import.meta.glob()`. The last line of the text report names the uses that it does not count.
 `--format text` (default) or `json`. Always exits `0`.
 

@@ -75,20 +75,20 @@ function unreadableText(files: { file: string; reason: string }[], cwd: string):
   const width = Math.max(...rows.map(row => row.file.length));
   return [
     [
-      'Files that could not be read:',
+      'Files that could not be read in full:',
       ...rows.map(row => `  ${row.file.padEnd(width)}  ${row.reason}`),
     ].join('\n'),
   ];
 }
 
-/** The sentence about files that could not be read; `null` when there are none. */
+/** The sentence about files that could not be read in full; `null` when there are none. */
 export function unreadableSentence(count: number): string | null {
   if (count === 0) {
     return null;
   }
   return count === 1
-    ? '1 file could not be read, so its uses are not counted.'
-    : `${count} files could not be read, so their uses are not counted.`;
+    ? '1 file could not be read in full, so some of its uses can be missing.'
+    : `${count} files could not be read in full, so some of their uses can be missing.`;
 }
 
 function noUnusedText(unreadable: number): string {

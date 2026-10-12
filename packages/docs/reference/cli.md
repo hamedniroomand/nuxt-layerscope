@@ -301,10 +301,10 @@ renders a component chosen at runtime, unused components are marked "possibly us
 layers installed as packages. Test files are `*.test.*`, `*.spec.*`, `__tests__/` and any file
 outside the layer source dirs. The last line of the text report names the parts that apply.
 
-After the symbols, it lists each file that it could not read. These are files with a parse error, a
+After the symbols, it lists each file that it could not read in full. These are files with a parse error, a
 template that layerscope does not read (a `lang` other than HTML, a `src` attribute, or an
 expression that does not parse), an `import()` or `require()` with a path that is not a fixed
-string, or an `import.meta.glob()`. `unused` does not count the uses in these files. When there are
+string, or an `import.meta.glob()`. `unused` can miss some uses in these files. When there are
 such files, the report does not say that every symbol is referenced. The JSON report has the same
 data in `blindSpots` (see [`unused` output](./output#unused-output)). The [explore
 guide](../guide/explore#find-unused-code) lists every use that `unused` does not see.
