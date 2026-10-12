@@ -38,7 +38,8 @@ action's `version` input through `npx` when the project does not install it.
 
 ### Drift and baseline size
 
-The action adds a summary to each run, such as `adds 3, fixes 5` and `Baseline: 47 → 42 (−5)`, so
+The action adds a summary to each run that has a base commit (see
+[Drift summary](../reference/github-action#drift-summary)), such as `adds 3, fixes 5` and `Baseline: 47 → 42 (−5)`, so
 a team can watch the baseline shrink. Set `comment: true` (with `pull-requests: write`) to post it
 on the pull request. Without the action, run
 `layerscope drift --base origin/main --format markdown`.
