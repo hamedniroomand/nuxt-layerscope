@@ -172,9 +172,9 @@ suggestions.
 
 After `--apply`, run `layerscope check --prepare`. After `--dry-run`, make the moves and update the
 imports yourself, then run `layerscope check --prepare`. The generated types still point at the old
-files. layerscope does not scan test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside
-the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by
-hand. With `typeImports: 'ignore'`, type-only imports are not listed either.
+files. `check` and `fix` do not read test files, `nuxt.config.*`, the Nuxt `modules/` dir, files
+outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in
+them by hand. With `typeImports: 'ignore'`, type-only imports are not listed either.
 
 Baseline entries that name a moved file are counted in one line. A baseline key holds file paths. A
 finding in a moved file, or a finding that points at a moved file, gets a new key after the move, so
@@ -298,16 +298,22 @@ nothing references. An explicit import of a file counts as using all of its expo
 renders a component chosen at runtime, unused components are marked "possibly used at runtime".
 
 `unused` does not count uses in test files, in files that match [`ignore`](./config#ignore), or in
-layers installed as packages. Test files are `*.test.*`, `*.spec.*`, `__tests__/` and any file
-outside the layer source dirs. The last line of the text report names the parts that apply.
+layers installed as packages. Test files are `*.test.*`, `*.spec.*` and `__tests__/`. A file outside
+the layer source dirs is not read when it is not in an extra auto-import or component dir and no
+counted file imports it. `unused` also counts the uses in `nuxt.config.*`, in the Nuxt `modules/`
+dir, in files of extra auto-import and component dirs, and in the project files that counted files
+import. The last line of the text report names the uses that it does not count.
 
-After the symbols, it lists each file that it could not read in full. These are files with a parse error, a
-template that layerscope does not read (a `lang` other than HTML, a `src` attribute, or an
+After the symbols, it lists each file that it could not read in full. These are files with a parse
+error, a template that layerscope does not read (a `lang` other than HTML, a `src` attribute, or an
 expression that does not parse), an `import()` or `require()` with a path that is not a fixed
-string, or an `import.meta.glob()`. `unused` can miss some uses in these files. When there are
-such files, the report does not say that every symbol is referenced. The JSON report has the same
-data in `blindSpots` (see [`unused` output](./output#unused-output)). The [explore
+string, or an `import.meta.glob()`. `unused` can miss some uses in these files. When there are such
+files, the report does not say that every symbol is referenced. The JSON report has the same data in
+`blindSpots` (see [`unused` output](./output#unused-output)). The [explore
 guide](../guide/explore#find-unused-code) lists every use that `unused` does not see.
+
+`why` shows only the uses that `check` reads. A use that only `unused` counts, for example in
+`nuxt.config.ts`, does not show in `why`.
 
 | Option              | Default | Description      |
 | ------------------- | ------- | ---------------- |

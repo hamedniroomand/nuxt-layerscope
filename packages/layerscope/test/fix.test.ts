@@ -123,7 +123,7 @@ describe('layerscope fix output', () => {
     expect(output.stdout()).toContain(
       'Make the moves with `--apply`, or move the files and update the imports yourself. Then run `layerscope check --prepare`.',
     );
-    expect(output.stdout()).toContain('does not scan test files, `nuxt.config.*`');
+    expect(output.stdout()).toContain('do not read test files, `nuxt.config.*`');
     expect(output.stdout()).not.toContain('(--dry-run)');
   });
 

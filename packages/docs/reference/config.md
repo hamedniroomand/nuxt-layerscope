@@ -253,13 +253,17 @@ the rule. An unknown rule name is a config error.
 
 - Type: `string[]`
 
-Globs of files not to check, relative to each scanned directory (a layer's `srcDir`,
-`serverDir` and shared dir). These are always ignored: `node_modules`, `.nuxt`, `.output`, `dist`,
-`.config`, type declarations, `nuxt.config.*`, test files (`*.test.*`, `*.spec.*`, `__tests__`),
-`layerscope.config.*` in the layer root, and the Nuxt `modules` and `public` dirs of each layer
-(`dir.modules` and `dir.public`). When the CLI runs without `@nuxt/kit`, layerscope uses the
-default `modules/` and `public/` dirs in the layer root. Other dirs named `modules`, for example
-`app/modules/` in Nuxt 4 and `server/modules/`, are checked.
+Globs of files not to check, relative to each scanned directory (a layer's `srcDir`, `serverDir` and
+shared dir). `check`, `fix` and `why` always ignore these: `node_modules`, `.nuxt`, `.output`,
+`dist`, `.config`, type declarations, `nuxt.config.*` (also in `.config/`), test files (`*.test.*`,
+`*.spec.*`, `__tests__`), `layerscope.config.*` in the layer root, and the Nuxt `modules` and
+`public` dirs of each layer (`dir.modules` and `dir.public`). When the CLI runs without `@nuxt/kit`,
+layerscope uses the default `modules/` and `public/` dirs in the layer root. Other dirs named
+`modules`, for example `app/modules/` in Nuxt 4 and `server/modules/`, are checked.
+
+These files are skipped as described above. `layerscope unused` still reads `nuxt.config.*` and the
+`modules` dir, so that their uses count. Files that match `ignore` stay skipped in every command.
+For a file outside the scanned directories, the patterns are matched from the layer root.
 
 ```ts
 ignore: ['**/*.stories.ts', 'playground/**'],

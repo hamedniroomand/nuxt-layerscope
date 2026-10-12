@@ -29,6 +29,11 @@ problems (the CLI's exit code `2`).
 | `prepare`    | `boolean`                         | `false`                       | Run `nuxi prepare` first                                    |
 | `source`     | `'auto' \| 'registry' \| 'types'` | `'auto'`                      | Where symbols come from                                     |
 | `baseline`   | `string`                          |                               | Baseline file, relative to the root; applied when it exists |
+| `extraFiles` | `boolean`                         | `false`                       | See below                                                   |
+
+`extraFiles`: also read `nuxt.config.*`, the Nuxt `modules/` dir, files of extra auto-import and
+component dirs, and the project files that counted files import, so that `unused` counts their
+uses. Default `false`. The rules never see these files.
 
 ### `AnalyzeResult`
 
@@ -51,9 +56,17 @@ interface AnalyzeResult {
   notes: string[];
   /** Every auto-import and component Nuxt registered, per context. */
   symbols: SymbolTable;
-  /** Files that render a component chosen at runtime. */
+  /** The edges of the extra files, with `extraFiles`. Only `findUnused` reads them. */
+  extraEdges: Edge[];
+  /**
+   * Files that render a component chosen at runtime.
+   * Can hold extra files that are not in `files`.
+   */
   dynamicComponentFiles: string[];
-  /** Files with code that layerscope cannot read. Each file is an absolute path. */
+  /**
+   * Files with code that layerscope cannot read. Each file is an absolute path.
+   * Can hold extra files that are not in `files`.
+   */
   unreadFiles: { file: string; reason: string }[];
   /** With a baseline: accepted findings and fixed entries. `findings` then holds only new ones. */
   baseline?: { file: string; suppressed: Finding[]; removable: BaselineEntry[] };
@@ -110,7 +123,8 @@ Each edge has `from`, `to`, `count` and `status`, the worst status of the refere
 
 ## `findUnused(result)`
 
-The components and auto-imports `layerscope unused` lists. Each entry has `name`, `kind`
+The components and auto-imports `layerscope unused` lists. It counts the uses in the extra files
+only when `result` comes from `analyze` with `extraFiles: true`. Each entry has `name`, `kind`
 (`component` or `auto-import`), `context`, `file`, `layer` and `possiblyUsed`.
 
 ## `findBlindSpots(result)`

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
+import type { SymbolTarget } from '#src/nuxt/symbols.ts';
 import { scanFile } from '#src/scan/index.ts';
 import type { FileScan, ImportRef } from '#src/scan/types.ts';
 import type {
@@ -15,8 +16,8 @@ import type {
 } from '#src/types.ts';
 import { lineColumn } from '#src/utils/position.ts';
 
-import { contextOf } from './files.ts';
-import type { ImportEnv, ImportTarget } from './import-refs.ts';
+import { CONTEXTS, contextOf } from './files.ts';
+import type { ImportEnv, ImportOutcome, ImportTarget } from './import-refs.ts';
 import { resolveImportRef } from './import-refs.ts';
 
 /** Runtime registrations (plugins, `app.component`, `vueApp.use`) are invisible statically. */
@@ -38,6 +39,8 @@ function isIgnored(ref: ImportRef, symbol: string): boolean {
   return ref.typeOnly || ref.typeNames.some(name => symbol === `${ref.specifier}:${name}`);
 }
 
+const VIRTUAL_MODULES = new Set(['#imports', '#components']);
+
 /** Turns one file's scan into dependency edges and unresolved-reference findings. */
 export class FileAnalysis {
   public readonly edges: Edge[] = [];
@@ -52,13 +55,29 @@ export class FileAnalysis {
   private readonly layer: Layer;
   private readonly env: AnalysisEnv;
   private readonly context: Context;
+  /** The contexts whose auto-imports a free identifier is looked up in, the file's own first. */
+  private readonly contexts: Context[];
 
-  public constructor(file: string, source: string, layer: Layer, env: AnalysisEnv) {
+  /**
+   * With `anyContext`, an identifier is also looked up in the other contexts. It is for the extra
+   * files that `unused` reads: a file outside the source dirs can run in any context, and a missed
+   * use lists a used symbol as unused.
+   */
+  public constructor(
+    file: string,
+    source: string,
+    layer: Layer,
+    env: AnalysisEnv,
+    anyContext = false,
+  ) {
     this.file = file;
     this.source = source;
     this.layer = layer;
     this.env = env;
     this.context = contextOf(file, layer);
+    this.contexts = anyContext
+      ? [this.context, ...CONTEXTS.filter(context => context !== this.context)]
+      : [this.context];
   }
 
   public run(scan: FileScan): this {
@@ -81,15 +100,32 @@ export class FileAnalysis {
     return this;
   }
 
-  private addIdentifiers(scan: FileScan): void {
-    const imports = this.env.table.imports[this.context];
-    for (const ref of scan.free) {
-      const target = imports.get(ref.name);
+  /**
+   * The auto-imports that a name stands for in the contexts of this file: one for each different
+   * target. An extra file can run in any context, and the name can be a different symbol in each.
+   */
+  private lookup(name: string): SymbolTarget[] {
+    const found = new Map<string, SymbolTarget>();
+    for (const context of this.contexts) {
+      const target = this.env.table.imports[context].get(name);
       if (target !== undefined) {
-        this.addEdge('auto-import', ref.name, ref.offset, {
-          to: target.file,
-          external: target.module,
-        });
+        found.set(`${target.file}\0${target.module}`, target);
+      }
+    }
+    return [...found.values()];
+  }
+
+  private addAutoImports(name: string, offset: number, targets: SymbolTarget[]): void {
+    for (const target of targets) {
+      this.addEdge('auto-import', name, offset, { to: target.file, external: target.module });
+    }
+  }
+
+  private addIdentifiers(scan: FileScan): void {
+    for (const ref of scan.free) {
+      const targets = this.lookup(ref.name);
+      if (targets.length > 0) {
+        this.addAutoImports(ref.name, ref.offset, targets);
       } else if (!this.env.identifiers.has(ref.name)) {
         this.addUnresolved(
           ref.name,
@@ -100,13 +136,7 @@ export class FileAnalysis {
     }
     // Template identifiers missing from the table are props, data or global properties.
     for (const ref of scan.templateIdents) {
-      const target = imports.get(ref.name);
-      if (target !== undefined) {
-        this.addEdge('auto-import', ref.name, ref.offset, {
-          to: target.file,
-          external: target.module,
-        });
-      }
+      this.addAutoImports(ref.name, ref.offset, this.lookup(ref.name));
     }
   }
 
@@ -137,11 +167,32 @@ export class FileAnalysis {
     }
   }
 
+  /**
+   * What an import stands for. A virtual module (`#imports`, `#components`) is looked up in each
+   * context of the file, so an extra file that imports a server name gets it; the same target is
+   * kept once. A path resolves the same in every context, so it is resolved once.
+   */
+  private outcomesOf(ref: ImportRef): ImportOutcome[] {
+    const found = new Map<string, ImportOutcome>();
+    const contexts = VIRTUAL_MODULES.has(ref.specifier) ? this.contexts : [this.context];
+    for (const context of contexts) {
+      for (const outcome of resolveImportRef(ref, this.file, context, this.env)) {
+        const key = outcome.resolved
+          ? `${outcome.symbol}\0${outcome.target.to}\0${outcome.target.external}`
+          : `\0${outcome.message}`;
+        if (!found.has(key)) {
+          found.set(key, outcome);
+        }
+      }
+    }
+    return [...found.values()];
+  }
+
   private addImports(scan: FileScan): void {
     const ignoreTypes = this.env.typeImports === 'ignore';
     for (const ref of scan.imports) {
       // An unresolved path is reported even when the import is type-only.
-      for (const outcome of resolveImportRef(ref, this.file, this.context, this.env)) {
+      for (const outcome of this.outcomesOf(ref)) {
         if (!outcome.resolved) {
           this.addUnresolved(ref.specifier, ref.offset, outcome.message);
         } else if (!ignoreTypes) {
@@ -174,9 +225,21 @@ export class FileAnalysis {
     target: ImportTarget,
     names?: string[],
   ): void {
-    if (!this.firstSeen(`${kind}\0${symbol}`)) {
+    // Ownership first: a layer installed from npm owns its files under node_modules.
+    const toLayer = target.to === null ? null : this.env.ownerOf(target.to);
+    const isPackage = toLayer === null && target.external !== null;
+    const to = isPackage ? null : target.to;
+    const external = toLayer === null ? (target.external ?? 'unknown') : null;
+    // A name can be two symbols (in two contexts); each target has its own edge.
+    if (!this.firstSeen(`${kind}\0${symbol}\0${to ?? external}`)) {
       // A second import of the same file adds its names to the edge that stands for both.
-      const known = this.edges.find(edge => edge.kind === kind && edge.symbol === symbol);
+      const known = this.edges.find(
+        edge =>
+          edge.kind === kind &&
+          edge.symbol === symbol &&
+          edge.to === to &&
+          edge.external === external,
+      );
       if (known?.names !== undefined && names !== undefined) {
         known.names = [...new Set([...known.names, ...names])];
       }
@@ -186,15 +249,12 @@ export class FileAnalysis {
       }
       return;
     }
-    // Ownership first: a layer installed from npm owns its files under node_modules.
-    const toLayer = target.to === null ? null : this.env.ownerOf(target.to);
-    const isPackage = toLayer === null && target.external !== null;
     this.edges.push({
       ...this.reference(kind, symbol, offset),
       fromLayer: this.layer.name,
-      to: isPackage ? null : target.to,
+      to,
       toLayer: toLayer?.name ?? null,
-      external: toLayer === null ? (target.external ?? 'unknown') : null,
+      external,
       ...(names === undefined ? {} : { names }),
     });
   }
@@ -221,7 +281,12 @@ export class FileAnalysis {
 }
 
 /** Reads, scans and analyzes one source file. */
-export function analyzeFile(file: string, layer: Layer, env: AnalysisEnv): FileAnalysis {
+export function analyzeFile(
+  file: string,
+  layer: Layer,
+  env: AnalysisEnv,
+  anyContext = false,
+): FileAnalysis {
   const source = readFileSync(file, 'utf8');
-  return new FileAnalysis(file, source, layer, env).run(scanFile(source, file));
+  return new FileAnalysis(file, source, layer, env, anyContext).run(scanFile(source, file));
 }

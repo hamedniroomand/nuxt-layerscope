@@ -13,7 +13,7 @@ export interface MoveNotes {
 }
 
 export const NOT_SCANNED =
-  'layerscope does not scan test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by hand.';
+  '`check` and `fix` do not read test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by hand.';
 
 function formatMove(move: PlannedMove, cwd: string): string {
   const head = `${relative(cwd, move.from)} → ${relative(cwd, move.to)}  (layer "${move.layer}", clears ${plural(move.fixes, 'finding')})`;

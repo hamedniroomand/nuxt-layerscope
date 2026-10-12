@@ -18,6 +18,7 @@ export async function unused(root: string | undefined, flags: CommonFlags): Prom
     configFile: flags.config,
     prepare: flags.prepare,
     source: toSource(flags.source),
+    extraFiles: true,
   });
   process.stdout.write(
     formatUnused(findUnused(result), format, currentDir(), findBlindSpots(result)),
