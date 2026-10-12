@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
@@ -92,6 +92,29 @@ describe('baseline writes', () => {
     const removed = await post('/api/baseline/remove', { ...(await meta()), keys: [KEY] });
     expect(removed.status).toBe(200);
     expect(readFileSync(file, 'utf8')).toContain('"entries": []');
+  });
+});
+
+describe('a stale layer-cycle entry', () => {
+  it('is listed with a key and removed through the API', async () => {
+    const { post, meta, file, fetch } = await setup();
+    const entry = {
+      rule: 'layer-cycle',
+      file: 'gone.vue',
+      symbol: 'a → b → a',
+      toLayer: 'b',
+    };
+    writeFileSync(file, JSON.stringify({ version: 1, entries: [entry] }));
+    // Reads the baseline again, as the tab does after a change of the file.
+    await post('/api/baseline/ignore', { ...(await meta()), keys: [KEY] });
+    const view = (await (await fetch('/api/baseline')).json()) as {
+      removable: { key: string; symbol: string }[];
+    };
+    const [stale] = view.removable;
+    expect(stale.symbol).toBe('a → b → a');
+    const removed = await post('/api/baseline/remove', { ...(await meta()), keys: [stale.key] });
+    expect(removed.status).toBe(200);
+    expect(readFileSync(file, 'utf8')).not.toContain('a → b → a');
   });
 });
 

@@ -20,8 +20,15 @@ export interface Baseline {
 
 export type Keyed = Pick<BaselineEntry, 'rule' | 'file' | 'symbol' | 'toLayer'>;
 
-/** Rule, file, symbol and target layer; lines are left out so unrelated edits keep the entry. */
+/**
+ * Rule, file, symbol and target layer; lines are left out so unrelated edits keep the entry. A
+ * `layer-cycle` finding is shown at its first use, and that file changes when a use is added or
+ * removed, so its key is the rule and the symbol (the chain of layers) only.
+ */
 export function keyOf(entry: Keyed): string {
+  if (entry.rule === 'layer-cycle') {
+    return [entry.rule, entry.symbol].join('\0');
+  }
   return [entry.rule, entry.file, entry.symbol, entry.toLayer ?? ''].join('\0');
 }
 
@@ -80,6 +87,28 @@ function isEntry(value: unknown): value is BaselineEntry {
   );
 }
 
+/**
+ * One entry for each cycle. The counts of `layer-cycle` entries with the same key are added up:
+ * an older baseline can name one cycle in more than one file. Other entries stay as they are.
+ */
+function mergeEntries(entries: BaselineEntry[]): BaselineEntry[] {
+  const cycles = new Map<string, number>();
+  const merged: BaselineEntry[] = [];
+  for (const entry of entries) {
+    const at = entry.rule === 'layer-cycle' ? cycles.get(keyOf(entry)) : undefined;
+    if (at === undefined) {
+      if (entry.rule === 'layer-cycle') {
+        cycles.set(keyOf(entry), merged.length);
+      }
+      merged.push(entry);
+    } else {
+      const known = merged[at];
+      merged[at] = { ...known, count: (known.count ?? 1) + (entry.count ?? 1) };
+    }
+  }
+  return merged;
+}
+
 export function parseBaseline(value: unknown, file: string): Baseline {
   const baseline = value as Partial<Baseline> | null;
   if (baseline?.version !== BASELINE_VERSION || !Array.isArray(baseline.entries)) {
@@ -91,7 +120,7 @@ export function parseBaseline(value: unknown, file: string): Baseline {
   if (invalid !== -1) {
     throw new LayerscopeError(`${file}: entry ${invalid} is not a valid baseline entry`);
   }
-  return { version: BASELINE_VERSION, entries: baseline.entries };
+  return { version: BASELINE_VERSION, entries: mergeEntries(baseline.entries) };
 }
 
 export function readBaseline(file: string): Baseline | null {
@@ -159,9 +188,22 @@ export function applyBaselineFile(
   if (baseline === null) {
     return result;
   }
-  const scoped =
-    inScope === undefined
-      ? baseline
-      : { ...baseline, entries: baseline.entries.filter(entry => inScope(entry.file)) };
-  return { ...result, ...applyBaseline(result.findings, scoped, file, result.rootDir) };
+  if (inScope === undefined) {
+    return { ...result, ...applyBaseline(result.findings, baseline, file, result.rootDir) };
+  }
+  // A cycle entry has no file to scope by, and its finding can be hidden by the scope, so it is
+  // kept for matching, and it is never listed as fixed.
+  const scoped = {
+    ...baseline,
+    entries: baseline.entries.filter(entry => entry.rule === 'layer-cycle' || inScope(entry.file)),
+  };
+  const applied = applyBaseline(result.findings, scoped, file, result.rootDir);
+  return {
+    ...result,
+    findings: applied.findings,
+    baseline: {
+      ...applied.baseline,
+      removable: applied.baseline.removable.filter(entry => entry.rule !== 'layer-cycle'),
+    },
+  };
 }

@@ -5,7 +5,6 @@
   import FileLocation from '#client/components/FileLocation.vue';
   import InlineConfirm from '#client/components/InlineConfirm.vue';
   import SeverityGlyph from '#client/components/SeverityGlyph.vue';
-  import { entryKey } from '#client/lib/actions.ts';
   import { useTab } from '#client/lib/context.ts';
   import { location } from '#client/lib/format.ts';
   import { useViewData } from '#client/lib/view-data.ts';
@@ -141,7 +140,7 @@
               type="button"
               @click="
                 pending = {
-                  keys: [entryKey(entry)],
+                  keys: [entry.key],
                   message: `Remove the stale entry for ${entry.symbol} in ${entry.file}?`,
                 }
               "

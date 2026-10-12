@@ -15,7 +15,10 @@ export interface FindingDelta {
   removed: KeyDelta[];
 }
 
-/** The baseline key of a finding: rule, relative file, symbol and target layer, never the line. */
+/**
+ * The baseline key of a finding: rule, relative file, symbol and target layer, never the line. A
+ * `layer-cycle` key is the rule and the symbol only.
+ */
 export function findingKey(finding: Finding, rootDir: string): string {
   return keyOf(toKeyed(finding, rootDir));
 }

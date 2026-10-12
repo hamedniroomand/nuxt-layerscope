@@ -2,12 +2,11 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 import { ref } from 'vue';
 
 import type { Toast } from '#client/lib/actions.ts';
-import { createActions, entryKey } from '#client/lib/actions.ts';
+import { createActions } from '#client/lib/actions.ts';
 import { ApiError } from '#client/lib/api.ts';
 import { planIgnore } from '#client/lib/ignore-flow.ts';
 import { createMultiSelection } from '#client/lib/selection.ts';
 import { createStore } from '#client/lib/store.ts';
-import { keyOf } from '#contract-testing';
 import { reportResponse, sampleFindings } from '#test/fixtures.ts';
 import { fakeApi } from '#test/mount.ts';
 
@@ -31,11 +30,6 @@ describe('ignore plan and picks', () => {
     expect(picks.has('b')).toBe(false);
     picks.clear();
     expect(picks.count.value).toBe(0);
-  });
-
-  it('builds the same entry key as the server', () => {
-    const entry = { rule: 'layer-boundary' as const, file: 'a.vue', symbol: 'x', toLayer: null };
-    expect(entryKey(entry)).toBe(keyOf(entry));
   });
 });
 

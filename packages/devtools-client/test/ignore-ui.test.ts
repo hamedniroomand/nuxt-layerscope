@@ -102,3 +102,33 @@ describe('baseline view actions', () => {
     expect(wrapper.text()).toContain('The last change to the baseline can be undone.');
   });
 });
+
+describe('baseline view stale entries', () => {
+  it('removes a stale entry with the key that the server sent', async () => {
+    window.location.hash = '#/baseline';
+    const { wrapper, api } = await mountFindings();
+    vi.mocked(api.baseline).mockResolvedValue({
+      file: 'layerscope-baseline.json',
+      suppressed: [],
+      removable: [
+        {
+          rule: 'layer-cycle',
+          file: 'gone.vue',
+          symbol: 'a → b → a',
+          toLayer: 'b',
+          key: 'server-key',
+        },
+      ],
+    });
+    vi.mocked(api.remove).mockResolvedValue({ ...reportResponse({}, 3), writeId: 2 });
+    press('1');
+    await flushPromises();
+    press('6');
+    await flushPromises();
+    const remove = wrapper.findAll('button').find(button => button.text() === 'Remove');
+    await remove?.trigger('click');
+    await wrapper.get('[role="alertdialog"] button').trigger('click');
+    await flushPromises();
+    expect(api.remove).toHaveBeenCalledWith({ id: 'a', rev: 0 }, ['server-key']);
+  });
+});

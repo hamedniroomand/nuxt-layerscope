@@ -119,11 +119,16 @@ export interface UnusedView {
   layers: string[];
 }
 
+/** A stale baseline entry, with the key that the server accepts to remove it. */
+export interface TabBaselineEntry extends BaselineEntry {
+  key: string;
+}
+
 export interface BaselineView {
   /** Relative to the project root; `null` when there is no baseline file. */
   file: string | null;
   suppressed: TabFinding[];
-  removable: BaselineEntry[];
+  removable: TabBaselineEntry[];
 }
 
 export interface GraphNodeView extends LayerStat {

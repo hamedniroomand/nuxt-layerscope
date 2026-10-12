@@ -20,6 +20,10 @@ function adjacencyOf(first: Map<string, Edge>): Map<string, string[]> {
   for (const { fromLayer, toLayer } of first.values()) {
     adjacency.set(fromLayer, [...(adjacency.get(fromLayer) ?? []), toLayer ?? '']);
   }
+  // Sorted, so the chain that the search finds does not depend on the order of the files.
+  for (const next of adjacency.values()) {
+    next.sort(compareStrings);
+  }
   return adjacency;
 }
 

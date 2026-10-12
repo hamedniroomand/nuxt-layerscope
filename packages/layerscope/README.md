@@ -92,10 +92,10 @@ npx layerscope check --update-baseline   # writes layerscope-baseline.json; comm
 npx layerscope check                     # fails only on findings missing from the baseline
 ```
 
-Entries are keyed by rule, file, symbol and target layer, not by line, so unrelated edits and
-moving a violation within its file keep the entry. Entries that no longer occur are listed as
-fixed (and as `::notice` annotations with `--format github`); run `--update-baseline` again to
-drop them, so the file only shrinks.
+Entries are keyed by rule, file, symbol and target layer, not by line, so unrelated edits and moving
+a violation within its file keep the entry. A `layer-cycle` entry is keyed by rule and chain of
+layers, not by file. Entries that no longer occur are listed as fixed (and as `::notice` annotations
+with `--format github`); run `--update-baseline` again to drop them, so the file only shrinks.
 
 ### GitHub Action
 

@@ -154,7 +154,10 @@ export type ResolutionSource = 'registry' | 'types';
 /** `auto` reads the registry when the Nuxt module wrote one, and the `.d.ts` files otherwise. */
 export type SourceOption = ResolutionSource | 'auto';
 
-/** A finding counts by rule, file, symbol and target layer, never by line. */
+/**
+ * A finding counts by rule, file, symbol and target layer, never by line. A `layer-cycle` finding
+ * counts by rule and symbol only.
+ */
 export interface BaselineEntry {
   rule: RuleName;
   /** Relative to the project root. */

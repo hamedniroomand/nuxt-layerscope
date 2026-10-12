@@ -135,7 +135,14 @@ describe('baseline view', () => {
       file: 'layerscope-baseline.json',
       suppressed: sampleFindings().slice(0, 1),
       removable: [
-        { rule: 'layer-boundary', file: 'gone.vue', symbol: 'x', toLayer: null, count: 2 },
+        {
+          rule: 'layer-boundary',
+          file: 'gone.vue',
+          symbol: 'x',
+          toLayer: null,
+          count: 2,
+          key: 'k',
+        },
       ],
     });
     press('1');

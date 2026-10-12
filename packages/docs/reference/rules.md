@@ -124,9 +124,12 @@ layers/a/app/pages/a.vue
 ```
 
 It looks at every dependency that exists, not at `allow`, so it also catches cycles between
-unrestricted layers. One cycle is reported per lowest layer in it, and fixing it can reveal
-another. The rule is opt-in because most existing projects have a cycle somewhere. Turn it on with
-`rules: { 'layer-cycle': 'error' }` and accept today's cycles in a [baseline](../guide/baseline).
+unrestricted layers. One cycle is reported per lowest layer in it, and fixing it can reveal another.
+When two cycles of the same length go through one layer, the one whose layers sort first is shown.
+The rule is opt-in because most existing projects have a cycle somewhere. Turn it on with
+`rules: { 'layer-cycle': 'error' }` and accept today's cycles in a [baseline](../guide/baseline). A
+baseline accepts a cycle by its chain, so it still accepts the cycle when the file of the first
+reference changes.
 
 ## `layer-internal`
 
