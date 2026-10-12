@@ -101,6 +101,25 @@ describe('assertRegistryFresh for auto-import dirs that are gone or cannot be re
     await expect(assertRegistryFresh(emptyTable(), registry)).resolves.toBeUndefined();
   });
 
+  it('skips the node_modules dir itself, and a dir below it', async () => {
+    const base = tempDir();
+    const modules = join(base, 'node_modules');
+    mkdirSync(join(modules, 'pkg'), { recursive: true });
+    writeFileSync(join(modules, 'new.ts'), 'export const x = 1;\n');
+    const registry = registryWith([entry(modules, []), entry(join(modules, 'pkg'), [])]);
+    await expect(assertRegistryFresh(emptyTable(), registry)).resolves.toBeUndefined();
+  });
+
+  it('checks a dir that only has node_modules in its name', async () => {
+    const base = tempDir();
+    const dir = join(base, 'my_node_modules_copy');
+    mkdirSync(dir);
+    writeFileSync(join(dir, 'new.ts'), 'export const x = 1;\n');
+    await expect(assertRegistryFresh(emptyTable(), registryWith([entry(dir, [])]))).rejects.toThrow(
+      /new\.ts is missing/u,
+    );
+  });
+
   it('skips a dir of a dependency', async () => {
     const base = tempDir();
     const dir = join(base, 'node_modules/@x/layer/app/composables');
@@ -125,7 +144,23 @@ describe('assertRegistryFresh for auto-import dirs that are globs', () => {
   });
 
   it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
-    'does not read a dir that it cannot open as an empty dir',
+    'does not read a dir without read access (stat passes) as an empty dir',
+    async () => {
+      const dir = composables([]);
+      chmodSync(dir, 0o000);
+      try {
+        const registry = registryWith([entry(dir, [])]);
+        await expect(assertRegistryFresh(emptyTable(), registry)).rejects.toThrow(
+          new RegExp(`Could not read ${dir}.*EACCES`, 'u'),
+        );
+      } finally {
+        chmodSync(dir, 0o700);
+      }
+    },
+  );
+
+  it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+    'does not read a dir that it cannot reach as an empty dir',
     async () => {
       const base = tempDir();
       const parent = join(base, 'locked');
