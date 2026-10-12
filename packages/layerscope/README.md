@@ -69,10 +69,14 @@ with, and prints each allowed edge plus how many references could not be resolve
 also accepts the remaining findings, `--dry-run` writes nothing and `--force` replaces an existing
 config. Delete the edges you consider mistakes, then run `check`.
 
-### `layerscope fix --dry-run [root]`
+### `layerscope fix --dry-run [root] [options]`
 
-Prints the file moves that the suggestions on boundary findings ask for, and the relative imports
-each move breaks. Nothing is applied.
+Prints the file moves that the suggestions on boundary findings ask for, and the imports that each
+move breaks. A relative import is listed with its new specifier. An alias that points at a moved
+file is listed to update by hand. Only moves are printed. The other suggestions are in
+`layerscope check`. layerscope does not scan test files, `nuxt.config.*`, `modules/`, files
+outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in
+them by hand. Nothing is applied.
 
 ### `layerscope drift [root]`
 

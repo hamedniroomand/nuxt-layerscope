@@ -8,6 +8,7 @@ export interface NuxtLayerConfig {
   srcDir?: string;
   serverDir?: string;
   components?: unknown;
+  imports?: { scan?: boolean; dirs?: unknown[] };
   dir?: { shared?: string };
   $meta?: { name?: string };
 }

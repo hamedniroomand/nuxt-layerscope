@@ -28,6 +28,11 @@ export interface Layer {
   sharedDir: string;
   /** Whether the layer uses Nuxt's default `<srcDir>/components` dir. */
   defaultComponents: boolean;
+  /**
+   * Whether the layer scans the default auto-import dirs only: it does not set `imports.dirs` and
+   * does not turn `imports.scan` off. Missing means the Nuxt default.
+   */
+  defaultImports?: boolean;
 }
 
 export type ReferenceKind = 'auto-import' | 'component' | 'import';

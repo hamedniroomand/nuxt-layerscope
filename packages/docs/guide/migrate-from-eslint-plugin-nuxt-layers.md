@@ -46,7 +46,7 @@ layers/cart/app/components/CartSummary.vue
   4:17    error  Auto-import "useProduct" crosses from layer "cart" into "products"  layer-boundary
                  useProduct → layers/products/app/composables/useProduct.js
                  allowed for "cart": shared
-                 suggestion: move it to layer "shared", which all 2 layers using it may depend on (2 files use it, 0 imports to update, clears 1 finding)
+                 suggestion: move it to layer "shared", which each of the 2 layers that use it may depend on (2 files use it, 0 imports to update, clears 1 finding)
   10:5    error  Component <ProductCard> crosses from layer "cart" into "products"  layer-boundary
                  ProductCard → layers/products/app/components/ProductCard.vue
                  allowed for "cart": shared

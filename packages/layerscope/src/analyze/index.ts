@@ -3,7 +3,7 @@ import { resolve } from 'pathe';
 import { applyBaselineFile } from '#src/baseline/index.ts';
 import { compareByPosition } from '#src/rules/compare.ts';
 import { runRules } from '#src/rules/index.ts';
-import { withRootNotes } from '#src/suggest/index.ts';
+import { withRootNotes, withSuggestions } from '#src/suggest/index.ts';
 import type { AnalyzeResult, LayerscopeConfig, SourceOption } from '#src/types.ts';
 
 import { analyzeFiles } from './cache.ts';
@@ -60,7 +60,8 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     config,
     layers,
     rootDir,
-    suggest: scope === undefined,
+    // The suggestions come after the baseline, so they count the findings that `check` shows.
+    suggest: false,
     presetLayers,
   });
   const { findings, notes } = applyScope(plan, ran, collected.size);
@@ -82,9 +83,11 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
       .filter(analysis => analysis.hasDynamicComponent)
       .map(analysis => analysis.file),
   };
-  return options.baseline === undefined
-    ? result
-    : applyBaselineFile(result, resolve(rootDir, options.baseline), scope?.hasRelative);
+  const reported =
+    options.baseline === undefined
+      ? result
+      : applyBaselineFile(result, resolve(rootDir, options.baseline), scope?.hasRelative);
+  return scope === undefined ? withSuggestions(reported) : reported;
 }
 
 /** `analyze` for the commands and tools that report findings. They add the root notes. */

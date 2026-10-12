@@ -83,7 +83,7 @@ export function rootIsBase(context: Context): boolean {
 export function rootBaseSuggestion(finding: Finding): Suggestion {
   return {
     action: 'leave',
-    message: `move "${finding.symbol}" to root, or remove this use: root is the base layer and may not use other layers`,
+    message: `change the code: root is the base layer and may not use other layers. Move "${finding.symbol}" to root, or remove this use`,
     impact: { fixes: 0 },
   };
 }

@@ -142,16 +142,19 @@ export class Analyzer {
 
   private async reapply(base: Snapshot): Promise<Snapshot> {
     const started = Date.now();
-    const [{ applyBaselineFile }, { compareByPosition }] = await Promise.all([
+    const [{ applyBaselineFile }, { compareByPosition }, { withSuggestions }] = await Promise.all([
       import('#src/baseline/index.ts'),
       import('#src/rules/compare.ts'),
+      import('#src/suggest/index.ts'),
     ]);
     const { result } = base;
     const all = [...result.findings, ...(result.baseline?.suppressed ?? [])].toSorted(
       compareByPosition,
     );
     const fresh = { ...result, findings: all, baseline: undefined };
-    return this.commit(applyBaselineFile(fresh, this.baselineFile), started, 'baseline');
+    // The suggestions count the findings that are shown, so they are made again.
+    const applied = await withSuggestions(applyBaselineFile(fresh, this.baselineFile));
+    return this.commit(applied, started, 'baseline');
   }
 
   private async analyze(): Promise<Snapshot> {

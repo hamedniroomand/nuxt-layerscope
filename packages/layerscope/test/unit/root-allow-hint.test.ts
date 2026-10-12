@@ -135,7 +135,7 @@ describe('root code that uses a feature layer, with root in the preset base', ()
     });
     expect(suggestion?.action).toBe('leave');
     expect(suggestion?.message).toBe(
-      'move "usePageSeo" to root, or remove this use: root is the base layer and may not use other layers',
+      'change the code: root is the base layer and may not use other layers. Move "usePageSeo" to root, or remove this use',
     );
   });
 

@@ -154,10 +154,26 @@
           "additionalProperties": false,
           "required": ["fixes"],
           "properties": {
-            "fixes": { "type": "integer", "minimum": 0 },
-            "files": { "type": "integer", "minimum": 0 },
-            "imports": { "type": "integer", "minimum": 0 },
-            "edges": { "type": "integer", "minimum": 0 }
+            "fixes": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "The findings that the suggestion clears, among the findings that the report shows. For a move: the findings that point at the file and the findings in it."
+            },
+            "files": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "move: the files that use the moved file."
+            },
+            "imports": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "move: the import lines that `layerscope fix` lists for the move: relative specifiers that change and aliases to update by hand, in the users and in the moved file."
+            },
+            "edges": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "allow: the edges that the suggestion adds to the allow map."
+            }
           }
         }
       }

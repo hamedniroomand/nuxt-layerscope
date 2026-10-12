@@ -50,6 +50,8 @@ export function layerFromNuxt(layer: NuxtLayer, index: number, dirs: LayerDirect
       (index === 0 ? ROOT_LAYER_NAME : (remoteLayerName(resolved.root) ?? basename(resolved.root))),
     ...resolved,
     defaultComponents: layer.config.components === undefined,
+    defaultImports:
+      layer.config.imports?.scan !== false && (layer.config.imports?.dirs ?? []).length === 0,
   };
 }
 

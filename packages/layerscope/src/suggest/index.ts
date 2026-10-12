@@ -1,22 +1,23 @@
-import { relative } from 'pathe';
-
-import { isScoped } from '#src/config/allow.ts';
-import { describePreset } from '#src/config/presets.ts';
-import type { Edge, Finding, Layer, LayerscopeConfig, Suggestion } from '#src/types.ts';
-import { plural } from '#src/utils/strings.ts';
+import type { Baseline } from '#src/baseline/index.ts';
+import type {
+  AnalyzeResult,
+  Edge,
+  Finding,
+  Layer,
+  LayerscopeConfig,
+  Suggestion,
+} from '#src/types.ts';
 import { createYielder } from '#src/utils/yield.ts';
 
+import { allowSuggestion, exposeSuggestion } from './allow.ts';
+import { acceptedBy, bare } from './baseline.ts';
 import type { Context } from './context.ts';
-import { createContext, edgeOfFinding, isLocal, pairKey, reaches } from './context.ts';
+import { createContext, isLocal, reaches } from './context.ts';
 import { moveSuggestion, pickTarget } from './move.ts';
-import {
-  needsRootHint,
-  rootAllowText,
-  rootBaseSuggestion,
-  rootIsBase,
-  rootPresetText,
-} from './root-hint.ts';
-import { isExplicitImport, namesOfEdge, onlyNames } from './scoped.ts';
+import { droppedMoves, withPlanCounts } from './plan.ts';
+import { rootBaseSuggestion, rootIsBase } from './root-hint.ts';
+
+const BATCH_FINDINGS = 200;
 
 function leaveSuggestion(from: string, to: string): Suggestion {
   return {
@@ -26,75 +27,9 @@ function leaveSuggestion(from: string, to: string): Suggestion {
   };
 }
 
-function allowSuggestion(context: Context, from: string, to: string): Suggestion {
-  const pair = context.boundaryBy.get(pairKey(from, to)) ?? [];
-  const fixes = pair.length;
-  const edges = pair.map(finding => edgeOfFinding(context, finding));
-  const names = edges.every(edge => edge !== undefined) ? onlyNames(edges) : null;
-  const hint = needsRootHint(context.config, from, to);
-  // A preset base has no scoped entry, so the preset hint names the whole base, never `only`.
-  if (hint && context.presetLayers.has(from)) {
-    const preset = describePreset(context.config, context.layers);
-    if (preset !== null) {
-      return {
-        action: 'allow',
-        message: rootPresetText(from, fixes, preset, context.config, context.layers),
-        // A stacked layer gets one list, which is one edge. A base change adds root to every layer
-        // that the preset filled; the layers that keep their own `allow` do not change.
-        impact: { fixes, edges: preset.name === 'stacked' ? 1 : context.presetLayers.size },
-      };
-    }
-  }
-  if (names !== null) {
-    const known = (context.config.layers?.[from]?.allow ?? []).find(
-      entry => isScoped(entry) && entry.layer === to,
-    );
-    const only = [
-      ...new Set([...(known !== undefined && isScoped(known) ? known.only : []), ...names]),
-    ];
-    const allow = `allow "${from}" to use ${only.map(name => `"${name}"`).join(', ')} from "${to}" (adds ${known === undefined ? '1 edge' : 'no edge'}, clears ${plural(fixes, 'finding')})`;
-    return {
-      action: 'allow',
-      message: hint ? `"root" is a layer too. ${allow}` : allow,
-      only,
-      impact: { fixes, edges: known === undefined ? 1 : 0 },
-    };
-  }
-  return {
-    action: 'allow',
-    message: hint
-      ? rootAllowText(from, fixes)
-      : `allow "${from}" to use "${to}" (adds 1 edge, clears ${plural(fixes, 'finding')})`,
-    impact: { fixes, edges: 1 },
-  };
-}
-
-function exposeSuggestion(context: Context, finding: Finding): Suggestion {
-  const to = finding.toLayer ?? '';
-  const layer = context.layers.find(candidate => candidate.name === to);
-  const edge = edgeOfFinding(context, finding);
-  const names = edge === undefined || isExplicitImport(edge) ? null : namesOfEdge(edge);
-  // An explicit import is listed by the path of its file, which covers every name in it.
-  const entry =
-    names?.[0] ??
-    (layer === undefined || finding.target === null
-      ? finding.symbol
-      : relative(layer.root, finding.target));
-  const fixes = context.internalBy.get(pairKey(to, finding.symbol))?.length ?? 1;
-  return {
-    action: 'expose',
-    message: `add "${entry}" to expose of "${to}" (clears ${plural(fixes, 'finding')})`,
-    expose: entry,
-    impact: { fixes },
-  };
-}
-
 function suggest(context: Context, finding: Finding): Suggestion {
   if (finding.rule === 'layer-internal') {
     return exposeSuggestion(context, finding);
-  }
-  if (finding.fromLayer === 'root' && rootIsBase(context)) {
-    return rootBaseSuggestion(finding);
   }
   const from = finding.fromLayer;
   const to = finding.toLayer ?? '';
@@ -104,37 +39,34 @@ function suggest(context: Context, finding: Finding): Suggestion {
   const cycle = reaches(context, to, from);
   const sharedByMany =
     new Set(uses.map(edge => edge.fromLayer).filter(name => name !== to)).size >= 2;
+  // Root is the base layer: a file that it uses from a feature layer can move into root.
+  const rootBase = from === 'root' && rootIsBase(context);
 
   if (
     file !== null &&
     owner !== undefined &&
     isLocal(owner, context.rootDir) &&
-    (sharedByMany || cycle)
+    !context.blocked.has(file) &&
+    (sharedByMany || cycle || rootBase)
   ) {
     const target = pickTarget(context, file, owner, uses);
     if (target !== undefined) {
       return moveSuggestion(context, file, owner, target, uses);
     }
   }
+  if (rootBase) {
+    return rootBaseSuggestion(finding);
+  }
   return cycle ? leaveSuggestion(from, to) : allowSuggestion(context, from, to);
 }
 
-const BATCH_FINDINGS = 200;
-
-/** Adds a suggestion to each boundary finding; yields to the event loop between batches. */
-export async function addSuggestions(
-  findings: Finding[],
-  edges: Edge[],
-  layers: Layer[],
-  config: LayerscopeConfig,
-  rootDir: string,
-  presetLayers: string[] = [],
-): Promise<Finding[]> {
-  const context = createContext(findings, edges, layers, config, rootDir, presetLayers);
-  // A suggestion reads only the layer pair and the target file, so findings that share them
-  // get the same one. Each finding gets its own copy, so no two findings share an object.
+/**
+ * A suggestion reads only the layer pair and the target file, so findings that share them get the
+ * same one. Each finding gets its own copy, so no two findings share an object.
+ */
+function suggester(context: Context): (finding: Finding) => Suggestion {
   const memo = new Map<string, Suggestion>();
-  const suggestionFor = (finding: Finding): Suggestion => {
+  return finding => {
     const key = JSON.stringify([
       finding.rule,
       finding.fromLayer,
@@ -146,6 +78,10 @@ export async function addSuggestions(
     memo.set(key, known);
     return { ...known, impact: { ...known.impact } };
   };
+}
+
+async function suggestAll(context: Context, findings: Finding[]): Promise<Finding[]> {
+  const suggestionFor = suggester(context);
   const pause = createYielder({ files: BATCH_FINDINGS });
   const result: Finding[] = [];
   for (const finding of findings) {
@@ -158,6 +94,62 @@ export async function addSuggestions(
     await pause();
   }
   return result;
+}
+
+/**
+ * Adds a suggestion to each boundary and internal finding; yields to the event loop between
+ * batches. Give it the findings that `check` shows, so the counts agree with them. The moves are
+ * checked together, and the ones that would break `check` are dropped. The findings of a dropped
+ * move get the suggestion that is not a move, and the other suggestions stay as they are.
+ * `baseline` is what the baseline accepts: a cycle that it accepts is not new.
+ */
+export async function addSuggestions(
+  findings: Finding[],
+  edges: Edge[],
+  layers: Layer[],
+  config: LayerscopeConfig,
+  rootDir: string,
+  presetLayers: string[] = [],
+  baseline: Baseline | null = null,
+): Promise<Finding[]> {
+  const context = createContext(findings, edges, layers, config, rootDir, presetLayers);
+  context.baseline = baseline;
+  const result = await suggestAll(context, findings);
+  const dropped = droppedMoves(context, result);
+  if (dropped.size === 0) {
+    return withPlanCounts(context, result);
+  }
+  for (const file of dropped) {
+    context.blocked.add(file);
+  }
+  const suggestionFor = suggester(context);
+  const final: Finding[] = [];
+  for (const finding of result) {
+    const again =
+      finding.target !== null && dropped.has(finding.target) && finding.suggestion !== undefined;
+    final.push(again ? { ...finding, suggestion: suggestionFor(finding) } : finding);
+  }
+  return withPlanCounts(context, final);
+}
+
+/** The result with a suggestion on each finding that it shows. The accepted ones get none. */
+export async function withSuggestions(result: AnalyzeResult): Promise<AnalyzeResult> {
+  const findings = await addSuggestions(
+    result.findings,
+    result.edges,
+    result.layers,
+    result.config,
+    result.rootDir,
+    result.presetLayers,
+    result.baseline === undefined ? null : acceptedBy(result.baseline, result.rootDir),
+  );
+  return {
+    ...result,
+    findings,
+    ...(result.baseline === undefined
+      ? {}
+      : { baseline: { ...result.baseline, suppressed: result.baseline.suppressed.map(bare) } }),
+  };
 }
 
 export { rootAllowNotes, withRootNotes } from './root-hint.ts';

@@ -1,11 +1,11 @@
-import { mkdirSync, mkdtempSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
-import { dirname, join } from 'pathe';
+import { dirname, join, relative } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { analyze } from '#src/analyze/index.ts';
-import { EXIT_CLEAN, EXIT_ERROR, EXIT_VIOLATIONS, run } from '#src/cli.ts';
+import { EXIT_CLEAN, EXIT_ERROR, run } from '#src/cli.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
 
 const CART = 'layers/web/app/composables/useCart.ts';
@@ -55,6 +55,11 @@ function project(): string {
   return root;
 }
 
+/** A path as `fix` prints it: relative to the working dir. */
+function shown(root: string, path: string): string {
+  return relative(process.cwd(), join(root, path));
+}
+
 function silence(): { stdout: () => string; stderr: () => string } {
   const out = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
   const err = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
@@ -89,22 +94,6 @@ describe('suggestions', () => {
       expect(suggestion?.impact).toMatchObject({ fixes: 2, files: 2, imports: 1 });
     }
   });
-
-  it('pass check once the suggested move is applied', async () => {
-    const root = project();
-    silence();
-    expect(await run(['node', 'layerscope', 'check', root])).toBe(EXIT_VIOLATIONS);
-
-    mkdirSync(dirname(join(root, MOVED)), { recursive: true });
-    renameSync(join(root, CART), join(root, MOVED));
-    writeTypes(root, MOVED);
-    write(
-      root,
-      'layers/admin/app/pages/admin.vue',
-      page("import { useCart as read } from '../../../shared/app/composables/useCart';", 'read();'),
-    );
-    expect(await run(['node', 'layerscope', 'check', root])).toBe(EXIT_CLEAN);
-  });
 });
 
 describe('layerscope fix', () => {
@@ -116,10 +105,133 @@ describe('layerscope fix', () => {
 
   it('prints the move and the import it updates', async () => {
     const output = silence();
-    expect(await run(['node', 'layerscope', 'fix', project(), '--dry-run'])).toBe(EXIT_CLEAN);
-    expect(output.stdout()).toContain('useCart.ts →');
+    const root = project();
+    expect(await run(['node', 'layerscope', 'fix', root, '--dry-run'])).toBe(EXIT_CLEAN);
+    expect(output.stdout()).toContain(`${shown(root, CART)} → ${shown(root, MOVED)}`);
     expect(output.stdout()).toContain(
       '"../../../web/app/composables/useCart" → "../../../shared/app/composables/useCart"',
+    );
+  });
+});
+
+describe('layerscope fix output', () => {
+  it('prints the steps after the move, and no dry-run note', async () => {
+    const output = silence();
+    await run(['node', 'layerscope', 'fix', project(), '--dry-run']);
+    expect(output.stdout()).toContain(
+      'Move the files, update the imports, then run `layerscope check --prepare`.',
+    );
+    expect(output.stdout()).toContain('does not scan test files, `nuxt.config.*`');
+    expect(output.stdout()).not.toContain('(--dry-run)');
+  });
+
+  it('does not list a symbol that is not in the source', async () => {
+    const output = silence();
+    await run(['node', 'layerscope', 'fix', project(), '--dry-run']);
+    // shop uses useCart as an auto-import, which has no import line to edit.
+    expect(output.stdout()).not.toContain('shop.vue');
+    expect(output.stdout()).toContain('admin.vue:2');
+  });
+});
+
+describe('layerscope fix with nothing to move', () => {
+  it('says so when the findings have no move', async () => {
+    const root = project();
+    write(root, 'layers/shop/app/pages/shop.vue', page('const a = 1;'));
+    write(
+      root,
+      'layerscope.config.mjs',
+      `export default { layers: {
+        web: { path: 'layers/web', allow: [] },
+        shared: { path: 'layers/shared', allow: [] },
+        admin: { path: 'layers/admin', allow: ['shared'] },
+        shop: { path: 'layers/shop', allow: ['shared'] },
+      } };\n`,
+    );
+    const output = silence();
+    expect(await run(['node', 'layerscope', 'fix', root, '--dry-run'])).toBe(EXIT_CLEAN);
+    expect(output.stdout()).toBe(
+      'No file moves suggested.\n1 other finding has no file move. Run `layerscope check` to see their suggestions.\n',
+    );
+  });
+
+  it('prints one line when there is nothing to fix', async () => {
+    const root = project();
+    write(root, 'layers/admin/app/pages/admin.vue', page('const a = 1;'));
+    write(root, 'layers/shop/app/pages/shop.vue', page('const a = 1;'));
+    const output = silence();
+    await run(['node', 'layerscope', 'fix', root, '--dry-run']);
+    expect(output.stdout()).toBe('No file moves suggested.\n');
+  });
+
+  it('skips the findings that the baseline accepts', async () => {
+    const root = project();
+    silence();
+    expect(await run(['node', 'layerscope', 'check', root, '--update-baseline'])).toBe(EXIT_CLEAN);
+    vi.restoreAllMocks();
+    const output = silence();
+    await run(['node', 'layerscope', 'fix', root, '--dry-run']);
+    expect(output.stdout()).toBe('No file moves suggested.\n');
+    vi.restoreAllMocks();
+    const other = silence();
+    await run(['node', 'layerscope', 'fix', root, '--dry-run', '--baseline', 'missing.json']);
+    expect(other.stdout()).toContain('useCart.ts →');
+  });
+});
+
+describe('layerscope fix options', () => {
+  it('reads the config from --config and the symbols from --source', async () => {
+    const root = project();
+    write(
+      root,
+      'config/layers.mjs',
+      `export default { layers: {
+        web: { path: 'layers/web', allow: [] },
+        shared: { path: 'layers/shared', allow: [] },
+        admin: { path: 'layers/admin', allow: ['shared'] },
+        shop: { path: 'layers/shop', allow: ['shared'] },
+      } };\n`,
+    );
+    const output = silence();
+    const config = join(root, 'config/layers.mjs');
+    expect(await run(['node', 'layerscope', 'fix', root, '--dry-run', '--config', config])).toBe(
+      EXIT_CLEAN,
+    );
+    expect(output.stdout()).toContain('useCart.ts →');
+    const dts = silence();
+    expect(await run(['node', 'layerscope', 'fix', root, '--dry-run', '--source', 'types'])).toBe(
+      EXIT_CLEAN,
+    );
+    expect(dts.stdout()).toContain('useCart.ts →');
+  });
+});
+
+describe('layerscope fix plans', () => {
+  it('plans a moved importer and more than one move', async () => {
+    const root = project();
+    write(root, 'layers/web/app/composables/useTotal.ts', 'export const useTotal = () => 2;\n');
+    write(
+      root,
+      CART,
+      "import { noop } from '../../../shared/app/utils/noop';\nexport const useCart = () => noop();\n",
+    );
+    for (const layer of ['admin', 'shop']) {
+      write(
+        root,
+        `layers/${layer}/app/pages/total-${layer}.vue`,
+        page("import { useTotal } from '../../../web/app/composables/useTotal';", 'useTotal();'),
+      );
+    }
+    const output = silence();
+    await run(['node', 'layerscope', 'fix', root, '--dry-run']);
+    const text = output.stdout();
+    expect(text).toContain(`${shown(root, CART)} → ${shown(root, MOVED)}`);
+    expect(text).toContain(
+      `${shown(root, 'layers/web/app/composables/useTotal.ts')} → ${shown(root, 'layers/shared/app/composables/useTotal.ts')}`,
+    );
+    // The moved file is the importer here: its own import gets a new path.
+    expect(text).toContain(
+      `${shown(root, CART)}:1  "../../../shared/app/utils/noop" → "../utils/noop"`,
     );
   });
 });

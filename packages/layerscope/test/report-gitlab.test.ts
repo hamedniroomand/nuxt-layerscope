@@ -42,6 +42,8 @@ const validateGitlab = new Ajv({ strict: true }).compile({
 interface SarifLog {
   runs: {
     results: {
+      message: { text: string };
+      properties?: { suggestion: { action: string; message: string } };
       partialFingerprints: Record<string, string>;
       locations: { physicalLocation: { artifactLocation: { uri: string } } }[];
     }[];
@@ -49,6 +51,7 @@ interface SarifLog {
 }
 
 interface Issue {
+  description: string;
   check_name: string;
   fingerprint: string;
   severity: string;
@@ -125,5 +128,28 @@ describe('paths of a project in a subdirectory', () => {
     const first = await gitlab(a);
     const second = await gitlab(b);
     expect(first.map(issue => issue.fingerprint)).toEqual(second.map(issue => issue.fingerprint));
+  });
+
+  it('puts the suggestion in the description', async () => {
+    const issues = await gitlab(NUXT4_ROOT);
+    const boundary = issues.filter(issue => issue.check_name === 'layer-boundary');
+    expect(boundary.length).toBeGreaterThan(0);
+    for (const issue of boundary) {
+      expect(issue.description).toMatch(/\nsuggestion: /u);
+    }
+  });
+});
+
+describe('sarif format', () => {
+  it('puts the suggestion in the message and in the properties', async () => {
+    const results = (await sarif(NUXT4_ROOT)).runs.flatMap(run => run.results);
+    const suggested = results.filter(result => result.properties !== undefined);
+    expect(suggested.length).toBeGreaterThan(0);
+    for (const result of suggested) {
+      expect(result.message.text).toContain(
+        `\nsuggestion: ${result.properties?.suggestion.message}`,
+      );
+      expect(result.properties?.suggestion.action).toMatch(/^(?:allow|move|expose|leave)$/u);
+    }
   });
 });
