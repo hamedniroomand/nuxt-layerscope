@@ -22,12 +22,24 @@ interface Shape {
   shared?: boolean;
   /** Root uses `website`, which makes a cycle with `website` using root. */
   rootUsesWebsite?: boolean;
+  /** `useWeb` uses a helper of `website`, so it cannot move into root. */
+  webNeedsHelper?: boolean;
   /** `website` also uses `admin`, to check that a real boundary still fails. */
   crossing?: boolean;
   /** The `allow` of `website`, as config text. Left out, the preset decides it. */
   allowWebsite?: string;
   /** The `allow` of `root`, as config text. Left out, the preset decides it. */
   allowRoot?: string;
+}
+
+/** `useWeb` imports a helper of its own layer, so a move into root would need `website`. */
+function writeHelper(root: string): void {
+  write(root, 'layers/website/app/utils/helper.ts', 'export const helper = () => 1;\n');
+  write(
+    root,
+    'layers/website/app/composables/useWeb.ts',
+    "import { helper } from '../utils/helper';\nexport const useWeb = () => helper();\n",
+  );
 }
 
 /** `extra` is more config text. The layers are declared by path, so no Nuxt install is needed. */
@@ -71,6 +83,9 @@ function project(extra: string, shape: Shape = {}): string {
     page('const shared = useShared();', shape.crossing === true ? 'const admin = useAdmin();' : ''),
   );
   write(root, 'layers/admin/app/pages/admin.vue', page('const shared = useShared();'));
+  if (shape.webNeedsHelper === true) {
+    writeHelper(root);
+  }
   if (shape.rootUsesWebsite === true) {
     write(root, 'app/pages/index.vue', page('const web = useWeb();'));
   }
@@ -110,14 +125,29 @@ describe('a preset whose base is root', () => {
     expect(code).toBe(EXIT_VIOLATIONS);
     expect(out).toContain('crosses from layer "website" into "admin"');
   });
+});
 
-  it('restricts root, so root code that uses a feature is reported without layer-cycle', async () => {
+describe('a preset whose base is root: the move', () => {
+  it('suggests moving the file into root when root uses it from a feature', async () => {
     const { code, out } = await check(
       project("preset: { name: 'features', base: ['root'] }", { rootUsesWebsite: true }),
     );
     expect(code).toBe(EXIT_VIOLATIONS);
     expect(out).toContain('crosses from layer "root" into "website"');
-    expect(out).toContain('move "useWeb" to root, or remove this use');
+    expect(out).toContain('move it to layer "root"');
+  });
+
+  it('restricts root, so root code that uses a feature is reported without layer-cycle', async () => {
+    const { code, out } = await check(
+      project("preset: { name: 'features', base: ['root'] }", {
+        rootUsesWebsite: true,
+        webNeedsHelper: true,
+      }),
+    );
+    expect(code).toBe(EXIT_VIOLATIONS);
+    expect(out).toContain('crosses from layer "root" into "website"');
+    expect(out).toContain('change the code: root is the base layer');
+    expect(out).toContain('Move "useWeb" to root, or remove this use');
   });
 
   it('lets a root entry in the config clear that finding', async () => {

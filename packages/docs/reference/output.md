@@ -84,32 +84,32 @@ changes; new fields can be added without it, so ignore fields you do not know.
 }
 ```
 
-| Field      | Description                                                                                     |
-| ---------- | ----------------------------------------------------------------------------------------------- |
-| `version`  | Report version, `1`. Raised only on breaking changes to the shape.                              |
-| `source`   | `registry` or `types`: where symbols were read from.                                            |
-| `notes`    | Notes also printed on stderr, such as a rule that could not run.                                |
-| `layers`   | Every layer in priority order, with its root.                                                   |
-| `summary`  | Files checked, and errors and warnings reported.                                                |
-| `findings` | Reported findings, sorted by file, line, column, rule and symbol.                               |
-| `baseline` | Only with a baseline: `file`, `suppressed` (accepted findings) and `removable` (fixed entries). |
+| Field      | Description                                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------------------------- |
+| `version`  | Report version, `1`. Raised only on breaking changes to the shape.                                                    |
+| `source`   | `registry` or `types`: where symbols were read from.                                                                  |
+| `notes`    | Notes also printed on stderr, such as a rule that could not run.                                                      |
+| `layers`   | Every layer in priority order, with its root.                                                                         |
+| `summary`  | Files checked, and errors and warnings reported.                                                                      |
+| `findings` | Reported findings, sorted by file, line, column, rule and symbol.                                                     |
+| `baseline` | Only with a baseline: `file`, `suppressed` (accepted findings, without a suggestion) and `removable` (fixed entries). |
 
 Finding fields:
 
-| Field                    | Description                                                                                                                                                                                           |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rule`                   | `layer-boundary`, `layer-cycle`, `layer-internal`, `unresolved-reference` or `shadowed-component`                                                                                                     |
-| `severity`               | `error` or `warn`                                                                                                                                                                                     |
-| `file`, `line`, `column` | Where the reference is; 1-based                                                                                                                                                                       |
-| `symbol`                 | Identifier, component name or import specifier                                                                                                                                                        |
-| `fromLayer`              | Layer of the file                                                                                                                                                                                     |
-| `toLayer`                | Layer the symbol resolves to, or `null` for packages and unresolved references                                                                                                                        |
-| `target`                 | File the symbol resolves to, when known                                                                                                                                                               |
-| `allowed`                | For `layer-boundary`: the layers `fromLayer` may use whole                                                                                                                                            |
-| `scoped`                 | For `layer-boundary`: the layers `fromLayer` may use in part, as `{ layer, only }` entries                                                                                                            |
-| `exposed`                | For `layer-internal`: what the layer of the symbol makes public, from its `expose` list                                                                                                               |
-| `suggestion`             | For `layer-boundary` and `layer-internal`: `action` (`move`, `allow`, `expose`, `leave`), `message`, `impact`; `move` adds `layer` and `file`, `allow` can add `only`, `expose` adds the entry to add |
-| `message`                | Human-readable description                                                                                                                                                                            |
+| Field                    | Description                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rule`                   | `layer-boundary`, `layer-cycle`, `layer-internal`, `unresolved-reference` or `shadowed-component`                                                                                                                                                                                                                                                                                                   |
+| `severity`               | `error` or `warn`                                                                                                                                                                                                                                                                                                                                                                                   |
+| `file`, `line`, `column` | Where the reference is; 1-based                                                                                                                                                                                                                                                                                                                                                                     |
+| `symbol`                 | Identifier, component name or import specifier                                                                                                                                                                                                                                                                                                                                                      |
+| `fromLayer`              | Layer of the file                                                                                                                                                                                                                                                                                                                                                                                   |
+| `toLayer`                | Layer the symbol resolves to, or `null` for packages and unresolved references                                                                                                                                                                                                                                                                                                                      |
+| `target`                 | File the symbol resolves to, when known                                                                                                                                                                                                                                                                                                                                                             |
+| `allowed`                | For `layer-boundary`: the layers `fromLayer` may use whole                                                                                                                                                                                                                                                                                                                                          |
+| `scoped`                 | For `layer-boundary`: the layers `fromLayer` may use in part, as `{ layer, only }` entries                                                                                                                                                                                                                                                                                                          |
+| `exposed`                | For `layer-internal`: what the layer of the symbol makes public, from its `expose` list                                                                                                                                                                                                                                                                                                             |
+| `suggestion`             | For `layer-boundary` and `layer-internal`: `action` (`move`, `allow`, `expose`, `leave`), `message`, `impact`; `move` adds `layer` and `file`, `allow` can add `only`, `expose` adds the entry to add. `impact` has `fixes` (findings cleared), and for a move `files` (files that use the file) and `imports` (import lines that `fix` lists for the move), and for an allow `edges` (edges added) |
+| `message`                | Human-readable description                                                                                                                                                                                                                                                                                                                                                                          |
 
 ## `sarif`
 
@@ -126,7 +126,9 @@ layerscope check --format sarif > layerscope.sarif
   (`none` when the rule is `off`) and `helpUri`, a link to the [rule](./rules).
 - Each finding is a `result` with `ruleId`, `ruleIndex`, `level` (`error` or `warning`),
   `message` and a location with a 1-based line and column. A finding with a target, such as the
-  file a `layer-boundary` finding resolves to, has it as a related location.
+  file a `layer-boundary` finding resolves to, has it as a related location. A finding with a
+  suggestion has it as the second line of `message.text`, after `suggestion: `, and as
+  `properties.suggestion` with `action` and `message`.
 - The location URI is relative to the repository root, the git root of the project, with
   `uriBaseId` set to `%SRCROOT%`. Without git it is relative to the project root.
 - `partialFingerprints` has `layerscope/v1`, a sha256 hash of the [baseline](../guide/baseline)
@@ -135,7 +137,7 @@ layerscope check --format sarif > layerscope.sarif
   with the same key in one file get an occurrence number, counted in report order.
 - Findings that the baseline accepts are included with
   `suppressions: [{ "kind": "external", "justification": "layerscope baseline" }]`, so code
-  scanning shows them as suppressed and not as fixed.
+  scanning shows them as suppressed and not as fixed. These suppressed results have no suggestion.
 
 ## `gitlab`
 
@@ -158,6 +160,8 @@ layerscope check --format gitlab > gl-code-quality-report.json
 ]
 ```
 
+- `description` is the message of the finding. A finding with a suggestion has it as the second
+  line, after `suggestion: `.
 - `severity` is `major` for an error and `minor` for a warning.
 - `location.path` is relative to the repository root, the git root of the project, which GitLab
   needs when the Nuxt project is in a subdirectory. Without git it is relative to the project

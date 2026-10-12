@@ -35,14 +35,14 @@ The report is versioned (`"version": 1`) and described by a
 `nuxt-layerscope/schema/report-1.json`. The fields that matter for a fix are on each entry of
 `findings`:
 
-| Field                    | Use it to                                                          |
-| ------------------------ | ------------------------------------------------------------------ |
-| `rule`, `severity`       | Tell an `error` `layer-boundary` from a warning                    |
-| `file`, `line`, `column` | Open the reference                                                 |
-| `symbol`, `target`       | Find the symbol and the file it resolves to                        |
-| `fromLayer`, `toLayer`   | See which layer depends on which                                   |
-| `allowed`                | See what `fromLayer` may use                                       |
-| `suggestion`             | Get a fix: `action` is `move`, `allow` or `leave`, with the impact |
+| Field                    | Use it to                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `rule`, `severity`       | Tell an `error` `layer-boundary` from a warning                              |
+| `file`, `line`, `column` | Open the reference                                                           |
+| `symbol`, `target`       | Find the symbol and the file it resolves to                                  |
+| `fromLayer`, `toLayer`   | See which layer depends on which                                             |
+| `allowed`                | See what `fromLayer` may use                                                 |
+| `suggestion`             | Get a fix: `action` is `move`, `allow`, `expose` or `leave`, with the impact |
 
 Consumers should ignore fields they do not know: fields may be added without changing `version`.
 The full shape is in [Output formats](../reference/output#json).
@@ -51,14 +51,21 @@ The full shape is in [Output formats](../reference/output#json).
 
 1. **Move the symbol.** When a suggestion says `move`, or the symbol is used by several layers, move
    the file to the layer it names (often `shared`). Auto-imports and components need no other
-   change; update explicit imports. `layerscope fix --dry-run` lists them.
+   change; update explicit imports. `layerscope fix --dry-run` lists them. Then run
+   `layerscope check --prepare`. layerscope does not scan test files, `nuxt.config.*`, `modules/`,
+   files outside the layer source dirs, or files that match `ignore`. Update the imports of moved
+   files in them by hand.
 2. **Ask before changing `allow`.** Adding a layer to `allow` accepts a new dependency between
-   layers. That is a design decision, so make it only when the user has said the dependency is
+   layers. A scoped entry (`{ layer: 'web', only: ['useCart'] }`) accepts only the names that it
+   lists. Both are design decisions, so make them only when the user has said the dependency is
    intended. Never loosen `allow`, add `globals`, change `rules` or edit the baseline just to get
    a green run.
-3. **Leave it** when a suggestion says `leave`: the dependency would create a cycle, and moving the
-   file is not possible. Report it instead.
-4. Run `layerscope check` again. A fix is done when the finding is gone and no new one appeared.
+3. **Expose it** when a suggestion says `expose`: add the entry to `expose` of the layer that owns
+   the symbol. Do this only when the symbol is meant to be public.
+4. **Leave it** when a suggestion says `leave`: layerscope has no fix. Read the message. For a
+   cycle, moving the file is not possible: report it instead. For `root` as a base layer, change
+   the code as the message says.
+5. Run `layerscope check` again. A fix is done when the finding is gone and no new one appeared.
 
 ## MCP server
 

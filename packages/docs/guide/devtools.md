@@ -52,8 +52,9 @@ text; the filters stay in the URL. Press <kbd>2</kbd>, then <kbd>/</kbd> to filt
 />
 
 Select a finding with <kbd>j</kbd> and <kbd>k</kbd>. The selected finding shows a suggestion from
-the analysis: move the file, allow the layer, or leave the reference. For an "allow" suggestion, the
-tab shows the config change to copy and how many findings it removes. The tab does not change your
+the analysis: move the file, allow the layer (the whole layer, or only some names), expose the
+symbol, or leave the reference. See [Suggestions](../reference/rules#suggestions). For an "allow"
+suggestion, the tab shows the config change to copy and how many findings it removes. The tab does not change your
 config. <kbd>o</kbd> opens the file, <kbd>t</kbd> traces the symbol, and <kbd>i</kbd> accepts the
 finding into the baseline.
 

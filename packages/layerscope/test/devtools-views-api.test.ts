@@ -13,7 +13,7 @@ const allow: Finding['suggestion'] = {
 };
 
 describe('allow hint', () => {
-  it('counts the files of the pair, baselined ones too, and quotes the snippet', () => {
+  it('counts the files of the shown findings of the pair, and quotes the snippet', () => {
     const finding = makeFinding({ suggestion: allow });
     const result = makeResult({
       config: { layers: { web: { allow: ['base'] } } },
@@ -29,7 +29,7 @@ describe('allow hint', () => {
       layer: 'web',
       add: 'shop',
       resolves: 3,
-      files: 3,
+      files: 2,
       baselined: 1,
       snippet: "layers: {\n  web: { allow: ['base', 'shop'] },\n}",
     });

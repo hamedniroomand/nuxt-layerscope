@@ -55,16 +55,61 @@ dependency if it is intended.
 
 ### Suggestions
 
-Each `layer-boundary` finding carries one suggestion, in every output format:
+Each `layer-boundary` and `layer-internal` finding that the baseline does not accept has one
+suggestion. A finding that the baseline accepts has no suggestion: SARIF lists it as a suppressed
+result, and JSON lists it in `baseline.suppressed`. A run on selected files (`check <files>`) makes
+no suggestions. Every output format shows the suggestion. In `sarif` and `gitlab` it is the second
+line of the message, after `suggestion: `. `sarif` also has it in `properties.suggestion`.
 
-- **move** the file to a layer that every layer using it may depend on, when two or more other
-  layers use it or allowing it would create a cycle. If several layers qualify, the one with the
-  shortest `allow` list wins. Only local layers are targets.
-- **allow** the dependency, when that creates no cycle.
-- **leave** it, when allowing would create a cycle and no layer can hold the file.
+The suggestions and their counts are made for the findings that `check` shows only.
 
-Each suggestion shows what it changes: findings cleared, files and imports affected for a move,
-edges added for an allow. [`layerscope fix --dry-run`](./cli#layerscope-fix) prints the moves.
+- **move** the file to another layer. layerscope offers a move when two or more other layers use
+  the file, or when an `allow` entry would create a cycle. layerscope also tries a move when
+  `root` is the base layer of a preset and root uses a file of another layer. Then `root` can be
+  the target. A layer is a target only when all of these are true:
+  - The layer that owns the file is local. It is a dir of the project, not in `node_modules`. A
+    file of the root layer, or of a layer in `node_modules`, does not move.
+  - The target is local, or it is the root layer.
+  - Each layer that uses the file may use the target. This includes the owner layer.
+  - The target exposes each symbol that the users use. This applies only when the target sets
+    `expose`.
+  - Each dependency of the file may be used from the target. It must pass `allow`, and `expose` of
+    the layer that holds it.
+  - No file is at the new path, and no other planned move uses that path.
+  - The target has no other component and no other auto-import with the same name.
+  - Nuxt finds the file in the target (see below).
+
+  If several layers qualify, the one with the shortest `allow` list wins. After all moves are
+  planned, layerscope checks them together. A move that would break `check` together with another
+  move is dropped. The findings of a dropped move get another suggestion.
+
+  When `layer-cycle` is not `off`, layerscope checks all planned moves together. If a layer cycle
+  is shown after the moves and the baseline, and it was not shown before, layerscope drops moves
+  until no such cycle is shown.
+
+  The file lands in the same source dir of the target: `srcDir`, `serverDir` or `sharedDir`. A
+  file that is in none of these dirs gets no move. For a file that is used as an auto-import,
+  layerscope assumes the default dirs of Nuxt: `composables/` and `utils/` in `srcDir`, `utils/`
+  in `serverDir`, and `utils/` and `types/` in `sharedDir`. Nuxt reads the script files in these
+  dirs and the `index` file of each sub dir. It does not read deeper, so a file at
+  `composables/cart/useCart.ts` gets no move. A file that is used as a component must be in
+  `components/`. A target that sets `imports.dirs`, turns `imports.scan` off or sets `components`
+  is not a target for these files, because layerscope does not know what it scans.
+
+- **allow** the dependency, when that creates no cycle. When the use needs only some names, the
+  entry is scoped: `{ layer: 'web', only: ['useCart'] }`. See [`allow`](./config#allow).
+- **expose** a symbol, for a `layer-internal` finding. Add the entry to `expose` of the layer that
+  owns the symbol.
+- **leave** it. layerscope has no fix, and the message tells what to do. For a cycle, allowing the
+  dependency would create the cycle and no layer can hold the file: report it. For a use of a
+  feature layer by `root`, when `root` is the base of a preset and no layer can hold the file, the
+  code must change: move the code to `root`, or remove the use.
+
+Each suggestion shows what it changes: findings cleared (for a move: the findings that point at
+the file and the findings in it), and files and imports affected for a move
+(`impact.imports` is the count of import lines that `fix` lists), edges added for an allow.
+[`layerscope fix --dry-run`](./cli#layerscope-fix) prints the moves only. The other suggestions are
+in the output of `layerscope check`.
 
 ## `layer-cycle`
 

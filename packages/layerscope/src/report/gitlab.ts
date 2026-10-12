@@ -2,6 +2,7 @@ import type { AnalyzeResult, Finding } from '#src/types.ts';
 
 import { fingerprints } from './fingerprint.ts';
 import { repoPath } from './paths.ts';
+import { messageWithSuggestion } from './suggestion.ts';
 
 // GitLab's `critical` and `blocker` mean crashes and security issues, so errors are `major`.
 const SEVERITY: Record<Finding['severity'], string> = { error: 'major', warn: 'minor' };
@@ -18,7 +19,7 @@ export function formatGitlab(
 ): string {
   const ids = fingerprints(result);
   const issues = result.findings.map(finding => ({
-    description: finding.message,
+    description: messageWithSuggestion(finding),
     check_name: finding.rule,
     fingerprint: ids.get(finding) ?? '',
     severity: SEVERITY[finding.severity],

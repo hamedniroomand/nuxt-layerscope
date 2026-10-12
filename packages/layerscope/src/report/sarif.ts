@@ -6,6 +6,7 @@ import { packageVersion } from '#src/version.ts';
 
 import { fingerprints } from './fingerprint.ts';
 import { repoPath } from './paths.ts';
+import { messageWithSuggestion } from './suggestion.ts';
 
 const SITE = 'https://layerscope.kitdev.space/';
 const SCHEMA = 'https://json.schemastore.org/sarif-2.1.0.json';
@@ -44,7 +45,7 @@ function toResult(
     ruleId: finding.rule,
     ruleIndex: RULES.indexOf(finding.rule),
     level: LEVELS[finding.severity],
-    message: { text: finding.message },
+    message: { text: messageWithSuggestion(finding) },
     locations: [
       {
         physicalLocation: {
@@ -63,6 +64,11 @@ function toResult(
       ],
     }),
     partialFingerprints: { 'layerscope/v1': fingerprint },
+    ...(finding.suggestion !== undefined && {
+      properties: {
+        suggestion: { action: finding.suggestion.action, message: finding.suggestion.message },
+      },
+    }),
     ...(suppressed && {
       suppressions: [{ kind: 'external', justification: 'layerscope baseline' }],
     }),

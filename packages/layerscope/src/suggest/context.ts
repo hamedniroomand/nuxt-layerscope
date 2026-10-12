@@ -1,12 +1,17 @@
+import type { Baseline } from '#src/baseline/index.ts';
 import { allowedLayers } from '#src/config/allow.ts';
 import { isAllowed } from '#src/rules/layer-boundary.ts';
 import type { Edge, Finding, Layer, LayerscopeConfig } from '#src/types.ts';
+
+import type { LayerNames } from './names.ts';
 
 /** Lookups for suggestions, indexed once so each finding costs no scan of every edge. */
 export interface Context {
   rootDir: string;
   config: LayerscopeConfig;
   layers: Layer[];
+  /** Every edge of the project. */
+  edges: Edge[];
   /** Cross-layer dependencies seen in the code, by layer. */
   seen: Map<string, Set<string>>;
   /** Edges by the file they resolve to. */
@@ -15,8 +20,21 @@ export interface Context {
   edgeAt: Map<string, Edge>;
   /** Edges by the file they start in. */
   edgesFrom: Map<string, Edge[]>;
-  /** Findings by the file they resolve to. */
+  /**
+   * Boundary and internal findings that a move of the file removes: the ones that resolve to it,
+   * and the ones in it, as the file then uses from another layer. A finding counts once.
+   */
   findingsAt: Map<string, number>;
+  /** Destinations that a move has taken, with the file that moves there. */
+  claimed: Map<string, string>;
+  /** What the baseline accepts, as `check` reads it; `null` without a baseline. */
+  baseline: Baseline | null;
+  /** The chains of the cycles that `check` shows now; read once, as they do not change. */
+  cycles: Set<string> | null;
+  /** Files that get no move, because the plan as a whole would break `check`. */
+  blocked: Set<string>;
+  /** The names that each layer has in the dirs that Nuxt scans, read once. */
+  names: Map<string, LayerNames>;
   /** Findings by `from\0to` layer pair. */
   findingsFor: Map<string, number>;
   /** Boundary findings by layer pair, to see which names a scoped entry would list. */
@@ -54,6 +72,21 @@ function count<T>(items: T[], keyOf: (item: T) => string | null): Map<string, nu
   return counts;
 }
 
+function clearedByMove(findings: Finding[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const finding of findings) {
+    if (finding.rule === 'layer-boundary' || finding.rule === 'layer-internal') {
+      const files = new Set(
+        finding.target === null ? [finding.file] : [finding.file, finding.target],
+      );
+      for (const file of files) {
+        counts.set(file, (counts.get(file) ?? 0) + 1);
+      }
+    }
+  }
+  return counts;
+}
+
 function edgeKey(edge: { file: string; line: number; column: number; symbol: string }): string {
   return `${edge.file}\0${edge.line}\0${edge.column}\0${edge.symbol}`;
 }
@@ -85,12 +118,18 @@ export function createContext(
     rootDir,
     config,
     layers,
+    edges,
     presetLayers: new Set(presetLayers),
     seen,
     usesOf: group(edges, edge => edge.to),
     edgesFrom: group(edges, edge => edge.file),
     edgeAt: new Map(edges.map(edge => [edgeKey(edge), edge])),
-    findingsAt: count(findings, finding => finding.target),
+    claimed: new Map(),
+    baseline: null,
+    cycles: null,
+    blocked: new Set(),
+    names: new Map(),
+    findingsAt: clearedByMove(findings),
     findingsFor: count(findings, finding =>
       finding.toLayer === null ? null : pairKey(finding.fromLayer, finding.toLayer),
     ),
@@ -107,8 +146,17 @@ export function createContext(
   };
 }
 
+/** A local layer is a dir inside the project root that is not in `node_modules`. */
 export function isLocal(layer: Layer, rootDir: string): boolean {
   return layer.root.startsWith(`${rootDir}/`) && !layer.root.includes('/node_modules/');
+}
+
+/**
+ * A layer that a file may move to: a local layer, or the root layer. The root layer is the
+ * project root itself, so it is not local. Files of the root layer do not move out of it.
+ */
+export function isMoveTarget(layer: Layer, rootDir: string): boolean {
+  return layer.root === rootDir || isLocal(layer, rootDir);
 }
 
 /** Whether the layer of the edge may use what the edge points at, scoped entries included. */

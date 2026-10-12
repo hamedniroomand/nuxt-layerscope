@@ -126,7 +126,7 @@ describe('an explicit import in a suggestion', () => {
 });
 
 describe('a move to a layer that users reach only in part', () => {
-  const FILE = '/app/web/useX.ts';
+  const FILE = '/app/web/composables/useX.ts';
   const use = (fromLayer: string): Edge =>
     makeEdge({
       symbol: 'useX',

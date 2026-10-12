@@ -7,15 +7,15 @@ The package installs a `layerscope` command. Without installing, run it as
 layerscope <command> [options]
 ```
 
-| Command                                  | Description                                           |
-| ---------------------------------------- | ----------------------------------------------------- |
-| [`init [root]`](#layerscope-init)        | Write a starter config from today's dependencies      |
-| [`drift [root]`](#layerscope-drift)      | Say how many violations the code adds and fixes       |
-| [`fix [root]`](#layerscope-fix)          | Print the file moves that would fix boundary findings |
-| [`check [root]`](#layerscope-check)      | Check layer boundaries, including auto-imports        |
-| [`why <symbol> [root]`](#layerscope-why) | List every use of a symbol and the layers it crosses  |
-| [`graph [root]`](#layerscope-graph)      | Print the dependency graph between layers or files    |
-| [`unused [root]`](#layerscope-unused)    | List components and auto-imports nothing references   |
+| Command                                  | Description                                                                              |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------- |
+| [`init [root]`](#layerscope-init)        | Write a starter config from today's dependencies                                         |
+| [`drift [root]`](#layerscope-drift)      | Say how many violations the code adds and fixes                                          |
+| [`fix [root]`](#layerscope-fix)          | Print the file moves that would fix boundary findings (only moves, no other suggestions) |
+| [`check [root]`](#layerscope-check)      | Check layer boundaries, including auto-imports                                           |
+| [`why <symbol> [root]`](#layerscope-why) | List every use of a symbol and the layers it crosses                                     |
+| [`graph [root]`](#layerscope-graph)      | Print the dependency graph between layers or files                                       |
+| [`unused [root]`](#layerscope-unused)    | List components and auto-imports nothing references                                      |
 
 `root` is the Nuxt project root and defaults to the current directory. `layerscope --help` and
 `layerscope <command> --help` print the options.
@@ -150,14 +150,28 @@ and now. A base without a baseline file counts as empty. Also takes `--baseline`
 ## `layerscope fix`
 
 ```bash
-layerscope fix [root] --dry-run
+layerscope fix [root] --dry-run [options]
 ```
 
-Prints the file moves asked for by the [suggestions](./rules#suggestions) on boundary findings, and
-the explicit imports each move breaks with their new specifier. Auto-imports and components need
-no update. Only relative specifiers are rewritten; aliases are listed as "update by hand".
-`--dry-run` is required: nothing is moved. Also takes `--config`, `--prepare`, `--source` and
-`--verbose`.
+Prints the file moves asked for by the [suggestions](./rules#suggestions) on boundary findings. For
+each move it lists the explicit imports that the move breaks, with their new specifier. Nothing is
+changed. Auto-imports and components need no update.
+
+`fix` lists only the imports that must change. A relative specifier is listed with its new
+specifier. An alias (such as `#layers/...` or `~~/...`) is listed as "update by hand". This is only
+for an alias that points at a file that moves. An alias that points at the same file after the
+move is not listed.
+
+Findings that have no move are counted in one line. Run `layerscope check` to see their
+suggestions.
+
+After the moves, update the imports and run `layerscope check --prepare`. The generated types
+still point at the old files. layerscope does not scan test files, `nuxt.config.*`, `modules/`,
+files outside the layer source dirs, or files that match `ignore`. Update the imports of moved
+files in them by hand. With `typeImports: 'ignore'`, type-only imports are not listed either.
+
+`--dry-run` is required: nothing is moved. Findings that `--baseline` accepts are skipped, as in
+`check`. Options: `--baseline`, `--config`, `--prepare`, `--source` and `--verbose`.
 
 ## `layerscope why`
 

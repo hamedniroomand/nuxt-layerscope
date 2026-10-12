@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { applyBaselineFile, createBaseline, writeBaseline } from '#src/baseline/index.ts';
 import { Analyzer } from '#src/devtools/analyzer.ts';
+import { withSuggestions } from '#src/suggest/index.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { makeFinding, makeResult } from '#test/factories.ts';
 
@@ -154,7 +155,7 @@ describe('Analyzer rebaseline', () => {
     expect(run).toHaveBeenCalledOnce();
     expect(next.cause).toBe('baseline');
     expect(next.rev).toBe(first.rev + 1);
-    const fresh = applyBaselineFile(makeResult({ findings }), file);
+    const fresh = await withSuggestions(applyBaselineFile(makeResult({ findings }), file));
     expect(next.result.findings).toEqual(fresh.findings);
     expect(next.result.baseline?.suppressed).toEqual(fresh.baseline?.suppressed);
   });
@@ -180,6 +181,10 @@ describe('Analyzer rebaseline while analyzing', () => {
     const next = await rebaselined;
     expect(run).toHaveBeenCalledOnce();
     expect(next.cause).toBe('baseline');
-    expect(next.result.findings).toEqual(first.result.findings);
+    // The suggestions are made again for the shown findings.
+    expect(next.result.findings.map(finding => finding.symbol)).toEqual(
+      first.result.findings.map(finding => finding.symbol),
+    );
+    expect(next.result.findings.every(finding => finding.suggestion !== undefined)).toBe(true);
   });
 });

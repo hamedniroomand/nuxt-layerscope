@@ -1,9 +1,9 @@
 import type { AnalyzeResult } from '#src/types.ts';
 
-import { newSpecifier } from './specifier.ts';
 import type { PlannedMove } from './types.ts';
+import { collectUpdates } from './updates.ts';
 
-function collectMoves(result: AnalyzeResult): Map<string, PlannedMove> {
+export function planMoves(result: AnalyzeResult): PlannedMove[] {
   const moves = new Map<string, PlannedMove>();
   for (const { target, suggestion } of result.findings) {
     if (target !== null && suggestion?.action === 'move' && suggestion.file !== undefined) {
@@ -16,25 +16,27 @@ function collectMoves(result: AnalyzeResult): Map<string, PlannedMove> {
       });
     }
   }
-  return moves;
-}
-
-export function planMoves(result: AnalyzeResult): PlannedMove[] {
-  const moves = collectMoves(result);
-  for (const edge of result.edges) {
-    if (edge.kind !== 'import' || edge.to === null) {
-      continue;
-    }
-    const importerMove = moves.get(edge.file);
-    const importedMove = moves.get(edge.to);
-    const move = importedMove ?? importerMove;
-    if (move === undefined) {
-      continue;
-    }
-    const updated = newSpecifier(edge, importerMove?.to ?? edge.file, importedMove?.to ?? edge.to);
-    if (updated !== edge.symbol) {
-      move.updates.push({ file: edge.file, line: edge.line, specifier: edge.symbol, updated });
-    }
+  const updates = collectUpdates(
+    result.edges,
+    new Map([...moves.values()].map(move => [move.from, move.to])),
+  );
+  for (const move of moves.values()) {
+    move.updates = updates.get(move.from) ?? [];
   }
   return [...moves.values()];
+}
+
+/**
+ * The findings that no planned move clears, of every rule. A move of a file clears each boundary
+ * and internal finding that points at it and each one in it, whatever suggestion that finding has.
+ */
+export function countOtherFindings(result: AnalyzeResult, moves: PlannedMove[]): number {
+  const moved = new Set(moves.map(move => move.from));
+  return result.findings.filter(
+    finding =>
+      !(
+        (finding.rule === 'layer-boundary' || finding.rule === 'layer-internal') &&
+        (moved.has(finding.file) || (finding.target !== null && moved.has(finding.target)))
+      ),
+  ).length;
 }
