@@ -43,8 +43,8 @@ One finding is old on purpose: `useCart` in `shop` uses `useUser` from `auth`.
    itself.
 
 The check reports 9 problems. The table shows the six causes; the other three follow from them (a
-cycle through `OrdersTable`, a cycle through `AccountMenu`, and `LoginForm` that now gets the
-`BaseButton` of `shop`).
+cycle from `admin` through `auth` and `shop`, a cycle through `AccountMenu`, and `LoginForm` that
+now gets the `BaseButton` of `shop`).
 
 | File in `violations/`                           | Rule                   | What it shows                                   |
 | ----------------------------------------------- | ---------------------- | ----------------------------------------------- |
