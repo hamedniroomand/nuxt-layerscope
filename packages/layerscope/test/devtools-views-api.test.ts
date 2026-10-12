@@ -131,7 +131,7 @@ describe('unused view', () => {
       unreadFiles: [{ file: '/app/pages/a.vue', reason: 'Could not parse file' }],
     });
     const view = await unusedView(result);
-    expect(view.blindSpotLine).toBe('Not counted as uses: test files.');
+    expect(view.blindSpotLines).toEqual(['Not counted as uses: test files.']);
     expect(view.unreadableLine).toBe(
       '1 file could not be read in full, so some of its uses can be missing.',
     );

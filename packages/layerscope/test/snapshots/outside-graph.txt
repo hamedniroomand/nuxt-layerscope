@@ -1,0 +1,27 @@
+exit 0
+{
+  "version": 1,
+  "level": "layer",
+  "nodes": [
+    {
+      "id": "root",
+      "layer": "root"
+    },
+    {
+      "id": "web",
+      "layer": "web"
+    },
+    {
+      "id": "ui",
+      "layer": "ui"
+    }
+  ],
+  "edges": [
+    {
+      "from": "web",
+      "to": "ui",
+      "count": 1,
+      "status": "not-allowed"
+    }
+  ]
+}

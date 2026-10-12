@@ -212,7 +212,7 @@ describe('unused blind spots: the other kinds', () => {
       layers: [makeLayer('ui', '/app/node_modules/ui')],
     });
     expect(formatUnused([], 'text', '/app', findBlindSpots(result))).toBe(
-      '✔ Every component and auto-import is referenced\n\nNot counted as uses: test files, files matched by "ignore", files in layers installed as packages.\n',
+      'No unused symbol found in the listed layers.\n\nNot counted as uses: test files, files matched by "ignore", files in layers installed as packages.\n',
     );
   });
 

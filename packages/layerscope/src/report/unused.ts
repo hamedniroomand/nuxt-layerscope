@@ -30,10 +30,22 @@ const NOT_COUNTED: Record<'test-files' | 'ignored' | 'package-layers', string> =
   'package-layers': 'files in layers installed as packages',
 };
 
-/** The one line that names the uses that `unused` does not count; `null` when none applies. */
-export function blindSpotLine(spots: BlindSpot[]): string | null {
-  const parts = spots.flatMap(spot => (spot.kind === 'unreadable' ? [] : [NOT_COUNTED[spot.kind]]));
-  return parts.length === 0 ? null : `Not counted as uses: ${parts.join(', ')}.`;
+/**
+ * The lines that name what `unused` does not see. The first names the uses that it does not
+ * count, the second the layers outside the project root that it does not list. A line is left
+ * out when nothing applies to it.
+ */
+export function blindSpotLines(spots: BlindSpot[]): string[] {
+  const parts = spots.flatMap(spot =>
+    spot.kind === 'unreadable' || spot.kind === 'outside-root' ? [] : [NOT_COUNTED[spot.kind]],
+  );
+  const lines = parts.length === 0 ? [] : [`Not counted as uses: ${parts.join(', ')}.`];
+  for (const spot of spots) {
+    if (spot.kind === 'outside-root') {
+      lines.push(`Not listed (layers outside the project root): ${spot.layers.join(', ')}.`);
+    }
+  }
+  return lines;
 }
 
 function unreadableOf(spots: BlindSpot[]): { file: string; reason: string }[] {
@@ -49,6 +61,8 @@ export interface BlindSpotRow {
   kind: BlindSpot['kind'];
   /** Only for `unreadable`. */
   files?: { file: string; reason: string; absFile?: string }[];
+  /** Only for `outside-root`. */
+  layers?: string[];
 }
 
 /** The blind spots with files relative to `cwd`; with `absolute`, each file keeps its full path. */
@@ -63,7 +77,9 @@ export function toBlindSpotRows(spots: BlindSpot[], cwd: string, absolute = fals
             ...(absolute && { absFile: file }),
           })),
         }
-      : { kind: spot.kind },
+      : spot.kind === 'outside-root'
+        ? { kind: spot.kind, layers: spot.layers }
+        : { kind: spot.kind },
   );
 }
 
@@ -91,18 +107,40 @@ export function unreadableSentence(count: number): string | null {
     : `${count} files could not be read in full, so some of their uses can be missing.`;
 }
 
-function noUnusedText(unreadable: number): string {
+/**
+ * Whether some symbols were not checked: a layer installed as a package, or a layer outside the
+ * project root. Then "no unused symbol" is about the listed layers only.
+ */
+function isScoped(spots: BlindSpot[]): boolean {
+  return spots.some(spot => spot.kind === 'package-layers' || spot.kind === 'outside-root');
+}
+
+const SCOPED = 'No unused symbol found in the listed layers.';
+
+/** The sentence for the Unused view when nothing is listed and every file was read. */
+export function emptySentence(spots: BlindSpot[]): string {
+  return isScoped(spots) ? SCOPED : 'Every component and auto-import is referenced.';
+}
+
+function noUnusedText(unreadable: number, spots: BlindSpot[]): string {
   const sentence = unreadableSentence(unreadable);
-  return sentence === null
-    ? '✔ Every component and auto-import is referenced'
-    : `No unused symbol found. ${sentence}`;
+  const scoped = isScoped(spots);
+  if (sentence === null) {
+    return scoped ? SCOPED : '✔ Every component and auto-import is referenced';
+  }
+  return `${scoped ? SCOPED : 'No unused symbol found.'} ${sentence}`;
 }
 
 function formatUnusedText(unused: UnusedSymbol[], cwd: string, spots: BlindSpot[]): string {
   const unreadable = unreadableOf(spots);
-  const tail = [...unreadableText(unreadable, cwd), blindSpotLine(spots) ?? []].flat();
+  const lines = blindSpotLines(spots);
+  // The lines of the blind spots stay together, one after the other.
+  const tail = [
+    ...unreadableText(unreadable, cwd),
+    ...(lines.length === 0 ? [] : [lines.join('\n')]),
+  ];
   if (unused.length === 0) {
-    return `${[noUnusedText(unreadable.length), ...tail].join('\n\n')}\n`;
+    return `${[noUnusedText(unreadable.length, spots), ...tail].join('\n\n')}\n`;
   }
   const rows = unused.map(symbol => ({ symbol, file: relative(cwd, symbol.file) }));
   const nameWidth = Math.max(...rows.map(row => row.symbol.name.length));

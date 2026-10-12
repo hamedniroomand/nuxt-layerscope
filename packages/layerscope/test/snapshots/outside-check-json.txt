@@ -1,0 +1,53 @@
+exit 1
+{
+  "version": 1,
+  "source": "types",
+  "notes": [
+    "shadowed-component needs the full component registry: add \"nuxt-layerscope\" to \"modules\" in nuxt.config. The generated .d.ts files list only the winning component, so the rule reported nothing."
+  ],
+  "layers": [
+    {
+      "name": "root",
+      "root": "<root>"
+    },
+    {
+      "name": "web",
+      "root": "<root>/layers/web"
+    },
+    {
+      "name": "ui",
+      "root": "<parent>/packages/ui"
+    }
+  ],
+  "summary": {
+    "files": 5,
+    "errors": 1,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule": "layer-boundary",
+      "severity": "error",
+      "file": "<root>/layers/web/app/pages/index.vue",
+      "line": 3,
+      "column": 1,
+      "symbol": "useUiUsed",
+      "fromLayer": "web",
+      "toLayer": "ui",
+      "target": "<parent>/packages/ui/app/composables/useUiUsed.ts",
+      "allowed": [],
+      "message": "Auto-import \"useUiUsed\" crosses from layer \"web\" into \"ui\"",
+      "suggestion": {
+        "action": "allow",
+        "message": "allow \"web\" to use \"useUiUsed\" from \"ui\" (adds 1 edge, clears 1 finding)",
+        "only": [
+          "useUiUsed"
+        ],
+        "impact": {
+          "fixes": 1,
+          "edges": 1
+        }
+      }
+    }
+  ]
+}

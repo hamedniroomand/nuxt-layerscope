@@ -303,7 +303,9 @@ the layer source dirs is not read when it is not in an extra auto-import or comp
 counted file imports it. `unused` also counts the uses in `nuxt.config.*`, in the Nuxt `modules/`
 dir, in files of extra auto-import and component dirs, and in the project files that counted files
 import. It also counts `typeof x` in a type, and `import type` when `typeImports` is `'ignore'`. The
-last line of the text report names the uses that it does not count.
+text report has a line that names the uses that it does not count. `unused` does not list the
+symbols of layers outside the project root that are not installed as packages, for example workspace
+packages, because another app can use them. When such layers exist, a second line names them.
 
 After the symbols, it lists each file that it could not read in full. These are files with a parse
 error, a template that layerscope does not read (a `lang` other than HTML, a `src` attribute, or an

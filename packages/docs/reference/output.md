@@ -232,12 +232,14 @@ reports:
       "files": [
         { "file": "layers/web/app/utils/load.ts", "reason": "import() with a dynamic path" }
       ]
-    }
+    },
+    { "kind": "outside-root", "layers": ["ui"] }
   ]
 }
 ```
 
-Each `blindSpots` entry names a kind of use that `unused` does not count: `test-files`, `ignored` (the
-config has `ignore` patterns), `package-layers` (a layer is installed as a package) or
-`unreadable`. Only `unreadable` has `files`. Each file is relative to the current directory.
-`reason` is a short text, not a fixed code.
+Each `blindSpots` entry names something that `unused` does not see: `test-files`, `ignored` (the
+config has `ignore` patterns), `package-layers` (a layer is installed as a package), `unreadable`,
+or `outside-root` (layers outside the project root that are not installed as packages, with
+`layers`: their names). Only `unreadable` has `files`. Each file is relative to the current
+directory. `reason` is a short text, not a fixed code.

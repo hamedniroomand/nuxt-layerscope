@@ -111,7 +111,8 @@ describe('unused view', () => {
         },
       ],
       blindSpots: [],
-      blindSpotLine: null,
+      blindSpotLines: [],
+      emptyLine: 'Every component and auto-import is referenced.',
       unreadableLine: null,
       possiblyUsed: true,
       layers: ['ui'],
@@ -142,7 +143,8 @@ describe('unused view blind spots', () => {
           files: [{ file: 'app/a.vue', reason: 'Could not parse file', absFile: '/app/app/a.vue' }],
         },
       ],
-      blindSpotLine: 'Not counted as uses: test files.',
+      blindSpotLines: ['Not counted as uses: test files.'],
+      emptyLine: 'Every component and auto-import is referenced.',
       unreadableLine: '1 file could not be read in full, so some of its uses can be missing.',
       possiblyUsed: false,
       layers: [],
@@ -155,6 +157,35 @@ describe('unused view blind spots', () => {
     expect(text).toContain('Not counted as uses: test files.');
     expect(text).toContain('1 file could not be read in full, so some of its uses can be missing.');
     expect(text).toContain('app/a.vue');
+    expect(text).not.toContain('Every component and auto-import is referenced');
+  });
+});
+
+describe('unused view with layers that are not listed', () => {
+  it('shows both lines and the scoped empty sentence', async () => {
+    window.location.hash = '#/unused';
+    const { wrapper, api } = await mountApp();
+    mounted = wrapper;
+    vi.mocked(api.unused).mockResolvedValue({
+      unused: [],
+      blindSpots: [{ kind: 'test-files' }, { kind: 'outside-root', layers: ['ui'] }],
+      blindSpotLines: [
+        'Not counted as uses: test files.',
+        'Not listed (layers outside the project root): ui.',
+      ],
+      emptyLine: 'No unused symbol found in the listed layers.',
+      unreadableLine: null,
+      possiblyUsed: false,
+      layers: [],
+    });
+    press('6');
+    await flushPromises();
+    press('4');
+    await flushPromises();
+    const text = wrapper.text();
+    expect(text).toContain('Not counted as uses: test files.');
+    expect(text).toContain('Not listed (layers outside the project root): ui.');
+    expect(text).toContain('No unused symbol found in the listed layers.');
     expect(text).not.toContain('Every component and auto-import is referenced');
   });
 });
