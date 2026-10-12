@@ -225,11 +225,11 @@ pnpm remove eslint-plugin-nuxt-layers
   layerscope reports the first use of an import path in a file, so two uses of the same path in one
   file are one finding. Fix the first one and the next run shows the next use, if the path is still
   forbidden.
-- **`require()` and CommonJS files are checked.** layerscope reads `require('...')` with a string
-  literal, also through a name that `createRequire(...)` gave, and it scans `.cjs` and `.cts`
+- **`require()` and CommonJS files are checked.** layerscope reads `require('...')` with a fixed
+  path, also through a name that `createRequire(...)` gave, and it scans `.cjs` and `.cts`
   files. With `const { a, b } = require('...')` it takes the names `a` and `b`, as it does for a
-  named import. It does not count `require.resolve('...')`, a `require()` with a value that is not
-  a string literal, a `createRequire` binding that goes through a function, or `createRequire`
+  named import. It does not count `require.resolve('...')`, a `require()` with a path that is
+  not a fixed string, a `createRequire` binding that goes through a function, or `createRequire`
   taken with `const { createRequire } = require('module')`.
 - **Layers come from Nuxt, not from the path.** The old plugin finds the layer of an import from
   its text: the first folder after an alias such as `#layers/`, or the folder after `/<root>/` in

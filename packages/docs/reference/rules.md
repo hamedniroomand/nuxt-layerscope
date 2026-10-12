@@ -32,18 +32,19 @@ Every kind of dependency is checked:
 | Explicit import          | `import { useCart } from '#layers/web/app/composables/useCart'`, `~/…`, relative paths |
 | Virtual module import    | `import { useCart } from '#imports'`, `import { CartSummary } from '#components'`      |
 
-A `require('...')` with a string literal is an explicit import, also when it is called through a
-name that `createRequire(...)` gave. `createRequire` is the one that `module` or `node:module`
-exports, imported by name (also `import { createRequire as cr }`), through a namespace or default
-import (`mod.createRequire(...)`), or the `module.createRequire(...)` of a CommonJS file. A function
-that you wrote and called `createRequire` is not it. `.cjs` and `.cts` files are scanned. So is
-`import x = require('...')`, the import form of a `.cts` file. With
-`const { a, b } = require('...')` the names are `a` and `b`, as for a named import; a rest element,
-a computed key or a plain `require()` takes the whole module. These are not counted:
-`require.resolve('...')`, a `require()` with a value that is not a string literal, and a
-`createRequire` binding that goes through a function, and `createRequire` taken with
-`const { createRequire } = require('module')`. A binding is the name that `createRequire`
-was assigned to, so a later reassignment of that name does not change what counts.
+A `require('...')` with a fixed path (a string literal, or a template literal with no `${}`) is an
+explicit import, also when it is called through a name that `createRequire(...)` gave.
+`createRequire` is the one that `module` or `node:module` exports, imported by name (also
+`import { createRequire as cr }`), through a namespace or default import (`mod.createRequire(...)`),
+or the `module.createRequire(...)` of a CommonJS file. A function that you wrote and called
+`createRequire` is not it. `.cjs` and `.cts` files are scanned. So is `import x = require('...')`,
+the import form of a `.cts` file. With `const { a, b } = require('...')` the names are `a` and `b`,
+as for a named import; a rest element, a computed key or a plain `require()` takes the whole module.
+These are not counted: `require.resolve('...')`, a `require()` with a path that is not a fixed
+string (the `unresolved-reference` rule reports it), and a `createRequire` binding that goes through
+a function, and `createRequire` taken with `const { createRequire } = require('module')`. A binding
+is the name that `createRequire` was assigned to, so a later reassignment of that name does not
+change what counts.
 
 A type-only import (`import type { A } from '...'`) counts as an explicit import, unless
 [`typeImports`](./config#typeimports) is `'ignore'`. Then it makes no dependency and no rule
@@ -122,6 +123,12 @@ Something could not be resolved, so layerscope will not call it safe:
   by its name, and layerscope cannot follow a global name to a file, so that prop is not reported.
   `unused` still treats such a file as one that can use a component by name.
   A `string` prop with no default, or with a default that is not an element name, is still reported.
+- a template that layerscope cannot read: a template expression that it cannot parse (for example
+  TypeScript syntax in a component without a TypeScript script), a `lang` other than HTML, or a
+  `src` attribute. Uses in that template are not checked.
+- an `import()` or a `require()` with a path that is not a fixed string, such as a template literal
+  with `${}` or a variable. The module that it loads is not checked.
+- an `import.meta.glob()`. The modules that it loads are not checked.
 - a file that could not be parsed.
 
 ```text

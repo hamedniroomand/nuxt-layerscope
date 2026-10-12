@@ -1,4 +1,4 @@
-import type { SFCDescriptor } from '@vue/compiler-sfc';
+import type { SFCDescriptor, SFCTemplateBlock } from '@vue/compiler-sfc';
 import { compileTemplate } from '@vue/compiler-sfc';
 import { parseAndWalk, walk } from 'oxc-walker';
 
@@ -22,6 +22,44 @@ function firstIdentOffset(name: string, source: string, index: TemplateIndex): n
   return null;
 }
 
+/** The tag and the reason, when layerscope cannot read the template; `null` when it can. */
+function unreadReason(template: SFCTemplateBlock): string | null {
+  // `<template src>` has no value, so the compiler gives no `src`, only the attribute.
+  if (template.src !== undefined || 'src' in template.attrs) {
+    const tag = template.src === undefined ? '<template src>' : `<template src="${template.src}">`;
+    return `${tag}. layerscope does not read a template in a separate file, so uses in it are not checked.`;
+  }
+  if (template.lang !== undefined && template.lang !== '' && template.lang !== 'html') {
+    return `<template lang="${template.lang}">. layerscope reads only HTML templates, so uses in this template are not checked.`;
+  }
+  return null;
+}
+
+/** Walks the render code. A parse error is reported, so a use that it hides is never dropped. */
+function readRender(
+  code: string,
+  lang: 'js' | 'ts',
+  ctx: RenderContext,
+  templateStart: number,
+): void {
+  const { program, errors } = parseAndWalk(code, `render.${lang}`, { parseOptions: { lang } });
+  const parseError = errors.at(0);
+  if (parseError !== undefined) {
+    ctx.scan.unread.push({
+      symbol: '<template>',
+      message: `Could not read the template render code: ${parseError.message}. Uses in this template are not checked.`,
+      offset: templateStart,
+    });
+    return;
+  }
+  walk(program, {
+    enter(node) {
+      visitRenderCall(node, ctx);
+      visitRenderMember(node, ctx);
+    },
+  });
+}
+
 /**
  * Compiles the template like Vue does and reads what the render function resolves at runtime:
  * `_resolveComponent("X")` for components and `_ctx.x` for identifiers without a setup binding.
@@ -33,12 +71,25 @@ export function scanTemplate(
   bindings: Bindings,
   scan: FileScan,
   elementProps: () => ElementProps,
+  renderLang: 'js' | 'ts',
 ): void {
   const { template } = descriptor;
-  if (!template?.ast || (template.lang !== undefined && template.lang !== 'html')) {
+  if (!template) {
     return;
   }
   const templateStart = template.loc.start.offset;
+  const unreadTemplate = unreadReason(template);
+  if (unreadTemplate !== null) {
+    scan.unread.push({
+      symbol: '<template>',
+      message: `Could not read ${unreadTemplate}`,
+      offset: templateStart,
+    });
+    return;
+  }
+  if (!template.ast) {
+    return;
+  }
   const compiled = compileTemplate({
     source: template.content,
     filename: descriptor.filename,
@@ -61,11 +112,5 @@ export function scanTemplate(
     elementOffset: predicate => index.elements.find(predicate)?.offset ?? templateStart,
     identOffset: name => firstIdentOffset(name, source, index) ?? templateStart,
   };
-  const { program } = parseAndWalk(compiled.code, 'render.js', { parseOptions: { lang: 'js' } });
-  walk(program, {
-    enter(node) {
-      visitRenderCall(node, ctx);
-      visitRenderMember(node, ctx);
-    },
-  });
+  readRender(compiled.code, renderLang, ctx, templateStart);
 }

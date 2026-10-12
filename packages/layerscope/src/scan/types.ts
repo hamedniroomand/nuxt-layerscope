@@ -13,8 +13,17 @@ export interface FileScan {
    */
   quietDynamicComponents: number[];
   imports: ImportRef[];
+  /** Parts of the file that layerscope cannot read. Everything else in the file is still scanned. */
+  unread: Unread[];
   /** Set when the file could not be parsed; nothing else in it was analyzed. */
   error: { message: string; offset: number } | null;
+}
+
+export interface Unread {
+  /** Short name of the part, for the finding: `<template>`, `<script>`, `import()` or `require()`. */
+  symbol: string;
+  message: string;
+  offset: number;
 }
 
 export interface Named {
@@ -49,6 +58,7 @@ export function emptyScan(): FileScan {
     dynamicComponents: [],
     quietDynamicComponents: [],
     imports: [],
+    unread: [],
     error: null,
   };
 }

@@ -8,7 +8,13 @@ import type { AnalyzeResult, SourceOption } from '#src/types.ts';
 import type { WatchAnalyzer } from './analyzer.ts';
 import { createWatchAnalyzer } from './analyzer.ts';
 import { isConfigChange } from './ignore.ts';
-import { buildDirOf, buildDirOrDefault, configPathOf, prepareProject } from './project.ts';
+import {
+  buildDirOf,
+  buildDirOrDefault,
+  configPathOf,
+  needsPrepareHint,
+  prepareProject,
+} from './project.ts';
 import { Trigger } from './trigger.ts';
 import type { StartWatcher, Watcher } from './watcher.ts';
 import { startWatcher } from './watcher.ts';
@@ -177,7 +183,7 @@ class WatchRun {
     if (result.notes.length > 0) {
       this.options.warn(result.notes.map(note => `layerscope: note: ${note}\n`).join(''));
     }
-    if (result.findings.some(finding => finding.rule === 'unresolved-reference')) {
+    if (needsPrepareHint(result.findings)) {
       (human ? this.options.write : this.options.warn)(`${UNRESOLVED_HINT}\n`);
     }
     this.status(`${plural(result.files.length, 'file')}  ${this.changes(result)}  ${ms} ms`);

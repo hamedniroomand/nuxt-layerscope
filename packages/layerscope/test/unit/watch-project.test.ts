@@ -1,7 +1,14 @@
 import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
-import { buildDirOf, buildDirOrDefault, configPathOf } from '#src/watch/project.ts';
+import type { Finding } from '#src/types.ts';
+import {
+  buildDirOf,
+  buildDirOrDefault,
+  configPathOf,
+  needsPrepareHint,
+} from '#src/watch/project.ts';
+import { makeFinding } from '#test/factories.ts';
 import { project, tempDir, write } from '#test/watch-project.ts';
 
 describe('configPathOf', () => {
@@ -35,5 +42,33 @@ describe('the build directory', () => {
     const root = tempDir();
     write(root, 'layerscope.config.mjs', 'export default { layers: 1 };\n');
     expect(await buildDirOrDefault(root)).toBe(join(root, '.nuxt'));
+  });
+});
+
+describe('needsPrepareHint', () => {
+  const unresolved = (message: string): Finding =>
+    makeFinding({ rule: 'unresolved-reference', message });
+
+  it('is true for an identifier that is not resolved', () => {
+    expect(needsPrepareHint([unresolved('"useX" is not a local binding')])).toBe(true);
+  });
+
+  it('is false for code that layerscope cannot read', () => {
+    expect(
+      needsPrepareHint([unresolved('Could not read import(): the path is not a fixed string.')]),
+    ).toBe(false);
+  });
+
+  it('is true when one finding needs it and another cannot be read', () => {
+    expect(
+      needsPrepareHint([
+        unresolved('Could not read import()'),
+        unresolved('"useX" is not a local binding'),
+      ]),
+    ).toBe(true);
+  });
+
+  it('is false for other rules', () => {
+    expect(needsPrepareHint([makeFinding()])).toBe(false);
   });
 });

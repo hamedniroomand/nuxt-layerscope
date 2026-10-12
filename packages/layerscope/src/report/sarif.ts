@@ -16,7 +16,7 @@ const DESCRIPTIONS: Record<RuleName, string> = {
   'layer-cycle': 'Layers depend on each other in a cycle.',
   'layer-internal': 'A file uses a symbol that its layer does not expose.',
   'unresolved-reference':
-    'A reference cannot be resolved: an unknown identifier, component or import, a dynamic component, or a file that cannot be parsed.',
+    'A reference cannot be resolved: an unknown identifier, component or import, a dynamic component, a file that cannot be parsed, or code that layerscope cannot read.',
   'shadowed-component': 'A component is replaced by a component of the same name in another layer.',
 };
 
