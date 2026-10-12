@@ -17,6 +17,6 @@ jobs:
           node-version: 24
       - run: npm install
       - run: npx nuxi prepare
-      - uses: hamedniroomand/nuxt-layerscope@main
+      - uses: hamedniroomand/nuxt-layerscope@v0
         with:
           comment: 'true'

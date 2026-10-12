@@ -41,11 +41,7 @@ runs:
         INPUT_PREPARE: ${{ inputs.prepare }}
         INPUT_BASELINE: ${{ inputs.baseline }}
         INPUT_VERSION: ${{ inputs.version }}
-      run: |
-        args=(check "$INPUT_ROOT" --format github --baseline "$INPUT_BASELINE")
-        if [ -n "$INPUT_CONFIG" ]; then args+=(--config "$INPUT_CONFIG"); fi
-        if [ "$INPUT_PREPARE" = "true" ]; then args+=(--prepare); fi
-        "$GITHUB_ACTION_PATH/scripts/layerscope.sh" "${args[@]}"
+      run: '"$GITHUB_ACTION_PATH/scripts/check.sh"'
 
     # The CLI runs in this step. The action does not give it the token.
     - name: Build the drift report

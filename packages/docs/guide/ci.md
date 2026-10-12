@@ -6,7 +6,8 @@ it after installing dependencies, and let it run `nuxi prepare` or run that your
 ## GitHub Actions
 
 The [GitHub Action](../reference/github-action) prints findings as annotations, so they show up
-inline on the pull request diff:
+inline on the pull request diff. The job summary lists the findings too, because GitHub shows only
+a few annotations for each step:
 
 ```yaml [.github/workflows/layerscope.yml]
 name: Layer boundaries

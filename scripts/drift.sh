@@ -9,6 +9,9 @@
 # empty for an event without a base.
 set -euo pipefail
 
+# shellcheck source=root-heading.sh
+source "$(dirname "$0")/root-heading.sh"
+
 dir="$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/layerscope-drift.XXXXXX")"
 echo "dir=$dir" >> "${GITHUB_OUTPUT:-/dev/null}"
 printf skipped > "$dir/state"
@@ -73,25 +76,10 @@ args=(drift "$INPUT_ROOT" --format markdown --base "$base" --baseline "$INPUT_BA
 if [ -n "$INPUT_CONFIG" ]; then args+=(--config "$INPUT_CONFIG"); fi
 if [ "$INPUT_PREPARE" = "true" ]; then args+=(--prepare); fi
 
-# The root as the reader sees it: no leading ./ and no trailing /.
-label="$INPUT_ROOT"
-while [[ "$label" == ./* ]]; do label="${label#./}"; done
-while [[ "$label" == */ ]]; do label="${label%/}"; done
-if [ -z "$label" ]; then label=.; fi
+# The root as the reader sees it, and the heading of the comment.
+label="$(root_label)"
 printf '%s' "$label" > "$dir/label"
-
-if [ "$label" = . ]; then
-  heading='### layerscope'
-else
-  # A code span with more backticks than any run in the root, so the root cannot end it.
-  fence='`'
-  while [[ "$label" == *"$fence"* ]]; do fence+='`'; done
-  if [ "${#fence}" -gt 1 ]; then
-    heading="### layerscope: $fence $label $fence"
-  else
-    heading="### layerscope: $fence$label$fence"
-  fi
-fi
+heading="$(root_heading layerscope)"
 
 report="$(mktemp)"
 status=0

@@ -7,16 +7,19 @@ import { repoRoot } from '#src/report/paths.ts';
 import { paintFor } from '#src/utils/style.ts';
 
 import { updateBaseline } from './check-baseline.ts';
-import { deletedNote, selectTarget } from './check-files.ts';
+import { deletedNote, selectTarget, splitArguments } from './check-files.ts';
 import { checkNothing } from './check-nothing.ts';
 import type { Cli, CommonFlags } from './shared.ts';
 import {
   currentDir,
   EXIT_CLEAN,
   EXIT_VIOLATIONS,
+  projectRoot,
   toSource,
   withCommonOptions,
+  prepareSummary,
   writeNotes,
+  writeSummary,
 } from './shared.ts';
 
 export interface CheckFlags extends CommonFlags {
@@ -26,6 +29,7 @@ export interface CheckFlags extends CommonFlags {
   staged?: boolean;
   changed?: boolean;
   since?: string;
+  summary?: string | boolean;
 }
 
 async function watch(rootDir: string, format: OutputFormat, flags: CheckFlags): Promise<number> {
@@ -73,6 +77,7 @@ export async function check(
   if (!isOutputFormat(format)) {
     throw new LayerscopeError(`Unknown format "${format}". Use ${OUTPUT_FORMATS.join(', ')}.`);
   }
+  prepareSummary(flags.summary, format, flags, projectRoot(splitArguments(root, files).root));
   if (flags.watch === true && flags.updateBaseline === true) {
     throw new LayerscopeError('--watch cannot be used with --update-baseline.');
   }
@@ -103,6 +108,7 @@ export async function check(
   process.stdout.write(
     formatResult(result, format, currentDir(), paintFor(process.stdout), repository),
   );
+  writeSummary(flags.summary, result.findings);
   writeNotes(result, flags.verbose === true);
   // Only findings missing from the baseline fail the check.
   return result.findings.some(finding => finding.severity === 'error')
@@ -127,6 +133,10 @@ export function registerCheck(cli: Cli): void {
         '--since <ref>',
         'Check only the files that changed since the merge base with a git ref (implies --changed)',
       )
-      .option('--watch', 'Check again after each change, until Ctrl+C'),
+      .option('--watch', 'Check again after each change, until Ctrl+C')
+      .option(
+        '--summary <file>',
+        'Write the count and the list of the findings to a file, as Markdown (only with --format github)',
+      ),
   ).action(check);
 }

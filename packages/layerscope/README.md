@@ -117,11 +117,11 @@ jobs:
           node-version: 24
       - run: npm ci
       - run: npx nuxi prepare
-      - uses: hamedniroomand/nuxt-layerscope@main
+      - uses: hamedniroomand/nuxt-layerscope@v0
 ```
 
-It runs `layerscope check --format github`, so findings show up inline on the pull request, then
-writes the drift report to the job summary. Inputs:
+It runs `layerscope check --format github`, so findings show up inline on the pull request. It
+writes the list of the findings (up to 200) and then the drift report to the job summary. Inputs:
 `root` (default `.`), `config`, `prepare` (`true` runs `nuxi prepare` instead of the separate
 step), `baseline` (default `layerscope-baseline.json`), `comment` (`true` posts the drift report on
 the pull request, one comment for each root) and `version` (used through `npx` when the

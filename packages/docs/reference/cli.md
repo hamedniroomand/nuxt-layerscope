@@ -73,19 +73,20 @@ findings change after you install the module, run `layerscope init --dry-run` an
 layerscope check [root] [files...] [options]
 ```
 
-| Option              | Default                    | Description                                                                                 |
-| ------------------- | -------------------------- | ------------------------------------------------------------------------------------------- |
-| `--format <format>` | `text`                     | [Output format](./output): `text`, `github`, `json`, `sarif` or `gitlab`                    |
-| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                                              |
-| `--prepare`         |                            | Run `nuxi prepare` before checking                                                          |
-| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                                     |
-| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                    |
-| `--update-baseline` |                            | Write every current finding to the baseline file and exit `0`                               |
-| `--watch`           |                            | Check again after each change, until Ctrl+C. See [Watch mode](../guide/editor#watch-mode)   |
-| `--staged`          |                            | Check only the files staged for commit. See [Git hooks](../guide/ci#git-hooks)              |
-| `--changed`         |                            | Check only the files that changed since the default branch, and untracked files             |
-| `--since <ref>`     |                            | Check only the files that changed since the merge base with a git ref (implies `--changed`) |
-| `--verbose`         |                            | Print where symbols were read from                                                          |
+| Option              | Default                    | Description                                                                                                                                                                                                                                                |
+| ------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--format <format>` | `text`                     | [Output format](./output): `text`, `github`, `json`, `sarif` or `gitlab`                                                                                                                                                                                   |
+| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                                                                                                                                                                                                             |
+| `--prepare`         |                            | Run `nuxi prepare` before checking                                                                                                                                                                                                                         |
+| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                                                                                                                                                                                                    |
+| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                                                                                                                                                                                   |
+| `--update-baseline` |                            | Write every current finding to the baseline file and exit `0`                                                                                                                                                                                              |
+| `--watch`           |                            | Check again after each change, until Ctrl+C. See [Watch mode](../guide/editor#watch-mode)                                                                                                                                                                  |
+| `--staged`          |                            | Check only the files staged for commit. See [Git hooks](../guide/ci#git-hooks)                                                                                                                                                                             |
+| `--changed`         |                            | Check only the files that changed since the default branch, and untracked files                                                                                                                                                                            |
+| `--since <ref>`     |                            | Check only the files that changed since the merge base with a git ref (implies `--changed`)                                                                                                                                                                |
+| `--summary <file>`  |                            | Write the count and the list of the findings to a file, relative to the current directory, as Markdown, up to 200 findings. Use it only with `--format github`. When there is no finding, the file is empty. The GitHub Action uses it for the job summary |
+| `--verbose`         |                            | Print where symbols were read from                                                                                                                                                                                                                         |
 
 ```bash
 layerscope check                                  # current directory
@@ -96,8 +97,12 @@ layerscope check --watch                          # check again after each save
 layerscope check --staged                         # only what is staged for commit
 layerscope check --since origin/main              # only what changed since a ref
 layerscope check src/a.ts src/b.vue               # only these files
+layerscope check --format github --summary out.md # also write the list of the findings
 layerscope check apps/web apps/web/src/a.ts       # a root first, then files
 ```
+
+The summary lists errors and warnings. It does not list the removable baseline entries. `--summary`
+does not work with `--watch` or `--update-baseline`.
 
 ### Checking some files
 
