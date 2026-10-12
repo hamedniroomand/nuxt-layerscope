@@ -31,7 +31,7 @@ describe('trace and unused views on the nuxt4 fixture', () => {
 
   it('matches `layerscope unused`', async () => {
     const view = await unusedView(result);
-    const cli = JSON.parse(formatUnused(findUnused(result), 'json', NUXT4_ROOT)) as {
+    const cli = JSON.parse(formatUnused(findUnused(result), 'json', NUXT4_ROOT, [])) as {
       unused: { name: string; file: string }[];
     };
     expect(view.unused.map(row => [row.name, row.file])).toEqual(

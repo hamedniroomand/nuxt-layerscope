@@ -28,11 +28,13 @@ const unused: UnusedSymbol[] = [
 
 describe('formatUnused', () => {
   it('confirms when nothing is unused', () => {
-    expect(formatUnused([], 'text', CWD)).toBe('✔ Every component and auto-import is referenced\n');
+    expect(formatUnused([], 'text', CWD, [])).toBe(
+      '✔ Every component and auto-import is referenced\n',
+    );
   });
 
   it('aligns columns per layer and describes each symbol', () => {
-    const output = formatUnused(unused, 'text', CWD);
+    const output = formatUnused(unused, 'text', CWD, []);
     expect(output).toContain('ui\n');
     expect(output).toContain(
       '  BaseCard  layers/ui/app/components/BaseCard.vue  component (possibly used at runtime)',
@@ -42,12 +44,12 @@ describe('formatUnused', () => {
   });
 
   it('defaults the auto-import context to app', () => {
-    const output = formatUnused([{ ...unused[1], context: null }], 'text', CWD);
+    const output = formatUnused([{ ...unused[1], context: null }], 'text', CWD, []);
     expect(output).toContain('auto-import (app)');
   });
 
   it('emits versioned JSON with relative files', () => {
-    const data: unknown = JSON.parse(formatUnused(unused, 'json', CWD));
+    const data: unknown = JSON.parse(formatUnused(unused, 'json', CWD, []));
     expect(data).toMatchObject({
       version: 1,
       unused: [{ file: 'layers/ui/app/components/BaseCard.vue' }, {}],

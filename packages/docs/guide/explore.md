@@ -89,6 +89,8 @@ admin
   exportCsv      layers/admin/app/utils/exportCsv.ts            auto-import (app)
 
 3 unused symbols in 2 layers
+
+Not counted as uses: test files.
 ```
 
 `unused` lists components, composables, utils and server utils that are registered by one of your
@@ -98,11 +100,30 @@ layers and referenced nowhere. A few rules keep it honest:
 - If any file renders a component chosen at runtime (`<component :is>` bound to a value, or
   `resolveComponent(name)`), unused components are marked **possibly used at runtime**, because
   layerscope cannot see which one is picked.
-- Layers installed from npm or git are not checked. They are dependencies, and their unused code
-  is not yours to delete.
 
-Treat the list as a starting point for review, not a delete list. Code used only by tests, by a
-plugin registered at runtime, or by another app that extends this one looks unused too.
+`unused` cannot see all uses. It does not count uses in these places:
+
+- test files (`*.test.*`, `*.spec.*`, `__tests__/`, and any file outside the layer source dirs) and
+  files that match [`ignore`](../reference/config#ignore);
+- files in layers installed under `node_modules`. These layers are dependencies, and their unused
+  code is not yours to delete;
+- files that layerscope could not read: a parse error, a template that layerscope does not read (a
+  `lang` other than HTML, a `src` attribute, or an expression that does not parse), an `import()`
+  or `require()` with a path that is not a fixed string, or an `import.meta.glob()`;
+- imports in `nuxt.config.*` and in the local `modules/` dir;
+- files in extra auto-import dirs (`imports.dirs`) and in component dirs outside the layer source
+  dirs;
+- uses in a type position, for example `ReturnType<typeof useCart>`, and `import type` uses when
+  `typeImports` is `'ignore'`;
+- uses in other apps of a workspace. A layer from a workspace package, or a layer that Nuxt
+  downloads from git into a cache dir, counts as a project layer. Its symbols can be listed when
+  only another app uses them;
+- runtime plugins and apps that extend this one.
+
+The last line of the report names test files, `ignore` and package layers, when they apply. The
+report lists the files that could not be read before that line. The report does not name the other
+places in this list. Layerscope cannot see them. Treat the list as a starting point for review, not
+a delete list.
 
 ## Options
 

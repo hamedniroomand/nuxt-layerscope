@@ -23,6 +23,8 @@ export interface Unread {
   /** Short name of the part, for the finding: `<template>`, `<script>`, `import()` or `require()`. */
   symbol: string;
   message: string;
+  /** Short cause, for the `unused` report: `import() with a dynamic path`. */
+  reason: string;
   offset: number;
 }
 

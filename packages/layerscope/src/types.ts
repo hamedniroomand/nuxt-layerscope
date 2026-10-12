@@ -186,6 +186,12 @@ export interface BaselineResult {
   removable: BaselineEntry[];
 }
 
+export interface UnreadFile {
+  file: string;
+  /** Short reason, for the `unused` report: `Could not parse file`, `import() with a dynamic path`. */
+  reason: string;
+}
+
 export interface AnalyzeResult {
   rootDir: string;
   /** Layers whose `allow` the preset gave, because the config gave them none. */
@@ -209,6 +215,8 @@ export interface AnalyzeResult {
   symbols: SymbolTable;
   /** Files rendering a component chosen at runtime (`<component :is>`, `resolveComponent(x)`). */
   dynamicComponentFiles: string[];
+  /** Files with code that layerscope cannot read: their uses are missing from `edges`. */
+  unreadFiles: UnreadFile[];
   /** Set when a baseline was applied; `findings` then holds only the new ones. */
   baseline?: BaselineResult;
 }

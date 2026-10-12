@@ -62,6 +62,7 @@ export function makeResult(overrides: Partial<AnalyzeResult> = {}): AnalyzeResul
       components: new Map(),
     },
     dynamicComponentFiles: [],
+    unreadFiles: [],
     ...overrides,
   };
 }

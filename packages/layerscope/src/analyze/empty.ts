@@ -17,5 +17,6 @@ export function emptyResult(rootDir: string, notes: string[]): AnalyzeResult {
       components: new Map(),
     },
     dynamicComponentFiles: [],
+    unreadFiles: [],
   };
 }

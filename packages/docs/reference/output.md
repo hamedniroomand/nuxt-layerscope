@@ -205,3 +205,39 @@ layerscope check --format gitlab > gl-code-quality-report.json
 `kind` is `auto-import`, `component` or `import`; `status` is `same-layer`, `external`,
 `unrestricted`, `allowed`, `not-allowed` or `not-exposed`. Each target also has `exposure`: `exposed`
 or `internal` when its layer sets [`expose`](./config#expose), and `all` when it does not.
+
+## `unused` output
+
+`layerscope unused` supports `text` and `json`. The JSON report has `version: 1`, like the other
+reports:
+
+```json
+{
+  "version": 1,
+  "unused": [
+    {
+      "name": "CartBadge",
+      "kind": "component",
+      "context": null,
+      "file": "layers/web/app/components/CartBadge.vue",
+      "layer": "web",
+      "exposed": false,
+      "possiblyUsed": false
+    }
+  ],
+  "blindSpots": [
+    { "kind": "test-files" },
+    {
+      "kind": "unreadable",
+      "files": [
+        { "file": "layers/web/app/utils/load.ts", "reason": "import() with a dynamic path" }
+      ]
+    }
+  ]
+}
+```
+
+Each `blindSpots` entry names a kind of use that `unused` does not count: `test-files`, `ignored` (the
+config has `ignore` patterns), `package-layers` (a layer is installed as a package) or
+`unreadable`. Only `unreadable` has `files`. Each file is relative to the current directory.
+`reason` is a short text, not a fixed code.

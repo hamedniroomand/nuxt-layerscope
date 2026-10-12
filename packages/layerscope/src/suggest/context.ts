@@ -1,5 +1,6 @@
 import type { Baseline } from '#src/baseline/index.ts';
 import { allowedLayers } from '#src/config/allow.ts';
+import { isPackageLayer } from '#src/nuxt/package-layer.ts';
 import { isAllowed } from '#src/rules/layer-boundary.ts';
 import type { Edge, Finding, Layer, LayerscopeConfig } from '#src/types.ts';
 
@@ -148,7 +149,7 @@ export function createContext(
 
 /** A local layer is a dir inside the project root that is not in `node_modules`. */
 export function isLocal(layer: Layer, rootDir: string): boolean {
-  return layer.root.startsWith(`${rootDir}/`) && !layer.root.includes('/node_modules/');
+  return layer.root.startsWith(`${rootDir}/`) && !isPackageLayer(layer);
 }
 
 /**

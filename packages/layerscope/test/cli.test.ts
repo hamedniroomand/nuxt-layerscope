@@ -187,6 +187,17 @@ describe('layerscope graph and unused', () => {
     const output = captureOutput();
     expect(await run(['node', 'layerscope', 'unused', NUXT4_ROOT])).toBe(EXIT_CLEAN);
     expect(output.stdout()).toContain('4 unused symbols in 2 layers');
+    expect(output.stdout().trimEnd().endsWith('Not counted as uses: test files.')).toBe(true);
+  });
+
+  it('adds the blind spots to the JSON report', async () => {
+    const output = captureOutput();
+    expect(await run(['node', 'layerscope', 'unused', NUXT4_ROOT, '--format', 'json'])).toBe(
+      EXIT_CLEAN,
+    );
+    const report = JSON.parse(output.stdout()) as { version: number; blindSpots: unknown };
+    expect(report.version).toBe(1);
+    expect(report.blindSpots).toEqual([{ kind: 'test-files' }]);
   });
 });
 

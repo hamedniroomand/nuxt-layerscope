@@ -53,6 +53,8 @@ interface AnalyzeResult {
   symbols: SymbolTable;
   /** Files that render a component chosen at runtime. */
   dynamicComponentFiles: string[];
+  /** Files with code that layerscope cannot read. Each file is an absolute path. */
+  unreadFiles: { file: string; reason: string }[];
   /** With a baseline: accepted findings and fixed entries. `findings` then holds only new ones. */
   baseline?: { file: string; suppressed: Finding[]; removable: BaselineEntry[] };
 }
@@ -110,6 +112,13 @@ Each edge has `from`, `to`, `count` and `status`, the worst status of the refere
 
 The components and auto-imports `layerscope unused` lists. Each entry has `name`, `kind`
 (`component` or `auto-import`), `context`, `file`, `layer` and `possiblyUsed`.
+
+## `findBlindSpots(result)`
+
+The uses that `layerscope unused` does not count in this run. Each entry has a `kind`:
+`test-files`, `ignored` (the config has `ignore` patterns), `package-layers` (a layer is installed
+as a package) or `unreadable`. An `unreadable` entry also has `files`: the files that layerscope
+could not read, each with a `file` (an absolute path) and a `reason`.
 
 ## `defineConfig(config)`
 

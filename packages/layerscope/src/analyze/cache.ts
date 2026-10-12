@@ -1,11 +1,25 @@
 import { statSync } from 'node:fs';
 
-import type { Layer } from '#src/types.ts';
+import type { AnalyzeResult, Layer } from '#src/types.ts';
 import { createYielder, yieldTurn } from '#src/utils/yield.ts';
 
 import type { Environment } from './environment.ts';
 import type { AnalysisEnv, FileAnalysis } from './file-analysis.ts';
 import { analyzeFile } from './file-analysis.ts';
+
+/** The files that render a dynamic component, and the files with code that is not read. */
+export function fileLists(
+  analyses: FileAnalysis[],
+): Pick<AnalyzeResult, 'dynamicComponentFiles' | 'unreadFiles'> {
+  return {
+    dynamicComponentFiles: analyses
+      .filter(analysis => analysis.hasDynamicComponent)
+      .map(analysis => analysis.file),
+    unreadFiles: analyses.flatMap(analysis =>
+      analysis.unread === null ? [] : [{ file: analysis.file, reason: analysis.unread }],
+    ),
+  };
+}
 
 interface Entry {
   mtimeMs: number;

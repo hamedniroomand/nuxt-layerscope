@@ -16,6 +16,9 @@
   const groups = computed(() =>
     unused.data.value === null ? [] : unusedGroups(unused.data.value),
   );
+  const unreadable = computed(
+    () => unused.data.value?.blindSpots.find(spot => spot.kind === 'unreadable')?.files ?? [],
+  );
 </script>
 
 <template>
@@ -39,7 +42,29 @@
       The project renders components chosen at runtime (<code>&lt;component :is&gt;</code>), so a
       component listed here may still be used.
     </p>
-    <p class="muted">Layers installed as packages are not checked.</p>
+    <p
+      v-if="unused.data.value?.blindSpotLine"
+      class="muted"
+    >
+      {{ unused.data.value.blindSpotLine }}
+    </p>
+    <template v-if="unreadable.length > 0">
+      <p class="banner">{{ unused.data.value?.unreadableLine }}</p>
+      <ul class="rows unreadable">
+        <li
+          v-for="item in unreadable"
+          :key="item.file"
+        >
+          <FileLocation
+            class="muted"
+            :file="item.absFile ?? item.file"
+          >
+            {{ item.file }}
+          </FileLocation>
+          <span class="muted">{{ item.reason }}</span>
+        </li>
+      </ul>
+    </template>
     <p
       v-if="unused.error.value"
       class="err"
@@ -48,7 +73,7 @@
       {{ unused.error.value }}
     </p>
     <p
-      v-else-if="unused.data.value && groups.length === 0"
+      v-else-if="unused.data.value && groups.length === 0 && unreadable.length === 0"
       class="ok"
     >
       Every component and auto-import is referenced.

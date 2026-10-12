@@ -44,6 +44,8 @@ export class FileAnalysis {
   public readonly unresolved: Finding[] = [];
   /** Renders a component chosen at runtime, so any component may be used. */
   public hasDynamicComponent = false;
+  /** Why part of the file is not read; `null` when all of it is. The first reason is kept. */
+  public unread: string | null = null;
   private readonly seen = new Set<string>();
   public readonly file: string;
   private readonly source: string;
@@ -60,6 +62,8 @@ export class FileAnalysis {
   }
 
   public run(scan: FileScan): this {
+    this.unread =
+      scan.error === null ? (scan.unread.at(0)?.reason ?? null) : 'Could not parse file';
     if (scan.error !== null) {
       this.addUnresolved(
         '<parse error>',

@@ -1,8 +1,9 @@
 import { analyze } from '#src/analyze/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatUnused, isUnusedFormat, UNUSED_FORMATS } from '#src/report/unused.ts';
+import { findBlindSpots } from '#src/unused/blind-spots.ts';
 import { findUnused } from '#src/unused/index.ts';
-import { projectRoot } from '#src/utils/fs.ts';
+import { currentDir, projectRoot } from '#src/utils/fs.ts';
 
 import type { Cli, CommonFlags } from './shared.ts';
 import { EXIT_CLEAN, toSource, withCommonOptions, writeNotes } from './shared.ts';
@@ -18,7 +19,9 @@ export async function unused(root: string | undefined, flags: CommonFlags): Prom
     prepare: flags.prepare,
     source: toSource(flags.source),
   });
-  process.stdout.write(formatUnused(findUnused(result), format));
+  process.stdout.write(
+    formatUnused(findUnused(result), format, currentDir(), findBlindSpots(result)),
+  );
   writeNotes(result, flags.verbose === true);
   return EXIT_CLEAN;
 }
