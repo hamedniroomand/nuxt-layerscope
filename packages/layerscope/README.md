@@ -74,9 +74,9 @@ config. Delete the edges you consider mistakes, then run `check`.
 Prints the file moves that the suggestions on boundary findings ask for, and the imports that each
 move breaks. A relative import is listed with its new specifier. An alias that points at a moved
 file is listed to update by hand. Only moves are printed. The other suggestions are in
-`layerscope check`. layerscope does not scan test files, `nuxt.config.*`, `modules/`, files
-outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in
-them by hand. Nothing is applied.
+`layerscope check`. layerscope does not scan test files, `nuxt.config.*`, the Nuxt `modules/` dir,
+files outside the layer source dirs, or files that match `ignore`. Update the imports of moved
+files in them by hand. Nothing is applied.
 
 ### `layerscope drift [root]`
 
@@ -253,7 +253,8 @@ module records them on `nuxi prepare`, `dev` and `build`; use one place or the o
 
 1. Layers come from the project's own `@nuxt/kit`, which every Nuxt install already has:
    `loadNuxtConfig` for the list and names, `getLayerDirectories` for each layer's `srcDir`,
-   `serverDir` and `shared` dir. Without kit, layers can be declared with `path` in the config.
+   `serverDir`, `shared` dir, `modules` dir and `public` dir. layerscope does not scan the
+   `modules` and `public` dirs. Without kit, layers can be declared with `path` in the config.
 2. Each file belongs to the layer with the longest matching root, compared as real paths so
    pnpm symlinks do not matter. Layers installed from npm or a remote source live under
    `node_modules` and still own their files, so boundaries apply to them; their own code is

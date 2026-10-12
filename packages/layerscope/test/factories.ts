@@ -40,6 +40,8 @@ export function makeLayer(name: string, root: string): Layer {
     srcDir: root,
     serverDir: `${root}/server`,
     sharedDir: `${root}/shared`,
+    modulesDir: `${root}/modules`,
+    publicDir: `${root}/public`,
     defaultComponents: true,
   };
 }

@@ -33,6 +33,14 @@ export function loadSymbols(buildDir: string, source: SourceOption): Symbols {
       throw new LayerscopeError(`${message} Update nuxt-layerscope in the project.`);
     }
     notes.push(`${message} Falling back to the generated .d.ts files.`);
+  } else if (read?.kind === 'stale') {
+    const message = `${read.file} was written by an older nuxt-layerscope and has no modules or public dir for its layers.`;
+    if (source === 'registry') {
+      throw new LayerscopeError(`${message} Run "nuxi prepare" to write it again.`);
+    }
+    notes.push(
+      `${message} Falling back to the generated .d.ts files. Run "nuxi prepare" to write it again.`,
+    );
   } else if (read !== null && source === 'registry') {
     throw new LayerscopeError(
       `${read.file} not found. Add "nuxt-layerscope" to "modules" in nuxt.config and run "nuxi prepare".`,

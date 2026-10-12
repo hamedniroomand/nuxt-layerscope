@@ -44,7 +44,7 @@ export interface RegistryImport {
 export interface Registry {
   version: typeof REGISTRY_VERSION;
   generator: { name: string; version: string; nuxt: string };
-  /** Highest priority first, as Nuxt orders `_layers`. */
+  /** Highest priority first, as Nuxt orders `_layers`. Older releases wrote no `modulesDir` or `publicDir`. */
   layers: Layer[];
   components: RegistryComponent[];
   shadowedComponents: ShadowedComponent[];

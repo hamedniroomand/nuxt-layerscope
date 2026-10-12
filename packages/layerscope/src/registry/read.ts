@@ -13,7 +13,9 @@ export type RegistryRead =
   | { kind: 'ok'; file: string; registry: Registry }
   | { kind: 'missing'; file: string }
   /** Written by a layerscope release with another schema. */
-  | { kind: 'incompatible'; file: string; version: unknown };
+  | { kind: 'incompatible'; file: string; version: unknown }
+  /** Same schema version, but a layer lacks a field that this release needs. */
+  | { kind: 'stale'; file: string; registry: Registry };
 
 export function readRegistry(buildDir: string): RegistryRead {
   const file = join(buildDir, REGISTRY_FILE);
@@ -24,7 +26,21 @@ export function readRegistry(buildDir: string): RegistryRead {
   if (registry.version !== REGISTRY_VERSION) {
     return { kind: 'incompatible', file, version: registry.version };
   }
-  return { kind: 'ok', file, registry: registry as Registry };
+  const { layers } = registry as { layers?: unknown };
+  // Older releases wrote no `modulesDir` or `publicDir`. Without them, layerscope would scan the
+  // Nuxt modules and public dirs, so the layers of such a file are not used. Its other data is
+  // kept: the `layerscope` options of `nuxt.config` are only stored there.
+  const complete =
+    Array.isArray(layers) &&
+    layers.every(
+      (layer: Record<string, unknown> | null) =>
+        typeof layer?.modulesDir === 'string' && typeof layer.publicDir === 'string',
+    );
+  return {
+    kind: complete ? 'ok' : 'stale',
+    file,
+    registry: registry as Registry,
+  };
 }
 
 function importMap(imports: RegistryImport[], buildDir: string): SymbolMap {

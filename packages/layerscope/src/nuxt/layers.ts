@@ -4,14 +4,9 @@ import { LayerscopeError } from '#src/errors.ts';
 import type { Layer, LayerscopeConfig } from '#src/types.ts';
 import { realPath } from '#src/utils/fs.ts';
 
-import type { NuxtKit } from './kit.ts';
+import type { NuxtKit, NuxtOptions } from './kit.ts';
 import { loadNuxtKit } from './kit.ts';
-import {
-  deriveDirectories,
-  layerFromNuxt,
-  layerFromPath,
-  ROOT_LAYER_NAME,
-} from './layer-factory.ts';
+import { layerFromPath, layersFromOptions, ROOT_LAYER_NAME } from './layer-factory.ts';
 import { isClonedFrom } from './remote-layer.ts';
 import { validateLayers } from './validate-layers.ts';
 
@@ -44,16 +39,20 @@ function layersFromConfig(rootDir: string, config: LayerscopeConfig): Layer[] {
 }
 
 async function layersFromNuxt(kit: NuxtKit, rootDir: string): Promise<Layer[]> {
-  let options: Awaited<ReturnType<NuxtKit['loadNuxtConfig']>> | null = null;
-  try {
-    options = await kit.loadNuxtConfig({ cwd: rootDir });
-  } catch (error) {
+  const options = await kit.loadNuxtConfig({ cwd: rootDir }).catch((error: unknown) => {
     throw new LayerscopeError(`Failed to load Nuxt config: ${(error as Error).message}`);
-  }
-  const dirs =
-    kit.getLayerDirectories?.({ options }) ??
-    options._layers.map((layer, index) => deriveDirectories(layer, index, options));
-  return options._layers.map((layer, index) => layerFromNuxt(layer, index, dirs[index]));
+  });
+  return layersFromOptions(kit, options);
+}
+
+/**
+ * The layers for the registry that the Nuxt module writes. They come from the project's own kit,
+ * as in the CLI. Without a kit that can load, they come from the derived dirs, never from an empty
+ * list.
+ */
+export async function layersForModule(rootDir: string, options: NuxtOptions): Promise<Layer[]> {
+  const kit = await loadNuxtKit(rootDir).catch(() => null);
+  return layersFromOptions(kit, options);
 }
 
 /**

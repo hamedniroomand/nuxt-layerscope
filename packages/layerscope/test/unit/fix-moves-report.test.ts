@@ -31,7 +31,7 @@ describe('formatMoves', () => {
   it('says that test files and ignored files are not scanned', () => {
     const text = formatMoves([move], '/app', plain);
     expect(text).toContain(
-      'layerscope does not scan test files, `nuxt.config.*`, `modules/`, files outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by hand.',
+      'layerscope does not scan test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by hand.',
     );
     expect(text).not.toContain('Type-only imports');
   });

@@ -54,3 +54,15 @@ describe('shadowedFindings', () => {
     expect(shadowedFindings(registry, ownerOf, config)).toEqual([]);
   });
 });
+
+describe('shadowedFindings with a module specifier', () => {
+  it('keeps a module specifier of the winner as it is, in any current dir', () => {
+    const registry = makeRegistry([
+      ['Icon', '/nonexistent/base/app/components/Icon.vue', '@iconify/vue'],
+    ]);
+    const [finding] = shadowedFindings(registry, ownerOf, {});
+    expect(finding.toLayer).toBeNull();
+    expect(finding.target).toBe('@iconify/vue');
+    expect(finding.message).toBe('Component <Icon> of layer "base" is overridden by @iconify/vue');
+  });
+});

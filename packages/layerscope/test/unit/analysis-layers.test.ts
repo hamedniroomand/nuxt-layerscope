@@ -20,6 +20,8 @@ function layer(root: string, srcDir: string): Layer {
     srcDir,
     serverDir: join(root, 'server'),
     sharedDir: join(root, 'shared'),
+    modulesDir: join(root, 'modules'),
+    publicDir: join(root, 'public'),
     defaultComponents: true,
   };
 }

@@ -167,9 +167,10 @@ Findings that have no move are counted in one line. Run `layerscope check` to se
 suggestions.
 
 After the moves, update the imports and run `layerscope check --prepare`. The generated types
-still point at the old files. layerscope does not scan test files, `nuxt.config.*`, `modules/`,
-files outside the layer source dirs, or files that match `ignore`. Update the imports of moved
-files in them by hand. With `typeImports: 'ignore'`, type-only imports are not listed either.
+still point at the old files. layerscope does not scan test files, `nuxt.config.*`, the Nuxt
+`modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the
+imports of moved files in them by hand. With `typeImports: 'ignore'`, type-only imports are not
+listed either.
 
 `--dry-run` is required: nothing is moved. Findings that `--baseline` accepts are skipped, as in
 `check`. Options: `--baseline`, `--config`, `--prepare`, `--source` and `--verbose`.
@@ -252,11 +253,11 @@ Also takes `--config`, `--prepare`, `--source` and `--verbose`. Exits `0`.
 
 ## `--source`
 
-| Value      | Behavior                                                                                            |
-| ---------- | --------------------------------------------------------------------------------------------------- |
-| `auto`     | The [module's registry](../guide/nuxt-module) when it exists, otherwise the generated `.d.ts` files |
-| `registry` | The registry; exit `2` when it is missing or from an incompatible version                           |
-| `types`    | The generated `.d.ts` files, even when a registry exists                                            |
+| Value      | Behavior                                                                                                                              |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `auto`     | The [module's registry](../guide/nuxt-module) when it exists and is current, otherwise the generated `.d.ts` files                    |
+| `registry` | The registry; exit `2` when it is missing, from an incompatible version, or from an older release without the modules and public dirs |
+| `types`    | The generated `.d.ts` files, even when a registry exists                                                                              |
 
 ## Exit codes
 

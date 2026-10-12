@@ -80,8 +80,9 @@ Layers under `node_modules` are dependencies: their code is resolved but not che
 cannot fix it in this repository.
 
 Some files are always skipped: `node_modules`, `.nuxt`, `.output`, `dist`, type declarations,
-`nuxt.config.*`, test files (`*.test.*`, `*.spec.*`, `__tests__`), and the root's `modules/` and
-`public/` dirs. Add more with [`ignore`](../reference/config#ignore).
+`nuxt.config.*`, test files (`*.test.*`, `*.spec.*`, `__tests__`), and the Nuxt `modules` and
+`public` dirs of each layer. Other dirs named `modules`, for example `app/modules/` in Nuxt 4 and
+`server/modules/`, are checked. Add more with [`ignore`](../reference/config#ignore).
 
 ## Contexts
 

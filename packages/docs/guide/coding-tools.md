@@ -52,9 +52,9 @@ The full shape is in [Output formats](../reference/output#json).
 1. **Move the symbol.** When a suggestion says `move`, or the symbol is used by several layers, move
    the file to the layer it names (often `shared`). Auto-imports and components need no other
    change; update explicit imports. `layerscope fix --dry-run` lists them. Then run
-   `layerscope check --prepare`. layerscope does not scan test files, `nuxt.config.*`, `modules/`,
-   files outside the layer source dirs, or files that match `ignore`. Update the imports of moved
-   files in them by hand.
+   `layerscope check --prepare`. layerscope does not scan test files, `nuxt.config.*`, the Nuxt
+   `modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the
+   imports of moved files in them by hand.
 2. **Ask before changing `allow`.** Adding a layer to `allow` accepts a new dependency between
    layers. A scoped entry (`{ layer: 'web', only: ['useCart'] }`) accepts only the names that it
    lists. Both are design decisions, so make them only when the user has said the dependency is
