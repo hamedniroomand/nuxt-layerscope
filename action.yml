@@ -55,4 +55,5 @@ runs:
         INPUT_VERSION: ${{ inputs.version }}
         GH_TOKEN: ${{ github.token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
+        BASE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}
       run: '"$GITHUB_ACTION_PATH/scripts/drift.sh"'
