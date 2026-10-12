@@ -95,7 +95,7 @@ export const rules: Record<string, Rule.RuleModule> = {
     false,
   ),
   'unresolved-reference': createRule(
-    'Report identifiers, components and imports that cannot be resolved',
+    'Report identifiers, components and imports that cannot be resolved, and code that cannot be read',
     lint => lint.unresolved,
     false,
   ),

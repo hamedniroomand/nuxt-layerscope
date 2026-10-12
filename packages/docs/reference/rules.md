@@ -122,6 +122,12 @@ Something could not be resolved, so layerscope will not call it safe:
   by its name, and layerscope cannot follow a global name to a file, so that prop is not reported.
   `unused` still treats such a file as one that can use a component by name.
   A `string` prop with no default, or with a default that is not an element name, is still reported.
+- a template that layerscope cannot read: a template expression that it cannot parse (for example
+  TypeScript syntax in a component without a TypeScript script), a `lang` other than HTML, or a
+  `src` attribute. Uses in that template are not checked.
+- an `import()` or a `require()` with a path that is not a fixed string, such as a template literal
+  with `${}` or a variable. The module that it loads is not checked.
+- an `import.meta.glob()`. The modules that it loads are not checked.
 - a file that could not be parsed.
 
 ```text

@@ -2,6 +2,7 @@ import { resolve, join } from 'pathe';
 
 import { prepareNuxt } from '#src/analyze/prepare.ts';
 import { findConfigFile, loadConfig } from '#src/config/load.ts';
+import type { Finding } from '#src/types.ts';
 
 /** The config file in use, or `undefined` when there is none or it cannot be found. */
 export function configPathOf(rootDir: string, configFile?: string): string | undefined {
@@ -26,4 +27,15 @@ export async function buildDirOrDefault(rootDir: string, configFile?: string): P
 
 export function prepareProject(rootDir: string): void {
   prepareNuxt(rootDir);
+}
+
+/**
+ * Whether a finding may come from stale auto-imports. Code that layerscope cannot read (its message
+ * starts with `Could not read`) does not, so `nuxi prepare` would not change it.
+ */
+export function needsPrepareHint(findings: Finding[]): boolean {
+  return findings.some(
+    finding =>
+      finding.rule === 'unresolved-reference' && !finding.message.startsWith('Could not read '),
+  );
 }

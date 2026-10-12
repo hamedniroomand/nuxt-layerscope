@@ -68,6 +68,9 @@ export class FileAnalysis {
       );
       return this;
     }
+    for (const part of scan.unread) {
+      this.addUnresolved(part.symbol, part.offset, part.message, true);
+    }
     this.addIdentifiers(scan);
     this.addComponents(scan);
     this.addImports(scan);
@@ -188,9 +191,11 @@ export class FileAnalysis {
     });
   }
 
-  private addUnresolved(symbol: string, offset: number, message: string): void {
+  private addUnresolved(symbol: string, offset: number, message: string, each = false): void {
     const severity = this.env.unresolvedSeverity;
-    if (severity === 'off' || !this.firstSeen(`unresolved\0${symbol}`)) {
+    // Each unread part is its own finding, so the key has the offset.
+    const key = each ? `unresolved\0${symbol}\0${offset}` : `unresolved\0${symbol}`;
+    if (severity === 'off' || !this.firstSeen(key)) {
       return;
     }
     this.unresolved.push({

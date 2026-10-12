@@ -2,8 +2,8 @@ import type { Node } from 'oxc-parser';
 import type { ScopeTracker, ScopeTrackerNode, WalkerThisContextEnter } from 'oxc-walker';
 import { isReferenceIdentifier } from 'oxc-walker';
 
-import { importedName, reexportedName, requiredNames, stringLiteral } from './ast.ts';
-import type { FileScan, ImportRef, OffsetMapper } from './types.ts';
+import { fixedPath, importedName, reexportedName, requiredNames, stringLiteral } from './ast.ts';
+import type { FileScan, ImportRef, OffsetMapper, Unread } from './types.ts';
 
 export interface VisitContext {
   scan: FileScan;
@@ -54,6 +54,24 @@ function typeInfo(
     typeNames: specifiers
       .filter(spec => spec.type && !values.has(spec.name))
       .map(spec => spec.name),
+  };
+}
+
+function isImportMetaGlob(callee: Node): boolean {
+  return (
+    callee.type === 'MemberExpression' &&
+    callee.object.type === 'MetaProperty' &&
+    !callee.computed &&
+    callee.property.type === 'Identifier' &&
+    callee.property.name === 'glob'
+  );
+}
+
+function dynamicPath(call: 'import()' | 'require()', offset: number): Unread {
+  return {
+    symbol: call,
+    message: `Could not read ${call}: the path is not a fixed string. The module that it loads is not checked.`,
+    offset,
   };
 }
 
@@ -115,8 +133,10 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
     if (node.type !== 'ImportExpression') {
       return;
     }
-    const specifier = stringLiteral(node.source);
-    if (specifier !== null) {
+    const specifier = fixedPath(node.source);
+    if (specifier === null) {
+      scan.unread.push(dynamicPath('import()', mapOffset(node.source.start)));
+    } else {
       scan.imports.push({
         specifier,
         names: ['*'],
@@ -158,12 +178,24 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
   },
   CallExpression(node, parent, ctx) {
     const { scan, mapOffset } = ctx;
-    if (node.type !== 'CallExpression' || node.callee.type !== 'Identifier') {
+    if (node.type !== 'CallExpression') {
+      return;
+    }
+    if (isImportMetaGlob(node.callee)) {
+      scan.unread.push({
+        symbol: 'import.meta.glob()',
+        message:
+          'Could not read import.meta.glob(): layerscope does not resolve glob imports. The modules that it loads are not checked.',
+        offset: mapOffset(node.start),
+      });
+      return;
+    }
+    if (node.callee.type !== 'Identifier') {
       return;
     }
     const [arg] = node.arguments as (Node | undefined)[];
     if (isRequireCall(node.callee.name, ctx)) {
-      const specifier = stringLiteral(arg);
+      const specifier = fixedPath(arg);
       if (arg !== undefined && specifier !== null) {
         scan.imports.push({
           specifier,
@@ -172,6 +204,8 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
           typeNames: [],
           offset: mapOffset(arg.start),
         });
+      } else if (arg !== undefined) {
+        scan.unread.push(dynamicPath('require()', mapOffset(arg.start)));
       }
       return;
     }

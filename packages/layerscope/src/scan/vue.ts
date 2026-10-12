@@ -72,6 +72,7 @@ export function scanVue(source: string, file: string): FileScan {
     elementProps = memoize(() => elementOnlyProps(script.code, script.lang));
   }
   const none = (): ElementProps => ({ kinds: new Map(), holders: new Set() });
-  scanTemplate(descriptor, source, bindings, scan, elementProps ?? none);
+  const typed = blocks.some(block => block.lang === 'ts' || block.lang === 'tsx');
+  scanTemplate(descriptor, source, bindings, scan, elementProps ?? none, typed ? 'ts' : 'js');
   return scan;
 }
