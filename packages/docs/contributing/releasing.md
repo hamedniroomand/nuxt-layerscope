@@ -15,8 +15,9 @@ adds [provenance](https://docs.npmjs.com/generating-provenance-statements).
    `packages/layerscope/CHANGELOG.md`. It does not publish and it does not make a tag.
    It also sets the range of `nuxt-layerscope` in `examples/shop/package.json` to the new version
    (`scripts/sync-example-range.mjs`) and updates the lockfile, so the example keeps linking the
-   local package. If the DevTools tab changed, run `vp run docs#screenshots` and commit the
-   pictures to that pull request; `packages/docs/public/devtools/manifest.json` shows the version
+   local package. It also sets the default of the `version` input in `action.yml`
+   (`scripts/sync-action-version.mjs`). Do not edit it by hand. If the DevTools tab changed, run
+   `vp run docs#screenshots` and commit the pictures to that pull request; `packages/docs/public/devtools/manifest.json` shows the version
    they were made for.
 2. Merge the version pull request to `main`.
 3. Tag `main` and push the tag:
@@ -42,6 +43,9 @@ The GitHub Action is referenced by the moving major tag (`hamedniroomand/nuxt-la
 After a stable release, the workflow moves `v0` to the released commit. A pre-release does not
 move it. The workflow starts only for tags like `v0.4.0` or `v0.4.0-beta.1`, so `v0` does not
 start a release.
+
+The tag exists before npm has the version. If the publish fails, a workflow that is
+pinned to that tag and does not install `nuxt-layerscope` fails until you publish it.
 
 ## Add a changeset
 

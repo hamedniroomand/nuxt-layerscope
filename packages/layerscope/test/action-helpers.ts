@@ -1,5 +1,6 @@
 // These tests run bash scripts with a stub gh, so they need a Unix shell. CI runs on Ubuntu only.
 import { execFileSync, spawnSync } from 'node:child_process';
+import type { SpawnSyncReturns } from 'node:child_process';
 import {
   chmodSync,
   copyFileSync,
@@ -9,39 +10,12 @@ import {
   writeFileSync,
 } from 'node:fs';
 
-import { join, resolve } from 'pathe';
+import { dirname, join, resolve } from 'pathe';
 
 import { git } from '#test/git-project.ts';
 import { tempDir } from '#test/watch-project.ts';
 
-/**
- * A stub gh. It records each call (and GH_REPO and GH_HOST), and the body file of a comment.
- * `api graphql` prints the file STUB_GRAPHQL, and runs the --jq filter on each page as the real gh
- * does, with the jq of the system (the stub jq is first on PATH, so the stub gh removes it); it fails when STUB_GRAPHQL_FAILS is set. `api --method PATCH` exits with STUB_PATCH_STATUS,
- * and `pr comment` with STUB_CREATE_STATUS. Like the real gh, `pr` needs a git repository in the
- * current folder when GH_REPO is not set, and `api graphql` does not.
- */
-const GH_STUB = `#!/usr/bin/env bash
-if [ "$1" = pr ] && [ -z "\${GH_REPO:-}" ] && ! git rev-parse --git-dir > /dev/null 2>&1; then
-  echo 'fatal: not a git repository (stub gh)' >&2
-  exit 1
-fi
-echo "gh $* [GH_REPO=\${GH_REPO:-} GH_HOST=\${GH_HOST:-}]" >> "CALLS_FILE"
-prev=''
-filter=''
-for arg in "$@"; do
-  case "$arg" in body=@*) cat "\${arg#body=@}" >> "CALLS_FILE" ;; esac
-  if [ "$prev" = "--body-file" ]; then cat "$arg" >> "CALLS_FILE"; fi
-  if [ "$prev" = "--jq" ]; then filter="$arg"; fi
-  prev="$arg"
-done
-if [ "$1 $2" = "api graphql" ]; then
-  if [ -n "\${STUB_GRAPHQL_FAILS:-}" ]; then echo 'gh: HTTP 502 (stub)' >&2; exit 1; fi
-  if [ -n "$filter" ]; then PATH="\${PATH#BIN_DIR:}" jq -r "$filter" "\${STUB_GRAPHQL:-/dev/null}"; else cat "\${STUB_GRAPHQL:-/dev/null}"; fi
-fi
-if [ "$2" = "--method" ]; then exit "\${STUB_PATCH_STATUS:-0}"; fi
-if [ "$1 $2" = "pr comment" ]; then exit "\${STUB_CREATE_STATUS:-0}"; fi
-`;
+import { GH_STUB } from './gh-stub.ts';
 
 const SCRIPTS = resolve(import.meta.dirname, '../../../scripts');
 export const ZEROS = '0'.repeat(40);
@@ -121,6 +95,7 @@ function makeStubs(dir: string): Stubs {
   mkdirSync(scripts);
   const script = join(scripts, 'drift.sh');
   copyFileSync(join(SCRIPTS, 'drift.sh'), script);
+  copyFileSync(join(SCRIPTS, 'comment.sh'), join(scripts, 'comment.sh'));
   // The stub prints the report that the real CLI prints, or fails when STUB_LS_STATUS is set.
   writeFileSync(
     join(scripts, 'layerscope.sh'),
@@ -146,7 +121,12 @@ function makeStubs(dir: string): Stubs {
     join(bin, 'gh'),
     GH_STUB.replaceAll('CALLS_FILE', calls).replaceAll('BIN_DIR', bin),
   );
-  for (const file of [script, join(scripts, 'layerscope.sh'), join(bin, 'gh')]) {
+  for (const file of [
+    script,
+    join(scripts, 'comment.sh'),
+    join(scripts, 'layerscope.sh'),
+    join(bin, 'gh'),
+  ]) {
     chmodSync(file, 0o755);
   }
   const summary = join(dir, 'summary.md');
@@ -164,53 +144,119 @@ export interface Result {
   gh: string;
   /** The lines the script wrote to GITHUB_OUTPUT. */
   output: string;
+  /** The exit status of the step that posts the comment, when it ran. */
+  postStatus: number | null;
 }
 
 export interface Setup extends Repos {
+  /** Runs the two steps of the action: the report, then the comment. */
   drift: (env: Record<string, string>, cwd?: string) => Result;
+  /** Runs only the step that posts the comment, with the token. */
+  post: (env: Record<string, string>, cwd?: string) => Result;
+  /** Runs only the step that builds the report. It has no token, as in action.yml. */
+  report: (env: Record<string, string>, cwd?: string) => Result;
   /** Writes a GraphQL answer for the stub gh, and returns its path for STUB_GRAPHQL. */
   answer: (...pages: unknown[]) => string;
+}
+
+// The variables of the step that posts the comment. The step that builds the report has none.
+const COMMENT_ONLY = new Set([
+  'GH_TOKEN',
+  'GH_ENTERPRISE_TOKEN',
+  'PR_NUMBER',
+  'IS_FORK',
+  'INPUT_COMMENT',
+  'REPORT_DIR',
+]);
+
+const read = (file: string): string => (existsSync(file) ? readFileSync(file, 'utf8') : '');
+
+const withoutTokens = (env: Record<string, string>): Record<string, string> =>
+  Object.fromEntries(Object.entries(env).filter(([name]) => !COMMENT_ONLY.has(name)));
+
+/** Runs one script of the action in the clone, with the stubs first on PATH. */
+function runStep(
+  repos: Repos,
+  stubs: Stubs,
+  step: { script: string; output: string; env: Record<string, string>; cwd?: string },
+): SpawnSyncReturns<string> {
+  return spawnSync(join(dirname(stubs.script), step.script), {
+    cwd: step.cwd ?? repos.clone,
+    encoding: 'utf8',
+    env: {
+      PATH: `${stubs.bin}:${process.env.PATH}`,
+      HOME: process.env.HOME ?? repos.dir,
+      INPUT_ROOT: '.',
+      INPUT_CONFIG: '',
+      INPUT_PREPARE: 'false',
+      INPUT_BASELINE: 'layerscope-baseline.json',
+      INPUT_COMMENT: 'false',
+      GITHUB_STEP_SUMMARY: stubs.summary,
+      GITHUB_OUTPUT: step.output,
+      GITHUB_REPOSITORY: 'owner/repo',
+      GITHUB_RUN_ID: '99',
+      GITHUB_SERVER_URL: 'https://github.com',
+      RUNNER_TEMP: repos.dir,
+      ...step.env,
+    },
+  });
+}
+
+/** Writes the pages of a GraphQL answer to a file, one JSON document for each page. */
+function writeAnswer(dir: string, pages: unknown[]): string {
+  const file = join(dir, 'graphql.json');
+  writeFileSync(file, pages.map(page => JSON.stringify(page)).join('\n'));
+  return file;
 }
 
 /** `shallow` is a clone depth. `true` means depth 1. */
 export function setup(shallow: boolean | number): Setup {
   const repos = makeRepos(shallow === true ? 1 : shallow);
   const stubs = makeStubs(repos.dir);
-  const drift = (env: Record<string, string>, cwd?: string): Result => {
-    const result = spawnSync(stubs.script, {
-      cwd: cwd ?? repos.clone,
-      encoding: 'utf8',
-      env: {
-        PATH: `${stubs.bin}:${process.env.PATH}`,
-        HOME: process.env.HOME ?? repos.dir,
-        INPUT_ROOT: '.',
-        INPUT_CONFIG: '',
-        INPUT_PREPARE: 'false',
-        INPUT_BASELINE: 'layerscope-baseline.json',
-        INPUT_COMMENT: 'false',
-        GITHUB_STEP_SUMMARY: stubs.summary,
-        GITHUB_OUTPUT: stubs.output,
-        GITHUB_REPOSITORY: 'owner/repo',
-        GITHUB_RUN_ID: '99',
-        GITHUB_SERVER_URL: 'https://github.com',
-        ...env,
-      },
+  const reportOutput = join(repos.dir, 'report-output.txt');
+  writeFileSync(reportOutput, '');
+  const result = (a: SpawnSyncReturns<string>, b?: SpawnSyncReturns<string>): Result => ({
+    status: a.status,
+    out: a.stdout + (b?.stdout ?? ''),
+    err: a.stderr + (b?.stderr ?? ''),
+    summary: read(stubs.summary),
+    gh: read(stubs.calls),
+    output: b === undefined ? read(reportOutput) : read(stubs.output),
+    postStatus: b?.status ?? null,
+  });
+  const buildReport = (env: Record<string, string>, cwd?: string): SpawnSyncReturns<string> => {
+    writeFileSync(reportOutput, '');
+    return runStep(repos, stubs, {
+      script: 'drift.sh',
+      output: reportOutput,
+      env: withoutTokens(env),
+      cwd,
     });
-    return {
-      status: result.status,
-      out: result.stdout,
-      err: result.stderr,
-      summary: readFileSync(stubs.summary, 'utf8'),
-      gh: existsSync(stubs.calls) ? readFileSync(stubs.calls, 'utf8') : '',
-      output: readFileSync(stubs.output, 'utf8'),
-    };
   };
-  const answer = (...pages: unknown[]): string => {
-    const file = join(repos.dir, 'graphql.json');
-    writeFileSync(file, pages.map(page => JSON.stringify(page)).join('\n'));
-    return file;
+  const report = (env: Record<string, string>, cwd?: string): Result =>
+    result(buildReport(env, cwd));
+  const drift = (env: Record<string, string>, cwd?: string): Result => {
+    const a = buildReport(env, cwd);
+    const dir = /^dir=(.*)$/mu.exec(read(reportOutput))?.[1] ?? '';
+    const b = runStep(repos, stubs, {
+      script: 'comment.sh',
+      output: stubs.output,
+      env: { GH_TOKEN: 'token', GH_ENTERPRISE_TOKEN: 'token', REPORT_DIR: dir, ...env },
+      cwd,
+    });
+    return result(a, b);
   };
-  return { ...repos, drift, answer };
+  const answer = (...pages: unknown[]): string => writeAnswer(repos.dir, pages);
+  const post = (env: Record<string, string>, cwd?: string): Result => {
+    const b = runStep(repos, stubs, {
+      script: 'comment.sh',
+      output: stubs.output,
+      env: { GH_TOKEN: 'token', GH_ENTERPRISE_TOKEN: 'token', ...env },
+      cwd,
+    });
+    return { ...result(b), output: read(stubs.output), postStatus: b.status };
+  };
+  return { ...repos, drift, report, post, answer };
 }
 
 export const isShallow = (clone: string): string =>

@@ -17,7 +17,7 @@
     "playground": "vp run nuxt-layerscope#build && vp run playground#dev",
     "example:verify": "vp run nuxt-layerscope#build && node scripts/verify-example.mjs",
     "changeset": "changeset",
-    "changeset:version": "changeset version && node scripts/sync-example-range.mjs && vp fmt"
+    "changeset:version": "changeset version && node scripts/sync-example-range.mjs && node scripts/sync-action-version.mjs && vp fmt"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^1.0.1",
