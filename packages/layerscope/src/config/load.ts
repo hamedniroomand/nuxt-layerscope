@@ -7,6 +7,7 @@ import { resolve } from 'pathe';
 
 import { LayerscopeError } from '#src/errors.ts';
 import type { LayerscopeConfig } from '#src/types.ts';
+import { realPath } from '#src/utils/fs.ts';
 
 import { forgetCommonJs, importNative, isNodeModule } from './native.ts';
 import { validateConfig } from './validate.ts';
@@ -31,7 +32,7 @@ function defineConfigModule(): string {
 
 function findConfigFile(rootDir: string, configFile?: string): string | null {
   if (configFile !== undefined) {
-    const file = resolve(process.cwd(), configFile);
+    const file = realPath(resolve(process.cwd(), configFile));
     if (!existsSync(file)) {
       throw new LayerscopeError(`Config file not found: ${file}`);
     }

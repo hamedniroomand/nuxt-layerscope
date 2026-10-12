@@ -1,9 +1,8 @@
-import { resolve } from 'pathe';
-
 import { computeEnvKey } from '#src/devtools/env-key.ts';
 import { countKeys, diffKeys } from '#src/devtools/finding-keys.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult, SourceOption } from '#src/types.ts';
+import { projectRoot } from '#src/utils/fs.ts';
 
 import type { WatchAnalyzer } from './analyzer.ts';
 import { createWatchAnalyzer } from './analyzer.ts';
@@ -83,7 +82,7 @@ class WatchRun {
 
   public constructor(options: WatchOptions) {
     this.options = options;
-    this.rootDir = resolve(options.rootDir);
+    this.rootDir = projectRoot(options.rootDir);
     this.analyzer = createWatchAnalyzer({
       rootDir: this.rootDir,
       baseline: options.baseline,
@@ -210,7 +209,7 @@ async function untilAborted(signal: AbortSignal): Promise<void> {
 export async function watchCheck(options: WatchOptions): Promise<number> {
   const watch = new WatchRun(options);
   watch.prepare();
-  const rootDir = resolve(options.rootDir);
+  const rootDir = projectRoot(options.rootDir);
   const configPath = configPathOf(rootDir, options.configFile);
   const added = new Set<string>();
   const handle: { watcher?: Watcher } = {};

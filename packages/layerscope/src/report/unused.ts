@@ -1,6 +1,7 @@
 import { relative } from 'pathe';
 
 import type { UnusedSymbol } from '#src/unused/index.ts';
+import { currentDir } from '#src/utils/fs.ts';
 import { plural } from '#src/utils/strings.ts';
 
 import { JSON_REPORT_VERSION } from './json.ts';
@@ -66,7 +67,7 @@ function formatUnusedJson(unused: UnusedSymbol[], cwd: string): string {
 export function formatUnused(
   unused: UnusedSymbol[],
   format: UnusedFormat,
-  cwd: string = process.cwd(),
+  cwd: string = currentDir(),
 ): string {
   return format === 'json' ? formatUnusedJson(unused, cwd) : formatUnusedText(unused, cwd);
 }

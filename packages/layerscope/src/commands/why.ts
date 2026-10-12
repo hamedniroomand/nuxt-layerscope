@@ -1,8 +1,7 @@
-import { resolve } from 'pathe';
-
 import { analyze } from '#src/analyze/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatWhy, isWhyFormat, WHY_FORMATS } from '#src/report/why.ts';
+import { projectRoot } from '#src/utils/fs.ts';
 import { findUses } from '#src/why/index.ts';
 
 import type { Cli, CommonFlags } from './shared.ts';
@@ -17,7 +16,7 @@ export async function why(
   if (!isWhyFormat(format)) {
     throw new LayerscopeError(`Unknown format "${format}". Use ${WHY_FORMATS.join(', ')}.`);
   }
-  const rootDir = resolve(root ?? process.cwd());
+  const rootDir = projectRoot(root);
   const result = await analyze({
     rootDir,
     configFile: flags.config,

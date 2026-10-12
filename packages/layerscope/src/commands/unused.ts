@@ -1,9 +1,8 @@
-import { resolve } from 'pathe';
-
 import { analyze } from '#src/analyze/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatUnused, isUnusedFormat, UNUSED_FORMATS } from '#src/report/unused.ts';
 import { findUnused } from '#src/unused/index.ts';
+import { projectRoot } from '#src/utils/fs.ts';
 
 import type { Cli, CommonFlags } from './shared.ts';
 import { EXIT_CLEAN, toSource, withCommonOptions, writeNotes } from './shared.ts';
@@ -14,7 +13,7 @@ export async function unused(root: string | undefined, flags: CommonFlags): Prom
     throw new LayerscopeError(`Unknown format "${format}". Use ${UNUSED_FORMATS.join(', ')}.`);
   }
   const result = await analyze({
-    rootDir: resolve(root ?? process.cwd()),
+    rootDir: projectRoot(root),
     configFile: flags.config,
     prepare: flags.prepare,
     source: toSource(flags.source),

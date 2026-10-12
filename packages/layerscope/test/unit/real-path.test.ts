@@ -1,4 +1,11 @@
-import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
@@ -20,6 +27,13 @@ function symlinkedRoot(): { real: string; link: string } {
   return { real, link };
 }
 
+/** Whether this file system tells `Shop` and `shop` apart. */
+const caseSensitive = ((): boolean => {
+  const base = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-probe-')));
+  mkdirSync(join(base, 'shop'));
+  return !existsSync(join(base, 'Shop'));
+})();
+
 describe('realPath', () => {
   it('resolves the symlinks of the nearest dir that exists', () => {
     const { real, link } = symlinkedRoot();
@@ -31,6 +45,16 @@ describe('realPath', () => {
     mkdirSync(join(real, 'modules'));
     expect(realPath(join(link, 'modules'))).toBe(join(real, 'modules'));
   });
+
+  // A case-sensitive file system (the Linux runner) has no `Shop`; the mocked tests cover it.
+  it.skipIf(caseSensitive)(
+    'gives the real case of a dir on a file system that ignores case',
+    () => {
+      const base = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-case-')));
+      mkdirSync(join(base, 'shop/app'), { recursive: true });
+      expect(realPath(join(base, 'Shop/app'))).toBe(join(base, 'shop/app'));
+    },
+  );
 
   it('keeps a path that is not absolute as it is: it can be a module specifier', () => {
     expect(realPath('@iconify/vue')).toBe('@iconify/vue');

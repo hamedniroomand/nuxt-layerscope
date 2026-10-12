@@ -1,4 +1,5 @@
 import type { AnalyzeResult } from '#src/types.ts';
+import { currentDir } from '#src/utils/fs.ts';
 import { plain } from '#src/utils/style.ts';
 import type { Paint } from '#src/utils/style.ts';
 
@@ -34,7 +35,7 @@ export function isOutputFormat(value: string): value is OutputFormat {
 export function formatResult(
   result: AnalyzeResult,
   format: OutputFormat,
-  cwd: string = process.cwd(),
+  cwd: string = currentDir(),
   paint: Paint = plain,
   repoRoot: string = result.rootDir,
 ): string {

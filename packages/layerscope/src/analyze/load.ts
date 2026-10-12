@@ -2,11 +2,15 @@ import { resolve } from 'pathe';
 
 import { loadConfig } from '#src/config/load.ts';
 import type { LayerscopeConfig, SourceOption } from '#src/types.ts';
+import { realPath } from '#src/utils/fs.ts';
 
 import type { EnvironmentCache } from './cache.ts';
 import type { Environment, EnvironmentOptions } from './environment.ts';
 import { loadEnvironment } from './environment.ts';
 import { prepareNuxt } from './prepare.ts';
+
+// `analyze/index.ts` is at the dependency limit and imports it from here.
+export { projectRoot } from '#src/utils/fs.ts';
 
 export interface LoadOptions {
   rootDir: string;
@@ -42,7 +46,7 @@ async function environmentOf(
 export async function loadProject(options: LoadOptions): Promise<Environment> {
   const { rootDir } = options;
   const fileConfig = options.config ?? (await loadConfig(rootDir, options.configFile));
-  const buildDir = resolve(rootDir, fileConfig.buildDir ?? '.nuxt');
+  const buildDir = realPath(resolve(rootDir, fileConfig.buildDir ?? '.nuxt'));
   if (options.prepare === true) {
     prepareNuxt(rootDir);
   }

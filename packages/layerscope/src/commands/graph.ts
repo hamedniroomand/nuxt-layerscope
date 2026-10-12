@@ -1,10 +1,9 @@
-import { resolve } from 'pathe';
-
 import { analyze } from '#src/analyze/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { GraphLevel } from '#src/graph/index.ts';
 import { buildGraph, GRAPH_LEVELS } from '#src/graph/index.ts';
 import { formatGraph, GRAPH_FORMATS, isGraphFormat } from '#src/report/graph/index.ts';
+import { projectRoot } from '#src/utils/fs.ts';
 
 import type { Cli, CommonFlags } from './shared.ts';
 import { EXIT_CLEAN, toSource, withCommonOptions, writeNotes } from './shared.ts';
@@ -27,7 +26,7 @@ export async function graph(root: string | undefined, flags: GraphFlags): Promis
     throw new LayerscopeError(`Unknown format "${format}". Use ${GRAPH_FORMATS.join(', ')}.`);
   }
   const level = toLevel(flags.by);
-  const rootDir = resolve(root ?? process.cwd());
+  const rootDir = projectRoot(root);
   const result = await analyze({
     rootDir,
     configFile: flags.config,

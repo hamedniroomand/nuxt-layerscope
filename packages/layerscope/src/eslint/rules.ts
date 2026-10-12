@@ -2,6 +2,7 @@ import type { Rule } from 'eslint';
 import { relative } from 'pathe';
 
 import type { Finding } from '#src/types.ts';
+import { realPath } from '#src/utils/fs.ts';
 
 import type { FileLint } from './lint-file.ts';
 import { lintFile } from './lint-file.ts';
@@ -55,7 +56,9 @@ function createRule(
       const [options] = context.options as (RuleOptions | undefined)[];
       return {
         'Program:exit'(): void {
-          const load = projectFor(context.filename, options?.root);
+          // The editor can give a path with `\` or another case than the disk.
+          const file = realPath(context.filename);
+          const load = projectFor(file, options?.root);
           if (!load.ok) {
             // Reported once, by the boundary rule, so a missing registry is not a wall of errors.
             if (reportsSetup) {
@@ -68,7 +71,7 @@ function createRule(
           }
           const { project } = load;
           const { text } = context.sourceCode;
-          const lint = lintFile(context.filename, text, project);
+          const lint = lintFile(file, text, project);
           for (const finding of pick(lint)) {
             const { line, column, outside } = reportLocation(finding, lint.source, text);
             const message = describeFinding(finding, project.rootDir);

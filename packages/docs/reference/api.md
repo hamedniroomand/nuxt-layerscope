@@ -34,6 +34,7 @@ problems (the CLI's exit code `2`).
 
 ```ts
 interface AnalyzeResult {
+  /** The real path of the root: symlinks resolved, case from the disk, `/` as separator. */
   rootDir: string;
   /** The config that applied: layerscope.config.* or the layerscope key of nuxt.config. */
   config: LayerscopeConfig;
@@ -67,7 +68,8 @@ import type { AnalyzeResult, Edge, Finding, Layer } from 'nuxt-layerscope';
 ## `formatResult(result, format, cwd?, paint?, repoRoot?)`
 
 Formats a result as `'text'`, `'github'`, `'json'`, `'sarif'` or `'gitlab'`, exactly like the CLI.
-Paths are relative to `cwd`, which defaults to `process.cwd()`. The `sarif` and `gitlab` formats
+Paths are relative to `cwd`, which defaults to the real path of the current directory (symlinks
+resolved, case from the disk). The `sarif` and `gitlab` formats
 use paths relative to `repoRoot` instead, which defaults to the project root. The CLI passes the
 git root of the project there.
 

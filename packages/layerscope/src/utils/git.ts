@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { realpathSync } from 'node:fs';
 
 import { dirname, resolve } from 'pathe';
+
+import { realPath } from '#src/utils/fs.ts';
 
 /** The variables that make git use one repository, whatever `-C` says. */
 export const LOCAL_GIT_ENV = [
@@ -43,8 +44,7 @@ export function cleanGitEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.Proces
  * be a lock file that git has not made yet.
  */
 function indexInGitDir(index: string, gitDir: string): boolean {
-  const folder = realpathSync(dirname(resolve(process.cwd(), index)));
-  return folder === gitDir;
+  return realPath(dirname(resolve(process.cwd(), index))) === realPath(gitDir);
 }
 
 /**
@@ -65,7 +65,7 @@ export function gitEnv(rootDir: string): NodeJS.ProcessEnv {
       env,
       stdio: 'pipe',
     });
-    if (indexInGitDir(index, realpathSync(out.trim()))) {
+    if (indexInGitDir(index, out.trim())) {
       env.GIT_INDEX_FILE = resolve(process.cwd(), index);
     }
   } catch {

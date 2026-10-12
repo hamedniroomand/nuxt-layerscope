@@ -60,12 +60,14 @@ async function writeJson(dir: string, path: string, body: unknown, rootDir: stri
  * answer the tab can ask for. Returns the written paths, relative to `__layerscope/`.
  */
 export async function writeSnapshot(options: SnapshotOptions): Promise<string[]> {
-  const { rootDir, publicDir, base, assetsDir } = options;
+  const { publicDir, base, assetsDir } = options;
   if (!existsSync(join(assetsDir, 'client.js'))) {
     throw new Error(MISSING_CLIENT);
   }
   const started = Date.now();
-  const result = await analyze({ rootDir, baseline: BASELINE_FILE });
+  const result = await analyze({ rootDir: options.rootDir, baseline: BASELINE_FILE });
+  // The root with the real case: the paths in the result have it, and they are compared as text.
+  const { rootDir } = result;
   const keys = result.findings.map(finding => findingKey(finding, rootDir));
   const files = await staticFiles(result, {
     keys,

@@ -1,9 +1,10 @@
 import { existsSync, statSync } from 'node:fs';
 
-import { dirname, join, resolve } from 'pathe';
+import { dirname, join } from 'pathe';
 
 import { findConfigFile } from '#src/config/load.ts';
 import { REGISTRY_FILE } from '#src/registry/schema.ts';
+import { projectRoot } from '#src/utils/fs.ts';
 
 import type { ProjectLoad } from './load-project.ts';
 import { loadProject } from './load-project.ts';
@@ -39,7 +40,7 @@ function tryLoadProject(rootDir: string): ProjectLoad {
 
 /** The Nuxt project a linted file belongs to, from its registry; Nuxt itself is never loaded. */
 export function projectFor(file: string, root: string | undefined): ProjectLoad {
-  const rootDir = root === undefined ? findProjectRoot(dirname(file)) : resolve(root);
+  const rootDir = root === undefined ? findProjectRoot(dirname(file)) : projectRoot(root);
   if (rootDir === null) {
     return {
       ok: false,

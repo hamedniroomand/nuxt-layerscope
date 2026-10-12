@@ -18,7 +18,14 @@ import type { AnalyzeResult } from '#src/types.ts';
 import { paintFor } from '#src/utils/style.ts';
 
 import type { Cli, CommonFlags } from './shared.ts';
-import { EXIT_CLEAN, toSource, withCommonOptions, writeNotes } from './shared.ts';
+import {
+  currentDir,
+  EXIT_CLEAN,
+  projectRoot,
+  toSource,
+  withCommonOptions,
+  writeNotes,
+} from './shared.ts';
 
 export interface InitFlags extends Omit<CommonFlags, 'format'> {
   baseline?: boolean;
@@ -42,15 +49,15 @@ export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
     return [];
   }
   // The folder is plain text, not part of a command, so it needs no quotes for any shell.
-  const root = relative(process.cwd(), result.rootDir);
+  const root = relative(currentDir(), result.rootDir);
   const where = root === '' ? 'run' : `in ${root}, run`;
   return [
-    `layerscope found no data from its Nuxt module (${relative(process.cwd(), registryFile)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, ${where} \`npx nuxi module add nuxt-layerscope --dev\` (or remove \`enabled: false\` from its \`layerscope\` options), then run \`npx nuxi prepare\`. Then run layerscope again.`,
+    `layerscope found no data from its Nuxt module (${relative(currentDir(), registryFile)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, ${where} \`npx nuxi module add nuxt-layerscope --dev\` (or remove \`enabled: false\` from its \`layerscope\` options), then run \`npx nuxi prepare\`. Then run layerscope again.`,
   ];
 }
 
 export async function init(root: string | undefined, flags: InitFlags): Promise<number> {
-  const rootDir = resolve(root ?? process.cwd());
+  const rootDir = projectRoot(root);
   const customConfig = flags.config === undefined ? undefined : resolve(flags.config);
   // One value for every check: the config file that exists, whatever its name. `--force` replaces
   // that file, so a second config never appears next to it. With `--config`, the file is the one named.
@@ -88,8 +95,8 @@ export async function init(root: string | undefined, flags: InitFlags): Promise<
     formatInit(result, proposal, {
       source,
       written: write,
-      configFile: relative(process.cwd(), configFile),
-      baselineFile: flags.baseline === true ? relative(process.cwd(), baselineFile) : null,
+      configFile: relative(currentDir(), configFile),
+      baselineFile: flags.baseline === true ? relative(currentDir(), baselineFile) : null,
       paint: paintFor(process.stdout),
     }),
   );

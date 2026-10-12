@@ -8,7 +8,10 @@ export function isNodeModule(file: string): boolean {
   return file.endsWith('.mjs') || file.endsWith('.js');
 }
 
-/** Node keeps a CommonJS config in its require cache, by real path, and jiti loads it from there. */
+/**
+ * Node keeps a CommonJS config in its require cache, by real path, and jiti loads it from there.
+ * The key is the result of the JS `realpathSync`, not the native one, so it is used as is here.
+ */
 export function forgetCommonJs(file: string): void {
   const { cache } = createRequire(file);
   /* eslint-disable @typescript-eslint/no-dynamic-delete */
