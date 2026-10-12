@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test';
 
-import { keyOf } from '#src/baseline/index.ts';
+import { surplusKeyOf } from '#src/baseline/index.ts';
 import { allowHint } from '#src/devtools/hints.ts';
 import { baselineView } from '#src/devtools/views-api.ts';
 import type { Finding } from '#src/types.ts';
@@ -73,7 +73,7 @@ describe('baseline view', () => {
       absFile: '/app/pages/index.vue',
       key: 'layer-boundary\0pages/index.vue\0useCart\0shop',
     });
-    expect(view.removable).toEqual([{ ...entry, key: keyOf(entry) }]);
+    expect(view.removable).toEqual([{ ...entry, key: surplusKeyOf(entry) }]);
     expect(baselineView(makeResult())).toEqual({ file: null, suppressed: [], removable: [] });
   });
 });

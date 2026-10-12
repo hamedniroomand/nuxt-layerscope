@@ -1,10 +1,11 @@
-import { rmSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { analyze } from '#src/analyze/index.ts';
-import { createBaseline, writeBaseline } from '#src/baseline/index.ts';
+import { removeEntries } from '#src/baseline/edit.ts';
+import { createBaseline, surplusKeyOf, writeBaseline } from '#src/baseline/index.ts';
 
 import { tempDir, write } from './watch-project.ts';
 
@@ -56,5 +57,38 @@ describe('check with a baselined layer cycle', () => {
     const root = await baselined();
     write(root, 'layers/auth/app/Aaa.ts', USE);
     expect(await cyclesWithBaseline(root)).toEqual([]);
+  });
+});
+
+describe('removing the surplus of a merged cycle entry', () => {
+  it('keeps the entry that the live cycle uses', async () => {
+    const root = project();
+    const [cycle] = (await analyze({ rootDir: root })).findings;
+    const file = join(root, 'layerscope-baseline.json');
+    const entry = { rule: 'layer-cycle', symbol: cycle.symbol, toLayer: cycle.toLayer };
+    // An older baseline names the cycle in two files, which is a count of 2.
+    writeFileSync(
+      file,
+      JSON.stringify({
+        version: 1,
+        entries: [
+          { ...entry, file: 'old.vue' },
+          { ...entry, file: 'older.vue' },
+        ],
+      }),
+    );
+    const before = await analyze({ rootDir: root, baseline: 'layerscope-baseline.json' });
+    expect(before.baseline?.suppressed).toHaveLength(1);
+    const surplus = before.baseline?.removable ?? [];
+    expect(surplus).toHaveLength(1);
+    removeEntries(
+      file,
+      surplus.map(item => surplusKeyOf(item)),
+      new Map(surplus.map(item => [surplusKeyOf(item), item.count ?? 1])),
+    );
+    const after = await analyze({ rootDir: root, baseline: 'layerscope-baseline.json' });
+    expect(after.findings.filter(finding => finding.rule === 'layer-cycle')).toEqual([]);
+    expect(after.baseline?.suppressed).toHaveLength(1);
+    expect(after.baseline?.removable).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
 import { relative } from 'pathe';
 
-import { keyOf } from '#src/baseline/index.ts';
+import { surplusKeyOf } from '#src/baseline/index.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import type { AnalyzeResult, BaselineEntry, Context, Finding } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
@@ -79,7 +79,7 @@ export async function unusedView(result: AnalyzeResult): Promise<UnusedView> {
 
 /** The server gives the key, so the tab never builds one. */
 function removableView(entry: BaselineEntry): TabBaselineEntry {
-  return { ...entry, key: keyOf(entry) };
+  return { ...entry, key: surplusKeyOf(entry) };
 }
 
 function suppressedView(finding: Finding, rootDir: string): TabFinding {

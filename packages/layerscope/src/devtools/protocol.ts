@@ -119,7 +119,7 @@ export interface UnusedView {
   layers: string[];
 }
 
-/** A stale baseline entry, with the key that the server accepts to remove it. */
+/** A baseline entry that a finding does not use, with the key that removes that unused part. */
 export interface TabBaselineEntry extends BaselineEntry {
   key: string;
 }

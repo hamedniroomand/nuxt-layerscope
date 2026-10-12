@@ -33,6 +33,15 @@ export function keyOf(entry: Keyed): string {
   return [entry.rule, entry.file, entry.symbol, entry.toLayer ?? ''].join('\0');
 }
 
+/**
+ * The key of the surplus of an entry: the part of its `count` that no finding uses. It is not the
+ * key of the entry, because a finding that the entry accepts has the key of the entry, and
+ * removing that finding drops the whole entry.
+ */
+export function surplusKeyOf(entry: Keyed): string {
+  return `${keyOf(entry)}\0surplus`;
+}
+
 export function toKeyed(finding: Finding, rootDir: string): Keyed {
   return {
     rule: finding.rule,
