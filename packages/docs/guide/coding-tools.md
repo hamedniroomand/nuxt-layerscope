@@ -115,12 +115,17 @@ name, so `can_use` may show as `layerscope.can_use`.
 | `suggest` | Get the suggested fix for the findings in a file, for a move with the imports to update.                                                                                                                                    |
 | `graph`   | See which layer depends on which, at layer or file level.                                                                                                                                                                   |
 
-Every tool only reads. The tools never write a file or edit `allow` or the baseline, and the server
-refuses a path outside the project root. The one write is the option `--prepare`, which runs
-`nuxi prepare` once when the server starts, and that writes the generated files in `.nuxt`; it is
-off by default. The rules above still hold: an assistant must not loosen
-`allow` to get a clean result, and `can_use` says to ask the user. `check` and `graph` cut a long
-answer at `limit` (50 by default, 500 at most) and say so.
+Every tool only reads. The tools never write a file or edit `allow` or the baseline.
+
+The server refuses a path outside the project root. There is one exception: `can_use` and
+`suggest` also accept the path of a file that belongs to a layer, for example a file in a layer
+outside the root or in a `serverDir` outside it. The `files` filter of `check` always refuses a
+path outside the root.
+
+The one write is the option `--prepare`, which runs `nuxi prepare` once when the server starts.
+That writes the generated files in `.nuxt`. It is off by default. The rules above still hold: an
+assistant must not loosen `allow` to get a clean result, and `can_use` says to ask the user.
+`check` and `graph` cut a long answer at `limit` (50 by default, 500 at most) and say so.
 
 ## Add it to your instructions
 

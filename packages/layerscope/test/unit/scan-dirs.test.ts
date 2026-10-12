@@ -79,6 +79,18 @@ const CASES: Case[] = [
     ],
   },
   {
+    name: 'Nuxt 4 with a serverDir outside the root',
+    nuxt: NUXT4_ROOT,
+    config: "{ serverDir: '../api' }",
+    rows: [
+      ['../api/modules/x.ts', true],
+      ['../api/layerscope.config.ts', true],
+      ['../api/public/x.ts', true],
+      ['../api/node_modules/pkg/x.ts', false],
+      ['app/modules/x.ts', true],
+    ],
+  },
+  {
     name: 'Nuxt 3 with a custom dir.modules',
     nuxt: NUXT3_ROOT,
     config: "{ dir: { modules: 'local' } }",
@@ -141,30 +153,6 @@ describe('deriveDirectories for the modules and public dirs', () => {
       const strip = (path: string | undefined): string | undefined => path?.replace(/\/$/u, '');
       expect(derived.modules, relative(root, layer.cwd)).toBe(strip(real[index].modules));
       expect(derived.public, relative(root, layer.cwd)).toBe(strip(real[index].public));
-    }
-  });
-});
-
-describe('a serverDir outside the layer root', () => {
-  it('keeps the dirs named modules and public, and the config name', async () => {
-    const item: Case = {
-      name: 'outside',
-      nuxt: NUXT4_ROOT,
-      config: "{ serverDir: '../api' }",
-      rows: [
-        ['../api/modules/x.ts', true],
-        ['../api/public/x.ts', true],
-        ['../api/layerscope.config.ts', true],
-      ],
-    };
-    const root = createProject(item);
-    const [layer] = await resolveLayers(root, {});
-    // Only `isCheckedFile` is asserted: `collectFiles` drops files that no layer root holds
-    // (`createOwnerLookup`), which is older than this rule.
-    for (const [file] of item.rows) {
-      expect(
-        isCheckedFile(join(realpathSync(join(root, '../api')), file.slice(7)), layer, []),
-      ).toBe(true);
     }
   });
 });

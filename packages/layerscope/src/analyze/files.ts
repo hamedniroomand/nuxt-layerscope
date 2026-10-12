@@ -49,7 +49,8 @@ function isSkipped(file: string, dir: string, layer: Layer, ignore: string[]): b
   if (isInside(layer.modulesDir, file) || isInside(layer.publicDir, file)) {
     return true;
   }
-  // A root `serverDir` from the options can be outside the root: `../` never matches.
+  // A source dir of any layer can be outside its root: then the path is `../...`, which never
+  // matches.
   if (isInside(layer.root, file) && path.matchesGlob(relative(layer.root, file), ROOT_IGNORE)) {
     return true;
   }

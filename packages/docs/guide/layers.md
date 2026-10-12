@@ -57,8 +57,11 @@ includes a layer folder named `root`: rename the project with `app: { path: '.' 
 
 ## Which layer owns a file
 
-A file belongs to the layer whose root is the longest prefix of its path. Paths are compared
-after resolving symlinks, so pnpm's linked `node_modules` do not matter.
+A file belongs to the layer with the longest matching dir. The dirs of a layer are its root, and
+also its `srcDir`, `serverDir` and shared dir when one of them is outside the root, for example
+`serverDir: '../api'`. When a source dir of one layer is the root of another layer, the layer with
+that root owns the files. Paths are compared after resolving symlinks, so pnpm's linked
+`node_modules` do not matter.
 
 - Files under `node_modules` that are not inside a layer root belong to no layer. They are
   packages, and depending on a package is always allowed.
@@ -75,6 +78,8 @@ layerscope scans the directories Nuxt uses for each layer, as reported by Nuxt's
   Nuxt 4 layout),
 - its `serverDir` (`server/`),
 - its `shared/` dir.
+
+A source dir outside the layer root is checked too, for example `serverDir: '../api'`.
 
 Layers under `node_modules` are dependencies: their code is resolved but not checked, since you
 cannot fix it in this repository.

@@ -1,3 +1,6 @@
+import { sourceDirsOutsideRoot } from '#src/nuxt/owner.ts';
+import type { Layer } from '#src/types.ts';
+
 import { createIgnore, isConfigFile } from './ignore.ts';
 
 export interface Change {
@@ -7,7 +10,7 @@ export interface Change {
 }
 
 export interface Watcher {
-  /** Layers outside the project root, known after the first run. */
+  /** Paths outside the project root (layer roots and source dirs), known after the first run. */
   add: (paths: string[]) => void;
   close: () => Promise<void>;
 }
@@ -17,6 +20,11 @@ export type StartWatcher = (
   buildDir: string,
   onChange: (change: Change) => void,
 ) => Promise<Watcher>;
+
+/** The root of each layer, and the source dirs of a layer that are outside its root. */
+export function layerDirs(layers: Layer[]): string[] {
+  return layers.flatMap(layer => [layer.root].concat(sourceDirsOutsideRoot(layer)));
+}
 
 /** Watches the paths until closed. Resolves once the first scan is done, so no edit is missed. */
 export const startWatcher: StartWatcher = async (paths, buildDir, onChange) => {
