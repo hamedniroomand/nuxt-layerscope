@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 import { relative } from 'pathe';
@@ -169,21 +169,46 @@ export function isExtraFile(
   return isSource && !isSkipped(file, dir, layer, ignore, true) ? layer : null;
 }
 
-/** The files that `unused` reads first: `nuxt.config.*`, local modules and symbol files. */
+/** A dir that `unused` could not list, with the code of the error. */
+export interface DeniedDir {
+  dir: string;
+  layer: Layer;
+  cause: string;
+}
+
+type DirState = { kind: 'listable' } | { kind: 'missing' } | { kind: 'denied'; cause: string };
+
+/** Whether the dir can be listed, is not there, or fails for another reason. */
+function dirState(dir: string): DirState {
+  try {
+    readdirSync(dir);
+    return { kind: 'listable' };
+  } catch (error) {
+    const code = (error as { code?: unknown } | null)?.code;
+    return code === 'ENOENT' || code === 'ENOTDIR'
+      ? { kind: 'missing' }
+      : { kind: 'denied', cause: typeof code === 'string' ? code : String(error) };
+  }
+}
+
+/**
+ * The files that `unused` reads first: `nuxt.config.*`, local modules and symbol files. A config
+ * file that is not there is skipped when it is read. A `modules` dir that cannot be listed is
+ * returned in `denied`, so that it is shown as unread.
+ */
 export async function extraSeeds(
   layers: Layer[],
   ownerOf: OwnerLookup,
   files: string[],
-): Promise<string[]> {
+): Promise<{ files: string[]; denied: DeniedDir[] }> {
   const found = new Set(files);
+  const denied: DeniedDir[] = [];
   for (const layer of layers.filter(item => !isPackageLayer(item))) {
     for (const name of NUXT_CONFIG_FILES) {
-      const file = `${layer.root}/${name}`;
-      if (existsSync(file)) {
-        found.add(file);
-      }
+      found.add(`${layer.root}/${name}`);
     }
-    if (existsSync(layer.modulesDir)) {
+    const state = dirState(layer.modulesDir);
+    if (state.kind === 'listable') {
       // eslint-disable-next-line no-await-in-loop -- one small dir at a time
       for (const file of await glob(SOURCE_GLOB, {
         cwd: layer.modulesDir,
@@ -192,7 +217,12 @@ export async function extraSeeds(
       })) {
         found.add(file);
       }
+    } else if (state.kind === 'denied') {
+      denied.push({ dir: layer.modulesDir, layer, cause: state.cause });
     }
   }
-  return [...found].filter(file => ownerOf(file) !== null).toSorted(compareStrings);
+  return {
+    files: [...found].filter(file => ownerOf(file) !== null).toSorted(compareStrings),
+    denied,
+  };
 }

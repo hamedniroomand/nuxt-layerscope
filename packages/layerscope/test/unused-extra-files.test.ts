@@ -176,6 +176,59 @@ describe('unused finds uses in any context (extra files)', () => {
     );
     expect(await unusedNames(root)).toEqual([]);
   });
+});
+
+describe('unused finds names that an extra file imports (extra files)', () => {
+  it('counts both targets of a name that an extra file imports from #imports', async () => {
+    const root = writeProject(
+      {
+        'layers/web/lib/fmt.ts': 'export const fmt = () => 1;\n',
+        'layers/web/server/utils/fmt.ts': 'export const fmt = () => 2;\n',
+        'layers/web/server/api/x.ts':
+          "import { t } from '../../tools/t';\nexport default () => t();\n",
+        'layers/web/tools/t.ts': "import { fmt } from '#imports';\nexport const t = () => fmt();\n",
+      },
+      { fmt: 'layers/web/lib/fmt.ts' },
+      undefined,
+      { fmt: 'layers/web/server/utils/fmt.ts' },
+    );
+    expect(await unusedNames(root)).toEqual([]);
+  });
+});
+
+describe('unused keeps one edge for each target', () => {
+  it('puts the second site of an import on the edge of its own target', async () => {
+    const root = writeProject(
+      {
+        'layers/web/lib/fmt.ts': 'export const fmt = () => 1;\n',
+        'layers/web/server/utils/fmt.ts': 'export const fmt = () => 2;\n',
+        'layers/web/tools/t.ts':
+          "import { fmt } from '#imports';\nimport { fmt as again } from '#imports';\nexport const t = [fmt, again];\n",
+      },
+      { fmt: 'layers/web/lib/fmt.ts', t: 'layers/web/tools/t.ts' },
+      undefined,
+      { fmt: 'layers/web/server/utils/fmt.ts' },
+    );
+    const result = await analyze({ rootDir: root, extraFiles: true });
+    const edges = result.extraEdges.filter(edge => edge.symbol === '#imports:fmt');
+    expect(edges.map(edge => edge.sites?.length)).toEqual([1, 1]);
+  });
+
+  it('finds a server name that an extra file imports from #imports', async () => {
+    const root = writeProject(
+      {
+        'layers/web/server/api/x.ts':
+          "import { t } from '../../tools/t';\nexport default () => t();\n",
+        'layers/web/tools/t.ts':
+          "import { serverHelper } from '#imports';\nexport const t = () => serverHelper();\n",
+        'layers/web/server/utils/serverHelper.ts': 'export const serverHelper = () => 1;\n',
+      },
+      {},
+      undefined,
+      { serverHelper: 'layers/web/server/utils/serverHelper.ts' },
+    );
+    expect(await unusedNames(root)).toEqual([]);
+  });
 
   it('gives no unresolved-reference finding for an extra file', async () => {
     const root = writeProject(

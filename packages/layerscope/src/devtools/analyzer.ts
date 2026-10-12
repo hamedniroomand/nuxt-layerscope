@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 import { resolve } from 'pathe';
 
@@ -36,11 +36,34 @@ export interface AnalyzerOptions {
   run?: (options: AnalyzeOptions) => Promise<AnalyzeResult>;
 }
 
+/** What a use is for the views: its kind, its name, the file that has it and the file it reaches. */
+function usesOf(edges: AnalyzeResult['edges']): (string | null)[][] {
+  return edges.map(edge => [edge.kind, edge.symbol, edge.file, edge.to]);
+}
+
+/** The registered names with their files, per context and for components. */
+function symbolsOf(symbols: AnalyzeResult['symbols']): [string, string | null][][] {
+  const maps = [symbols.components, ...Object.values(symbols.imports)];
+  return maps.map(map => [...map].map(([name, target]) => [name, target.file]));
+}
+
 /**
  * The output the revision tracks: what the tab shows. The symbol table and the edges are large,
- * so the per-layer statistics stand in for the edges.
+ * so the per-layer statistics stand in for them in the Graph view, and the Unused view, which
+ * reads the uses, the symbols and the unread files, is covered by a hash of a short form of them.
  */
 function fingerprint(result: AnalyzeResult): string {
+  const unused = createHash('sha1')
+    .update(
+      JSON.stringify([
+        usesOf(result.edges),
+        usesOf(result.extraEdges),
+        symbolsOf(result.symbols),
+        result.dynamicComponentFiles,
+        result.unreadFiles,
+      ]),
+    )
+    .digest('hex');
   return JSON.stringify([
     result.findings,
     result.baseline?.suppressed,
@@ -49,6 +72,7 @@ function fingerprint(result: AnalyzeResult): string {
     layerStats(result),
     result.files.length,
     result.notes,
+    unused,
   ]);
 }
 

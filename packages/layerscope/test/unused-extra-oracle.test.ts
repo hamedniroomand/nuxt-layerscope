@@ -8,7 +8,7 @@ import { run } from '#src/cli.ts';
 import { formatResult } from '#src/report/index.ts';
 
 import type { Files } from './unused-extra-project.ts';
-import { LIB, LIB_IMPORTS, writeProject } from './unused-extra-project.ts';
+import { LIB, LIB_IMPORTS, write, writeProject } from './unused-extra-project.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -121,6 +121,43 @@ describe('a file that cannot be read', () => {
         ]);
       } finally {
         chmodSync(join(root, 'layers/web/lib/libA.ts'), 0o644);
+      }
+    },
+  );
+});
+
+describe('a modules dir that cannot be listed', () => {
+  it.skipIf(process.getuid?.() === 0 || process.platform === 'win32')(
+    'is recorded as unread',
+    async () => {
+      const root = writeProject(LIB, LIB_IMPORTS);
+      write(root, 'layers/web/modules/m.ts', 'export default () => 1;\n');
+      chmodSync(join(root, 'layers/web/modules'), 0);
+      try {
+        const result = await analyze({ rootDir: root, extraFiles: true });
+        expect(result.unreadFiles.map(item => item.reason)).toEqual([
+          'Could not read dir (EACCES)',
+        ]);
+        expect(result.unreadFiles[0].file.endsWith('/layers/web/modules')).toBe(true);
+      } finally {
+        chmodSync(join(root, 'layers/web/modules'), 0o755);
+      }
+    },
+  );
+
+  it.skipIf(process.getuid?.() === 0 || process.platform === 'win32')(
+    'does not hide an unreadable nuxt.config.ts',
+    async () => {
+      const root = writeProject(LIB, LIB_IMPORTS);
+      write(root, 'layers/web/nuxt.config.ts', 'export default {};\n');
+      chmodSync(join(root, 'layers/web/nuxt.config.ts'), 0);
+      try {
+        const result = await analyze({ rootDir: root, extraFiles: true });
+        expect(result.unreadFiles.map(item => item.reason)).toEqual([
+          'Could not read file (EACCES)',
+        ]);
+      } finally {
+        chmodSync(join(root, 'layers/web/nuxt.config.ts'), 0o644);
       }
     },
   );

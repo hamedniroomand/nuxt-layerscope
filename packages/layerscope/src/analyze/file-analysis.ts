@@ -17,7 +17,7 @@ import type {
 import { lineColumn } from '#src/utils/position.ts';
 
 import { CONTEXTS, contextOf } from './files.ts';
-import type { ImportEnv, ImportTarget } from './import-refs.ts';
+import type { ImportEnv, ImportOutcome, ImportTarget } from './import-refs.ts';
 import { resolveImportRef } from './import-refs.ts';
 
 /** Runtime registrations (plugins, `app.component`, `vueApp.use`) are invisible statically. */
@@ -38,6 +38,8 @@ export interface AnalysisEnv extends ImportEnv {
 function isIgnored(ref: ImportRef, symbol: string): boolean {
   return ref.typeOnly || ref.typeNames.some(name => symbol === `${ref.specifier}:${name}`);
 }
+
+const VIRTUAL_MODULES = new Set(['#imports', '#components']);
 
 /** Turns one file's scan into dependency edges and unresolved-reference findings. */
 export class FileAnalysis {
@@ -165,11 +167,32 @@ export class FileAnalysis {
     }
   }
 
+  /**
+   * What an import stands for. A virtual module (`#imports`, `#components`) is looked up in each
+   * context of the file, so an extra file that imports a server name gets it; the same target is
+   * kept once. A path resolves the same in every context, so it is resolved once.
+   */
+  private outcomesOf(ref: ImportRef): ImportOutcome[] {
+    const found = new Map<string, ImportOutcome>();
+    const contexts = VIRTUAL_MODULES.has(ref.specifier) ? this.contexts : [this.context];
+    for (const context of contexts) {
+      for (const outcome of resolveImportRef(ref, this.file, context, this.env)) {
+        const key = outcome.resolved
+          ? `${outcome.symbol}\0${outcome.target.to}\0${outcome.target.external}`
+          : `\0${outcome.message}`;
+        if (!found.has(key)) {
+          found.set(key, outcome);
+        }
+      }
+    }
+    return [...found.values()];
+  }
+
   private addImports(scan: FileScan): void {
     const ignoreTypes = this.env.typeImports === 'ignore';
     for (const ref of scan.imports) {
       // An unresolved path is reported even when the import is type-only.
-      for (const outcome of resolveImportRef(ref, this.file, this.context, this.env)) {
+      for (const outcome of this.outcomesOf(ref)) {
         if (!outcome.resolved) {
           this.addUnresolved(ref.specifier, ref.offset, outcome.message);
         } else if (!ignoreTypes) {
@@ -202,14 +225,21 @@ export class FileAnalysis {
     target: ImportTarget,
     names?: string[],
   ): void {
-    // A name can be two auto-imports (in two contexts); each target has its own edge.
-    const key =
-      kind === 'auto-import'
-        ? `${kind}\0${symbol}\0${target.to ?? target.external}`
-        : `${kind}\0${symbol}`;
-    if (!this.firstSeen(key)) {
+    // Ownership first: a layer installed from npm owns its files under node_modules.
+    const toLayer = target.to === null ? null : this.env.ownerOf(target.to);
+    const isPackage = toLayer === null && target.external !== null;
+    const to = isPackage ? null : target.to;
+    const external = toLayer === null ? (target.external ?? 'unknown') : null;
+    // A name can be two symbols (in two contexts); each target has its own edge.
+    if (!this.firstSeen(`${kind}\0${symbol}\0${to ?? external}`)) {
       // A second import of the same file adds its names to the edge that stands for both.
-      const known = this.edges.find(edge => edge.kind === kind && edge.symbol === symbol);
+      const known = this.edges.find(
+        edge =>
+          edge.kind === kind &&
+          edge.symbol === symbol &&
+          edge.to === to &&
+          edge.external === external,
+      );
       if (known?.names !== undefined && names !== undefined) {
         known.names = [...new Set([...known.names, ...names])];
       }
@@ -219,15 +249,12 @@ export class FileAnalysis {
       }
       return;
     }
-    // Ownership first: a layer installed from npm owns its files under node_modules.
-    const toLayer = target.to === null ? null : this.env.ownerOf(target.to);
-    const isPackage = toLayer === null && target.external !== null;
     this.edges.push({
       ...this.reference(kind, symbol, offset),
       fromLayer: this.layer.name,
-      to: isPackage ? null : target.to,
+      to,
       toLayer: toLayer?.name ?? null,
-      external: toLayer === null ? (target.external ?? 'unknown') : null,
+      external,
       ...(names === undefined ? {} : { names }),
     });
   }

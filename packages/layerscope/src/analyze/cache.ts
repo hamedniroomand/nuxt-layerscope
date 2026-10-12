@@ -1,4 +1,4 @@
-import { existsSync, statSync } from 'node:fs';
+import { statSync } from 'node:fs';
 
 import type { SymbolTable } from '#src/nuxt/symbols.ts';
 import type { AnalyzeResult, Edge, Layer, LayerscopeConfig } from '#src/types.ts';
@@ -119,19 +119,34 @@ interface ExtraInput {
 }
 
 /** A file that could not be read: it counts as unread, and it never stops the run. */
+function unreadStub(file: string, layer: Layer, env: AnalysisEnv, reason: string): FileAnalysis {
+  const analysis = new FileAnalysis(file, '', layer, env);
+  analysis.unread = reason;
+  return analysis;
+}
+
 function failedAnalysis(
   file: string,
   layer: Layer,
   env: AnalysisEnv,
   error: unknown,
 ): FileAnalysis {
-  const analysis = new FileAnalysis(file, '', layer, env);
   // The code of a file system error, such as EACCES; any other error shows its message.
   const code = (error as { code?: unknown } | null)?.code;
   const message = error instanceof Error ? error.message : String(error);
   const cause = typeof code === 'string' ? code : message.split('\n')[0];
-  analysis.unread = `Could not read file (${cause})`;
-  return analysis;
+  return unreadStub(file, layer, env, `Could not read file (${cause})`);
+}
+
+/** Reads an extra file. A file that is gone is skipped; any other error makes it unread. */
+export function analyzeOrFail(file: string, layer: Layer, env: AnalysisEnv): FileAnalysis | null {
+  try {
+    return analyzeFile(file, layer, env, true);
+  } catch (error) {
+    return (error as { code?: unknown } | null)?.code === 'ENOENT'
+      ? null
+      : failedAnalysis(file, layer, env, error);
+  }
 }
 
 function symbolFilesOf(symbols: SymbolTable): string[] {
@@ -159,7 +174,7 @@ async function analyzeExtraFiles(input: ExtraInput): Promise<FileAnalysis[]> {
   // Compared by real path: a symbol file has its real path, and a collected file can be a link.
   const known = new Set([...collected.keys()].map(file => realPath(file)));
   const seeds = await extraSeeds(input.layers, ownerOf, symbolFilesOf(table));
-  const pending = new Set(seeds.map(file => realPath(file)));
+  const pending = new Set(seeds.files.map(file => realPath(file)));
   const queue = (edges: Edge[]): void => {
     for (const edge of edges) {
       if (edge.to !== null) {
@@ -168,18 +183,15 @@ async function analyzeExtraFiles(input: ExtraInput): Promise<FileAnalysis[]> {
     }
   };
   queue(input.edges);
-  const analyses: FileAnalysis[] = [];
+  const analyses: FileAnalysis[] = seeds.denied.map(item =>
+    unreadStub(item.dir, item.layer, env, `Could not read dir (${item.cause})`),
+  );
   const pause = createYielder();
   // The set grows while it is read, so the imports of an extra file are read in this loop too.
   for (const file of pending) {
     const layer = isExtraFile(file, ownerOf, ignore, known);
-    if (layer !== null && existsSync(file)) {
-      let analysis: FileAnalysis;
-      try {
-        analysis = analyzeFile(file, layer, env, true);
-      } catch (error) {
-        analysis = failedAnalysis(file, layer, env, error);
-      }
+    const analysis = layer === null ? null : analyzeOrFail(file, layer, env);
+    if (analysis !== null) {
       analyses.push(analysis);
       queue(analysis.edges);
       // eslint-disable-next-line no-await-in-loop -- yields between files
