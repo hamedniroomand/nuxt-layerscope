@@ -127,3 +127,30 @@ describe('layer dirs under a symlinked root', () => {
     expect(layer.publicDir).toBe(join(real, 'public'));
   });
 });
+
+describe('a modules or public dir that is the scanned dir', () => {
+  it.each(['modules', 'public'] as const)(
+    'uses the real path of a symlinked srcDir for dir.%s equal to it',
+    async kind => {
+      const base = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-eqdir-')));
+      const real = join(base, 'real');
+      const link = join(base, 'link');
+      mkdirSync(real);
+      writeFileSync(join(real, 'm.ts'), 'export const m = 1;\n');
+      symlinkSync(real, link);
+      const dirs = {
+        root: link,
+        app: link,
+        server: join(link, 'server'),
+        shared: join(link, 'shared'),
+        modules: kind === 'modules' ? link : join(link, 'modules'),
+        public: kind === 'public' ? link : join(link, 'public'),
+      };
+      const layer = layerFromNuxt({ cwd: link, config: {} }, 0, dirs);
+      expect(layer[`${kind}Dir`]).toBe(real);
+      const files = await collectFiles([layer], createOwnerLookup([layer]), []);
+      expect([...files.keys()]).toEqual([]);
+      expect(isCheckedFile(join(real, 'm.ts'), layer, [])).toBe(false);
+    },
+  );
+});

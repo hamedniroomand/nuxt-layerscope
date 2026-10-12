@@ -45,12 +45,14 @@ function toDirs(dirs: LayerDirectories): Dirs {
   const entry = (path: string): string => {
     const target = resolve(path);
     const base = bases
-      .filter(candidate => target.startsWith(`${candidate}/`))
+      .filter(candidate => target === candidate || target.startsWith(`${candidate}/`))
       .toSorted((a, b) => b.length - a.length)
       .at(0);
-    return base === undefined
-      ? join(dir(dirname(target)), basename(target))
-      : join(dir(base), target.slice(base.length + 1));
+    if (base === undefined) {
+      return join(dir(dirname(target)), basename(target));
+    }
+    // The dir can be the scanned dir itself (`dir.modules: '.'`).
+    return target === base ? dir(base) : join(dir(base), target.slice(base.length + 1));
   };
   return {
     root: dir(dirs.root),
