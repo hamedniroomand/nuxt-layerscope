@@ -2,7 +2,7 @@ import { existsSync, readFileSync, rmSync } from 'node:fs';
 
 import { cac } from 'cac';
 import { join } from 'pathe';
-import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { EXIT_CLEAN, EXIT_VIOLATIONS, run } from '#src/cli.ts';
 import { acceptDashedBooleans } from '#src/commands/shared.ts';
@@ -12,19 +12,37 @@ import { ADMIN, SHARED, SHOP, WEB, cartProject } from './fix-project.ts';
 
 /**
  * Files that a command writes in the working dir when the flag took the root as its value and
- * the root was lost: `init` wrote a config there, so a failing test must not leave it.
+ * the root was lost: `init` wrote a config there. A file that was there before the test stays,
+ * with its content. A file that the test made is removed, and the test fails.
  */
-const STRAY = ['layerscope.config.ts', 'layerscope-baseline.json'].map(name =>
+const WATCHED = ['layerscope.config.ts', 'layerscope-baseline.json'].map(name =>
   join(process.cwd(), name),
 );
 
+function contentOf(path: string): string | null {
+  return existsSync(path) ? readFileSync(path, 'utf8') : null;
+}
+
+let before = new Map<string, string | null>();
+
+beforeEach(() => {
+  before = new Map(WATCHED.map(path => [path, contentOf(path)]));
+});
+
 afterEach(() => {
   vi.restoreAllMocks();
-  const written = STRAY.filter(path => existsSync(path));
-  for (const path of written) {
-    rmSync(path, { force: true });
+  const problems: string[] = [];
+  for (const path of WATCHED) {
+    const was = before.get(path) ?? null;
+    const now = contentOf(path);
+    if (was === null && now !== null) {
+      rmSync(path, { force: true });
+      problems.push(`a command wrote ${path}`);
+    } else if (was !== now) {
+      problems.push(`a command changed ${path}`);
+    }
   }
-  expect(written, 'a command wrote in the working dir').toEqual([]);
+  expect(problems).toEqual([]);
 });
 
 function silence(): () => string {
