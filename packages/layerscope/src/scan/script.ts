@@ -57,6 +57,28 @@ function createRequireBindings(program: Program, tracker: ScopeTracker): Set<Sco
   return bindings;
 }
 
+/**
+ * The local names of `import type { a }`, `import { type a }`, `import type * as a`,
+ * and `import type a from`. Found before the scan, so a `typeof a`
+ * that comes before the import in the file is known.
+ */
+function typeOnlyBindings(program: Program): Set<string> {
+  const names = new Set<string>();
+  for (const statement of program.body) {
+    if (statement.type === 'ImportDeclaration') {
+      for (const specifier of statement.specifiers) {
+        if (
+          statement.importKind === 'type' ||
+          (specifier.type === 'ImportSpecifier' && specifier.importKind === 'type')
+        ) {
+          names.add(specifier.local.name);
+        }
+      }
+    }
+  }
+  return names;
+}
+
 export function scanScript(
   code: string,
   lang: Lang,
@@ -74,6 +96,7 @@ export function scanScript(
     tracker,
     mapOffset,
     requireBindings: createRequireBindings(program, tracker),
+    typeBindings: typeOnlyBindings(program),
   };
   walk(program, {
     scopeTracker: tracker,

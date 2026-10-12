@@ -99,6 +99,8 @@ layers and referenced nowhere. A few rules keep it honest:
 - An explicit import of a file counts as using everything the file exports.
 - Uses in `nuxt.config.*`, in the Nuxt `modules/` dir, in files of extra auto-import and component
   dirs (`imports.dirs`), and in the project files that counted files import, count too.
+- A `typeof x` in a type, such as `ReturnType<typeof useCart>`, counts too. With
+  `typeImports: 'ignore'`, `unused` also counts `import type`.
 - If any file renders a component chosen at runtime (`<component :is>` bound to a value, or
   `resolveComponent(name)`), unused components are marked **possibly used at runtime**, because
   layerscope cannot see which one is picked.
@@ -113,8 +115,9 @@ layers and referenced nowhere. A few rules keep it honest:
 - files that layerscope could not read in full: a parse error, a template that layerscope does not
   read (a `lang` other than HTML, a `src` attribute, or an expression that does not parse), an
   `import()` or `require()` with a path that is not a fixed string, or an `import.meta.glob()`;
-- uses in a type position, for example `ReturnType<typeof useCart>`, and `import type` uses when
-  `typeImports` is `'ignore'`;
+- types written as `import('...')`;
+- `.d.ts` files, for example global type augmentations;
+- a `typeof x` in a `.vue` `generic` attribute, in a template expression, or in a JSDoc comment;
 - uses in other apps of a workspace. A layer from a workspace package, or a layer that Nuxt
   downloads from git into a cache dir, counts as a project layer. Its symbols can be listed when
   only another app uses them;

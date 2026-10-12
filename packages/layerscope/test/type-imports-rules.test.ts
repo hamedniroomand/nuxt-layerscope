@@ -68,7 +68,7 @@ describe('suggestions with typeImports', () => {
 });
 
 describe('unused with typeImports', () => {
-  it('lists a symbol that is used only through a type-only import as unused', async () => {
+  it('counts a symbol that is used only through a type-only import, with either value', async () => {
     const root = base();
     write(
       root,
@@ -84,7 +84,7 @@ describe('unused with typeImports', () => {
     const names = async (setting: TypeImports): Promise<string[]> =>
       findUnused(await run(root, setting)).map(symbol => symbol.name);
     expect(await names('check')).toEqual([]);
-    expect(await names('ignore')).toEqual(['useB']);
+    expect(await names('ignore')).toEqual([]);
   });
 });
 

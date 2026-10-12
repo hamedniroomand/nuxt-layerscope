@@ -18,7 +18,7 @@ import { lineColumn } from '#src/utils/position.ts';
 
 import { CONTEXTS, contextOf } from './files.ts';
 import type { ImportEnv, ImportOutcome, ImportTarget } from './import-refs.ts';
-import { resolveImportRef } from './import-refs.ts';
+import { isIgnored, lookupAutoImports, outcomesOf } from './import-refs.ts';
 
 /** Runtime registrations (plugins, `app.component`, `vueApp.use`) are invisible statically. */
 const GLOBALS_HINT = 'if it is registered at runtime, add it to "globals" in layerscope.config.ts';
@@ -31,19 +31,11 @@ export interface AnalysisEnv extends ImportEnv {
   unresolvedSeverity: Severity;
 }
 
-/**
- * A type-only statement, or for a virtual module such as `#imports` (one outcome for each name,
- * in the symbol as `#imports:Name`) a name that only a `type` keyword brings in.
- */
-function isIgnored(ref: ImportRef, symbol: string): boolean {
-  return ref.typeOnly || ref.typeNames.some(name => symbol === `${ref.specifier}:${name}`);
-}
-
-const VIRTUAL_MODULES = new Set(['#imports', '#components']);
-
 /** Turns one file's scan into dependency edges and unresolved-reference findings. */
 export class FileAnalysis {
   public readonly edges: Edge[] = [];
+  /** Uses in a type position: `typeof x`, and `import type` when types are ignored. Not in `edges`. */
+  public readonly typeEdges: Edge[] = [];
   public readonly unresolved: Finding[] = [];
   /** Renders a component chosen at runtime, so any component may be used. */
   public hasDynamicComponent = false;
@@ -100,30 +92,27 @@ export class FileAnalysis {
     return this;
   }
 
-  /**
-   * The auto-imports that a name stands for in the contexts of this file: one for each different
-   * target. An extra file can run in any context, and the name can be a different symbol in each.
-   */
-  private lookup(name: string): SymbolTarget[] {
-    const found = new Map<string, SymbolTarget>();
-    for (const context of this.contexts) {
-      const target = this.env.table.imports[context].get(name);
-      if (target !== undefined) {
-        found.set(`${target.file}\0${target.module}`, target);
-      }
-    }
-    return [...found.values()];
-  }
-
-  private addAutoImports(name: string, offset: number, targets: SymbolTarget[]): void {
+  private addAutoImports(
+    name: string,
+    offset: number,
+    targets: SymbolTarget[],
+    type = false,
+  ): void {
     for (const target of targets) {
-      this.addEdge('auto-import', name, offset, { to: target.file, external: target.module });
+      this.addEdge(
+        'auto-import',
+        name,
+        offset,
+        { to: target.file, external: target.module },
+        undefined,
+        type,
+      );
     }
   }
 
   private addIdentifiers(scan: FileScan): void {
     for (const ref of scan.free) {
-      const targets = this.lookup(ref.name);
+      const targets = lookupAutoImports(this.env.table, this.contexts, ref.name);
       if (targets.length > 0) {
         this.addAutoImports(ref.name, ref.offset, targets);
       } else if (!this.env.identifiers.has(ref.name)) {
@@ -134,9 +123,22 @@ export class FileAnalysis {
         );
       }
     }
+    // A `typeof x` in a type is a use for `unused` only: no finding, no edge for the rules.
+    for (const ref of scan.typeFree) {
+      this.addAutoImports(
+        ref.name,
+        ref.offset,
+        lookupAutoImports(this.env.table, this.contexts, ref.name),
+        true,
+      );
+    }
     // Template identifiers missing from the table are props, data or global properties.
     for (const ref of scan.templateIdents) {
-      this.addAutoImports(ref.name, ref.offset, this.lookup(ref.name));
+      this.addAutoImports(
+        ref.name,
+        ref.offset,
+        lookupAutoImports(this.env.table, this.contexts, ref.name),
+      );
     }
   }
 
@@ -167,42 +169,37 @@ export class FileAnalysis {
     }
   }
 
-  /**
-   * What an import stands for. A virtual module (`#imports`, `#components`) is looked up in each
-   * context of the file, so an extra file that imports a server name gets it; the same target is
-   * kept once. A path resolves the same in every context, so it is resolved once.
-   */
-  private outcomesOf(ref: ImportRef): ImportOutcome[] {
-    const found = new Map<string, ImportOutcome>();
-    const contexts = VIRTUAL_MODULES.has(ref.specifier) ? this.contexts : [this.context];
-    for (const context of contexts) {
-      for (const outcome of resolveImportRef(ref, this.file, context, this.env)) {
-        const key = outcome.resolved
-          ? `${outcome.symbol}\0${outcome.target.to}\0${outcome.target.external}`
-          : `\0${outcome.message}`;
-        if (!found.has(key)) {
-          found.set(key, outcome);
-        }
-      }
-    }
-    return [...found.values()];
-  }
-
   private addImports(scan: FileScan): void {
     const ignoreTypes = this.env.typeImports === 'ignore';
     for (const ref of scan.imports) {
       // An unresolved path is reported even when the import is type-only.
-      for (const outcome of this.outcomesOf(ref)) {
+      for (const outcome of outcomesOf(ref, this.file, this.contexts, this.env)) {
         if (!outcome.resolved) {
           this.addUnresolved(ref.specifier, ref.offset, outcome.message);
-        } else if (!ignoreTypes) {
+        } else if (ignoreTypes) {
+          this.addIgnoringTypes(ref, outcome);
+        } else {
           this.addEdge('import', outcome.symbol, ref.offset, outcome.target, outcome.names);
-        } else if (!isIgnored(ref, outcome.symbol)) {
-          const names = outcome.names?.filter(name => !ref.typeNames.includes(name));
-          this.addEdge('import', outcome.symbol, ref.offset, outcome.target, names);
         }
       }
     }
+  }
+
+  /**
+   * With `typeImports: 'ignore'`, the type-only part of an import makes no edge for the rules. It
+   * is still a use for `unused`, so it goes to `typeEdges`.
+   */
+  private addIgnoringTypes(
+    ref: ImportRef,
+    outcome: Extract<ImportOutcome, { resolved: true }>,
+  ): void {
+    const { symbol, target } = outcome;
+    if (isIgnored(ref, symbol)) {
+      this.addEdge('import', symbol, ref.offset, target, outcome.names, true);
+      return;
+    }
+    const names = outcome.names?.filter(name => !ref.typeNames.includes(name));
+    this.addEdge('import', symbol, ref.offset, target, names);
   }
 
   private reference(kind: ReferenceKind, symbol: string, offset: number): Reference {
@@ -224,16 +221,18 @@ export class FileAnalysis {
     offset: number,
     target: ImportTarget,
     names?: string[],
+    type = false,
   ): void {
+    const edges = type ? this.typeEdges : this.edges;
     // Ownership first: a layer installed from npm owns its files under node_modules.
     const toLayer = target.to === null ? null : this.env.ownerOf(target.to);
     const isPackage = toLayer === null && target.external !== null;
     const to = isPackage ? null : target.to;
     const external = toLayer === null ? (target.external ?? 'unknown') : null;
     // A name can be two symbols (in two contexts); each target has its own edge.
-    if (!this.firstSeen(`${kind}\0${symbol}\0${to ?? external}`)) {
+    if (!this.firstSeen(`${type ? 'type\0' : ''}${kind}\0${symbol}\0${to ?? external}`)) {
       // A second import of the same file adds its names to the edge that stands for both.
-      const known = this.edges.find(
+      const known = edges.find(
         edge =>
           edge.kind === kind &&
           edge.symbol === symbol &&
@@ -249,7 +248,7 @@ export class FileAnalysis {
       }
       return;
     }
-    this.edges.push({
+    edges.push({
       ...this.reference(kind, symbol, offset),
       fromLayer: this.layer.name,
       to,

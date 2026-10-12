@@ -1,0 +1,53 @@
+exit 1
+{
+  "version": 1,
+  "source": "types",
+  "notes": [
+    "shadowed-component needs the full component registry: add \"nuxt-layerscope\" to \"modules\" in nuxt.config. The generated .d.ts files list only the winning component, so the rule reported nothing."
+  ],
+  "layers": [
+    {
+      "name": "root",
+      "root": "<root>"
+    },
+    {
+      "name": "web",
+      "root": "<root>/layers/web"
+    },
+    {
+      "name": "base",
+      "root": "<root>/layers/base"
+    }
+  ],
+  "summary": {
+    "files": 4,
+    "errors": 1,
+    "warnings": 0
+  },
+  "findings": [
+    {
+      "rule": "layer-boundary",
+      "severity": "error",
+      "file": "<root>/layers/web/app/pages/index.vue",
+      "line": 3,
+      "column": 37,
+      "symbol": "../../../base/app/utils/pair",
+      "fromLayer": "web",
+      "toLayer": "base",
+      "target": "<root>/layers/base/app/utils/pair.ts",
+      "allowed": [],
+      "message": "Import \"../../../base/app/utils/pair\" crosses from layer \"web\" into \"base\"",
+      "suggestion": {
+        "action": "allow",
+        "message": "allow \"web\" to use \"pairUtil\" from \"base\" (adds 1 edge, clears 1 finding)",
+        "only": [
+          "pairUtil"
+        ],
+        "impact": {
+          "fixes": 1,
+          "edges": 1
+        }
+      }
+    }
+  ]
+}

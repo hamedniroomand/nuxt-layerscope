@@ -89,6 +89,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     declaredConfig,
     recordedFile: environment.recordedFile,
     extraEdges: extra.flatMap(analysis => analysis.edges),
+    typeEdges: [...checked, ...extra].flatMap(analysis => analysis.typeEdges),
     ...fileLists([...checked, ...extra]),
   };
   const reported =

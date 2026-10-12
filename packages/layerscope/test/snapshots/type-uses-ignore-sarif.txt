@@ -1,0 +1,120 @@
+exit 1
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "originalUriBaseIds": {
+        "%SRCROOT%": {
+          "uri": "file://<root>/"
+        }
+      },
+      "tool": {
+        "driver": {
+          "name": "nuxt-layerscope",
+          "version": "0.7.0",
+          "informationUri": "https://layerscope.kitdev.space/",
+          "rules": [
+            {
+              "id": "layer-boundary",
+              "shortDescription": {
+                "text": "A file uses a layer that its own layer does not allow."
+              },
+              "helpUri": "https://layerscope.kitdev.space/reference/rules#layer-boundary",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "layer-cycle",
+              "shortDescription": {
+                "text": "Layers depend on each other in a cycle."
+              },
+              "helpUri": "https://layerscope.kitdev.space/reference/rules#layer-cycle",
+              "defaultConfiguration": {
+                "level": "none"
+              }
+            },
+            {
+              "id": "layer-internal",
+              "shortDescription": {
+                "text": "A file uses a symbol that its layer does not expose."
+              },
+              "helpUri": "https://layerscope.kitdev.space/reference/rules#layer-internal",
+              "defaultConfiguration": {
+                "level": "error"
+              }
+            },
+            {
+              "id": "unresolved-reference",
+              "shortDescription": {
+                "text": "A reference cannot be resolved: an unknown identifier, component or import, a dynamic component, a file that cannot be parsed, or code that layerscope cannot read."
+              },
+              "helpUri": "https://layerscope.kitdev.space/reference/rules#unresolved-reference",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "shadowed-component",
+              "shortDescription": {
+                "text": "A component is replaced by a component of the same name in another layer."
+              },
+              "helpUri": "https://layerscope.kitdev.space/reference/rules#shadowed-component",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "layer-boundary",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Import \"../../../base/app/utils/pair\" crosses from layer \"web\" into \"base\"\nsuggestion: allow \"web\" to use \"pairUtil\" from \"base\" (adds 1 edge, clears 1 finding)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "layers/web/app/pages/index.vue",
+                  "uriBaseId": "%SRCROOT%"
+                },
+                "region": {
+                  "startLine": 3,
+                  "startColumn": 37
+                }
+              }
+            }
+          ],
+          "relatedLocations": [
+            {
+              "id": 1,
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "layers/base/app/utils/pair.ts",
+                  "uriBaseId": "%SRCROOT%"
+                }
+              },
+              "message": {
+                "text": "../../../base/app/utils/pair resolves here"
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "layerscope/v1": "e786caae3dc8f1603c3a5f1bd2e1c82e4ed7271cf07d7fa8754c25fa7a5bb587"
+          },
+          "properties": {
+            "suggestion": {
+              "action": "allow",
+              "message": "allow \"web\" to use \"pairUtil\" from \"base\" (adds 1 edge, clears 1 finding)"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -18,6 +18,7 @@ export function emptyResult(rootDir: string, notes: string[]): AnalyzeResult {
     },
     dynamicComponentFiles: [],
     extraEdges: [],
+    typeEdges: [],
     unreadFiles: [],
   };
 }

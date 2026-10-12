@@ -166,7 +166,8 @@ unused components are marked "possibly used at runtime". `unused` does not count
 packages, or in files outside the layer source dirs that are not in an extra auto-import or
 component dir and that no counted file imports. `unused` also counts the uses in `nuxt.config.*`, in
 the Nuxt `modules/` dir, in files of extra auto-import and component dirs, and in the project files
-that counted files import. It lists the files that it could not read in full: a parse error, a
+that counted files import. It also counts `typeof x` in a type, and `import type` when `typeImports`
+is `'ignore'`. It lists the files that it could not read in full: a parse error, a
 template that layerscope does not read (a `lang` other than HTML, a `src` attribute, or an
 expression that does not parse), a dynamic `import()` or `require()`, or an `import.meta.glob()`.
 The last line of the text report names the uses that it does not count. `why` shows only the uses
