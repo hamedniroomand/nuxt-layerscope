@@ -43,10 +43,11 @@
       component listed here may still be used.
     </p>
     <p
-      v-if="unused.data.value?.blindSpotLine"
+      v-for="line in unused.data.value?.blindSpotLines ?? []"
+      :key="line"
       class="muted"
     >
-      {{ unused.data.value.blindSpotLine }}
+      {{ line }}
     </p>
     <template v-if="unreadable.length > 0">
       <p class="banner">{{ unused.data.value?.unreadableLine }}</p>
@@ -76,7 +77,7 @@
       v-else-if="unused.data.value && groups.length === 0 && unreadable.length === 0"
       class="ok"
     >
-      Every component and auto-import is referenced.
+      {{ unused.data.value.emptyLine }}
     </p>
     <section
       v-for="group in groups"

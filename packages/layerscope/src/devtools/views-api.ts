@@ -75,7 +75,8 @@ export async function unusedView(result: AnalyzeResult): Promise<UnusedView> {
   return {
     unused: rows,
     blindSpots: report.toBlindSpotRows(spots, result.rootDir, true),
-    blindSpotLine: report.blindSpotLine(spots),
+    blindSpotLines: report.blindSpotLines(spots),
+    emptyLine: report.emptySentence(spots),
     unreadableLine: report.unreadableSentence(report.countUnreadable(spots)),
     possiblyUsed: rows.some(row => row.possiblyUsed),
     layers: result.layers.map(layer => layer.name),

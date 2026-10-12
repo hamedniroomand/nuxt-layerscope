@@ -76,8 +76,9 @@ Every use of a component or auto-import, grouped by layer, as `layerscope why` s
 ### Unused
 
 Components and auto-imports that nothing uses, as `layerscope unused` shows them. Press
-<kbd>4</kbd>. The view also names the uses that it does not count, and lists the files that
-layerscope could not read in full. A half-edited file with a parse error is one of them.
+<kbd>4</kbd>. The view also names the uses that it does not count and the layers outside the project
+root that it does not list, and lists the files that layerscope could not read in full. A
+half-edited file with a parse error is one of them.
 
 <Screenshot
   name="unused"
@@ -187,7 +188,7 @@ own scripts while the dev server runs.
 | `GET /api/report`                               | The report for the tab: findings with keys, suggestions and statistics.     |
 | `GET /api/symbols`                              | The names that Trace accepts, with their kind and layer.                    |
 | `GET /api/trace?symbol=useCart`                 | Every use of a symbol, as `layerscope why --format json` shows it.          |
-| `GET /api/unused`                               | Unused components and auto-imports, and the uses that are not counted.      |
+| `GET /api/unused`                               | Unused components and auto-imports, and what the view does not see.         |
 | `GET /api/baseline`                             | The accepted findings and the entries that no longer match.                 |
 | `GET /api/graph`                                | Layers, dependencies and the matrix. Add `?layout=1` above 15 layers.       |
 | `GET /api/edge?from=A&to=B`                     | The symbols and files behind one dependency, at most 500.                   |

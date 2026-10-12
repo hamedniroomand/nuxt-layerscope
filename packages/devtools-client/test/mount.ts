@@ -28,7 +28,8 @@ export function fakeApi(data: ReportResponse | Error): Api {
     unused: vi.fn<Api['unused']>().mockResolvedValue({
       unused: [],
       blindSpots: [],
-      blindSpotLine: null,
+      blindSpotLines: [],
+      emptyLine: 'Every component and auto-import is referenced.',
       unreadableLine: null,
       possiblyUsed: false,
       layers: [],

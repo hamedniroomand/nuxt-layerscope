@@ -26,8 +26,11 @@ export function writeProject(
   imports: Record<string, string>,
   config = "{ layers: { web: { path: 'layers/web' } } }",
   serverImports: Record<string, string> = {},
+  /** Makes the project root `app` in a new dir, so `../` is private to the project. */
+  inOwnDir = false,
 ): string {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-extra-')));
+  const parent = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-extra-')));
+  const root = inOwnDir ? join(parent, 'app') : parent;
   const all: Files = {
     '.nuxt/types/imports.d.ts': importsDts(imports),
     '.nuxt/types/nitro-imports.d.ts': importsDts(serverImports),

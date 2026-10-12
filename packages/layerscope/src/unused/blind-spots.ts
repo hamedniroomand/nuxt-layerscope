@@ -1,11 +1,12 @@
-import { isPackageLayer } from '#src/nuxt/package-layer.ts';
+import { isOutsideRoot, isPackageLayer } from '#src/nuxt/package-layer.ts';
 import type { AnalyzeResult, UnreadFile } from '#src/types.ts';
 
-/** A kind of use that `unused` does not count. */
+/** Something that `unused` does not see: a use that it does not count, or a layer it does not list. */
 export type BlindSpot =
   | { kind: 'test-files' }
   | { kind: 'ignored' }
   | { kind: 'package-layers' }
+  | { kind: 'outside-root'; layers: string[] }
   | { kind: 'unreadable'; files: UnreadFile[] };
 
 /** The blind spots that apply to this run. Test files always apply: layerscope never scans them. */
@@ -16,6 +17,12 @@ export function findBlindSpots(result: AnalyzeResult): BlindSpot[] {
   }
   if (result.layers.some(isPackageLayer)) {
     spots.push({ kind: 'package-layers' });
+  }
+  const outside = result.layers.filter(
+    layer => !isPackageLayer(layer) && isOutsideRoot(layer, result.rootDir),
+  );
+  if (outside.length > 0) {
+    spots.push({ kind: 'outside-root', layers: outside.map(layer => layer.name) });
   }
   if (result.unreadFiles.length > 0) {
     spots.push({ kind: 'unreadable', files: result.unreadFiles });

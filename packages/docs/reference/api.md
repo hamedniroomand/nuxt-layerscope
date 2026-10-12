@@ -135,10 +135,12 @@ only when `result` comes from `analyze` with `extraFiles: true`. Each entry has 
 
 ## `findBlindSpots(result)`
 
-The uses that `layerscope unused` does not count in this run. Each entry has a `kind`:
-`test-files`, `ignored` (the config has `ignore` patterns), `package-layers` (a layer is installed
-as a package) or `unreadable`. An `unreadable` entry also has `files`: the files that layerscope
-could not read, each with a `file` (an absolute path) and a `reason`.
+What `layerscope unused` does not see in this run. Each entry has a `kind`: `test-files`, `ignored`
+(the config has `ignore` patterns), `package-layers` (a layer is installed as a package),
+`unreadable` or `outside-root`. An `unreadable` entry also has `files`: the files that layerscope
+could not read, each with a `file` (an absolute path) and a `reason`. An `outside-root` entry has
+`layers`: the names of the layers outside the project root that are not installed as packages.
+`findUnused` does not list their symbols.
 
 ## `defineConfig(config)`
 

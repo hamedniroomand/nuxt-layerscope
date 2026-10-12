@@ -187,7 +187,11 @@ describe('layerscope graph and unused', () => {
     const output = captureOutput();
     expect(await run(['node', 'layerscope', 'unused', NUXT4_ROOT])).toBe(EXIT_CLEAN);
     expect(output.stdout()).toContain('4 unused symbols in 2 layers');
-    expect(output.stdout().trimEnd().endsWith('Not counted as uses: test files.')).toBe(true);
+    // The `ui` layer of the fixture is a workspace package outside the project root.
+    expect(output.stdout().trimEnd().split('\n').slice(-2)).toEqual([
+      'Not counted as uses: test files.',
+      'Not listed (layers outside the project root): ui.',
+    ]);
   });
 
   it('adds the blind spots to the JSON report', async () => {
@@ -197,7 +201,10 @@ describe('layerscope graph and unused', () => {
     );
     const report = JSON.parse(output.stdout()) as { version: number; blindSpots: unknown };
     expect(report.version).toBe(1);
-    expect(report.blindSpots).toEqual([{ kind: 'test-files' }]);
+    expect(report.blindSpots).toEqual([
+      { kind: 'test-files' },
+      { kind: 'outside-root', layers: ['ui'] },
+    ]);
   });
 });
 

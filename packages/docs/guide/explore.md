@@ -101,6 +101,11 @@ layers and referenced nowhere. A few rules keep it honest:
   dirs (`imports.dirs`), and in the project files that counted files import, count too.
 - A `typeof x` in a type, such as `ReturnType<typeof useCart>`, counts too. With
   `typeImports: 'ignore'`, `unused` also counts `import type`.
+- `unused` does not list the symbols of a layer outside the project root that is not installed as a
+  package, for example a workspace package, or a layer that Nuxt downloads from git into a cache dir
+  outside `node_modules` (`~/.cache/c12`), because another app can use them. Uses in these layers
+  still count. A second line of the report names these layers. When any layer is not listed, an
+  empty list says "No unused symbol found in the listed layers."
 - If any file renders a component chosen at runtime (`<component :is>` bound to a value, or
   `resolveComponent(name)`), unused components are marked **possibly used at runtime**, because
   layerscope cannot see which one is picked.
@@ -110,23 +115,23 @@ layers and referenced nowhere. A few rules keep it honest:
 - test files (`*.test.*`, `*.spec.*`, `__tests__/`), files outside the layer source dirs that are
   not in an extra auto-import or component dir and that no counted file imports, and files that
   match [`ignore`](../reference/config#ignore);
-- files in layers installed under `node_modules`. These layers are dependencies, and their unused
-  code is not yours to delete;
+- files in layers installed under `node_modules`, also a layer that Nuxt downloads from git into
+  `node_modules/.c12`. These layers are dependencies, and their unused code is not yours to delete.
+  They can use a component or auto-import that your project defines, and `unused` does not read
+  them;
 - files that layerscope could not read in full: a parse error, a template that layerscope does not
   read (a `lang` other than HTML, a `src` attribute, or an expression that does not parse), an
   `import()` or `require()` with a path that is not a fixed string, or an `import.meta.glob()`;
 - types written as `import('...')`;
 - `.d.ts` files, for example global type augmentations;
 - a `typeof x` in a `.vue` `generic` attribute, in a template expression, or in a JSDoc comment;
-- uses in other apps of a workspace. A layer from a workspace package, or a layer that Nuxt
-  downloads from git into a cache dir, counts as a project layer. Its symbols can be listed when
-  only another app uses them;
 - runtime plugins and apps that extend this one.
 
-The last line of the report names test files, `ignore` and package layers, when they apply. The
-report lists the files that could not be read before that line. The report does not name the other
-places in this list. Layerscope cannot see them. Treat the list as a starting point for review, not
-a delete list.
+The report has one line that names the uses that `unused` does not count: test files, `ignore` and
+package layers, when they apply. When a layer is outside the project root and is not installed as a
+package, a second line names it. The report lists the files that could not be read before these
+lines. The report does not name the other places in this list. Layerscope cannot see them. Treat the
+list as a starting point for review, not a delete list.
 
 `why` shows only the uses that `check` reads. A use that only `unused` counts, for example in
 `nuxt.config.ts`, does not show in `why`.

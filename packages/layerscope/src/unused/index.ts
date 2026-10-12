@@ -1,8 +1,8 @@
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
-import { isPackageLayer } from '#src/nuxt/package-layer.ts';
+import { isOutsideRoot, isPackageLayer } from '#src/nuxt/package-layer.ts';
 import type { SymbolMap, SymbolTarget } from '#src/nuxt/symbols.ts';
 import { exposureOf } from '#src/rules/layer-internal.ts';
-import type { AnalyzeResult, Context, Edge } from '#src/types.ts';
+import type { AnalyzeResult, Context, Edge, Layer } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
 export type UnusedKind = 'component' | 'auto-import';
@@ -94,15 +94,25 @@ function isExposedSymbol(
 }
 
 /**
+ * The name of the layer when its symbols are listed. A layer installed as a package is not
+ * checked, and a layer outside the project root can be used by another app.
+ */
+function listedLayer(layer: Layer | null, rootDir: string): string | null {
+  return layer === null || isPackageLayer(layer) || isOutsideRoot(layer, rootDir)
+    ? null
+    : layer.name;
+}
+
+/**
  * Components and auto-imports registered by the project's own layers that nothing references.
- * Layers installed as packages are not checked, so their symbols are never reported.
+ * Layers installed as packages are not checked, and the symbols of a layer outside the project
+ * root (for example a workspace package) are not listed, because another app can use them. So
+ * their symbols are never reported.
  */
 export function findUnused(result: AnalyzeResult): UnusedSymbol[] {
   const ownerOf = createOwnerLookup(result.layers);
-  const checked = (target: SymbolTarget): string | null => {
-    const layer = target.file === null ? null : ownerOf(target.file);
-    return layer === null || isPackageLayer(layer) ? null : layer.name;
-  };
+  const checked = (target: SymbolTarget): string | null =>
+    listedLayer(target.file === null ? null : ownerOf(target.file), result.rootDir);
   const uses = collectUses([...result.edges, ...result.extraEdges, ...result.typeEdges]);
   const possiblyUsed = result.dynamicComponentFiles.length > 0;
   const unused: UnusedSymbol[] = [];

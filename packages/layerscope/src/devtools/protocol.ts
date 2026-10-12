@@ -115,8 +115,10 @@ export interface UnusedView {
   unused: UnusedRow[];
   /** Uses that `unused` does not count; `unreadable` lists files that could not be read. */
   blindSpots: BlindSpotRow[];
-  /** The text of the CLI blind-spot line; `null` when none applies. */
-  blindSpotLine: string | null;
+  /** The text of the CLI blind-spot lines. */
+  blindSpotLines: string[];
+  /** What the view says when no symbol is listed and every file was read. */
+  emptyLine: string;
   /** The sentence about files that could not be read; `null` when all files were read. */
   unreadableLine: string | null;
   /** The project renders components chosen at runtime, so some may be used after all. */

@@ -158,21 +158,22 @@ npx layerscope graph --by file --format dot | dot -Tsvg > files.svg
 
 ### `layerscope unused [root]`
 
-Lists components and auto-imports (composables, utils, server utils) that nothing references,
-per layer. Explicit imports of a file count as using everything it exports. When the project
-renders components chosen at runtime (`<component :is>` bound to a value, `resolveComponent(x)`),
-unused components are marked "possibly used at runtime". `unused` does not count uses in test files
+Lists components and auto-imports (composables, utils, server utils) that nothing references, per
+layer. Explicit imports of a file count as using everything it exports. When the project renders
+components chosen at runtime (`<component :is>` bound to a value, `resolveComponent(x)`), unused
+components are marked "possibly used at runtime". `unused` does not count uses in test files
 (`*.test.*`, `*.spec.*`, `__tests__/`), in files that match `ignore`, in layers installed as
 packages, or in files outside the layer source dirs that are not in an extra auto-import or
 component dir and that no counted file imports. `unused` also counts the uses in `nuxt.config.*`, in
 the Nuxt `modules/` dir, in files of extra auto-import and component dirs, and in the project files
 that counted files import. It also counts `typeof x` in a type, and `import type` when `typeImports`
-is `'ignore'`. It lists the files that it could not read in full: a parse error, a
-template that layerscope does not read (a `lang` other than HTML, a `src` attribute, or an
-expression that does not parse), a dynamic `import()` or `require()`, or an `import.meta.glob()`.
-The last line of the text report names the uses that it does not count. `why` shows only the uses
-that `check` reads.
-`--format text` (default) or `json`. Always exits `0`.
+is `'ignore'`. It lists the files that it could not read in full: a parse error, a template that
+layerscope does not read (a `lang` other than HTML, a `src` attribute, or an expression that does
+not parse), a dynamic `import()` or `require()`, or an `import.meta.glob()`. The text report has a
+line that names the uses that it does not count. It does not list the symbols of layers outside the
+project root that are not installed as packages, for example workspace packages. When such layers
+exist, a second line names them. `why` shows only the uses that `check` reads. `--format text`
+(default) or `json`. Always exits `0`.
 
 ### Editor feedback: ESLint and oxlint
 
