@@ -1,9 +1,8 @@
-import { resolve } from 'pathe';
-
 import { assertBaselineOption, BASELINE_FILE } from '#src/baseline/index.ts';
 import { measureDrift } from '#src/drift/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { DRIFT_FORMATS, formatDrift, isDriftFormat } from '#src/report/drift.ts';
+import { projectRoot } from '#src/utils/fs.ts';
 
 import type { Cli, CommonFlags } from './shared.ts';
 import { EXIT_CLEAN, toSource, withCommonOptions } from './shared.ts';
@@ -21,7 +20,7 @@ export async function drift(root: string | undefined, flags: DriftFlags): Promis
   }
   const result = await measureDrift(
     {
-      rootDir: resolve(root ?? process.cwd()),
+      rootDir: projectRoot(root),
       configFile: flags.config,
       prepare: flags.prepare,
       source: toSource(flags.source),

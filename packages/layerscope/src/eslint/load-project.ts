@@ -8,6 +8,7 @@ import { nameLayers } from '#src/nuxt/layers.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import { readRegistry, tableFromRegistry } from '#src/registry/read.ts';
 import type { Layer, LayerscopeConfig } from '#src/types.ts';
+import { realPath } from '#src/utils/fs.ts';
 
 export interface Project {
   rootDir: string;
@@ -21,7 +22,7 @@ export type ProjectLoad = { ok: true; project: Project } | { ok: false; message:
 /** Config, layers and symbols of a project, from its registry; Nuxt itself is never loaded. */
 export function loadProject(rootDir: string): ProjectLoad {
   const fileConfig = loadConfigSync(rootDir);
-  const buildDir = resolve(rootDir, fileConfig.buildDir ?? '.nuxt');
+  const buildDir = realPath(resolve(rootDir, fileConfig.buildDir ?? '.nuxt'));
   const read = readRegistry(buildDir);
   if (read.kind !== 'ok') {
     return {

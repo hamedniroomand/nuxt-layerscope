@@ -9,7 +9,7 @@ import type { AnalyzeResult, LayerscopeConfig, SourceOption } from '#src/types.t
 import { analyzeFiles } from './cache.ts';
 import type { AnalysisCache, EnvironmentCache } from './cache.ts';
 import { collectFiles } from './files.ts';
-import { loadProject } from './load.ts';
+import { loadProject, projectRoot } from './load.ts';
 import { applyScope, planScan } from './scope.ts';
 
 export interface AnalyzeOptions {
@@ -46,7 +46,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
   if (options.baseline !== undefined) {
     assertBaselineName(options.baseline);
   }
-  const rootDir = resolve(options.rootDir ?? process.cwd());
+  const rootDir = projectRoot(options.rootDir);
   const environment = await loadProject({ ...options, rootDir });
   const { layers, env, registry, config, presetLayers, declaredConfig } = environment;
   // Collecting reads the file system, so the event loop gets a turn after the environment loads.

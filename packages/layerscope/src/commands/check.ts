@@ -10,7 +10,14 @@ import { updateBaseline } from './check-baseline.ts';
 import { deletedNote, selectTarget } from './check-files.ts';
 import { checkNothing } from './check-nothing.ts';
 import type { Cli, CommonFlags } from './shared.ts';
-import { EXIT_CLEAN, EXIT_VIOLATIONS, toSource, withCommonOptions, writeNotes } from './shared.ts';
+import {
+  currentDir,
+  EXIT_CLEAN,
+  EXIT_VIOLATIONS,
+  toSource,
+  withCommonOptions,
+  writeNotes,
+} from './shared.ts';
 
 export interface CheckFlags extends CommonFlags {
   baseline: string;
@@ -39,7 +46,7 @@ async function watch(rootDir: string, format: OutputFormat, flags: CheckFlags): 
       source: toSource(flags.source),
       baseline: flags.baseline,
       prepare: flags.prepare === true,
-      render: result => formatResult(result, format, process.cwd(), paint, repository),
+      render: result => formatResult(result, format, currentDir(), paint, repository),
       human: format === 'text' || format === 'github',
       tty: process.stdout.isTTY,
       write: text => {
@@ -94,7 +101,7 @@ export async function check(
   // Only `sarif` and `gitlab` read the repository root; the others do not run git.
   const repository = format === 'sarif' || format === 'gitlab' ? repoRoot(rootDir) : rootDir;
   process.stdout.write(
-    formatResult(result, format, process.cwd(), paintFor(process.stdout), repository),
+    formatResult(result, format, currentDir(), paintFor(process.stdout), repository),
   );
   writeNotes(result, flags.verbose === true);
   // Only findings missing from the baseline fail the check.

@@ -1,6 +1,7 @@
 import { relative } from 'pathe';
 
 import type { Edge } from '#src/types.ts';
+import { currentDir } from '#src/utils/fs.ts';
 import type { SymbolTarget, SymbolUse, UseStatus } from '#src/why/index.ts';
 
 import { JSON_REPORT_VERSION } from './json.ts';
@@ -113,7 +114,7 @@ export function formatWhy(
   query: string,
   targets: SymbolTarget[],
   format: WhyFormat,
-  cwd: string = process.cwd(),
+  cwd: string = currentDir(),
 ): string {
   if (format === 'json') {
     return formatWhyJson(query, targets, cwd);

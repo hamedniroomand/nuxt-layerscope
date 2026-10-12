@@ -1,7 +1,9 @@
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 
 import { dirname, join } from 'pathe';
+
+import { realPath } from '#src/utils/fs.ts';
 
 export interface NuxtLayerConfig {
   rootDir?: string;
@@ -50,7 +52,7 @@ function findPackageDir(from: string, name: string): string | null {
   for (let dir = from; ; dir = dirname(dir)) {
     const candidate = join(dir, 'node_modules', name);
     if (existsSync(join(candidate, 'package.json'))) {
-      return realpathSync(candidate);
+      return realPath(candidate);
     }
     if (dirname(dir) === dir) {
       return null;

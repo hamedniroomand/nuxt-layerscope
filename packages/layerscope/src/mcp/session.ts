@@ -4,7 +4,7 @@ import { Analyzer } from '#src/devtools/analyzer.ts';
 import { computeEnvKey } from '#src/devtools/env-key.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import type { AnalyzeResult, Layer, SourceOption } from '#src/types.ts';
-import { realPath } from '#src/utils/fs.ts';
+import { projectRoot, realPath } from '#src/utils/fs.ts';
 import { buildDirOrDefault } from '#src/watch/project.ts';
 
 import { ToolError } from './types.ts';
@@ -35,7 +35,7 @@ export class ProjectSession {
   private startupError: string | undefined;
 
   public constructor(options: SessionOptions) {
-    this.rootDir = resolve(options.rootDir);
+    this.rootDir = projectRoot(options.rootDir);
     this.now = options.now ?? Date.now;
     this.startupError = options.startupError;
     this.analyzer = new Analyzer({
@@ -100,7 +100,7 @@ export class ProjectSession {
 
   /** The same file, whatever symlink the path went through. */
   public real(file: string): string {
-    return realPath(file.startsWith('/') ? file : resolve(this.rootDir, file));
+    return realPath(isAbsolute(file) ? file : resolve(this.rootDir, file));
   }
 
   /** The path relative to the project root, for output. */

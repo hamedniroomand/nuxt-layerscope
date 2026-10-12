@@ -9,7 +9,7 @@ import { paintFor } from '#src/utils/style.ts';
 
 import { deletedNote } from './check-files.ts';
 import type { CheckFlags } from './check.ts';
-import { EXIT_CLEAN, toSource } from './shared.ts';
+import { currentDir, EXIT_CLEAN, toSource } from './shared.ts';
 
 /**
  * The empty report of a check with nothing selected. It reads the project, so that the report
@@ -61,7 +61,7 @@ export async function checkNothing(
   const result = await emptyReport(rootDir, flags, deleted === null ? [] : [deleted]);
   const repository = format === 'sarif' || format === 'gitlab' ? repoRoot(rootDir) : rootDir;
   process.stdout.write(
-    formatResult(result, format, process.cwd(), paintFor(process.stdout), repository),
+    formatResult(result, format, currentDir(), paintFor(process.stdout), repository),
   );
   return EXIT_CLEAN;
 }

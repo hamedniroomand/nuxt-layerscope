@@ -8,10 +8,11 @@ import { hasProjectConfig, keysSet } from '#src/config/effective.ts';
 import { findConfigFile } from '#src/config/load.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult } from '#src/types.ts';
+import { currentDir } from '#src/utils/fs.ts';
 
 function alreadyExists(file: string): LayerscopeError {
   return new LayerscopeError(
-    `${relative(process.cwd(), file)} already exists. To keep it, run with --dry-run and copy what you need. To replace it, run with --force.`,
+    `${relative(currentDir(), file)} already exists. To keep it, run with --dry-run and copy what you need. To replace it, run with --force.`,
   );
 }
 

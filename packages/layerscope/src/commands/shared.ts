@@ -3,7 +3,11 @@ import { relative } from 'pathe';
 
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult, SourceOption } from '#src/types.ts';
+import { currentDir } from '#src/utils/fs.ts';
 import { paintFor } from '#src/utils/style.ts';
+
+// Command files that are at the dependency limit import these from here.
+export { currentDir, projectRoot } from '#src/utils/fs.ts';
 
 export const SOURCE_OPTIONS: readonly SourceOption[] = ['auto', 'registry', 'types'];
 
@@ -52,7 +56,7 @@ export function writeNotes(result: AnalyzeResult, verbose: boolean): void {
   );
   if (verbose) {
     const kind = result.source === 'registry' ? 'the registry' : 'the generated .d.ts files';
-    const source = relative(process.cwd(), result.sourceFile);
+    const source = relative(currentDir(), result.sourceFile);
     lines.unshift(paint('dim', `layerscope: symbols from ${kind} (${source})`));
   }
   if (lines.length > 0) {

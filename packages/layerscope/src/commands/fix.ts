@@ -1,5 +1,3 @@
-import { resolve } from 'pathe';
-
 import { analyzeReport } from '#src/analyze/index.ts';
 import { assertBaselineOption, BASELINE_FILE } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
@@ -7,6 +5,7 @@ import { prepareApply, realIo, runApply } from '#src/fix/apply.ts';
 import { countBaselineEntries, countOtherFindings, planMoves } from '#src/fix/plan.ts';
 import { formatApplied, formatStopped } from '#src/report/applied.ts';
 import { formatMoves } from '#src/report/moves.ts';
+import { projectRoot, currentDir } from '#src/utils/fs.ts';
 
 import type { Cli, CommonFlags } from './shared.ts';
 import { EXIT_CLEAN, EXIT_ERROR, toSource, withCommonOptions, writeNotes } from './shared.ts';
@@ -31,7 +30,7 @@ export async function fix(root: string | undefined, flags: FixFlags): Promise<nu
   if (flags.allowDirty === true && flags.apply !== true) {
     throw new LayerscopeError('--allow-dirty works only with --apply.');
   }
-  const rootDir = resolve(root ?? process.cwd());
+  const rootDir = projectRoot(root);
   const result = await analyzeReport({
     rootDir,
     configFile: flags.config,
@@ -45,7 +44,7 @@ export async function fix(root: string | undefined, flags: FixFlags): Promise<nu
     baselineEntries: countBaselineEntries(result, moves),
     typeImportsIgnored: result.config.typeImports === 'ignore',
   };
-  const cwd = process.cwd();
+  const cwd = currentDir();
   if (flags.apply !== true || moves.length === 0) {
     process.stdout.write(formatMoves(moves, cwd, notes));
     writeNotes(result, flags.verbose === true);

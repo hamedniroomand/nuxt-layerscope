@@ -5,6 +5,7 @@ import { resolve } from 'pathe';
 import { LayerscopeError } from '#src/errors.ts';
 import { changedFiles, pathSelection, stagedFiles } from '#src/git/selection.ts';
 import type { Selection } from '#src/git/selection.ts';
+import { projectRoot } from '#src/utils/fs.ts';
 import { plural } from '#src/utils/strings.ts';
 
 /** The note about deleted files in a selection, or `null` when none was deleted. */
@@ -81,7 +82,7 @@ export function selectTarget(
 ): CheckTarget {
   const split = splitArguments(root, files);
   assertNoConflict(flags, split.files);
-  const rootDir = resolve(split.root ?? process.cwd());
+  const rootDir = projectRoot(split.root);
   if (flags.staged === true) {
     return { rootDir, selection: stagedFiles(rootDir) };
   }

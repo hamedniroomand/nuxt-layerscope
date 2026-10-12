@@ -5,6 +5,7 @@ import { resolve } from 'pathe';
 import { AnalysisCache, createEnvironmentCache } from '#src/analyze/cache.ts';
 import type { AnalyzeOptions } from '#src/analyze/index.ts';
 import type { AnalyzeResult } from '#src/types.ts';
+import { projectRoot } from '#src/utils/fs.ts';
 
 import { layerStats } from './stats.ts';
 
@@ -60,7 +61,7 @@ export class Analyzer {
   private queued: Promise<Snapshot> | undefined;
 
   public constructor(options: AnalyzerOptions) {
-    this.options = options;
+    this.options = { ...options, rootDir: projectRoot(options.rootDir) };
   }
 
   public get current(): Snapshot | undefined {
