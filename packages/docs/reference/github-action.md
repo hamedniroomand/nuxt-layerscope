@@ -40,7 +40,7 @@ is not valid, the step prints the error in its log and writes no summary.
 
 With `comment: true`, the action also posts the report as a pull request comment, one comment for
 each root. Later runs update the comment that the same account wrote. Two steps or workflows with
-the same root and the same account share one comment. If the action cannot find, update or post the
+the same root and the same account share one comment. If they run at the same time, each can post its own comment. If the action cannot find, update or post the
 comment, it prints a warning. If drift succeeds, the job summary still has the report. If drift fails, the comment
 says so. If the step skips the report, the old comment stays as it is.
 

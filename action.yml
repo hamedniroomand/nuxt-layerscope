@@ -60,6 +60,7 @@ runs:
         INPUT_COMMENT: ${{ inputs.comment }}
         INPUT_VERSION: ${{ inputs.version }}
         GH_TOKEN: ${{ github.token }}
+        GH_ENTERPRISE_TOKEN: ${{ github.token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         BASE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}

@@ -236,6 +236,10 @@ describe('action.yml', () => {
     expect(stepLine('id')).toBe('id: drift');
   });
 
+  it('gives gh the token for GitHub Enterprise Server, which reads another variable', () => {
+    expect(stepLine('GH_ENTERPRISE_TOKEN')).toBe('GH_ENTERPRISE_TOKEN: ${{ github.token }}');
+  });
+
   it('marks a pull request from a fork only for the pull_request event', () => {
     expect(stepLine('IS_FORK')).toBe(
       "IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}",

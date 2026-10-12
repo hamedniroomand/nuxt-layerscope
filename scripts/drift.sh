@@ -76,7 +76,7 @@ if [ "$INPUT_PREPARE" = "true" ]; then args+=(--prepare); fi
 # The root as the reader sees it: no leading ./ and no trailing /.
 label="$INPUT_ROOT"
 while [[ "$label" == ./* ]]; do label="${label#./}"; done
-label="${label%/}"
+while [[ "$label" == */ ]]; do label="${label%/}"; done
 if [ -z "$label" ]; then label=.; fi
 
 if [ "$label" = . ]; then
@@ -132,8 +132,7 @@ publish() {
 # A failed call must not fail the step: the job summary has the report.
 try_publish() {
   # gh needs the repository and the host: the root can be a subfolder, and the server can be GitHub
-  # Enterprise. On GitHub Enterprise Server, gh also needs GH_ENTERPRISE_TOKEN. The action does not
-  # set it, so the comment fails with a warning there.
+  # Enterprise. On GitHub Enterprise Server, gh reads GH_ENTERPRISE_TOKEN, which action.yml sets.
   if [ -n "${GITHUB_SERVER_URL:-}" ]; then
     export GH_HOST="${GITHUB_SERVER_URL#*://}"
     export GH_REPO="$GH_HOST/$GITHUB_REPOSITORY"

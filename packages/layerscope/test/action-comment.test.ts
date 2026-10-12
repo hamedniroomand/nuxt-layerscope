@@ -119,10 +119,10 @@ describe('drift.sh, root in the heading and the marker', () => {
     expect(result.gh).toContain(`${SHOP_MARKER}\n### layerscope: \`apps/shop\`\n`);
   });
 
-  it('reads ./ as the root .', () => {
+  it('drops every leading ./ and every trailing /', () => {
     const t = setup(false);
-    const result = t.drift({ ...none(t), INPUT_ROOT: './' });
-    expect(result.gh).toContain(`${MARKER}\n### layerscope\n`);
+    const result = root(t, 'apps/shop', '././apps/shop//');
+    expect(result.gh).toContain(`${SHOP_MARKER}\n### layerscope: \`apps/shop\`\n`);
   });
 
   it('encodes the root in the marker so it cannot end the comment', () => {
@@ -135,6 +135,26 @@ describe('drift.sh, root in the heading and the marker', () => {
     const t = setup(false);
     const result = root(t, 'a`b');
     expect(result.gh).toContain('### layerscope: `` a`b ``\n');
+  });
+});
+
+describe('drift.sh, roots that strip to nothing', () => {
+  it.each(['./', './/', '././', './//'])(
+    'reads %s as the root . and never as an empty root',
+    input => {
+      const t = setup(false);
+      const result = t.drift({ ...none(t), INPUT_ROOT: input });
+      expect(result.gh).toContain(`${MARKER}\n### layerscope\n`);
+      expect(result.gh).not.toContain('layerscope:\n');
+    },
+  );
+
+  it('skips with a notice when the root is / , because / is not a repository', () => {
+    const t = setup(false);
+    const result = t.drift({ ...none(t), INPUT_ROOT: '//' });
+    expect(result.status).toBe(0);
+    expect(result.gh).toBe('');
+    expect(result.out).toContain('Cannot run git in "//"');
   });
 });
 
