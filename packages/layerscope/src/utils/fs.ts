@@ -10,9 +10,14 @@ export function isFile(path: string): boolean {
   }
 }
 
+/** Parses JSON text. User-extended tsconfigs may carry line comments, so those are removed. */
+export function parseJson(text: string): unknown {
+  // A leading BOM is not part of the JSON; Windows PowerShell 5.1 writes one.
+  return JSON.parse(text.replace(/^\uFEFF/u, '').replaceAll(/^\s*\/\/.*$/gmu, ''));
+}
+
 export function readJson(path: string): unknown {
-  // User-extended tsconfigs may carry line comments.
-  return JSON.parse(readFileSync(path, 'utf8').replaceAll(/^\s*\/\/.*$/gmu, ''));
+  return parseJson(readFileSync(path, 'utf8'));
 }
 
 /**

@@ -1,7 +1,7 @@
 import { resolve } from 'pathe';
 
 import { analyzeReport } from '#src/analyze/index.ts';
-import { BASELINE_FILE } from '#src/baseline/index.ts';
+import { assertBaselineOption, BASELINE_FILE } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { countOtherFindings, planMoves } from '#src/fix/plan.ts';
 import { formatMoves } from '#src/report/moves.ts';
@@ -15,6 +15,7 @@ export interface FixFlags extends CommonFlags {
 }
 
 export async function fix(root: string | undefined, flags: FixFlags): Promise<number> {
+  assertBaselineOption(flags.baseline);
   if (flags.dryRun !== true) {
     throw new LayerscopeError('fix only supports --dry-run for now: it never moves files.');
   }

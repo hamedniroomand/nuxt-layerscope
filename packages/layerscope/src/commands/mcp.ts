@@ -1,7 +1,7 @@
 import { resolve } from 'pathe';
 
 import { prepareNuxt } from '#src/analyze/prepare.ts';
-import { BASELINE_FILE } from '#src/baseline/index.ts';
+import { assertBaselineOption, BASELINE_FILE } from '#src/baseline/index.ts';
 import { redirectStdout } from '#src/mcp/stdio.ts';
 import { packageVersion } from '#src/version.ts';
 
@@ -13,6 +13,7 @@ export interface McpFlags extends CommonFlags {
 }
 
 export async function mcp(root: string | undefined, flags: McpFlags): Promise<number> {
+  assertBaselineOption(flags.baseline);
   const rootDir = resolve(root ?? process.cwd());
   let startupError: string | undefined;
   if (flags.prepare === true) {

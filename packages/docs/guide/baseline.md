@@ -85,9 +85,21 @@ Entries are sorted, and paths are relative to the project root, so the file diff
 | `--baseline <file>` | Baseline path, relative to the root. Default `layerscope-baseline.json`. |
 | `--update-baseline` | Write every current finding (errors and warnings) and exit `0`.          |
 
-Without a baseline file, `check` behaves as if there were none. In JSON output the accepted
-findings are listed under `baseline.suppressed` and fixed entries under `baseline.removable`;
-with `--format github` fixed entries become `::notice` annotations.
+Without a baseline file, `check` behaves as if there were none.
+
+A baseline file that is not valid stops `check`, `fix` and `drift` with exit code `2`, and the
+message names the file. When `--staged`, `--changed` or `--since` selects no file, `check` exits
+`0`: with `--format json`, `sarif` or `gitlab` the error is in a note of the report, and with `text`
+and `github` the file is not read. These files are not valid: an empty file, a file that is not
+JSON, a directory, a file with an entry whose `count` is not a whole number above 0, and a file with
+another version. An empty `--baseline` value is also refused. For a file from a newer layerscope,
+update layerscope. Do not create the file again, because that removes the newer data. For a
+directory, use another file name. In other cases, fix the file, or run `--update-baseline` to write
+a new one. `check --watch` prints the error, and `mcp` returns it to the assistant. Both keep
+running, so you can fix the file.
+
+In JSON output the accepted findings are listed under `baseline.suppressed` and fixed entries under
+`baseline.removable`; with `--format github` fixed entries become `::notice` annotations.
 
 ## A workflow that works
 

@@ -1,6 +1,6 @@
 import { resolve } from 'pathe';
 
-import { BASELINE_FILE } from '#src/baseline/index.ts';
+import { assertBaselineOption, BASELINE_FILE } from '#src/baseline/index.ts';
 import { measureDrift } from '#src/drift/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { DRIFT_FORMATS, formatDrift, isDriftFormat } from '#src/report/drift.ts';
@@ -14,6 +14,7 @@ export interface DriftFlags extends CommonFlags {
 }
 
 export async function drift(root: string | undefined, flags: DriftFlags): Promise<number> {
+  assertBaselineOption(flags.baseline);
   const { format } = flags;
   if (!isDriftFormat(format)) {
     throw new LayerscopeError(`Unknown format "${format}". Use ${DRIFT_FORMATS.join(', ')}.`);

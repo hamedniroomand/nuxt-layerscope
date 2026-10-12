@@ -1,5 +1,5 @@
 import { analyzeReport } from '#src/analyze/index.ts';
-import { BASELINE_FILE } from '#src/baseline/index.ts';
+import { assertBaselineOption, BASELINE_FILE } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatResult, isOutputFormat, OUTPUT_FORMATS } from '#src/report/index.ts';
 import type { OutputFormat } from '#src/report/index.ts';
@@ -61,6 +61,7 @@ export async function check(
   files: string[],
   flags: CheckFlags,
 ): Promise<number> {
+  assertBaselineOption(flags.baseline);
   const { format } = flags;
   if (!isOutputFormat(format)) {
     throw new LayerscopeError(`Unknown format "${format}". Use ${OUTPUT_FORMATS.join(', ')}.`);
