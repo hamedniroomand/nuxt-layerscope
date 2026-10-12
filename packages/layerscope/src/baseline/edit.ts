@@ -9,6 +9,7 @@ import {
   createBaseline,
   keyOf,
   readBaseline,
+  surplusKeyOf,
   toKeyed,
   writeBaseline,
 } from './index.ts';
@@ -55,14 +56,31 @@ export function ignoreFindings(
   return { before, after };
 }
 
-/** Drops the entries with `keys`; their findings come back. */
-export function removeEntries(file: string, keys: string[]): BaselineEdit {
+/**
+ * Drops the entries with `keys`; their findings come back. A key from `surplus` takes away only
+ * the count that no finding uses (`surplus` maps `surplusKeyOf` to that count, and the entry goes
+ * when no count is left). The caller gives the counts, so a request cannot set them.
+ */
+export function removeEntries(
+  file: string,
+  keys: string[],
+  surplus: Map<string, number> = new Map(),
+): BaselineEdit {
   const before = textOf(file);
   const dropped = new Set(keys);
-  const after: Baseline = {
-    version: BASELINE_VERSION,
-    entries: (readBaseline(file)?.entries ?? []).filter(entry => !dropped.has(keyOf(entry))),
-  };
+  const entries = (readBaseline(file)?.entries ?? []).flatMap(entry => {
+    if (dropped.has(keyOf(entry))) {
+      return [];
+    }
+    const left =
+      (entry.count ?? 1) -
+      (dropped.has(surplusKeyOf(entry)) ? (surplus.get(surplusKeyOf(entry)) ?? 0) : 0);
+    if (left === (entry.count ?? 1)) {
+      return [entry];
+    }
+    return left > 0 ? [{ ...entry, count: left > 1 ? left : undefined }] : [];
+  });
+  const after: Baseline = { version: BASELINE_VERSION, entries };
   writeBaseline(file, after);
   return { before, after };
 }

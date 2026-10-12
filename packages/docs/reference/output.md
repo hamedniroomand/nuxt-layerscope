@@ -132,9 +132,10 @@ layerscope check --format sarif > layerscope.sarif
 - The location URI is relative to the repository root, the git root of the project, with
   `uriBaseId` set to `%SRCROOT%`. Without git it is relative to the project root.
 - `partialFingerprints` has `layerscope/v1`, a sha256 hash of the [baseline](../guide/baseline)
-  key: rule, file, symbol and target layer, without the line. Code scanning uses it to match the
-  same finding across runs, so a finding that moves down a file stays the same alert. Findings
-  with the same key in one file get an occurrence number, counted in report order.
+  key: rule, file, symbol and target layer, without the line. For `layer-cycle` the key has no file.
+  Code scanning uses it to match the same finding across runs, so a finding that moves down a file
+  stays the same alert. Findings with the same key get an occurrence number, counted in report
+  order.
 - Findings that the baseline accepts are included with
   `suppressions: [{ "kind": "external", "justification": "layerscope baseline" }]`, so code
   scanning shows them as suppressed and not as fixed. These suppressed results have no suggestion.

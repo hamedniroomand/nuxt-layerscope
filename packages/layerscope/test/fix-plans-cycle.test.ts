@@ -108,6 +108,13 @@ describe('a move that makes a layer cycle', () => {
   it('is planned when the cycle rule is off', async () => {
     expect(await plan(cyclic("rules: { 'layer-cycle': 'off'"))).toHaveLength(1);
   });
+
+  it('is not planned when the baseline accepts another cycle only', async () => {
+    const root = cyclic("rules: { 'layer-cycle': 'error'");
+    const entry = { rule: 'layer-cycle', file: 'x.ts', symbol: 'p → q → p', toLayer: 'q' };
+    writeFileSync(join(root, 'b.json'), JSON.stringify({ version: 1, entries: [entry] }));
+    expect(await plan(root, 'b.json')).toEqual([]);
+  });
 });
 
 /** a and b use each other (a cycle in the baseline); x and y use useF, which is in a. */
@@ -156,10 +163,11 @@ async function acceptCycles(root: string): Promise<void> {
 }
 
 describe('a move and a cycle that the baseline accepts', () => {
-  it('does not plan a move that makes a cycle that check would show', async () => {
+  it('plans a move that only changes the file of the accepted cycle', async () => {
     const root = accepted();
     await acceptCycles(root);
-    expect(await plan(root, 'b.json')).toEqual([]);
+    const moves = await plan(root, 'b.json');
+    expect(moves.map(move => move.from)).toEqual([join(root, 'layers/a/app/composables/useF.ts')]);
   });
 
   it('shows no new cycle in check --baseline after the plan is applied', async () => {
@@ -201,12 +209,13 @@ function shifting(): string {
   return root;
 }
 
-describe('a move that changes the file of a cycle', () => {
-  it('is dropped when the cycle is accepted in another file and the move shows it', async () => {
+describe('a move that changes the file of an accepted cycle', () => {
+  it('is kept when the cycle is accepted in another file, because the baseline matches the chain', async () => {
     const root = shifting();
     await acceptCycles(root);
-    // In `a`, useX.ts comes before m.ts, so the first edge of the cycle is in useX.ts.
-    expect(await plan(root, 'b.json')).toEqual([]);
+    // In `a`, useX.ts comes before m.ts, so the first edge of the cycle moves to useX.ts.
+    const moves = await plan(root, 'b.json');
+    expect(moves).toHaveLength(1);
     await applyPlan(root, 'b.json');
     const after = await analyze({ rootDir: root, baseline: 'b.json' });
     expect(after.findings.filter(finding => finding.rule === 'layer-cycle')).toEqual([]);

@@ -1,12 +1,20 @@
 import { relative } from 'pathe';
 
+import { surplusKeyOf } from '#src/baseline/index.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
-import type { AnalyzeResult, Context } from '#src/types.ts';
+import type { AnalyzeResult, BaselineEntry, Context, Finding } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
 import { findingKey } from './finding-keys.ts';
 import { edgeView, graphView, LAYOUT_LIMIT, nodeView } from './graph-api.ts';
-import type { BaselineView, SymbolEntry, TraceView, UnusedView } from './protocol.ts';
+import type {
+  BaselineView,
+  SymbolEntry,
+  TabBaselineEntry,
+  TabFinding,
+  TraceView,
+  UnusedView,
+} from './protocol.ts';
 
 const CONTEXTS: Context[] = ['app', 'server', 'shared'];
 const LAZY = /^Lazy[A-Z]/u;
@@ -69,6 +77,23 @@ export async function unusedView(result: AnalyzeResult): Promise<UnusedView> {
   };
 }
 
+/** The server gives the key, so the tab never builds one. */
+function removableView(entry: BaselineEntry): TabBaselineEntry {
+  return { ...entry, key: surplusKeyOf(entry) };
+}
+
+function suppressedView(finding: Finding, rootDir: string): TabFinding {
+  return {
+    ...finding,
+    file: relative(rootDir, finding.file),
+    target: finding.target === null ? null : relative(rootDir, finding.target),
+    absFile: finding.file,
+    absTarget: finding.target,
+    key: findingKey(finding, rootDir),
+    isNew: false,
+  };
+}
+
 /** The baseline the analysis applied: suppressed findings, keyed like live ones, and stale entries. */
 export function baselineView(result: AnalyzeResult): BaselineView {
   const { baseline, rootDir } = result;
@@ -77,16 +102,8 @@ export function baselineView(result: AnalyzeResult): BaselineView {
   }
   return {
     file: relative(rootDir, baseline.file),
-    suppressed: baseline.suppressed.map(finding => ({
-      ...finding,
-      file: relative(rootDir, finding.file),
-      target: finding.target === null ? null : relative(rootDir, finding.target),
-      absFile: finding.file,
-      absTarget: finding.target,
-      key: findingKey(finding, rootDir),
-      isNew: false,
-    })),
-    removable: baseline.removable,
+    suppressed: baseline.suppressed.map(finding => suppressedView(finding, rootDir)),
+    removable: baseline.removable.map(entry => removableView(entry)),
   };
 }
 

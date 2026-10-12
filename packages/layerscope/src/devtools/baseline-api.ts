@@ -1,7 +1,7 @@
 import type { H3Event } from 'h3';
 import { readBody } from 'h3';
 
-import { keyOf } from '#src/baseline/index.ts';
+import { surplusKeyOf } from '#src/baseline/index.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 
 import { hasToken } from './csrf.ts';
@@ -56,7 +56,7 @@ function knownKeys(result: AnalyzeResult, path: string): Set<string> {
   }
   return new Set([
     ...keyed(suppressed),
-    ...(result.baseline?.removable ?? []).map(entry => keyOf(entry)),
+    ...(result.baseline?.removable ?? []).map(entry => surplusKeyOf(entry)),
   ]);
 }
 
@@ -80,7 +80,16 @@ async function edit(path: string, body: EditBody, session: Session): Promise<Rep
   const change =
     path === '/api/baseline/ignore'
       ? ignoreFindings(analyzer.baselineFile, body.keys, all, result.rootDir)
-      : removeEntries(analyzer.baselineFile, body.keys);
+      : removeEntries(
+          analyzer.baselineFile,
+          body.keys,
+          new Map(
+            (result.baseline?.removable ?? []).map(entry => [
+              surplusKeyOf(entry),
+              entry.count ?? 1,
+            ]),
+          ),
+        );
   const writeId = writes.record(change.before);
   const next = await analyzer.rebaseline();
   return { status: 200, body: { ...(await withReport(next, session)), writeId } };

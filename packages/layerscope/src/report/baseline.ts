@@ -2,7 +2,9 @@ import type { BaselineEntry } from '#src/types.ts';
 
 /** `layer-boundary useCart → web (×2)` */
 export function describeEntry(entry: BaselineEntry): string {
-  const target = entry.toLayer === null ? '' : ` → ${entry.toLayer}`;
+  // The symbol of a cycle is the whole chain, so it already ends in the target layer.
+  const target =
+    entry.toLayer === null || entry.rule === 'layer-cycle' ? '' : ` → ${entry.toLayer}`;
   const count = (entry.count ?? 1) > 1 ? ` (×${entry.count})` : '';
   return `${entry.rule} ${entry.symbol}${target}${count}`;
 }

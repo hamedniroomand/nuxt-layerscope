@@ -127,7 +127,8 @@ hook.
   once with a short message, before the project loads; `--format json`, `sarif` and `gitlab` still
   print a valid, empty report.
 - **The baseline** applies. A fixed baseline entry is reported only for a selected file, because a
-  check of some files cannot tell whether the entries of other files are fixed.
+  check of some files cannot tell whether the entries of other files are fixed. A `layer-cycle` entry
+  is never reported as fixed in such a run, because it is not tied to one file.
 - **What it does not see.** A use of a symbol that changed, in a file that is not selected, is not
   found; a full `layerscope check` (in CI) covers it. A check of some files gives no fix
   suggestions either, because they need the dependencies of every file. With the

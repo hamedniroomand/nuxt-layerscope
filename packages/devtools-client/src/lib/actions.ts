@@ -1,8 +1,6 @@
 import type { Ref, ShallowRef } from 'vue';
 import { shallowRef } from 'vue';
 
-import type { BaselineEntry } from '#contract';
-
 import type { Api } from './api.ts';
 import { ApiError } from './api.ts';
 import { plural } from './format.ts';
@@ -27,13 +25,6 @@ export interface BaselineActions {
 }
 
 const BASELINE = 'layerscope-baseline.json';
-
-/** The key of a baseline entry, as the server's `keyOf` builds it: rule, file, symbol, layer. */
-export function entryKey(
-  entry: Pick<BaselineEntry, 'rule' | 'file' | 'symbol' | 'toLayer'>,
-): string {
-  return [entry.rule, entry.file, entry.symbol, entry.toLayer ?? ''].join('\0');
-}
 
 function explain(error: unknown): string {
   if (error instanceof ApiError && error.status === 409) {

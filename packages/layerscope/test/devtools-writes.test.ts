@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
@@ -21,10 +21,10 @@ interface Setup extends Server {
   meta: () => Promise<{ id: string; rev: number }>;
 }
 
-async function setup(): Promise<Setup> {
+async function setup(findings = [cart, total]): Promise<Setup> {
   const root = mkdtempSync(join(tmpdir(), 'layerscope-writes-'));
   const app = await server(root);
-  app.run.mockResolvedValue(makeResult({ findings: [cart, total] }));
+  app.run.mockResolvedValue(makeResult({ findings }));
   const post = async (path: string, body: object, headers = {}): Promise<Response> => {
     const response = await app.fetch(path, {
       method: 'POST',
@@ -92,6 +92,98 @@ describe('baseline writes', () => {
     const removed = await post('/api/baseline/remove', { ...(await meta()), keys: [KEY] });
     expect(removed.status).toBe(200);
     expect(readFileSync(file, 'utf8')).toContain('"entries": []');
+  });
+});
+
+describe('a stale layer-cycle entry', () => {
+  it('is listed with a key and removed through the API', async () => {
+    const { post, meta, file, fetch } = await setup();
+    const entry = {
+      rule: 'layer-cycle',
+      file: 'gone.vue',
+      symbol: 'a → b → a',
+      toLayer: 'b',
+    };
+    writeFileSync(file, JSON.stringify({ version: 1, entries: [entry] }));
+    // Reads the baseline again, as the tab does after a change of the file.
+    await post('/api/baseline/ignore', { ...(await meta()), keys: [KEY] });
+    const view = (await (await fetch('/api/baseline')).json()) as {
+      removable: { key: string; symbol: string }[];
+    };
+    const [stale] = view.removable;
+    expect(stale.symbol).toBe('a → b → a');
+    const removed = await post('/api/baseline/remove', { ...(await meta()), keys: [stale.key] });
+    expect(removed.status).toBe(200);
+    expect(readFileSync(file, 'utf8')).not.toContain('a → b → a');
+  });
+});
+
+const cycle = makeFinding({
+  rule: 'layer-cycle',
+  symbol: 'a → b → a',
+  toLayer: 'b',
+  file: '/app/pages/a.vue',
+});
+const entry = { rule: 'layer-cycle', symbol: 'a → b → a', toLayer: 'b' };
+type Counts = { removable: { key: string; count?: number }[]; suppressed: unknown[] };
+
+async function counts(fetch: Setup['fetch']): Promise<Counts> {
+  const view = (await (await fetch('/api/baseline')).json()) as Counts;
+  return view;
+}
+
+/** Two entries for one chain in two files, which is a count of 2, and one live cycle finding. */
+async function merged(): Promise<Setup> {
+  const app = await setup([cycle, cart]);
+  writeFileSync(
+    app.file,
+    JSON.stringify({
+      version: 1,
+      entries: [
+        { ...entry, file: 'old.vue' },
+        { ...entry, file: 'older.vue' },
+      ],
+    }),
+  );
+  // Accepting another finding reads the file again, with the two entries merged into one.
+  await app.post('/api/baseline/ignore', { ...(await app.meta()), keys: [KEY] });
+  return app;
+}
+
+describe('a merged cycle entry with a surplus', () => {
+  it('lowers the count and keeps the entry that the live finding uses', async () => {
+    const app = await merged();
+    const before = await counts(app.fetch);
+    expect(before.suppressed).toHaveLength(2);
+    const [surplus] = before.removable;
+    expect(surplus.count ?? 1).toBe(1);
+    const removed = await app.post('/api/baseline/remove', {
+      ...(await app.meta()),
+      keys: [surplus.key],
+    });
+    expect(removed.status).toBe(200);
+    const kept = JSON.parse(readFileSync(app.file, 'utf8')) as {
+      entries: { rule: string; count?: number }[];
+    };
+    const cycles = kept.entries.filter(item => item.rule === 'layer-cycle');
+    expect(cycles).toHaveLength(1);
+    expect(cycles[0].count).toBeUndefined();
+    const after = await counts(app.fetch);
+    expect(after.suppressed).toHaveLength(2);
+    expect(after.removable).toEqual([]);
+  });
+});
+
+describe('removing a surplus again', () => {
+  it('undoes the removal byte for byte', async () => {
+    const app = await merged();
+    const text = readFileSync(app.file, 'utf8');
+    const [surplus] = (await counts(app.fetch)).removable;
+    const removed = (await (
+      await app.post('/api/baseline/remove', { ...(await app.meta()), keys: [surplus.key] })
+    ).json()) as { id: string; writeId: number };
+    await app.post('/api/baseline/undo', { id: removed.id, writeId: removed.writeId });
+    expect(readFileSync(app.file, 'utf8')).toBe(text);
   });
 });
 

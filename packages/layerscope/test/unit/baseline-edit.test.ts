@@ -5,7 +5,14 @@ import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { ignoreFindings, removeEntries, restoreBaseline } from '#src/baseline/edit.ts';
-import { createBaseline, keyOf, toKeyed, writeBaseline } from '#src/baseline/index.ts';
+import {
+  keyOf as keyOfEntry,
+  surplusKeyOf,
+  createBaseline,
+  keyOf,
+  toKeyed,
+  writeBaseline,
+} from '#src/baseline/index.ts';
 import { makeFinding } from '#test/factories.ts';
 
 const ROOT = '/app';
@@ -86,5 +93,64 @@ describe('removeEntries and restoreBaseline', () => {
     writeFileSync(file, 'kept');
     restoreBaseline(file, 'kept');
     expect(readFileSync(file, 'utf8')).toBe('kept');
+  });
+});
+
+const entry = { rule: 'layer-boundary', file: 'a.vue', symbol: 'useX', toLayer: 'b' } as const;
+const other = { ...entry, symbol: 'useY' };
+
+function written(count?: number): string {
+  const file = tempFile();
+  writeFileSync(file, JSON.stringify({ version: 1, entries: [{ ...entry, count }, { ...other }] }));
+  return file;
+}
+
+describe('removeEntries with a surplus', () => {
+  it('lowers the count by the surplus and keeps the entry', () => {
+    const file = written(3);
+    const edit = removeEntries(file, [surplusKeyOf(entry)], new Map([[surplusKeyOf(entry), 2]]));
+    expect(edit.after.entries).toEqual([{ ...entry }, other]);
+    const saved = JSON.parse(readFileSync(file, 'utf8')) as { entries: object[] };
+    expect(saved.entries[0]).not.toHaveProperty('count');
+  });
+
+  it('keeps a count of 2 or more', () => {
+    const file = written(4);
+    const edit = removeEntries(file, [surplusKeyOf(entry)], new Map([[surplusKeyOf(entry), 1]]));
+    expect(edit.after.entries[0].count).toBe(3);
+  });
+
+  it('deletes the entry when the surplus is the whole count', () => {
+    const file = written(2);
+    const edit = removeEntries(file, [surplusKeyOf(entry)], new Map([[surplusKeyOf(entry), 2]]));
+    expect(edit.after.entries).toEqual([other]);
+  });
+
+  it('deletes an entry with no count when its surplus is 1', () => {
+    const file = written();
+    const edit = removeEntries(file, [surplusKeyOf(entry)], new Map([[surplusKeyOf(entry), 1]]));
+    expect(edit.after.entries).toEqual([other]);
+  });
+});
+
+describe('removeEntries without the surplus', () => {
+  it('ignores a surplus that the caller did not give', () => {
+    const file = written(3);
+    const edit = removeEntries(file, [surplusKeyOf(entry)]);
+    expect(edit.after.entries[0].count).toBe(3);
+  });
+
+  it('drops the whole entry for the key of the entry, as before', () => {
+    const file = written(3);
+    const edit = removeEntries(file, [keyOfEntry(entry)]);
+    expect(edit.after.entries).toEqual([other]);
+  });
+
+  it('undoes byte for byte', () => {
+    const file = written(3);
+    const text = readFileSync(file, 'utf8');
+    const edit = removeEntries(file, [surplusKeyOf(entry)], new Map([[surplusKeyOf(entry), 2]]));
+    restoreBaseline(file, edit.before);
+    expect(readFileSync(file, 'utf8')).toBe(text);
   });
 });

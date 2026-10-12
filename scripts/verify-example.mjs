@@ -30,14 +30,16 @@ const exampleDir = join(import.meta.dirname, '..', 'examples', 'shop');
 const bin = join(exampleDir, 'node_modules', 'nuxt-layerscope', 'dist', 'bin.mjs');
 
 // Every finding the violations make: [rule, file]. Three come from the others: the shadowing
-// `BaseButton` also makes `LoginForm` in `auth` use a component of `shop`, and the two layer
-// cycles run through `OrdersTable` and `AccountMenu`.
+// `BaseButton` also makes `LoginForm` in `auth` use a component of `shop`, and two layer cycles
+// follow: `admin → auth → shop → admin`, shown at its first use in `useOrders`, and
+// `auth → shop → auth`, shown at `AccountMenu`. The `admin` cycle also runs through `shared`.
+// When two cycles have the same length, layerscope shows the one whose layers sort first.
 const EXPECTED = [
   ['layer-boundary', 'layers/auth/app/components/AccountMenu.vue'],
   ['layer-boundary', 'layers/auth/app/components/LoginForm.vue'],
   ['layer-boundary', 'layers/shared/app/composables/useCartBadge.ts'],
   ['layer-boundary', 'layers/shop/server/api/order-count.get.ts'],
-  ['layer-cycle', 'layers/admin/app/components/OrdersTable.vue'],
+  ['layer-cycle', 'layers/admin/app/composables/useOrders.ts'],
   ['layer-cycle', 'layers/auth/app/components/AccountMenu.vue'],
   ['layer-cycle', 'layers/shared/app/composables/useCartBadge.ts'],
   ['shadowed-component', 'layers/shared/app/components/BaseButton.vue'],
