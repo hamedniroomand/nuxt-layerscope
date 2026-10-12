@@ -187,6 +187,10 @@ describe('import.meta.glob()', () => {
     ).toEqual([GLOB, GLOB]);
   });
 
+  it('does not report `new.target.glob()`', () => {
+    expect(unread('export function F() {\n  new.target.glob();\n}\n', 'a.ts')).toEqual([]);
+  });
+
   it('does not report other import.meta members', () => {
     expect(unread('export const url = import.meta.url;\nimport.meta.env.get();\n', 'a.ts')).toEqual(
       [],

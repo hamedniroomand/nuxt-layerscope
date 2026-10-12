@@ -61,6 +61,8 @@ function isImportMetaGlob(callee: Node): boolean {
   return (
     callee.type === 'MemberExpression' &&
     callee.object.type === 'MetaProperty' &&
+    callee.object.meta.name === 'import' &&
+    callee.object.property.name === 'meta' &&
     !callee.computed &&
     callee.property.type === 'Identifier' &&
     callee.property.name === 'glob'
