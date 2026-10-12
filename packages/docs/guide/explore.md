@@ -97,22 +97,22 @@ Not counted as uses: test files.
 layers and referenced nowhere. A few rules keep it honest:
 
 - An explicit import of a file counts as using everything the file exports.
+- Uses in `nuxt.config.*`, in the Nuxt `modules/` dir, in files of extra auto-import and component
+  dirs (`imports.dirs`), and in the project files that counted files import, count too.
 - If any file renders a component chosen at runtime (`<component :is>` bound to a value, or
   `resolveComponent(name)`), unused components are marked **possibly used at runtime**, because
   layerscope cannot see which one is picked.
 
 `unused` cannot see all uses. It can miss uses in these places:
 
-- test files (`*.test.*`, `*.spec.*`, `__tests__/`, and any file outside the layer source dirs) and
-  files that match [`ignore`](../reference/config#ignore);
+- test files (`*.test.*`, `*.spec.*`, `__tests__/`), files outside the layer source dirs that are
+  not in an extra auto-import or component dir and that no counted file imports, and files that
+  match [`ignore`](../reference/config#ignore);
 - files in layers installed under `node_modules`. These layers are dependencies, and their unused
   code is not yours to delete;
 - files that layerscope could not read in full: a parse error, a template that layerscope does not
   read (a `lang` other than HTML, a `src` attribute, or an expression that does not parse), an
   `import()` or `require()` with a path that is not a fixed string, or an `import.meta.glob()`;
-- imports in `nuxt.config.*` and in the local `modules/` dir;
-- files in extra auto-import dirs (`imports.dirs`) and in component dirs outside the layer source
-  dirs;
 - uses in a type position, for example `ReturnType<typeof useCart>`, and `import type` uses when
   `typeImports` is `'ignore'`;
 - uses in other apps of a workspace. A layer from a workspace package, or a layer that Nuxt
@@ -124,6 +124,9 @@ The last line of the report names test files, `ignore` and package layers, when 
 report lists the files that could not be read before that line. The report does not name the other
 places in this list. Layerscope cannot see them. Treat the list as a starting point for review, not
 a delete list.
+
+`why` shows only the uses that `check` reads. A use that only `unused` counts, for example in
+`nuxt.config.ts`, does not show in `why`.
 
 ## Options
 

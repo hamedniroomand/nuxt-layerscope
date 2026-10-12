@@ -65,7 +65,12 @@ export async function writeSnapshot(options: SnapshotOptions): Promise<string[]>
     throw new Error(MISSING_CLIENT);
   }
   const started = Date.now();
-  const result = await analyze({ rootDir: options.rootDir, baseline: BASELINE_FILE });
+  const result = await analyze({
+    rootDir: options.rootDir,
+    baseline: BASELINE_FILE,
+    // The Unused view of the snapshot counts the same uses as the live tab.
+    extraFiles: true,
+  });
   // The root with the real case: the paths in the result have it, and they are compared as text.
   const { rootDir } = result;
   const keys = result.findings.map(finding => findingKey(finding, rootDir));

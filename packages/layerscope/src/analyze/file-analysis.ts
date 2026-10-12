@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
+import type { SymbolTarget } from '#src/nuxt/symbols.ts';
 import { scanFile } from '#src/scan/index.ts';
 import type { FileScan, ImportRef } from '#src/scan/types.ts';
 import type {
@@ -15,7 +16,7 @@ import type {
 } from '#src/types.ts';
 import { lineColumn } from '#src/utils/position.ts';
 
-import { contextOf } from './files.ts';
+import { CONTEXTS, contextOf } from './files.ts';
 import type { ImportEnv, ImportTarget } from './import-refs.ts';
 import { resolveImportRef } from './import-refs.ts';
 
@@ -52,13 +53,29 @@ export class FileAnalysis {
   private readonly layer: Layer;
   private readonly env: AnalysisEnv;
   private readonly context: Context;
+  /** The contexts whose auto-imports a free identifier is looked up in, the file's own first. */
+  private readonly contexts: Context[];
 
-  public constructor(file: string, source: string, layer: Layer, env: AnalysisEnv) {
+  /**
+   * With `anyContext`, an identifier is also looked up in the other contexts. It is for the extra
+   * files that `unused` reads: a file outside the source dirs can run in any context, and a missed
+   * use lists a used symbol as unused.
+   */
+  public constructor(
+    file: string,
+    source: string,
+    layer: Layer,
+    env: AnalysisEnv,
+    anyContext = false,
+  ) {
     this.file = file;
     this.source = source;
     this.layer = layer;
     this.env = env;
     this.context = contextOf(file, layer);
+    this.contexts = anyContext
+      ? [this.context, ...CONTEXTS.filter(context => context !== this.context)]
+      : [this.context];
   }
 
   public run(scan: FileScan): this {
@@ -81,15 +98,32 @@ export class FileAnalysis {
     return this;
   }
 
-  private addIdentifiers(scan: FileScan): void {
-    const imports = this.env.table.imports[this.context];
-    for (const ref of scan.free) {
-      const target = imports.get(ref.name);
+  /**
+   * The auto-imports that a name stands for in the contexts of this file: one for each different
+   * target. An extra file can run in any context, and the name can be a different symbol in each.
+   */
+  private lookup(name: string): SymbolTarget[] {
+    const found = new Map<string, SymbolTarget>();
+    for (const context of this.contexts) {
+      const target = this.env.table.imports[context].get(name);
       if (target !== undefined) {
-        this.addEdge('auto-import', ref.name, ref.offset, {
-          to: target.file,
-          external: target.module,
-        });
+        found.set(`${target.file}\0${target.module}`, target);
+      }
+    }
+    return [...found.values()];
+  }
+
+  private addAutoImports(name: string, offset: number, targets: SymbolTarget[]): void {
+    for (const target of targets) {
+      this.addEdge('auto-import', name, offset, { to: target.file, external: target.module });
+    }
+  }
+
+  private addIdentifiers(scan: FileScan): void {
+    for (const ref of scan.free) {
+      const targets = this.lookup(ref.name);
+      if (targets.length > 0) {
+        this.addAutoImports(ref.name, ref.offset, targets);
       } else if (!this.env.identifiers.has(ref.name)) {
         this.addUnresolved(
           ref.name,
@@ -100,13 +134,7 @@ export class FileAnalysis {
     }
     // Template identifiers missing from the table are props, data or global properties.
     for (const ref of scan.templateIdents) {
-      const target = imports.get(ref.name);
-      if (target !== undefined) {
-        this.addEdge('auto-import', ref.name, ref.offset, {
-          to: target.file,
-          external: target.module,
-        });
-      }
+      this.addAutoImports(ref.name, ref.offset, this.lookup(ref.name));
     }
   }
 
@@ -174,7 +202,12 @@ export class FileAnalysis {
     target: ImportTarget,
     names?: string[],
   ): void {
-    if (!this.firstSeen(`${kind}\0${symbol}`)) {
+    // A name can be two auto-imports (in two contexts); each target has its own edge.
+    const key =
+      kind === 'auto-import'
+        ? `${kind}\0${symbol}\0${target.to ?? target.external}`
+        : `${kind}\0${symbol}`;
+    if (!this.firstSeen(key)) {
       // A second import of the same file adds its names to the edge that stands for both.
       const known = this.edges.find(edge => edge.kind === kind && edge.symbol === symbol);
       if (known?.names !== undefined && names !== undefined) {
@@ -221,7 +254,12 @@ export class FileAnalysis {
 }
 
 /** Reads, scans and analyzes one source file. */
-export function analyzeFile(file: string, layer: Layer, env: AnalysisEnv): FileAnalysis {
+export function analyzeFile(
+  file: string,
+  layer: Layer,
+  env: AnalysisEnv,
+  anyContext = false,
+): FileAnalysis {
   const source = readFileSync(file, 'utf8');
-  return new FileAnalysis(file, source, layer, env).run(scanFile(source, file));
+  return new FileAnalysis(file, source, layer, env, anyContext).run(scanFile(source, file));
 }

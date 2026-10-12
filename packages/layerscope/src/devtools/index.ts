@@ -5,6 +5,7 @@ import { BASELINE_FILE } from '#src/baseline/index.ts';
 import { onDevtoolsCustomTabs } from '#src/module/nuxt.ts';
 import type { Nuxt } from '#src/module/nuxt.ts';
 
+import type { AnalyzerOptions } from './analyzer.ts';
 import { defaultAssetsDir } from './assets.ts';
 import { computeEnvKey } from './env-key.ts';
 import { createDevtoolsHandler } from './handler.ts';
@@ -14,6 +15,16 @@ import { createSession } from './session.ts';
 export const DEVTOOLS_ROUTE = '/__layerscope';
 
 type WatchHook = (name: 'builder:watch', handler: () => void) => unknown;
+
+/** The options of the analyzer behind the tab. The Unused view counts the extra files too. */
+export function sessionOptions(rootDir: string, buildDir: string): AnalyzerOptions {
+  return {
+    extraFiles: true,
+    rootDir,
+    baseline: BASELINE_FILE,
+    envKey: (): string => computeEnvKey(rootDir, buildDir),
+  };
+}
 
 /** A Nuxt DevTools tab with the layer report, served while `nuxi dev` runs. */
 export function setupDevtools(nuxt: Nuxt): void {
@@ -29,11 +40,7 @@ export function setupDevtools(nuxt: Nuxt): void {
     route: DEVTOOLS_ROUTE,
     handler: createDevtoolsHandler({
       get session(): Session {
-        session ??= createSession({
-          rootDir,
-          baseline: BASELINE_FILE,
-          envKey: (): string => computeEnvKey(rootDir, buildDir),
-        });
+        session ??= createSession(sessionOptions(rootDir, buildDir));
         return session;
       },
       openInEditor,

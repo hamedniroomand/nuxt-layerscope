@@ -26,7 +26,7 @@ export interface Layer {
   srcDir: string;
   serverDir: string;
   sharedDir: string;
-  /** The Nuxt `dir.modules` dir of the layer. Not scanned: Nuxt loads its files as modules. */
+  /** The Nuxt `dir.modules` dir of the layer. Not checked: Nuxt loads its files as modules. */
   modulesDir: string;
   /** The Nuxt `dir.public` dir of the layer. Not scanned: it holds static assets. */
   publicDir: string;
@@ -215,6 +215,12 @@ export interface AnalyzeResult {
   symbols: SymbolTable;
   /** Files rendering a component chosen at runtime (`<component :is>`, `resolveComponent(x)`). */
   dynamicComponentFiles: string[];
+  /**
+   * The edges of files that the rules do not check, but that can use a symbol: `nuxt.config.*`,
+   * local modules, files of extra auto-import dirs and the project files that they import. Only
+   * `unused` reads them. Empty when the run is limited to some files.
+   */
+  extraEdges: Edge[];
   /** Files with code that layerscope cannot read: their uses are missing from `edges`. */
   unreadFiles: UnreadFile[];
   /** Set when a baseline was applied; `findings` then holds only the new ones. */

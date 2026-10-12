@@ -25,6 +25,11 @@ export interface AnalyzerOptions {
   /** Baseline file relative to `rootDir`. */
   baseline: string;
   envKey: () => Promise<string> | string;
+  /**
+   * Also read the files that only `unused` reads, for the Unused view. Only the DevTools server
+   * sets it: the watch mode and the MCP server do not need those files.
+   */
+  extraFiles?: boolean;
   /** More options for every run, such as the config file the CLI was given. */
   analyze?: Pick<AnalyzeOptions, 'configFile' | 'source'>;
   /** Defaults to `analyze`, imported on first use so it stays out of Nuxt's startup. */
@@ -171,6 +176,7 @@ export class Analyzer {
         cache: this.cache,
         environment: this.environment,
         envKey: await this.options.envKey(),
+        extraFiles: this.options.extraFiles,
       });
       return this.commit(result, started, 'analysis');
     } catch (error) {

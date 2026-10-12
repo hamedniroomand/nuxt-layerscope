@@ -6,7 +6,7 @@ import { runRules } from '#src/rules/index.ts';
 import { withRootNotes, withSuggestions } from '#src/suggest/index.ts';
 import type { AnalyzeResult, LayerscopeConfig, SourceOption } from '#src/types.ts';
 
-import { analyzeFiles, fileLists } from './cache.ts';
+import { analyzeProject, fileLists } from './cache.ts';
 import type { AnalysisCache, EnvironmentCache } from './cache.ts';
 import { collectFiles } from './files.ts';
 import { loadProject, projectRoot } from './load.ts';
@@ -19,6 +19,12 @@ export interface AnalyzeOptions {
   configFile?: string;
   /** Used instead of loading a config file. */
   config?: LayerscopeConfig;
+  /**
+   * Also read `nuxt.config.*`, the Nuxt `modules/` dir, files of extra auto-import and component
+   * dirs, and the project files that counted files import, so that `unused` counts their uses.
+   * Their edges are in `extraEdges`; the rules never see them. Default `false`.
+   */
+  extraFiles?: boolean;
   /** Run `nuxi prepare` before reading generated files. */
   prepare?: boolean;
   /** Where symbols come from. Defaults to `auto`: the registry when present, else `.d.ts`. */
@@ -53,11 +59,11 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
   const collected = await collectFiles(layers, env.ownerOf, config.ignore ?? []);
   const plan = planScan(options.only, collected, config, rootDir);
   const { files, scope } = plan;
-  const analyses = await analyzeFiles(files, env, options.cache, options.envKey);
-  const edges = analyses.flatMap(analysis => analysis.edges).toSorted(compareByPosition);
+  const { checked, extra } = await analyzeProject(files, { ...environment, collected }, options);
+  const edges = checked.flatMap(analysis => analysis.edges).toSorted(compareByPosition);
   const ran = await runRules({
     edges,
-    unresolved: analyses.flatMap(analysis => analysis.unresolved),
+    unresolved: checked.flatMap(analysis => analysis.unresolved),
     registry,
     ownerOf: env.ownerOf,
     config,
@@ -82,7 +88,8 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     presetLayers,
     declaredConfig,
     recordedFile: environment.recordedFile,
-    ...fileLists(analyses),
+    extraEdges: extra.flatMap(analysis => analysis.edges),
+    ...fileLists([...checked, ...extra]),
   };
   const reported =
     options.baseline === undefined

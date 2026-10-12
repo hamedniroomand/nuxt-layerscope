@@ -1,11 +1,14 @@
-import { statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 
-import type { AnalyzeResult, Layer } from '#src/types.ts';
+import type { SymbolTable } from '#src/nuxt/symbols.ts';
+import type { AnalyzeResult, Edge, Layer, LayerscopeConfig } from '#src/types.ts';
+import { realPath } from '#src/utils/fs.ts';
 import { createYielder, yieldTurn } from '#src/utils/yield.ts';
 
 import type { Environment } from './environment.ts';
-import type { AnalysisEnv, FileAnalysis } from './file-analysis.ts';
-import { analyzeFile } from './file-analysis.ts';
+import type { AnalysisEnv } from './file-analysis.ts';
+import { analyzeFile, FileAnalysis } from './file-analysis.ts';
+import { extraSeeds, isExtraFile } from './files.ts';
 
 /** The files that render a dynamic component, and the files with code that is not read. */
 export function fileLists(
@@ -103,6 +106,112 @@ export async function analyzeFiles(
   // One more turn, so the rules that run next start a task of their own.
   await yieldTurn();
   return analyses;
+}
+
+interface ExtraInput {
+  layers: Layer[];
+  ignore: string[];
+  /** The files that the rules check. */
+  collected: Map<string, Layer>;
+  /** The edges of the collected files. */
+  edges: Edge[];
+  env: AnalysisEnv;
+}
+
+/** A file that could not be read: it counts as unread, and it never stops the run. */
+function failedAnalysis(
+  file: string,
+  layer: Layer,
+  env: AnalysisEnv,
+  error: unknown,
+): FileAnalysis {
+  const analysis = new FileAnalysis(file, '', layer, env);
+  // The code of a file system error, such as EACCES; any other error shows its message.
+  const code = (error as { code?: unknown } | null)?.code;
+  const message = error instanceof Error ? error.message : String(error);
+  const cause = typeof code === 'string' ? code : message.split('\n')[0];
+  analysis.unread = `Could not read file (${cause})`;
+  return analysis;
+}
+
+function symbolFilesOf(symbols: SymbolTable): string[] {
+  const files = new Set<string>();
+  for (const map of [symbols.components, ...Object.values(symbols.imports)]) {
+    for (const { file } of map.values()) {
+      if (file !== null) {
+        files.add(file);
+      }
+    }
+  }
+  return [...files];
+}
+
+/**
+ * Analyzes the project files that the rules do not check but that can use a symbol, for `unused`:
+ * `nuxt.config.*`, local modules, files of extra auto-import and component dirs, and the project
+ * files that any analyzed file imports. A file is analyzed once, so an import cycle ends. These
+ * results are never checked: the caller keeps only their edges. A file that cannot be read is
+ * recorded as unread.
+ */
+async function analyzeExtraFiles(input: ExtraInput): Promise<FileAnalysis[]> {
+  const { collected, ignore, env } = input;
+  const { ownerOf, table } = env;
+  // Compared by real path: a symbol file has its real path, and a collected file can be a link.
+  const known = new Set([...collected.keys()].map(file => realPath(file)));
+  const seeds = await extraSeeds(input.layers, ownerOf, symbolFilesOf(table));
+  const pending = new Set(seeds.map(file => realPath(file)));
+  const queue = (edges: Edge[]): void => {
+    for (const edge of edges) {
+      if (edge.to !== null) {
+        pending.add(realPath(edge.to));
+      }
+    }
+  };
+  queue(input.edges);
+  const analyses: FileAnalysis[] = [];
+  const pause = createYielder();
+  // The set grows while it is read, so the imports of an extra file are read in this loop too.
+  for (const file of pending) {
+    const layer = isExtraFile(file, ownerOf, ignore, known);
+    if (layer !== null && existsSync(file)) {
+      let analysis: FileAnalysis;
+      try {
+        analysis = analyzeFile(file, layer, env, true);
+      } catch (error) {
+        analysis = failedAnalysis(file, layer, env, error);
+      }
+      analyses.push(analysis);
+      queue(analysis.edges);
+      // eslint-disable-next-line no-await-in-loop -- yields between files
+      await pause();
+    }
+  }
+  return analyses;
+}
+
+/**
+ * Analyzes the files that the rules check, and then, with `extraFiles`, the extra files that only
+ * `unused` reads. A run limited to some files (`only`) does not look for more.
+ */
+export async function analyzeProject(
+  files: Map<string, Layer>,
+  project: {
+    layers: Layer[];
+    env: AnalysisEnv;
+    config: LayerscopeConfig;
+    collected: Map<string, Layer>;
+  },
+  options: { only?: string[]; cache?: AnalysisCache; envKey?: string; extraFiles?: boolean },
+): Promise<{ checked: FileAnalysis[]; extra: FileAnalysis[] }> {
+  const { layers, env, config, collected } = project;
+  const checked = await analyzeFiles(files, env, options.cache, options.envKey);
+  const edges = checked.flatMap(analysis => analysis.edges);
+  const ignore = config.ignore ?? [];
+  const extra =
+    options.extraFiles === true && options.only === undefined
+      ? await analyzeExtraFiles({ layers, ignore, collected, edges, env })
+      : [];
+  return { checked, extra };
 }
 
 /** Keeps the last environment while its key holds. */

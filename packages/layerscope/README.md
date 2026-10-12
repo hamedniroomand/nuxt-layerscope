@@ -73,11 +73,11 @@ config. Delete the edges you consider mistakes, then run `check`.
 
 Prints the file moves that the suggestions on boundary findings ask for, and the imports that each
 move breaks. A relative import is listed with its new specifier. An alias that points at a moved
-file is listed to update by hand. Only moves are printed. The other suggestions are in
-`layerscope check`. layerscope does not scan test files, `nuxt.config.*`, the Nuxt `modules/` dir,
-files outside the layer source dirs, or files that match `ignore`. Update the imports of moved
-files in them by hand. `--dry-run` prints the moves and changes nothing. `--apply` makes them: it
-rewrites the relative imports, then moves each file (with `git mv` when git tracks it). It stops
+file is listed to update by hand. Only moves are printed. The other suggestions are in `layerscope
+check`. `check` and `fix` do not read test files, `nuxt.config.*`, the Nuxt `modules/` dir, files
+outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in
+them by hand. `--dry-run` prints the moves and changes nothing. `--apply` makes them: it rewrites
+the relative imports, then moves each file (with `git mv` when git tracks it). It stops
 before the first change when the git working tree of the repository has changes or untracked files,
 when git does not track a file to move or edit, when a file is in a submodule or has a symbolic
 link in its path, or when a target path exists. `--allow-dirty` skips the git checks (repository, clean tree, tracked files, submodules). See the
@@ -161,11 +161,16 @@ npx layerscope graph --by file --format dot | dot -Tsvg > files.svg
 Lists components and auto-imports (composables, utils, server utils) that nothing references,
 per layer. Explicit imports of a file count as using everything it exports. When the project
 renders components chosen at runtime (`<component :is>` bound to a value, `resolveComponent(x)`),
-unused components are marked "possibly used at runtime". `unused` does not count uses in test files,
-in files that match `ignore`, or in layers installed as packages. It lists the files that it could
-not read in full: a parse error, a template that layerscope does not read (a `lang` other than HTML,
-a `src` attribute, or an expression that does not parse), a dynamic `import()` or `require()`, or an
-`import.meta.glob()`. The last line of the text report names the uses that it does not count.
+unused components are marked "possibly used at runtime". `unused` does not count uses in test files
+(`*.test.*`, `*.spec.*`, `__tests__/`), in files that match `ignore`, in layers installed as
+packages, or in files outside the layer source dirs that are not in an extra auto-import or
+component dir and that no counted file imports. `unused` also counts the uses in `nuxt.config.*`, in
+the Nuxt `modules/` dir, in files of extra auto-import and component dirs, and in the project files
+that counted files import. It lists the files that it could not read in full: a parse error, a
+template that layerscope does not read (a `lang` other than HTML, a `src` attribute, or an
+expression that does not parse), a dynamic `import()` or `require()`, or an `import.meta.glob()`.
+The last line of the text report names the uses that it does not count. `why` shows only the uses
+that `check` reads.
 `--format text` (default) or `json`. Always exits `0`.
 
 ### Editor feedback: ESLint and oxlint
@@ -262,8 +267,9 @@ module records them on `nuxi prepare`, `dev` and `build`; use one place or the o
 
 1. Layers come from the project's own `@nuxt/kit`, which every Nuxt install already has:
    `loadNuxtConfig` for the list and names, `getLayerDirectories` for each layer's `srcDir`,
-   `serverDir`, `shared` dir, `modules` dir and `public` dir. layerscope does not scan the
-   `modules` and `public` dirs. Without kit, layers can be declared with `path` in the config.
+   `serverDir`, `shared` dir, `modules` dir and `public` dir. `check` does not read the `modules`
+   and `public` dirs. `unused` reads `modules`, so that its uses count. Without kit, layers can be
+   declared with `path` in the config.
 2. Each file belongs to the layer with the longest matching dir. The dirs of a layer are its root,
    and also its `srcDir`, `serverDir` and shared dir when one of them is outside the root. When a
    source dir of one layer is the root of another layer, the layer with that root owns the files.

@@ -84,10 +84,14 @@ A source dir outside the layer root is checked too, for example `serverDir: '../
 Layers under `node_modules` are dependencies: their code is resolved but not checked, since you
 cannot fix it in this repository.
 
-Some files are always skipped: `node_modules`, `.nuxt`, `.output`, `dist`, type declarations,
+`check` always skips some files: `node_modules`, `.nuxt`, `.output`, `dist`, type declarations,
 `nuxt.config.*`, test files (`*.test.*`, `*.spec.*`, `__tests__`), and the Nuxt `modules` and
 `public` dirs of each layer. Other dirs named `modules`, for example `app/modules/` in Nuxt 4 and
 `server/modules/`, are checked. Add more with [`ignore`](../reference/config#ignore).
+
+[`unused`](../reference/cli#layerscope-unused) also reads `nuxt.config.*`, the Nuxt `modules` dir,
+the files of extra auto-import and component dirs, and the project files that counted files import,
+so that their uses count.
 
 ## Contexts
 
