@@ -17,14 +17,14 @@ first, then either run `npx nuxi prepare` or set `prepare: true`. See
 
 ## Inputs
 
-| Input      | Default                    | Description                                                                           |
-| ---------- | -------------------------- | ------------------------------------------------------------------------------------- |
-| `root`     | `.`                        | Nuxt project root, relative to the repository                                         |
-| `config`   |                            | Config file; defaults to `layerscope.config.*` in the root                            |
-| `prepare`  | `false`                    | `true` runs `nuxi prepare` first; needs the project's dependencies installed          |
-| `baseline` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                              |
-| `comment`  | `false`                    | `true` posts the drift report as a pull request comment; needs `pull-requests: write` |
-| `version`  | `latest`                   | `nuxt-layerscope` version to run through `npx` when the project does not install it   |
+| Input      | Default                    | Description                                                                                                                                             |
+| ---------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `root`     | `.`                        | Nuxt project root, relative to the repository                                                                                                           |
+| `config`   |                            | Config file; defaults to `layerscope.config.*` in the root                                                                                              |
+| `prepare`  | `false`                    | `true` runs `nuxi prepare` first; needs the project's dependencies installed                                                                            |
+| `baseline` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                                                                                |
+| `comment`  | `false`                    | `true` posts the drift report as a pull request comment, one for each root; needs `pull-requests: write`. Skipped on a `pull_request` event from a fork |
+| `version`  | `latest`                   | `nuxt-layerscope` version to run through `npx` when the project does not install it                                                                     |
 
 ## Drift summary
 
@@ -36,8 +36,23 @@ commit of the merge group. If the clone does not have that commit, the step fetc
 cannot fetch it, if git cannot run in the root, or if the event has no base commit (for example a
 push of a new branch, or a manual run), the step skips the report and prints a notice.
 The step never fails the job. If `drift` fails, for example because the baseline on the base branch
-is not valid, the step prints the error in its log and writes no summary and no comment. With
-`comment: true` the report is also posted as a single pull request comment that later runs update.
+is not valid, the step prints the error in its log and writes no summary.
+
+With `comment: true`, the action also posts the report as a pull request comment, one comment for
+each root. Later runs update the comment that the same account wrote. Two steps or workflows with
+the same root and the same account share one comment. If the action cannot find, update or post the
+comment, it prints a warning. If drift succeeds, the job summary still has the report. If drift fails, the comment
+says so. If the step skips the report, the old comment stays as it is.
+
+On a `pull_request` event from a fork, the token is read-only, so the action skips the comment and
+prints a notice. With `pull_request_target`, the action posts the comment. A Dependabot pull request
+also has a read-only token: the action prints a warning.
+
+## Outputs
+
+| Output    | Description                                                                                     |
+| --------- | ----------------------------------------------------------------------------------------------- |
+| `comment` | What the action did with the pull request comment: `created`, `updated`, `skipped` or `failed`. |
 
 ## Which layerscope runs
 

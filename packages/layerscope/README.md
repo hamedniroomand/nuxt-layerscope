@@ -124,7 +124,7 @@ It runs `layerscope check --format github`, so findings show up inline on the pu
 writes the drift report to the job summary. Inputs:
 `root` (default `.`), `config`, `prepare` (`true` runs `nuxi prepare` instead of the separate
 step), `baseline` (default `layerscope-baseline.json`), `comment` (`true` posts the drift report on
-the pull request) and `version` (used through `npx` when the
+the pull request, one comment for each root) and `version` (used through `npx` when the
 project does not install `nuxt-layerscope`).
 
 ### `layerscope why <symbol> [root]`

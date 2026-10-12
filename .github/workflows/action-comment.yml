@@ -1,0 +1,89 @@
+name: Action comment
+
+# Runs the action from this pull request on examples/shop, with `comment: true` and the default
+# token. This checks the comment code in the same conditions as a user. A second push to the pull
+# request must update the comment, not add one. The job runs the action twice and checks the output
+# `comment` of each run, that there is one comment, and that it is not a failure comment.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  action-comment:
+    name: Action comment (examples/shop)
+    # Dependabot gets a read-only token.
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: voidzero-dev/setup-vp@3754dd7dbdb32bd8f6d28b6043de13ad3a75f21f # v1.21.1
+        with:
+          node-version: '24'
+          cache: true
+          run-install: true
+      - run: vp run build
+      - name: Check that the example runs the build of this pull request
+        run: |
+          real="$(realpath examples/shop/node_modules/nuxt-layerscope)"
+          if [ "$real" != "$GITHUB_WORKSPACE/packages/layerscope" ]; then
+            echo "::error::examples/shop uses $real, not the build of this pull request."
+            exit 1
+          fi
+      # Two runs on one pull request: the second run must update the comment of the first.
+      - uses: ./
+        id: first
+        with:
+          root: examples/shop
+          prepare: 'true'
+          comment: 'true'
+      - uses: ./
+        id: second
+        with:
+          root: examples/shop
+          prepare: 'true'
+          comment: 'true'
+      # A pull request from a fork has a read-only token. The action skips the comment there.
+      - name: Check the comment
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          MARKER: '<!-- layerscope:examples%2Fshop -->'
+          FIRST: ${{ steps.first.outputs.comment }}
+          SECOND: ${{ steps.second.outputs.comment }}
+        run: |
+          if [ "$FIRST" != "created" ] && [ "$FIRST" != "updated" ]; then
+            echo "::error::The first run did not post the comment. Its output is '$FIRST'."
+            exit 1
+          fi
+          if [ "$SECOND" != "updated" ]; then
+            echo "::error::The second run did not update the comment. Its output is '$SECOND'."
+            exit 1
+          fi
+          # One line for each comment of this account with the marker: "<failure text?>".
+          lines="$(gh api graphql --paginate \
+            -f owner="${GITHUB_REPOSITORY%%/*}" -f name="${GITHUB_REPOSITORY#*/}" -F number="$PR_NUMBER" \
+            -f query='query($owner:String!,$name:String!,$number:Int!,$endCursor:String){repository(owner:$owner,name:$name){pullRequest(number:$number){comments(first:100,after:$endCursor){pageInfo{hasNextPage endCursor}nodes{body viewerDidAuthor}}}}}' \
+            --jq ".data.repository.pullRequest.comments.nodes[] | select(.viewerDidAuthor and (.body | startswith(\"$MARKER\"))) | .body | contains(\"The drift report failed\")")"
+          count="$(printf '%s\n' "$lines" | grep -c . || true)"
+          if [ "$count" != "1" ]; then
+            echo "::error::Expected one layerscope comment from this account, found $count."
+            exit 1
+          fi
+          if [ "$lines" != "false" ]; then
+            echo "::error::The comment says that the drift report failed."
+            exit 1
+          fi
