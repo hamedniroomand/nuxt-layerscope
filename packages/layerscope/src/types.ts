@@ -59,6 +59,12 @@ export interface Edge extends Reference {
   external: string | null;
   /** `import` edges: the names the statement imports, with `default` and `*` as written. */
   names?: string[];
+  /**
+   * `import` edges: the places of the other imports of the same specifier in the file. The edge
+   * stands for all of them, so a finding is one for each file and specifier, but a move must
+   * rewrite each import.
+   */
+  sites?: { line: number; column: number }[];
 }
 
 export type SuggestionAction = 'move' | 'allow' | 'expose' | 'leave';
