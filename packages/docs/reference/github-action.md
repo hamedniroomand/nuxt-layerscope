@@ -29,10 +29,11 @@ first, then either run `npx nuxi prepare` or set `prepare: true`. See
 ## Drift summary
 
 After the check, the action runs [`layerscope drift`](./cli#layerscope-drift) against the pull
-request's base branch and writes the result to the job summary: how many violations the pull
-request adds and fixes, and how the baseline size changed. On pushes it compares with the previous
-commit. The step never fails the job. With `comment: true` the report is also posted as a single
-pull request comment that later runs update.
+request's base branch and writes the result to the job summary: how many violations the pull request
+adds and fixes, and how the baseline size changed. On pushes it compares with the previous commit.
+The step never fails the job. If `drift` fails, for example because the baseline on the base branch
+is not valid, the step prints the error in its log and writes no summary and no comment. With
+`comment: true` the report is also posted as a single pull request comment that later runs update.
 
 ## Which layerscope runs
 

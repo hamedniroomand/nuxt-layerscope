@@ -1,17 +1,29 @@
-import { existsSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 
 import { relative } from 'pathe';
 
 import { isRuleName } from '#src/config/rules.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult, BaselineEntry, BaselineResult, Finding } from '#src/types.ts';
-import { readJson } from '#src/utils/fs.ts';
+import { parseJson } from '#src/utils/fs.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
-export const BASELINE_FILE = 'layerscope-baseline.json';
+import {
+  BASELINE_VERSION,
+  checkVersion,
+  FILE_ADVICE,
+  hasBadCount,
+  isCount,
+  readBaselineText,
+} from './input.ts';
 
-/** Bumped on breaking changes to the baseline file. */
-export const BASELINE_VERSION = 1;
+export {
+  assertBaselineName,
+  assertBaselineOption,
+  assertNotDirectory,
+  BASELINE_FILE,
+  BASELINE_VERSION,
+} from './input.ts';
 
 export interface Baseline {
   version: typeof BASELINE_VERSION;
@@ -94,7 +106,7 @@ function isEntry(value: unknown): value is BaselineEntry {
     typeof entry.file === 'string' &&
     typeof entry.symbol === 'string' &&
     (entry.toLayer === null || typeof entry.toLayer === 'string') &&
-    (entry.count === undefined || (Number.isInteger(entry.count) && entry.count > 0))
+    (entry.count === undefined || isCount(entry.count))
   );
 }
 
@@ -120,22 +132,49 @@ function mergeEntries(entries: BaselineEntry[]): BaselineEntry[] {
   return merged;
 }
 
-export function parseBaseline(value: unknown, file: string): Baseline {
+/**
+ * `label` names the file in every message: a path, or `path at ref` for a file in git. `advice` is
+ * the last sentence of an error that a new file would fix.
+ */
+export function parseBaseline(value: unknown, label: string, advice = FILE_ADVICE): Baseline {
   const baseline = value as Partial<Baseline> | null;
-  if (baseline?.version !== BASELINE_VERSION || !Array.isArray(baseline.entries)) {
-    throw new LayerscopeError(
-      `${file} is not a layerscope baseline (version ${BASELINE_VERSION}). Recreate it with --update-baseline.`,
-    );
+  checkVersion(typeof baseline === 'object' ? baseline?.version : undefined, label, advice);
+  if (!Array.isArray(baseline?.entries)) {
+    throw new LayerscopeError(`${label} is not a layerscope baseline. ${advice}`);
   }
   const invalid = baseline.entries.findIndex(entry => !isEntry(entry));
   if (invalid !== -1) {
-    throw new LayerscopeError(`${file}: entry ${invalid} is not a valid baseline entry`);
+    const why = hasBadCount(baseline.entries[invalid])
+      ? '. A "count" must be a whole number above 0.'
+      : '';
+    throw new LayerscopeError(`${label}: entry ${invalid} is not a valid baseline entry${why}`);
   }
   return { version: BASELINE_VERSION, entries: mergeEntries(baseline.entries) };
 }
 
+/**
+ * The one reader of baseline text, for a file and for a file in git. `ref` is the git ref of the
+ * text: it changes the advice, because the fix is in that ref and not in the working tree.
+ */
+export function parseBaselineText(text: string, file: string, ref?: string): Baseline {
+  const label = ref === undefined ? file : `${file} at ${ref}`;
+  const fixIt =
+    ref === undefined
+      ? 'Fix the file, or create it again with --update-baseline.'
+      : `Fix the file on ${ref}, or use another ref with --base.`;
+  let value: unknown;
+  try {
+    value = parseJson(text);
+  } catch (error) {
+    throw new LayerscopeError(`${label} is not valid JSON (${(error as Error).message}). ${fixIt}`);
+  }
+  return parseBaseline(value, label, ref === undefined ? FILE_ADVICE : fixIt);
+}
+
+/** The baseline in `file`, or `null` when the file does not exist. */
 export function readBaseline(file: string): Baseline | null {
-  return existsSync(file) ? parseBaseline(readJson(file), file) : null;
+  const text = readBaselineText(file);
+  return text === null ? null : parseBaselineText(text, file);
 }
 
 export function baselineSize(entries: BaselineEntry[]): number {

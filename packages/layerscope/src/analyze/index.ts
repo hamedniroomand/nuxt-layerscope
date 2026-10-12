@@ -1,6 +1,6 @@
 import { resolve } from 'pathe';
 
-import { applyBaselineFile } from '#src/baseline/index.ts';
+import { applyBaselineFile, assertBaselineName } from '#src/baseline/index.ts';
 import { compareByPosition } from '#src/rules/compare.ts';
 import { runRules } from '#src/rules/index.ts';
 import { withRootNotes, withSuggestions } from '#src/suggest/index.ts';
@@ -43,6 +43,9 @@ export interface AnalyzeOptions {
 }
 
 export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResult> {
+  if (options.baseline !== undefined) {
+    assertBaselineName(options.baseline);
+  }
   const rootDir = resolve(options.rootDir ?? process.cwd());
   const environment = await loadProject({ ...options, rootDir });
   const { layers, env, registry, config, presetLayers, declaredConfig } = environment;
