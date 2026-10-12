@@ -1,7 +1,7 @@
-import { writeFileSync } from 'node:fs';
+import { statSync, writeFileSync } from 'node:fs';
 
 import type { cac } from 'cac';
-import { relative } from 'pathe';
+import { relative, resolve } from 'pathe';
 
 import { LayerscopeError } from '#src/errors.ts';
 import { formatFindingsSummary } from '#src/report/findings-summary.ts';
@@ -90,7 +90,7 @@ export function acceptDashedBooleans(cli: Cli): void {
  * The value of `--summary`. The option parser gives a number for an empty value and for a value
  * like `2024`, and a list for a flag that is given more than once, as for `--baseline`.
  */
-function assertSummaryName(value: unknown): void {
+function assertSummaryName(value: unknown): asserts value is string {
   if (Array.isArray(value)) {
     throw new LayerscopeError('The option --summary was given more than once. Give it one time.');
   }
@@ -110,10 +110,24 @@ export function writeSummary(summary: unknown, findings: Finding[]): void {
     return;
   }
   try {
-    writeFileSync(summary, formatFindingsSummary(findings, currentDir()));
+    writeFileSync(resolve(currentDir(), summary), formatFindingsSummary(findings, currentDir()));
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     throw new LayerscopeError(`The summary file cannot be written: ${reason}`);
+  }
+}
+
+/** The same path, or two paths of one file on disk (a link). */
+function sameFile(a: string, b: string): boolean {
+  if (a === b) {
+    return true;
+  }
+  try {
+    const first = statSync(a);
+    const second = statSync(b);
+    return first.ino === second.ino && first.dev === second.dev;
+  } catch {
+    return false;
   }
 }
 
@@ -125,7 +139,8 @@ export function writeSummary(summary: unknown, findings: Finding[]): void {
 export function prepareSummary(
   summary: unknown,
   format: string,
-  flags: { watch?: boolean; updateBaseline?: boolean },
+  flags: { watch?: boolean; updateBaseline?: boolean; baseline?: string },
+  rootDir: string,
 ): void {
   if (summary === undefined) {
     return;
@@ -139,6 +154,12 @@ export function prepareSummary(
   }
   if (flags.updateBaseline === true) {
     throw new LayerscopeError('--update-baseline cannot be used with --summary.');
+  }
+  // The summary path is from the current directory, the baseline path is from the root. Emptying
+  // the baseline file would lose its entries.
+  const baseline = flags.baseline === undefined ? undefined : resolve(rootDir, flags.baseline);
+  if (baseline !== undefined && sameFile(resolve(currentDir(), summary), baseline)) {
+    throw new LayerscopeError('--summary and --baseline name the same file.');
   }
   writeSummary(summary, []);
 }

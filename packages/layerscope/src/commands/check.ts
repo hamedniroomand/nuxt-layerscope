@@ -7,13 +7,14 @@ import { repoRoot } from '#src/report/paths.ts';
 import { paintFor } from '#src/utils/style.ts';
 
 import { updateBaseline } from './check-baseline.ts';
-import { deletedNote, selectTarget } from './check-files.ts';
+import { deletedNote, selectTarget, splitArguments } from './check-files.ts';
 import { checkNothing } from './check-nothing.ts';
 import type { Cli, CommonFlags } from './shared.ts';
 import {
   currentDir,
   EXIT_CLEAN,
   EXIT_VIOLATIONS,
+  projectRoot,
   toSource,
   withCommonOptions,
   prepareSummary,
@@ -76,7 +77,7 @@ export async function check(
   if (!isOutputFormat(format)) {
     throw new LayerscopeError(`Unknown format "${format}". Use ${OUTPUT_FORMATS.join(', ')}.`);
   }
-  prepareSummary(flags.summary, format, flags);
+  prepareSummary(flags.summary, format, flags, projectRoot(splitArguments(root, files).root));
   if (flags.watch === true && flags.updateBaseline === true) {
     throw new LayerscopeError('--watch cannot be used with --update-baseline.');
   }

@@ -90,6 +90,35 @@ describe('check --summary, the file name', () => {
 });
 
 describe('check --summary, errors', () => {
+  it('refuses a summary file that is the baseline file, and keeps the baseline', async () => {
+    const repo = gitProject();
+    const baseline = join(repo.root, 'layerscope-baseline.json');
+    writeFileSync(baseline, '{"entries":"keep"}\n');
+    const result = await check(
+      [repo.root, '--format', 'github', '--summary', 'layerscope-baseline.json'],
+      repo.root,
+    );
+    expect(result.code).toBe(2);
+    expect(result.err).toContain('--summary and --baseline name the same file.');
+    expect(readFileSync(baseline, 'utf8')).toBe('{"entries":"keep"}\n');
+  });
+});
+
+describe('check --summary, paths', () => {
+  it('resolves the summary from the current directory and the baseline from the root', async () => {
+    const repo = gitProject();
+    const baseline = join(repo.root, 'layerscope-baseline.json');
+    writeFileSync(baseline, '{"entries":"keep"}\n');
+    const elsewhere = tempDir();
+    const result = await check(
+      [repo.root, '--format', 'github', '--summary', 'layerscope-baseline.json'],
+      elsewhere,
+    );
+    expect(result.err).not.toContain('name the same file');
+    expect(readFileSync(baseline, 'utf8')).toBe('{"entries":"keep"}\n');
+    expect(readFileSync(join(elsewhere, 'layerscope-baseline.json'), 'utf8')).toBe('');
+  });
+
   it('leaves no old list in the file when the check stops with an error later', async () => {
     const file = join(tempDir(), 'summary.md');
     writeFileSync(file, 'The check found 9 errors.\n');
@@ -100,7 +129,9 @@ describe('check --summary, errors', () => {
     expect(result.code).toBe(2);
     expect(readFileSync(file, 'utf8')).toBe('');
   });
+});
 
+describe('check --summary, other options', () => {
   it('refuses an empty file name, with exit code 2', async () => {
     const repo = gitProject();
     const result = await check([repo.root, '--format', 'github', '--summary', ''], repo.root);
