@@ -23,11 +23,12 @@ export type Keyed = Pick<BaselineEntry, 'rule' | 'file' | 'symbol' | 'toLayer'>;
 /**
  * Rule, file, symbol and target layer; lines are left out so unrelated edits keep the entry. A
  * `layer-cycle` finding is shown at its first use, and that file changes when a use is added or
- * removed, so its key is the rule and the symbol (the chain of layers) only.
+ * removed, so its key has no file. The target layer is the second layer of the chain. It stays in
+ * the key, so two chains with the same joined symbol are not the same cycle.
  */
 export function keyOf(entry: Keyed): string {
   if (entry.rule === 'layer-cycle') {
-    return [entry.rule, entry.symbol].join('\0');
+    return [entry.rule, entry.symbol, entry.toLayer ?? ''].join('\0');
   }
   return [entry.rule, entry.file, entry.symbol, entry.toLayer ?? ''].join('\0');
 }
@@ -83,7 +84,8 @@ function isEntry(value: unknown): value is BaselineEntry {
     isRuleName(entry.rule) &&
     typeof entry.file === 'string' &&
     typeof entry.symbol === 'string' &&
-    (entry.toLayer === null || typeof entry.toLayer === 'string')
+    (entry.toLayer === null || typeof entry.toLayer === 'string') &&
+    (entry.count === undefined || (Number.isInteger(entry.count) && entry.count > 0))
   );
 }
 

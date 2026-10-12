@@ -156,7 +156,7 @@ export type SourceOption = ResolutionSource | 'auto';
 
 /**
  * A finding counts by rule, file, symbol and target layer, never by line. A `layer-cycle` finding
- * counts by rule and symbol only.
+ * counts without its file.
  */
 export interface BaselineEntry {
   rule: RuleName;

@@ -47,10 +47,11 @@ An entry is identified by its **rule**, **file**, **symbol** and **target layer*
 - A file that is renamed or moved produces new findings. Regenerate the baseline in the same
   change.
 
-A `layer-cycle` entry is identified by its **rule** and **symbol** only. The symbol is the chain of
-layers, for example `auth → shop → auth`. The file is not part of it, because the finding is shown
-at the first use in the cycle, and that file changes when you add or remove a use. The `file` in the
-entry tells you where the first use was when the baseline was written. A baseline made by an
+A `layer-cycle` entry is identified by its **rule**, **symbol** and **target layer**, but not by its
+**file**. The symbol is the chain of layers, for example `auth → shop → auth`, and the target layer
+is the second layer in it. The file is not part of it, because the finding is shown at the first
+use in the cycle, and that file changes when you add or remove a use. The `file` in the entry
+tells you where the first use was when the baseline was written. A baseline made by an
 older release still matches each cycle by its chain. In one case it does not: when two cycles of the
 same length go through one layer, layerscope can now show the other cycle. `check` then reports it
 as new once. Run `check --update-baseline` to accept it. Since this release, layerscope always shows

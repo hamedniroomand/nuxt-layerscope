@@ -6,8 +6,8 @@ import type { AnalyzeResult, Finding } from '#src/types.ts';
 
 /**
  * A stable id for each finding, live or accepted by the baseline: the sha256 of the baseline key
- * (rule, file, symbol, target layer; for `layer-cycle` the rule and the symbol), which has no line
- * number, so unrelated edits keep it.
+ * (rule, file, symbol, target layer; a `layer-cycle` key has no file), which has no line number,
+ * so unrelated edits keep it.
  * Findings with the same key get an occurrence number, counted in report order. A new
  * duplicate above an old one moves the numbers; the baseline `count` has the same limit.
  */

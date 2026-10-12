@@ -234,3 +234,50 @@ describe('identical entries of another rule', () => {
     expect(diffBaselines(baseline, now)).toEqual({ added: [], fixed: [] });
   });
 });
+
+describe('a baseline entry with a wrong count', () => {
+  const entry = { rule: 'layer-cycle', file: 'a.vue', symbol: 'a → b → a', toLayer: 'b' };
+  const read = (count: unknown): unknown =>
+    parseBaseline({ version: 1, entries: [{ ...entry, count }] }, 'b.json');
+
+  it.each([['1'], [0], [-1], [1.5], [null]])('is refused: %j', count => {
+    expect(() => read(count)).toThrow('b.json: entry 0 is not a valid baseline entry');
+  });
+
+  it('is read when the count is a positive integer or not set', () => {
+    expect(() => read(2)).not.toThrow();
+    expect(() => parseBaseline({ version: 1, entries: [entry] }, 'b.json')).not.toThrow();
+  });
+});
+
+describe('two chains with the same joined symbol', () => {
+  it('are not the same cycle', () => {
+    const one = {
+      rule: 'layer-cycle',
+      file: 'a.vue',
+      symbol: 'a → b → c → a',
+      toLayer: 'b',
+    } as const;
+    const other = { ...one, toLayer: 'b → c' };
+    expect(keyOf(one)).not.toBe(keyOf(other));
+    const result = applyBaseline(
+      [
+        makeFinding({
+          rule: 'layer-cycle',
+          file: `${ROOT}/a.vue`,
+          symbol: one.symbol,
+          toLayer: other.toLayer,
+        }),
+      ],
+      { version: 1, entries: [one] },
+      'b.json',
+      ROOT,
+    );
+    expect(result.findings).toHaveLength(1);
+  });
+
+  it('keep the file out of the key of a cycle, as before', () => {
+    const a = { rule: 'layer-cycle', file: 'a.vue', symbol: 'a → b → a', toLayer: 'b' } as const;
+    expect(keyOf(a)).toBe(keyOf({ ...a, file: 'z.vue' }));
+  });
+});

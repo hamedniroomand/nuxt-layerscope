@@ -75,28 +75,36 @@ function mutate(uses: Use[], next: () => number): Use[] {
   return result.toSorted(() => next() - 0.5);
 }
 
-/** The shortest chain through layers after `start`; of equal ones, the first by layer names. */
-function bruteForce(start: string, uses: Use[]): string | null {
+const keyOfChain = (list: string[]): string =>
+  `${String(list.length).padStart(3, '0')}${list.join()}`;
+
+/** Every shortest chain `start → … → start` through layers after `start`. */
+function shortestChains(start: string, uses: Use[]): string[][] {
   const next = new Map<string, Set<string>>();
   for (const use of uses) {
     next.set(use.from, (next.get(use.from) ?? new Set()).add(use.to));
   }
-  const key = (list: string[]): string => `${String(list.length).padStart(3, '0')}${list.join()}`;
-  const found: { best: string[] | null } = { best: null };
+  const found: string[][] = [];
   const walk = (path: string[]): void => {
     for (const layer of next.get(path.at(-1) ?? '') ?? []) {
       if (layer === start) {
-        const chain = [...path, start];
-        if (found.best === null || key(chain) < key(found.best)) {
-          found.best = chain;
-        }
+        found.push([...path, start]);
       } else if (layer > start && !path.includes(layer)) {
         walk([...path, layer]);
       }
     }
   };
   walk([start]);
-  return found.best?.join(' → ') ?? null;
+  const shortest = Math.min(...found.map(chain => chain.length));
+  return found.filter(chain => chain.length === shortest);
+}
+
+/** The shortest chain through layers after `start`; of equal ones, the first by layer names. */
+function bruteForce(start: string, uses: Use[]): string | null {
+  const sorted = shortestChains(start, uses).toSorted((a, b) =>
+    keyOfChain(a).localeCompare(keyOfChain(b)),
+  );
+  return sorted.at(0)?.join(' → ') ?? null;
 }
 
 describe.each(SEEDS)('cycle baseline, seed %i', seed => {
@@ -127,10 +135,20 @@ describe.each(SEEDS)('cycle baseline, seed %i', seed => {
   });
 });
 
-it('has seeds with cycles and with equal-length ties', () => {
-  const cycles = SEEDS.filter(seed => {
-    const next = random(seed);
-    return cycleFindings(toEdges(project(next)), CONFIG).length > 0;
+describe('the seeds', () => {
+  const projects = SEEDS.map(seed => project(random(seed)));
+
+  it('hold cycles', () => {
+    const cycles = projects.filter(uses => cycleFindings(toEdges(uses), CONFIG).length > 0);
+    expect(cycles.length).toBeGreaterThan(SEEDS.length / 2);
   });
-  expect(cycles.length).toBeGreaterThan(SEEDS.length / 2);
+
+  it('hold equal-length ties: a start layer with two or more shortest chains', () => {
+    const layers = (uses: Use[]): string[] => [...new Set(uses.map(use => use.from))];
+    const ties = projects.filter(uses =>
+      layers(uses).some(start => shortestChains(start, uses).length >= 2),
+    );
+    // 20 of the 200 seeds today; the floor leaves room for a change of the generator.
+    expect(ties.length).toBeGreaterThanOrEqual(10);
+  });
 });
