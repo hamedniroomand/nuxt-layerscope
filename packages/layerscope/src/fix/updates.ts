@@ -22,9 +22,12 @@ export function collectUpdates(
     const owner = importedTo === undefined ? edge.file : edge.to;
     const update = importUpdate(edge, importerTo ?? edge.file, importedTo ?? edge.to);
     if (update !== undefined && (importerTo !== undefined || importedTo !== undefined)) {
-      updates
-        .get(owner)
-        ?.push({ file: edge.file, line: edge.line, specifier: edge.symbol, ...update });
+      // One update for each import of the specifier in the file, the first one and the later ones.
+      for (const { line, column } of [edge, ...(edge.sites ?? [])]) {
+        updates
+          .get(owner)
+          ?.push({ file: edge.file, line, column, specifier: edge.symbol, ...update });
+      }
     }
   }
   return updates;

@@ -41,6 +41,7 @@ describe('planMoves', () => {
       {
         file: edge.file,
         line: 3,
+        column: 5,
         specifier: '../../web/composables/useCart',
         updated: '../../shared/composables/useCart',
       },

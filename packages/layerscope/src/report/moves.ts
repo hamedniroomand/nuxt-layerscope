@@ -12,8 +12,8 @@ export interface MoveNotes {
 
 function formatMove(move: PlannedMove, cwd: string): string {
   const head = `${relative(cwd, move.from)} → ${relative(cwd, move.to)}  (layer "${move.layer}", clears ${plural(move.fixes, 'finding')})`;
-  const updates = move.updates.map(({ file, line, specifier, updated }) => {
-    const at = `  ${relative(cwd, file)}:${line}  "${specifier}"`;
+  const updates = move.updates.map(({ file, line, column, specifier, updated }) => {
+    const at = `  ${relative(cwd, file)}:${line}:${column}  "${specifier}"`;
     return updated === null ? `${at} — update by hand` : `${at} → "${updated}"`;
   });
   return [head, ...updates].join('\n');

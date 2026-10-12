@@ -167,7 +167,7 @@
             "imports": {
               "type": "integer",
               "minimum": 0,
-              "description": "move: the import lines that `layerscope fix` lists for the move: relative specifiers that change and aliases to update by hand, in the users and in the moved file."
+              "description": "move: the imports that `layerscope fix` lists for the move: relative specifiers that change and aliases to update by hand, in the users and in the moved file."
             },
             "edges": {
               "type": "integer",

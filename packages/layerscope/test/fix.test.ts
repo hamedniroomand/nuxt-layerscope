@@ -231,7 +231,7 @@ describe('layerscope fix plans', () => {
     );
     // The moved file is the importer here: its own import gets a new path.
     expect(text).toContain(
-      `${shown(root, CART)}:1  "../../../shared/app/utils/noop" → "../utils/noop"`,
+      `${shown(root, CART)}:1:22  "../../../shared/app/utils/noop" → "../utils/noop"`,
     );
   });
 });

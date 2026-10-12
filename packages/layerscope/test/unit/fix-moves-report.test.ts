@@ -9,8 +9,8 @@ const move: PlannedMove = {
   layer: 'b',
   fixes: 2,
   updates: [
-    { file: '/app/c/y.ts', line: 4, specifier: '../a/x', updated: '../b/x' },
-    { file: '/app/d/z.ts', line: 1, specifier: '#layers/a/x', updated: null },
+    { file: '/app/c/y.ts', line: 4, column: 8, specifier: '../a/x', updated: '../b/x' },
+    { file: '/app/d/z.ts', line: 1, column: 8, specifier: '#layers/a/x', updated: null },
   ],
 };
 
@@ -20,8 +20,8 @@ describe('formatMoves', () => {
   it('prints each move, its edits and the steps after it', () => {
     const text = formatMoves([move], '/app', plain);
     expect(text).toContain('a/x.ts → b/x.ts  (layer "b", clears 2 findings)');
-    expect(text).toContain('c/y.ts:4  "../a/x" → "../b/x"');
-    expect(text).toContain('d/z.ts:1  "#layers/a/x" — update by hand');
+    expect(text).toContain('c/y.ts:4:8  "../a/x" → "../b/x"');
+    expect(text).toContain('d/z.ts:1:8  "#layers/a/x" — update by hand');
     expect(text).toContain(
       'Move the files, update the imports, then run `layerscope check --prepare`.',
     );

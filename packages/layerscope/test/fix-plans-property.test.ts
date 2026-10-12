@@ -64,6 +64,14 @@ function writeFiles(root: string, random: Random): Source[] {
     const lines = imports.map(
       other => `import { ${other.name} as i_${other.name} } from '${specifier(file, other)}';`,
     );
+    // Each third import comes twice: a type import and a value import of the same file.
+    const again = imports.filter((_, index) => index % 3 === 0);
+    lines.push(
+      ...again.map(
+        other =>
+          `import type { ${other.name} as j_${other.name} } from '${specifier(file, other)}';`,
+      ),
+    );
     const names = imports.map(other => `i_${other.name}`);
     write(
       root,

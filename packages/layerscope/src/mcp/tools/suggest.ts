@@ -49,6 +49,7 @@ export const suggestTool: Tool = {
               ? move.updates.map(update => ({
                   file: session.relative(update.file),
                   line: update.line,
+                  column: update.column,
                   from: update.specifier,
                   to: update.updated,
                 }))

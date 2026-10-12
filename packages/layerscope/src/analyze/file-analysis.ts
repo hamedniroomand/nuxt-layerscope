@@ -176,6 +176,10 @@ export class FileAnalysis {
       if (known?.names !== undefined && names !== undefined) {
         known.names = [...new Set([...known.names, ...names])];
       }
+      if (known !== undefined && kind === 'import') {
+        const { line, column } = this.reference(kind, symbol, offset);
+        known.sites = [...(known.sites ?? []), { line, column }];
+      }
       return;
     }
     // Ownership first: a layer installed from npm owns its files under node_modules.
