@@ -14,11 +14,17 @@ function isInside(dir: string, path: string): boolean {
 /**
  * The root of a layer, and its `srcDir`, `serverDir` and shared dir when one of them is outside
  * the root (for example `serverDir: '../api'`). A dir inside the root is already covered by it.
- * The dirs can come from a registry file: one that is missing or not a string is left out.
+ * The dirs can come from a registry file: one that is missing or not a string is left out. A dir
+ * with a `node_modules` segment is left out too: files there are packages, and the check for them
+ * looks only below the matched dir, so it would not see that segment.
  */
 export function sourceDirsOutsideRoot(layer: Layer): string[] {
   const outside = [layer.srcDir, layer.serverDir, layer.sharedDir].filter(
-    (dir): dir is string => typeof dir === 'string' && dir !== '' && !isInside(layer.root, dir),
+    (dir): dir is string =>
+      typeof dir === 'string' &&
+      dir !== '' &&
+      !isInside(layer.root, dir) &&
+      !dir.split(/[\\/]/u).includes('node_modules'),
   );
   return [...new Set(outside)];
 }

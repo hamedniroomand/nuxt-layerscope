@@ -1,5 +1,10 @@
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+
+import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
+import { collectFiles } from '#src/analyze/files.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import type { Layer } from '#src/types.ts';
 import { makeLayer } from '#test/factories.ts';
@@ -93,5 +98,33 @@ describe('createOwnerLookup with equal prefixes', () => {
     const ownerOf = createOwnerLookup([layer('root', '/mono/web', { srcDir: '/mono/web/app' })]);
     expect(ownerOf('/mono/web/server/a.ts')?.name).toBe('root');
     expect(ownerOf('/mono/web2/a.ts')).toBeNull();
+  });
+});
+
+describe('createOwnerLookup with a source dir inside node_modules', () => {
+  it('gives no owner to the files of a serverDir inside node_modules', () => {
+    const ownerOf = createOwnerLookup([
+      layer('root', '/mono/web', { serverDir: '/mono/node_modules/pkg/server' }),
+    ]);
+    expect(ownerOf('/mono/node_modules/pkg/server/x.ts')).toBeNull();
+    expect(ownerOf('/mono/web/app/a.ts')?.name).toBe('root');
+  });
+
+  it('matches the node_modules segment, not the text', () => {
+    const ownerOf = createOwnerLookup([
+      layer('root', '/mono/web', { serverDir: '/mono/my_node_modules_x/server' }),
+    ]);
+    expect(ownerOf('/mono/my_node_modules_x/server/x.ts')?.name).toBe('root');
+  });
+
+  it('does not scan the files of a serverDir inside node_modules', async () => {
+    const base = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-nm-')));
+    const server = join(base, 'node_modules/pkg/server');
+    mkdirSync(server, { recursive: true });
+    mkdirSync(join(base, 'web'), { recursive: true });
+    writeFileSync(join(server, 'x.ts'), 'export const x = 1;\n');
+    const web = layer('root', join(base, 'web'), { serverDir: server });
+    const files = await collectFiles([web], createOwnerLookup([web]), []);
+    expect([...files.keys()]).toEqual([]);
   });
 });
