@@ -60,3 +60,21 @@ export function writeNotes(result: AnalyzeResult, verbose: boolean): void {
     process.stderr.write(`${process.stdout.isTTY ? '\n' : ''}${lines.join('\n')}\n`);
   }
 }
+
+/**
+ * cac gives its parser the camelCase name of a boolean flag (`dryRun`), but the parser reads the
+ * argument as the user wrote it (`--dry-run`). It does not know that this is a boolean, so it takes
+ * the next argument as the value, and the root argument is lost. This adds the spelling of the user
+ * as one more name of each boolean flag. Then cac gives both names to its parser, for the command
+ * that has the flag only, and the value of `options.dryRun` is the same as before.
+ */
+export function acceptDashedBooleans(cli: Cli): void {
+  for (const command of [cli.globalCommand, ...cli.commands]) {
+    for (const option of command.options) {
+      if (option.isBoolean === true && !option.negated) {
+        const written = option.rawName.split(',').map(name => name.trim().replace(/^--?/u, ''));
+        option.names.push(...written.filter(name => !option.names.includes(name)));
+      }
+    }
+  }
+}
