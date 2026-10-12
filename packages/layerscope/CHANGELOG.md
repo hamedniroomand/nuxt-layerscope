@@ -1,5 +1,44 @@
 # Changelog
 
+## 0.8.0
+
+### Minor Changes
+
+- [#150](https://github.com/hamedniroomand/nuxt-layerscope/pull/150) [`6b98d05`](https://github.com/hamedniroomand/nuxt-layerscope/commit/6b98d05dfe636a45cc8876f30c636b1999be4a53) - The GitHub Action writes the findings of the check to the job summary, up to 200 findings, because GitHub shows at most 10 error and 10 warning annotations for each step. The new option `--summary <file>` of `check` writes that list. It works only with `--format github`.
+
+- [#138](https://github.com/hamedniroomand/nuxt-layerscope/pull/138) [`6eb05c0`](https://github.com/hamedniroomand/nuxt-layerscope/commit/6eb05c0c34d5c1f1d00296378206858833ec8ea9) - `layerscope unused` now lists what it does not count. It lists each file that layerscope could not read in full: a parse error, an unread template, an `import()` or `require()` with a path that is not a fixed string, or an `import.meta.glob()`. When such a file exists, the report does not say that every symbol is referenced.
+
+  The last line of the text report names the other uses that are not counted: test files, files that match `ignore`, and files in layers installed as packages. The JSON report has a new `blindSpots` field, and the DevTools Unused view shows the same data. `findBlindSpots` is a new export of `nuxt-layerscope/api`.
+
+- [#142](https://github.com/hamedniroomand/nuxt-layerscope/pull/142) [`4a7fdc5`](https://github.com/hamedniroomand/nuxt-layerscope/commit/4a7fdc528188c9b09ed36810f7695cdb90a6918f) - `layerscope unused` counts more uses. It now counts the uses in `nuxt.config.*`, in the Nuxt `modules/` dir, in files of extra auto-import and component dirs, and in the project files that counted files import.
+  A symbol that only one of these files uses is no longer listed as unused. `check`, `fix` and `why` do not change: they do not read these files.
+
+  `analyze` has a new `extraFiles` option (default `false`) that turns this on for `unused` and the DevTools Unused view.
+
+- [#146](https://github.com/hamedniroomand/nuxt-layerscope/pull/146) [`7ffda4e`](https://github.com/hamedniroomand/nuxt-layerscope/commit/7ffda4e3e3a936395d911fdfd8ac1abbf29e89c8) - `layerscope unused` does not list the symbols of a layer outside the project root that is not installed as a package, such as a workspace package, because another app can use them. The text report names these layers in a second line. When a layer is not listed, an empty list says "No unused symbol found in the listed layers." and not that every symbol is referenced.
+
+  The JSON report has a new `outside-root` entry in `blindSpots`, and `findBlindSpots` returns the same new kind. The DevTools Unused view shows the same lines. In the view data, `blindSpotLine` is now `blindSpotLines`, a list.
+
+- [#144](https://github.com/hamedniroomand/nuxt-layerscope/pull/144) [`3a97f57`](https://github.com/hamedniroomand/nuxt-layerscope/commit/3a97f5746f0d3b137b2658660263a7233736c902) - `layerscope unused` counts a `typeof x` in a type, such as `ReturnType<typeof useCart>`, and an `import type` when `typeImports` is `'ignore'`. `check` does not change.
+
+### Patch Changes
+
+- [#140](https://github.com/hamedniroomand/nuxt-layerscope/pull/140) [`4d69b7b`](https://github.com/hamedniroomand/nuxt-layerscope/commit/4d69b7bc647be8b4e49f4d5f5ac6d8a320782ec3) - The drift step of the GitHub Action no longer makes a shallow or full clone shallower. It now finds the base commit for pull requests, pushes and merge queues, and fetches it when the clone does not have it. If the event has no base commit, or the fetch fails, the step skips the report and prints a notice.
+
+- [#143](https://github.com/hamedniroomand/nuxt-layerscope/pull/143) [`c56ab6b`](https://github.com/hamedniroomand/nuxt-layerscope/commit/c56ab6bcdfd2b0f951c6ad4c188c63113bce4d0d) - The drift comment of the GitHub Action now posts one comment for each root. Later runs update the comment that the same account wrote, so steps with different roots no longer overwrite each other, and the action no longer edits a comment that another account wrote. If drift fails, the comment says so. On a `pull_request` event from a fork, or when the action cannot post the comment, it prints a notice or a warning. A failed comment does not fail the step. A new `comment` output says what the action did.
+
+- [#145](https://github.com/hamedniroomand/nuxt-layerscope/pull/145) [`29e516a`](https://github.com/hamedniroomand/nuxt-layerscope/commit/29e516ad8005e4e43dbcedabeeee3714aebd25af) - The GitHub Action runs the nuxt-layerscope version of its own release when the project does not install it, so a tag pins the CLI too. The step that posts the comment is separate from the steps that run the CLI, so the action does not give its token to the CLI.
+
+- [#151](https://github.com/hamedniroomand/nuxt-layerscope/pull/151) [`d08d5dc`](https://github.com/hamedniroomand/nuxt-layerscope/commit/d08d5dcc8747ae8b36b121d8410d2212f3d7a254) - The stale check now finds a new auto-import file, such as a composable that overrides one of a lower layer. layerscope stops with exit code 2 and asks you to run "nuxi prepare" again. This check uses the registry of the module. The `types` source does not check auto-import files.
+
+  The registry has a new `importDirs` field. A registry that an earlier release wrote does not have it. With `--source auto`, layerscope then falls back to the `.d.ts` files and prints a note. With `--source registry`, it stops with exit code 2. Run "nuxi prepare" again.
+
+  When the module cannot read the auto-import dirs of Nuxt, it prints a warning with the reason and writes `importDirs: null`. Then layerscope prints a note and does not check auto-import files.
+
+- [#139](https://github.com/hamedniroomand/nuxt-layerscope/pull/139) [`b218ee0`](https://github.com/hamedniroomand/nuxt-layerscope/commit/b218ee04b49ee9447b2f7fb672aee75ad1433ff6) - Fix path checks on case-insensitive file systems and on Windows. Layerscope now uses the real case of a path and forward slashes. `--prepare` now starts `npx` on Windows and shows the error when it cannot start.
+
+- [#152](https://github.com/hamedniroomand/nuxt-layerscope/pull/152) [`00c2411`](https://github.com/hamedniroomand/nuxt-layerscope/commit/00c24114b5434af7c737491731ddef85fe0856d9) - `check --watch` uses the shared test for layers outside the project root, so a project root of `/` works.
+
 ## 0.7.0
 
 ### Minor Changes
