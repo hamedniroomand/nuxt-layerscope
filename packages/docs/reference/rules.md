@@ -108,8 +108,8 @@ The suggestions and their counts are made for the findings that `check` shows on
 Each suggestion shows what it changes: findings cleared (for a move: the findings that point at
 the file and the findings in it), and files and imports affected for a move
 (`impact.imports` is the count of imports that `fix` lists), edges added for an allow.
-[`layerscope fix --dry-run`](./cli#layerscope-fix) prints the moves only. The other suggestions are
-in the output of `layerscope check`.
+[`layerscope fix --dry-run`](./cli#layerscope-fix) prints the moves only, and `--apply` makes them.
+The other suggestions are in the output of `layerscope check`.
 
 ## `layer-cycle`
 

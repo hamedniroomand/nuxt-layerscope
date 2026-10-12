@@ -97,10 +97,12 @@ describe('suggestions', () => {
 });
 
 describe('layerscope fix', () => {
-  it('requires --dry-run', async () => {
+  it('requires --dry-run or --apply', async () => {
     const output = silence();
     expect(await run(['node', 'layerscope', 'fix', project()])).toBe(EXIT_ERROR);
-    expect(output.stderr()).toContain('--dry-run');
+    expect(output.stderr()).toContain(
+      'fix needs --dry-run or --apply. --dry-run prints the moves. --apply makes them.',
+    );
   });
 
   it('prints the move and the import it updates', async () => {
@@ -119,7 +121,7 @@ describe('layerscope fix output', () => {
     const output = silence();
     await run(['node', 'layerscope', 'fix', project(), '--dry-run']);
     expect(output.stdout()).toContain(
-      'Move the files, update the imports, then run `layerscope check --prepare`.',
+      'Make the moves with `--apply`, or move the files and update the imports yourself. Then run `layerscope check --prepare`.',
     );
     expect(output.stdout()).toContain('does not scan test files, `nuxt.config.*`');
     expect(output.stdout()).not.toContain('(--dry-run)');
