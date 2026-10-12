@@ -25,9 +25,14 @@ export function fakeApi(data: ReportResponse | Error): Api {
     events: '/__layerscope/events',
     symbols: vi.fn<Api['symbols']>().mockResolvedValue({ symbols: [] }),
     trace: vi.fn<Api['trace']>().mockResolvedValue({ version: 1, symbol: '', targets: [] }),
-    unused: vi
-      .fn<Api['unused']>()
-      .mockResolvedValue({ unused: [], possiblyUsed: false, layers: [] }),
+    unused: vi.fn<Api['unused']>().mockResolvedValue({
+      unused: [],
+      blindSpots: [],
+      blindSpotLine: null,
+      unreadableLine: null,
+      possiblyUsed: false,
+      layers: [],
+    }),
     ignore: vi.fn<Api['ignore']>().mockRejectedValue(new Error('no ignore in this test')),
     remove: vi.fn<Api['remove']>().mockRejectedValue(new Error('no remove in this test')),
     undo: vi.fn<Api['undo']>().mockRejectedValue(new Error('no undo in this test')),

@@ -5,6 +5,7 @@ import { relative } from 'pathe';
 import { escapePath, glob } from 'tinyglobby';
 
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
+import { isPackageLayer } from '#src/nuxt/package-layer.ts';
 import type { Context, Layer } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
@@ -28,7 +29,7 @@ const ROOT_IGNORE = 'layerscope.config.*';
 
 function scannedDirs(layer: Layer): string[] {
   // Layers installed from npm are dependencies: their code is resolved, not checked.
-  if (layer.root.includes('/node_modules/')) {
+  if (isPackageLayer(layer)) {
     return [];
   }
   return [...new Set([layer.srcDir, layer.serverDir, layer.sharedDir])].filter(dir =>

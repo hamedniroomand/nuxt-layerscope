@@ -110,6 +110,9 @@ describe('unused view', () => {
           possiblyUsed: true,
         },
       ],
+      blindSpots: [],
+      blindSpotLine: null,
+      unreadableLine: null,
       possiblyUsed: true,
       layers: ['ui'],
     });
@@ -122,6 +125,37 @@ describe('unused view', () => {
     expect(wrapper.get('h3.group').text()).toContain('ui');
     await wrapper.get('.rows button').trigger('click');
     expect(window.location.hash).toBe('#/trace/BaseCard');
+  });
+});
+
+describe('unused view blind spots', () => {
+  it('names the files that could not be read and drops the all-clear line', async () => {
+    window.location.hash = '#/unused';
+    const { wrapper, api } = await mountApp();
+    mounted = wrapper;
+    vi.mocked(api.unused).mockResolvedValue({
+      unused: [],
+      blindSpots: [
+        { kind: 'test-files' },
+        {
+          kind: 'unreadable',
+          files: [{ file: 'app/a.vue', reason: 'Could not parse file', absFile: '/app/app/a.vue' }],
+        },
+      ],
+      blindSpotLine: 'Not counted as uses: test files.',
+      unreadableLine: '1 file could not be read in full, so some of its uses can be missing.',
+      possiblyUsed: false,
+      layers: [],
+    });
+    press('6');
+    await flushPromises();
+    press('4');
+    await flushPromises();
+    const text = wrapper.text();
+    expect(text).toContain('Not counted as uses: test files.');
+    expect(text).toContain('1 file could not be read in full, so some of its uses can be missing.');
+    expect(text).toContain('app/a.vue');
+    expect(text).not.toContain('Every component and auto-import is referenced');
   });
 });
 

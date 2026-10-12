@@ -9,7 +9,7 @@ import type { Bindings, RenderContext } from './render-visitors.ts';
 import { visitRenderCall, visitRenderMember } from './render-visitors.ts';
 import type { TemplateIndex, VueAstNode } from './template-index.ts';
 import { indexTemplate } from './template-index.ts';
-import type { FileScan } from './types.ts';
+import type { FileScan, Unread } from './types.ts';
 
 function firstIdentOffset(name: string, source: string, index: TemplateIndex): number | null {
   const pattern = new RegExp(`(?<![\\w$.])${escapeRegExp(name)}(?![\\w$])`, 'u');
@@ -23,14 +23,21 @@ function firstIdentOffset(name: string, source: string, index: TemplateIndex): n
 }
 
 /** The tag and the reason, when layerscope cannot read the template; `null` when it can. */
-function unreadReason(template: SFCTemplateBlock): string | null {
+function unreadReason(template: SFCTemplateBlock): Pick<Unread, 'reason' | 'message'> | null {
   // `<template src>` has no value, so the compiler gives no `src`, only the attribute.
   if (template.src !== undefined || 'src' in template.attrs) {
     const tag = template.src === undefined ? '<template src>' : `<template src="${template.src}">`;
-    return `${tag}. layerscope does not read a template in a separate file, so uses in it are not checked.`;
+    return {
+      reason: tag,
+      message: `Could not read ${tag}. layerscope does not read a template in a separate file, so uses in it are not checked.`,
+    };
   }
   if (template.lang !== undefined && template.lang !== '' && template.lang !== 'html') {
-    return `<template lang="${template.lang}">. layerscope reads only HTML templates, so uses in this template are not checked.`;
+    const tag = `<template lang="${template.lang}">`;
+    return {
+      reason: tag,
+      message: `Could not read ${tag}. layerscope reads only HTML templates, so uses in this template are not checked.`,
+    };
   }
   return null;
 }
@@ -47,6 +54,7 @@ function readRender(
   if (parseError !== undefined) {
     ctx.scan.unread.push({
       symbol: '<template>',
+      reason: 'template expression that does not parse',
       message: `Could not read the template render code: ${parseError.message}. Uses in this template are not checked.`,
       offset: templateStart,
     });
@@ -82,7 +90,7 @@ export function scanTemplate(
   if (unreadTemplate !== null) {
     scan.unread.push({
       symbol: '<template>',
-      message: `Could not read ${unreadTemplate}`,
+      ...unreadTemplate,
       offset: templateStart,
     });
     return;

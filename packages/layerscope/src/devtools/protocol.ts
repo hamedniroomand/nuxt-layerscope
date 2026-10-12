@@ -1,5 +1,5 @@
 import type { Layout } from '#src/graph/layout.ts';
-import type { UnusedRow } from '#src/report/unused.ts';
+import type { BlindSpotRow, UnusedRow } from '#src/report/unused.ts';
 import type { WhyReport } from '#src/report/why.ts';
 import type { GraphEdgeStatus } from '#src/rules/edge-status.ts';
 import type { BaselineEntry, Context, Finding, Suggestion } from '#src/types.ts';
@@ -113,6 +113,12 @@ export type TraceView = WhyReport;
 
 export interface UnusedView {
   unused: UnusedRow[];
+  /** Uses that `unused` does not count; `unreadable` lists files that could not be read. */
+  blindSpots: BlindSpotRow[];
+  /** The text of the CLI blind-spot line; `null` when none applies. */
+  blindSpotLine: string | null;
+  /** The sentence about files that could not be read; `null` when all files were read. */
+  unreadableLine: string | null;
   /** The project renders components chosen at runtime, so some may be used after all. */
   possiblyUsed: boolean;
   /** Layer order for grouping. */

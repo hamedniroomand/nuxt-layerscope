@@ -11,6 +11,8 @@ export type { Registry } from './registry/schema.ts';
 export { formatResult, OUTPUT_FORMATS } from './report/index.ts';
 export type { OutputFormat } from './report/index.ts';
 export { JSON_REPORT_VERSION } from './report/json.ts';
+export { findBlindSpots } from './unused/blind-spots.ts';
+export type { BlindSpot } from './unused/blind-spots.ts';
 export { findUnused } from './unused/index.ts';
 export type { UnusedSymbol } from './unused/index.ts';
 export type * from './types.ts';

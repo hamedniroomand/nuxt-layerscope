@@ -72,6 +72,7 @@ function isImportMetaGlob(callee: Node): boolean {
 function dynamicPath(call: 'import()' | 'require()', offset: number): Unread {
   return {
     symbol: call,
+    reason: `${call} with a dynamic path`,
     message: `Could not read ${call}: the path is not a fixed string. The module that it loads is not checked.`,
     offset,
   };
@@ -186,6 +187,7 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
     if (isImportMetaGlob(node.callee)) {
       scan.unread.push({
         symbol: 'import.meta.glob()',
+        reason: 'import.meta.glob()',
         message:
           'Could not read import.meta.glob(): layerscope does not resolve glob imports. The modules that it loads are not checked.',
         offset: mapOffset(node.start),

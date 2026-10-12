@@ -6,7 +6,7 @@ import { runRules } from '#src/rules/index.ts';
 import { withRootNotes, withSuggestions } from '#src/suggest/index.ts';
 import type { AnalyzeResult, LayerscopeConfig, SourceOption } from '#src/types.ts';
 
-import { analyzeFiles } from './cache.ts';
+import { analyzeFiles, fileLists } from './cache.ts';
 import type { AnalysisCache, EnvironmentCache } from './cache.ts';
 import { collectFiles } from './files.ts';
 import { loadProject, projectRoot } from './load.ts';
@@ -82,9 +82,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     presetLayers,
     declaredConfig,
     recordedFile: environment.recordedFile,
-    dynamicComponentFiles: analyses
-      .filter(analysis => analysis.hasDynamicComponent)
-      .map(analysis => analysis.file),
+    ...fileLists(analyses),
   };
   const reported =
     options.baseline === undefined

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vite-plus/test';
 
 import { surplusKeyOf } from '#src/baseline/index.ts';
 import { allowHint } from '#src/devtools/hints.ts';
-import { baselineView } from '#src/devtools/views-api.ts';
+import { baselineView, unusedView } from '#src/devtools/views-api.ts';
 import type { Finding } from '#src/types.ts';
 import { server } from '#test/devtools-server.ts';
 import { makeFinding, makeResult } from '#test/factories.ts';
@@ -122,5 +122,27 @@ describe('graph endpoints', () => {
     expect(node.offset).toBe(1);
     expect((await fetch('/api/node?layer=web&offset=-5')).status).toBe(200);
     expect((await fetch('/api/node?layer=nope')).status).toBe(404);
+  });
+});
+
+describe('unused view', () => {
+  it('gives the blind spots with full paths and the text of the line', async () => {
+    const result = makeResult({
+      unreadFiles: [{ file: '/app/pages/a.vue', reason: 'Could not parse file' }],
+    });
+    const view = await unusedView(result);
+    expect(view.blindSpotLine).toBe('Not counted as uses: test files.');
+    expect(view.unreadableLine).toBe(
+      '1 file could not be read in full, so some of its uses can be missing.',
+    );
+    expect(view.blindSpots).toEqual([
+      { kind: 'test-files' },
+      {
+        kind: 'unreadable',
+        files: [
+          { file: 'pages/a.vue', reason: 'Could not parse file', absFile: '/app/pages/a.vue' },
+        ],
+      },
+    ]);
   });
 });

@@ -65,13 +65,18 @@ export async function traceView(result: AnalyzeResult, symbol: string): Promise<
 
 /** Unused components and auto-imports, as `layerscope unused` reports them. */
 export async function unusedView(result: AnalyzeResult): Promise<UnusedView> {
-  const [{ findUnused }, { toUnusedRows }] = await Promise.all([
+  const [{ findUnused }, { findBlindSpots }, report] = await Promise.all([
     import('#src/unused/index.ts'),
+    import('#src/unused/blind-spots.ts'),
     import('#src/report/unused.ts'),
   ]);
-  const rows = toUnusedRows(findUnused(result), result.rootDir, true);
+  const rows = report.toUnusedRows(findUnused(result), result.rootDir, true);
+  const spots = findBlindSpots(result);
   return {
     unused: rows,
+    blindSpots: report.toBlindSpotRows(spots, result.rootDir, true),
+    blindSpotLine: report.blindSpotLine(spots),
+    unreadableLine: report.unreadableSentence(report.countUnreadable(spots)),
     possiblyUsed: rows.some(row => row.possiblyUsed),
     layers: result.layers.map(layer => layer.name),
   };

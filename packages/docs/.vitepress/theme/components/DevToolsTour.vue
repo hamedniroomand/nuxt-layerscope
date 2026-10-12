@@ -24,7 +24,7 @@
     {
       name: 'unused',
       label: 'Unused',
-      alt: 'The Unused view: 2 unused symbols in 2 layers, the AppBadge component in ui and the formatDate auto-import in base, with a note about components chosen at runtime.',
+      alt: 'The Unused view: 2 unused symbols in 2 layers, the AppBadge component in ui and the formatDate auto-import in base, with a note about components chosen at runtime and a line that names the uses that are not counted.',
     },
     {
       name: 'graph',

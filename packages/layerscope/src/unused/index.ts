@@ -1,4 +1,5 @@
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
+import { isPackageLayer } from '#src/nuxt/package-layer.ts';
 import type { SymbolMap, SymbolTarget } from '#src/nuxt/symbols.ts';
 import { exposureOf } from '#src/rules/layer-internal.ts';
 import type { AnalyzeResult, Context, Edge } from '#src/types.ts';
@@ -100,7 +101,7 @@ export function findUnused(result: AnalyzeResult): UnusedSymbol[] {
   const ownerOf = createOwnerLookup(result.layers);
   const checked = (target: SymbolTarget): string | null => {
     const layer = target.file === null ? null : ownerOf(target.file);
-    return layer === null || layer.root.includes('/node_modules/') ? null : layer.name;
+    return layer === null || isPackageLayer(layer) ? null : layer.name;
   };
   const uses = collectUses(result.edges);
   const possiblyUsed = result.dynamicComponentFiles.length > 0;
