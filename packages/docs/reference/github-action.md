@@ -1,7 +1,8 @@
 # GitHub Action
 
 `hamedniroomand/nuxt-layerscope` runs `layerscope check --format github`, so findings are shown
-inline on the pull request diff and the job fails on errors.
+inline on the pull request diff and the job fails on errors. GitHub shows at most 10 error and 10
+warning annotations for each step. The job summary lists the findings, up to 200.
 
 ```yaml
 - uses: hamedniroomand/nuxt-layerscope@v0
@@ -28,7 +29,8 @@ first, then either run `npx nuxi prepare` or set `prepare: true`. See
 
 ## Drift summary
 
-After the check, the step `Build the drift report` runs [`layerscope drift`](./cli#layerscope-drift)
+The check step writes its own section, `layerscope findings`, to the job summary when there are
+findings. After the check, the step `Build the drift report` runs [`layerscope drift`](./cli#layerscope-drift)
 against the base commit and writes the result to the job summary: how many violations the change adds and fixes, and how the
 baseline size changed. On a pull request, it compares with the latest commit of the base branch. On a
 push, it compares with the commit before the push. In a merge queue, it compares with the base
@@ -65,6 +67,10 @@ has write permissions or secrets.
 1. `<root>/node_modules/.bin/layerscope`, the version the project installs,
 2. otherwise `node_modules/.bin/layerscope` at the repository root (monorepos),
 3. otherwise `npx nuxt-layerscope@<version>`.
+
+The action runs `check --summary`, which needs `nuxt-layerscope` 0.8.0 or later. The version that
+the project installs and the `version` input must be 0.8.0 or later. An older version stops the
+check step with exit code 2.
 
 Installing `nuxt-layerscope` in the project keeps CI and local runs on the same version, and
 the [Nuxt module](../guide/nuxt-module) and the CLI in step.

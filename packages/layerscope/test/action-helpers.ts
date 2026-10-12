@@ -96,6 +96,7 @@ function makeStubs(dir: string): Stubs {
   const script = join(scripts, 'drift.sh');
   copyFileSync(join(SCRIPTS, 'drift.sh'), script);
   copyFileSync(join(SCRIPTS, 'comment.sh'), join(scripts, 'comment.sh'));
+  copyFileSync(join(SCRIPTS, 'root-heading.sh'), join(scripts, 'root-heading.sh'));
   // The stub prints the report that the real CLI prints, or fails when STUB_LS_STATUS is set.
   writeFileSync(
     join(scripts, 'layerscope.sh'),

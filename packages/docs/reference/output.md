@@ -40,6 +40,9 @@ warnings, and `::notice` for fixed baseline entries.
 ::error file=layers/admin/app/components/AdminPanel.vue,line=2,col=14,title=layerscope layer-boundary::Auto-import "useCart" crosses from layer "admin" into "web"%0AuseCart → layers/web/app/composables/useCart.ts%0Aallowed for "admin": shared, auth%0Asuggestion: allow "admin" to use "web" (adds 1 edge%2C clears 4 findings)
 ```
 
+With `--summary <file>`, the CLI also writes a list of the findings as Markdown. Fixed baseline
+entries are not in that list.
+
 Run it from the repository root so the paths match the diff; the
 [GitHub Action](./github-action) does.
 

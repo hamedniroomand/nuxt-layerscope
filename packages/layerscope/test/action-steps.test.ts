@@ -66,6 +66,14 @@ describe('action.yml, the token', () => {
   });
 });
 
+describe('action.yml, the check step', () => {
+  it('runs check.sh, and has no token', () => {
+    const lines = step('Check layer boundaries');
+    expect(lines).toContain('run: \'"$GITHUB_ACTION_PATH/scripts/check.sh"\'');
+    expect(lines.join('\n')).not.toContain('github.token');
+  });
+});
+
 describe('drift.sh, the step that builds the report', () => {
   const env = { GITHUB_BASE_REF: 'main', INPUT_COMMENT: 'true', PR_NUMBER: '7' };
   const dirOf = (output: string): string => /^dir=(.*)$/mu.exec(output)?.[1] ?? '';
