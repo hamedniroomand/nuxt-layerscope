@@ -14,6 +14,35 @@ import { join, resolve } from 'pathe';
 import { git } from '#test/git-project.ts';
 import { tempDir } from '#test/watch-project.ts';
 
+/**
+ * A stub gh. It records each call (and GH_REPO and GH_HOST), and the body file of a comment.
+ * `api graphql` prints the file STUB_GRAPHQL, and runs the --jq filter on each page as the real gh
+ * does, with the jq of the system (the stub jq is first on PATH, so the stub gh removes it); it fails when STUB_GRAPHQL_FAILS is set. `api --method PATCH` exits with STUB_PATCH_STATUS,
+ * and `pr comment` with STUB_CREATE_STATUS. Like the real gh, `pr` needs a git repository in the
+ * current folder when GH_REPO is not set, and `api graphql` does not.
+ */
+const GH_STUB = `#!/usr/bin/env bash
+if [ "$1" = pr ] && [ -z "\${GH_REPO:-}" ] && ! git rev-parse --git-dir > /dev/null 2>&1; then
+  echo 'fatal: not a git repository (stub gh)' >&2
+  exit 1
+fi
+echo "gh $* [GH_REPO=\${GH_REPO:-} GH_HOST=\${GH_HOST:-}]" >> "CALLS_FILE"
+prev=''
+filter=''
+for arg in "$@"; do
+  case "$arg" in body=@*) cat "\${arg#body=@}" >> "CALLS_FILE" ;; esac
+  if [ "$prev" = "--body-file" ]; then cat "$arg" >> "CALLS_FILE"; fi
+  if [ "$prev" = "--jq" ]; then filter="$arg"; fi
+  prev="$arg"
+done
+if [ "$1 $2" = "api graphql" ]; then
+  if [ -n "\${STUB_GRAPHQL_FAILS:-}" ]; then echo 'gh: HTTP 502 (stub)' >&2; exit 1; fi
+  if [ -n "$filter" ]; then PATH="\${PATH#BIN_DIR:}" jq -r "$filter" "\${STUB_GRAPHQL:-/dev/null}"; else cat "\${STUB_GRAPHQL:-/dev/null}"; fi
+fi
+if [ "$2" = "--method" ]; then exit "\${STUB_PATCH_STATUS:-0}"; fi
+if [ "$1 $2" = "pr comment" ]; then exit "\${STUB_CREATE_STATUS:-0}"; fi
+`;
+
 const SCRIPTS = resolve(import.meta.dirname, '../../../scripts');
 export const ZEROS = '0'.repeat(40);
 
@@ -81,6 +110,7 @@ export interface Stubs {
   bin: string;
   summary: string;
   calls: string;
+  output: string;
 }
 
 /** A copy of drift.sh next to a stub layerscope.sh, and a stub gh that records its arguments. */
@@ -91,22 +121,39 @@ function makeStubs(dir: string): Stubs {
   mkdirSync(scripts);
   const script = join(scripts, 'drift.sh');
   copyFileSync(join(SCRIPTS, 'drift.sh'), script);
-  writeFileSync(join(scripts, 'layerscope.sh'), '#!/usr/bin/env bash\necho "layerscope $*"\n');
+  // The stub prints the report that the real CLI prints, or fails when STUB_LS_STATUS is set.
+  writeFileSync(
+    join(scripts, 'layerscope.sh'),
+    '#!/usr/bin/env bash\n' +
+      'if [ -n "${STUB_LS_STATUS:-}" ]; then echo "boom" >&2; exit "$STUB_LS_STATUS"; fi\n' +
+      'printf "### layerscope\\n\\n**adds 1** against \\`%s\\`\\n" "$*"\n',
+  );
   const calls = join(dir, 'gh-calls.txt');
   // A git that fails every fetch when STUB_FETCH_FAILS is set, and ls-remote with STUB_LS_REMOTE_FAILS.
   const realGit = execFileSync('which', ['git'], { encoding: 'utf8' }).trim();
+  // The script must not use the system jq: this one fails, as a missing jq does.
+  writeFileSync(
+    join(bin, 'jq'),
+    '#!/usr/bin/env bash\necho "jq: command not found (stub)" >&2\nexit 127\n',
+  );
+  chmodSync(join(bin, 'jq'), 0o755);
   writeFileSync(
     join(bin, 'git'),
     `#!/usr/bin/env bash\nif [ -n "\${STUB_FETCH_FAILS:-}" ] && [ "$3" = fetch ]; then echo 'fatal: stub fetch error' >&2; exit 128; fi\nif [ -n "\${STUB_LS_REMOTE_FAILS:-}" ] && [ "$3" = ls-remote ]; then echo 'fatal: stub ls-remote error' >&2; exit 128; fi\nexec ${realGit} "$@"\n`,
   );
   chmodSync(join(bin, 'git'), 0o755);
-  writeFileSync(join(bin, 'gh'), `#!/usr/bin/env bash\necho "gh $*" >> "${calls}"\n`);
+  writeFileSync(
+    join(bin, 'gh'),
+    GH_STUB.replaceAll('CALLS_FILE', calls).replaceAll('BIN_DIR', bin),
+  );
   for (const file of [script, join(scripts, 'layerscope.sh'), join(bin, 'gh')]) {
     chmodSync(file, 0o755);
   }
   const summary = join(dir, 'summary.md');
   writeFileSync(summary, '');
-  return { script, bin, summary, calls };
+  const output = join(dir, 'output.txt');
+  writeFileSync(output, '');
+  return { script, bin, summary, calls, output };
 }
 
 export interface Result {
@@ -115,10 +162,14 @@ export interface Result {
   err: string;
   summary: string;
   gh: string;
+  /** The lines the script wrote to GITHUB_OUTPUT. */
+  output: string;
 }
 
 export interface Setup extends Repos {
   drift: (env: Record<string, string>, cwd?: string) => Result;
+  /** Writes a GraphQL answer for the stub gh, and returns its path for STUB_GRAPHQL. */
+  answer: (...pages: unknown[]) => string;
 }
 
 /** `shallow` is a clone depth. `true` means depth 1. */
@@ -138,6 +189,10 @@ export function setup(shallow: boolean | number): Setup {
         INPUT_BASELINE: 'layerscope-baseline.json',
         INPUT_COMMENT: 'false',
         GITHUB_STEP_SUMMARY: stubs.summary,
+        GITHUB_OUTPUT: stubs.output,
+        GITHUB_REPOSITORY: 'owner/repo',
+        GITHUB_RUN_ID: '99',
+        GITHUB_SERVER_URL: 'https://github.com',
         ...env,
       },
     });
@@ -147,9 +202,15 @@ export function setup(shallow: boolean | number): Setup {
       err: result.stderr,
       summary: readFileSync(stubs.summary, 'utf8'),
       gh: existsSync(stubs.calls) ? readFileSync(stubs.calls, 'utf8') : '',
+      output: readFileSync(stubs.output, 'utf8'),
     };
   };
-  return { ...repos, drift };
+  const answer = (...pages: unknown[]): string => {
+    const file = join(repos.dir, 'graphql.json');
+    writeFileSync(file, pages.map(page => JSON.stringify(page)).join('\n'));
+    return file;
+  };
+  return { ...repos, drift, answer };
 }
 
 export const isShallow = (clone: string): string =>

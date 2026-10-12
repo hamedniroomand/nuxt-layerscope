@@ -19,11 +19,16 @@ inputs:
     description: Baseline file, relative to the root.
     default: layerscope-baseline.json
   comment:
-    description: Post the drift report as a pull request comment. Needs `pull-requests` write permission.
+    description: Post the drift report as a pull request comment, one for each root. Needs `pull-requests` write permission. Skipped on a `pull_request` event from a fork.
     default: 'false'
   version:
     description: nuxt-layerscope version to run when the project does not install it.
     default: latest
+
+outputs:
+  comment:
+    description: What the action did with the pull request comment, `created`, `updated`, `skipped` or `failed`.
+    value: ${{ steps.drift.outputs.comment }}
 
 runs:
   using: composite
@@ -43,6 +48,7 @@ runs:
         "$GITHUB_ACTION_PATH/scripts/layerscope.sh" "${args[@]}"
 
     - name: Report drift
+      id: drift
       if: ${{ always() }}
       shell: bash
       continue-on-error: true
@@ -54,6 +60,8 @@ runs:
         INPUT_COMMENT: ${{ inputs.comment }}
         INPUT_VERSION: ${{ inputs.version }}
         GH_TOKEN: ${{ github.token }}
+        GH_ENTERPRISE_TOKEN: ${{ github.token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
+        IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         BASE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}
       run: '"$GITHUB_ACTION_PATH/scripts/drift.sh"'

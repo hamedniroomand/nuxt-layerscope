@@ -222,19 +222,27 @@ describe('action.yml', () => {
       'BASE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}',
     );
   });
-});
 
-describe('drift.sh, comment', () => {
-  it('posts the report when comment is true on a pull request', () => {
-    const t = setup(false);
-    const result = t.drift({ GITHUB_BASE_REF: 'main', INPUT_COMMENT: 'true', PR_NUMBER: '7' });
-    expect(result.status).toBe(0);
-    expect(result.gh).toContain('gh pr comment 7 --body-file');
+  const stepLine = (name: string): string | undefined => {
+    const action = readFileSync(join(import.meta.dirname, '../../../action.yml'), 'utf8');
+    return action
+      .split('\n')
+      .find(text => text.trim().startsWith(`${name}:`))
+      ?.trim();
+  };
+
+  it('gives the output comment of the drift step to the caller', () => {
+    expect(stepLine('value')).toBe('value: ${{ steps.drift.outputs.comment }}');
+    expect(stepLine('id')).toBe('id: drift');
   });
 
-  it('does not call gh when comment is false', () => {
-    const t = setup(false);
-    const result = t.drift({ GITHUB_BASE_REF: 'main', PR_NUMBER: '7' });
-    expect(result.gh).toBe('');
+  it('gives gh the token for GitHub Enterprise Server, which reads another variable', () => {
+    expect(stepLine('GH_ENTERPRISE_TOKEN')).toBe('GH_ENTERPRISE_TOKEN: ${{ github.token }}');
+  });
+
+  it('marks a pull request from a fork only for the pull_request event', () => {
+    expect(stepLine('IS_FORK')).toBe(
+      "IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}",
+    );
   });
 });
