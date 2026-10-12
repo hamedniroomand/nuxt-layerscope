@@ -2,7 +2,7 @@ import { computeEnvKey } from '#src/devtools/env-key.ts';
 import { countKeys, diffKeys } from '#src/devtools/finding-keys.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult, SourceOption } from '#src/types.ts';
-import { projectRoot } from '#src/utils/fs.ts';
+import { isOutsideDir, projectRoot } from '#src/utils/fs.ts';
 
 import type { WatchAnalyzer } from './analyzer.ts';
 import { createWatchAnalyzer } from './analyzer.ts';
@@ -215,9 +215,7 @@ export async function watchCheck(options: WatchOptions): Promise<number> {
   const handle: { watcher?: Watcher } = {};
   // Layers and source dirs outside the project root are known after a run, and a run can add more.
   const watchNewRoots = (): void => {
-    const roots = watch
-      .layerDirs()
-      .filter(root => root !== rootDir && !root.startsWith(`${rootDir}/`) && !added.has(root));
+    const roots = watch.layerDirs().filter(root => isOutsideDir(root, rootDir) && !added.has(root));
     for (const root of roots) {
       added.add(root);
     }
