@@ -8,7 +8,12 @@ export interface MoveNotes {
   others: number;
   /** `typeImports` is `ignore`, so type-only imports are not in the plan. */
   typeImportsIgnored: boolean;
+  /** Baseline entries that name a moved file: they do not match after the move. */
+  baselineEntries: number;
 }
+
+export const NOT_SCANNED =
+  'layerscope does not scan test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by hand.';
 
 function formatMove(move: PlannedMove, cwd: string): string {
   const head = `${relative(cwd, move.from)} → ${relative(cwd, move.to)}  (layer "${move.layer}", clears ${plural(move.fixes, 'finding')})`;
@@ -19,12 +24,24 @@ function formatMove(move: PlannedMove, cwd: string): string {
   return [head, ...updates].join('\n');
 }
 
-function formatOthers(others: number): string[] {
+export function formatOthers(others: number): string[] {
   return others === 0
     ? []
     : [
         `${plural(others, 'other finding')} ${others === 1 ? 'has' : 'have'} no file move. Run \`layerscope check\` to see their suggestions.`,
       ];
+}
+
+/** `applied` is true after `--apply`, false for `--dry-run`: then the moves are still to be made. */
+export function formatBaseline(entries: number, applied: boolean): string[] {
+  if (entries === 0) {
+    return [];
+  }
+  const names = `${plural(entries, 'baseline entry', 'baseline entries')} ${entries === 1 ? 'names' : 'name'} a moved file.`;
+  const when = applied ? 'After the move' : 'After you make the moves';
+  return [
+    `${names} ${when}, update ${entries === 1 ? 'this entry' : 'these entries'} in the baseline file, or run \`layerscope check --update-baseline\` if you want to accept all current findings.`,
+  ];
 }
 
 export function formatMoves(moves: PlannedMove[], cwd: string, notes: MoveNotes): string {
@@ -34,8 +51,9 @@ export function formatMoves(moves: PlannedMove[], cwd: string, notes: MoveNotes)
   const blocks = moves.map(move => formatMove(move, cwd)).join('\n\n');
   const footer = [
     ...formatOthers(notes.others),
-    'Move the files, update the imports, then run `layerscope check --prepare`.',
-    'layerscope does not scan test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by hand.',
+    ...formatBaseline(notes.baselineEntries, false),
+    'Make the moves with `--apply`, or move the files and update the imports yourself. Then run `layerscope check --prepare`.',
+    NOT_SCANNED,
     ...(notes.typeImportsIgnored
       ? ["Type-only imports are not checked (typeImports: 'ignore'), so they are not listed."]
       : []),

@@ -25,8 +25,8 @@ code says what happened:
 | `2`  | Config or input problem. Read stderr: it names the file and what to do. |
 
 All commands are listed in the [CLI reference](../reference/cli#exit-codes). Other commands that
-help with a finding: `layerscope why <symbol>` (every use of a symbol) and
-`layerscope fix --dry-run` (the file moves a suggestion needs).
+help with a finding: `layerscope why <symbol>` (every use of a symbol), `layerscope fix --dry-run`
+(prints the file moves a suggestion needs) and `layerscope fix --apply` (makes them).
 
 ## Read the JSON
 
@@ -51,10 +51,11 @@ The full shape is in [Output formats](../reference/output#json).
 
 1. **Move the symbol.** When a suggestion says `move`, or the symbol is used by several layers, move
    the file to the layer it names (often `shared`). Auto-imports and components need no other
-   change; update explicit imports. `layerscope fix --dry-run` lists them. Then run
-   `layerscope check --prepare`. layerscope does not scan test files, `nuxt.config.*`, the Nuxt
-   `modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the
-   imports of moved files in them by hand.
+   change. `layerscope fix --apply` makes the move and updates the relative imports. Use `--dry-run`
+   to see the moves and imports first. Update alias imports by hand. Then run `layerscope check --prepare`.
+   layerscope does not scan test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside the
+   layer source dirs, or files that match `ignore`. Update the imports of moved files in them by
+   hand.
 2. **Ask before changing `allow`.** Adding a layer to `allow` accepts a new dependency between
    layers. A scoped entry (`{ layer: 'web', only: ['useCart'] }`) accepts only the names that it
    lists. Both are design decisions, so make them only when the user has said the dependency is
@@ -139,7 +140,9 @@ This project uses layerscope to keep Nuxt layers apart.
 - Run `npx layerscope check --prepare --format json`. Exit `0` is clean, `1` means violations,
   `2` means a config problem (read stderr).
 - Fix a `layer-boundary` finding by moving the symbol to a layer both sides may use, as its
-  `suggestion` says (`npx layerscope fix --dry-run` lists the moves).
+  `suggestion` says. `npx layerscope fix --dry-run` lists the moves. `--apply` makes them. It
+  refuses to run when a check fails (for example, a git working tree with changes). Do not use
+  `--allow-dirty` without asking.
 - Do not edit `allow`, `rules`, `globals` or `layerscope-baseline.json` to silence a finding. Ask
   first: allowing a dependency is a design decision.
 - Optional: `npx layerscope mcp` is a read-only MCP server (`can_use`, `check`, `why`, `layers`,

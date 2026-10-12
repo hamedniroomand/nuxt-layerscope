@@ -14,7 +14,7 @@ const move: PlannedMove = {
   ],
 };
 
-const plain = { others: 0, typeImportsIgnored: false };
+const plain = { others: 0, typeImportsIgnored: false, baselineEntries: 0 };
 
 describe('formatMoves', () => {
   it('prints each move, its edits and the steps after it', () => {
@@ -23,7 +23,7 @@ describe('formatMoves', () => {
     expect(text).toContain('c/y.ts:4:8  "../a/x" → "../b/x"');
     expect(text).toContain('d/z.ts:1:8  "#layers/a/x" — update by hand');
     expect(text).toContain(
-      'Move the files, update the imports, then run `layerscope check --prepare`.',
+      'Make the moves with `--apply`, or move the files and update the imports yourself. Then run `layerscope check --prepare`.',
     );
     expect(text).not.toContain('--dry-run');
   });

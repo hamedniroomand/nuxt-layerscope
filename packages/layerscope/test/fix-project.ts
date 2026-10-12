@@ -1,16 +1,10 @@
-import {
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  realpathSync,
-  renameSync,
-  writeFileSync,
-} from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { dirname, join, relative } from 'pathe';
 
 import { analyze } from '#src/analyze/index.ts';
+import { prepareApply, realIo, runApply } from '#src/fix/apply.ts';
 import { planMoves } from '#src/fix/plan.ts';
 import type { PlannedMove } from '#src/fix/types.ts';
 
@@ -66,22 +60,15 @@ function retarget(root: string, move: PlannedMove): void {
   }
 }
 
-/** Does what `fix` prints: moves the files, then rewrites the imports in the planned places. */
+/** Applies the plan with the real writer of `fix --apply`; the project is not in git. */
 export async function applyPlan(root: string, baseline?: string): Promise<void> {
   const moves = await plan(root, baseline);
-  for (const move of moves) {
-    for (const update of move.updates.filter(edit => edit.updated !== null)) {
-      const lines = readFileSync(update.file, 'utf8').split('\n');
-      lines[update.line - 1] = (lines[update.line - 1] ?? '').replace(
-        `'${update.specifier}'`,
-        `'${update.updated}'`,
-      );
-      writeFileSync(update.file, lines.join('\n'));
-    }
+  const prepared = prepareApply(moves, root, { allowDirty: true, cwd: root });
+  const result = runApply(prepared, realIo(root));
+  if (result.failure !== null) {
+    throw new Error(result.failure);
   }
   for (const move of moves) {
-    mkdirSync(dirname(move.to), { recursive: true });
-    renameSync(move.from, move.to);
     retarget(root, move);
   }
 }

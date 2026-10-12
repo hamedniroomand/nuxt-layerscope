@@ -7,15 +7,15 @@ The package installs a `layerscope` command. Without installing, run it as
 layerscope <command> [options]
 ```
 
-| Command                                  | Description                                                                              |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------- |
-| [`init [root]`](#layerscope-init)        | Write a starter config from today's dependencies                                         |
-| [`drift [root]`](#layerscope-drift)      | Say how many violations the code adds and fixes                                          |
-| [`fix [root]`](#layerscope-fix)          | Print the file moves that would fix boundary findings (only moves, no other suggestions) |
-| [`check [root]`](#layerscope-check)      | Check layer boundaries, including auto-imports                                           |
-| [`why <symbol> [root]`](#layerscope-why) | List every use of a symbol and the layers it crosses                                     |
-| [`graph [root]`](#layerscope-graph)      | Print the dependency graph between layers or files                                       |
-| [`unused [root]`](#layerscope-unused)    | List components and auto-imports nothing references                                      |
+| Command                                  | Description                                                                                |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [`init [root]`](#layerscope-init)        | Write a starter config from today's dependencies                                           |
+| [`drift [root]`](#layerscope-drift)      | Say how many violations the code adds and fixes                                            |
+| [`fix [root]`](#layerscope-fix)          | Print or make the file moves that fix boundary findings (only moves, no other suggestions) |
+| [`check [root]`](#layerscope-check)      | Check layer boundaries, including auto-imports                                             |
+| [`why <symbol> [root]`](#layerscope-why) | List every use of a symbol and the layers it crosses                                       |
+| [`graph [root]`](#layerscope-graph)      | Print the dependency graph between layers or files                                         |
+| [`unused [root]`](#layerscope-unused)    | List components and auto-imports nothing references                                        |
 
 `root` is the Nuxt project root and defaults to the current directory. `layerscope --help` and
 `layerscope <command> --help` print the options.
@@ -155,12 +155,12 @@ and now. A base without a baseline file counts as empty. A baseline file that is
 ## `layerscope fix`
 
 ```bash
-layerscope fix [root] --dry-run [options]
+layerscope fix [root] (--dry-run | --apply) [options]
 ```
 
-Prints the file moves asked for by the [suggestions](./rules#suggestions) on boundary findings. For
-each move it lists the explicit imports that the move breaks, with their new specifier. Nothing is
-changed. Auto-imports and components need no update.
+Prints, or with `--apply` makes, the file moves asked for by the [suggestions](./rules#suggestions)
+on boundary findings. For each move it lists the explicit imports that the move breaks, with their
+new specifier. Auto-imports and components need no update.
 
 `fix` lists only the imports that must change. A relative specifier is listed with its new
 specifier. An alias (such as `#layers/...` or `~~/...`) is listed as "update by hand". This is only
@@ -170,14 +170,62 @@ move is not listed.
 Findings that have no move are counted in one line. Run `layerscope check` to see their
 suggestions.
 
-After the moves, update the imports and run `layerscope check --prepare`. The generated types
-still point at the old files. layerscope does not scan test files, `nuxt.config.*`, the Nuxt
-`modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the
-imports of moved files in them by hand. With `typeImports: 'ignore'`, type-only imports are not
-listed either.
+After `--apply`, run `layerscope check --prepare`. After `--dry-run`, make the moves and update the
+imports yourself, then run `layerscope check --prepare`. The generated types still point at the old
+files. layerscope does not scan test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside
+the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by
+hand. With `typeImports: 'ignore'`, type-only imports are not listed either.
 
-`--dry-run` is required: nothing is moved. Findings that `--baseline` accepts are skipped, as in
-`check`. Options: `--baseline`, `--config`, `--prepare`, `--source` and `--verbose`.
+Baseline entries that name a moved file are counted in one line. A baseline key holds file paths. A
+finding in a moved file, or a finding that points at a moved file, gets a new key after the move, so
+its old entry no longer matches. A move that clears a finding makes its entry unused. `layer-cycle`
+entries are not counted. Update these entries in the baseline file, or run
+`layerscope check --update-baseline` if you want to accept all current findings. `fix` does not
+change the baseline file.
+
+`--apply` makes the steps in this order: it writes the new text of each file that has an import to
+change, then it moves each file. A tracked file moves with `git mv`, so that git keeps its history.
+It rewrites the relative imports in the importers and in the moved file. It does not change
+aliases: they are listed to update by hand.
+
+Before the first change, `--apply` makes these git checks:
+
+- The root is in a git repository, and the git working tree of the repository has no changes and no
+  untracked files.
+- Git tracks each file to move and each file to edit, and none is marked assume-unchanged or
+  skip-worktree.
+- No file to move, file to edit or target path is in a git submodule, and no target path is in
+  another git repository.
+- Git can make each move of a tracked file. For example, git refuses a target outside a sparse
+  checkout.
+
+`--allow-dirty` skips these checks. With it, a file that git does not track, and a move that git
+refuses because of a sparse checkout, use a plain rename. Another error of git, such as a lock,
+stops the run with `--allow-dirty` too.
+
+It also makes these checks, always:
+
+- Each file to move is still a file.
+- Each file to edit can be written and is UTF-8 text. It still has the old import at the place the
+  plan says.
+- No file to move or edit, and no target dir, has a symbolic link in its path or is outside the
+  repository (when there is one).
+- No file to move or edit has more than one hard link.
+- No target path exists, no two moves have the same target, and no target differs only in letter
+  case from another target or from a file in its folder.
+- Each new specifier can be written in the quotes of the old one.
+
+If a check fails, nothing is changed, and each reason is listed.
+
+If a step fails (a write or a move), `--apply` stops. It prints the reason, what is done and what is not, and then tells
+you to run `git status` and `git diff` and to use git to undo the changes. The check for a clean
+tree is there so that `git status` and `git diff` show only the changes of `--apply`. With
+`--allow-dirty`, git can also show changes from before, and it can miss some changes of `--apply`.
+If the project is not in git, the lists are the only record of the changes.
+
+Use `--dry-run` or `--apply`, not both and not none. `--dry-run` moves nothing. Findings that
+`--baseline` accepts are skipped, as in `check`. Options: `--baseline`, `--config`, `--prepare`,
+`--source`, `--verbose` and, with `--apply`, `--allow-dirty`.
 
 ## `layerscope why`
 
@@ -268,17 +316,18 @@ Also takes `--config`, `--prepare`, `--source` and `--verbose`. Exits `0`.
 Every command works with flags only and never prompts, so it is safe in scripts, CI and for
 [coding assistants](../guide/coding-tools).
 
-| Code | Meaning                                                                                                                                                       |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran                                |
-| `1`  | `check` found at least one error that is not in the baseline                                                                                                  |
-| `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, `why` found no use, invalid baseline file, empty `--baseline` value |
+| Code | Meaning                                                                                                                                                                                           |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran                                                                    |
+| `1`  | `check` found at least one error that is not in the baseline                                                                                                                                      |
+| `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, `why` found no use, invalid baseline file, empty `--baseline` value, a refused or stopped `fix --apply` |
 
 ## Output streams
 
-The report goes to stdout. Everything else goes to stderr, prefixed with `layerscope:`: errors,
-notes (such as a rule that could not run or a `nuxt.config` newer than the registry) and the
-`--verbose` line. Notes are printed after the report, so they are the last thing on screen.
+The report goes to stdout. Everything else goes to stderr, prefixed with `layerscope:`, except the
+stop report of `fix --apply`, which has no prefix. This is errors, notes (such as a rule that could
+not run or a `nuxt.config` newer than the registry) and the `--verbose` line. Notes are printed
+after the report, so they are the last thing on screen.
 Redirecting stdout always gives a clean report:
 
 ```bash

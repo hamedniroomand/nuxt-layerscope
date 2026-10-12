@@ -1,3 +1,4 @@
+import { keyOf, toKeyed } from '#src/baseline/index.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 
 import type { PlannedMove } from './types.ts';
@@ -39,4 +40,23 @@ export function countOtherFindings(result: AnalyzeResult, moves: PlannedMove[]):
         (moved.has(finding.file) || (finding.target !== null && moved.has(finding.target)))
       ),
   ).length;
+}
+
+/**
+ * The baseline entries that name a moved file: a finding that the baseline accepts, in a moved
+ * file or at one. The key of an entry has the file and the layer, so the entry does not match
+ * after the move.
+ */
+export function countBaselineEntries(result: AnalyzeResult, moves: PlannedMove[]): number {
+  const moved = new Set(moves.map(move => move.from));
+  const keys = new Set(
+    (result.baseline?.suppressed ?? [])
+      .filter(
+        finding =>
+          finding.rule !== 'layer-cycle' &&
+          (moved.has(finding.file) || (finding.target !== null && moved.has(finding.target))),
+      )
+      .map(finding => keyOf(toKeyed(finding, result.rootDir))),
+  );
+  return keys.size;
 }
