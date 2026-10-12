@@ -2,6 +2,7 @@ import { relative } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { run } from '#src/cli.ts';
+import { packageVersion } from '#src/version.ts';
 
 import { writeProject } from './unused-extra-project.ts';
 
@@ -49,8 +50,12 @@ async function cli(
   vi.spyOn(process.stderr, 'write').mockReturnValue(true);
   const code = await run(['node', 'layerscope', command, root, ...args]);
   const text = out.mock.calls.map(call => String(call[0])).join('');
-  // The report prints paths relative to the current dir.
-  return `exit ${code}\n${text.replaceAll(relative(process.cwd(), root), '<root>').replaceAll(root, '<root>')}`;
+  // The report prints paths relative to the current dir. SARIF names the package version, which a release changes.
+  const clean = text
+    .replaceAll(relative(process.cwd(), root), '<root>')
+    .replaceAll(root, '<root>')
+    .replaceAll(`"version": "${packageVersion()}"`, '"version": "<version>"');
+  return `exit ${code}\n${clean}`;
 }
 
 const check = async (typeImports: 'check' | 'ignore', ...args: string[]): Promise<string> => {
