@@ -80,18 +80,18 @@ describe('drift.sh, pull request, base not available', () => {
     const result = t.drift({ GITHUB_BASE_REF: 'gone' });
     expect(result.status).toBe(0);
     expect(result.out).toBe(
-      '::notice title=layerscope drift::Drift report skipped. Cannot find the base branch gone on origin.\n',
+      '::notice title=layerscope drift::Drift report skipped. Cannot find the base branch "gone" on origin.\n',
     );
     expect(result.summary).toBe('');
   });
 
-  it('shows the git error, and skips with the same notice, when ls-remote fails', () => {
+  it('shows the git error, and skips with a different notice, when ls-remote fails', () => {
     const t = setup(false);
     const result = t.drift({ GITHUB_BASE_REF: 'main', STUB_LS_REMOTE_FAILS: '1' });
     expect(result.status).toBe(0);
     expect(result.err).toContain('stub ls-remote error');
     expect(result.out).toBe(
-      '::notice title=layerscope drift::Drift report skipped. Cannot find the base branch main on origin.\n',
+      '::notice title=layerscope drift::Drift report skipped. Cannot read the branches of origin. See the git error above.\n',
     );
   });
 });

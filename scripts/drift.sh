@@ -42,12 +42,13 @@ if [ -n "${GITHUB_BASE_REF:-}" ]; then
   # The current tip of the base branch. ls-remote also matches the end of other ref names, such as
   # refs/heads/decoy/refs/heads/main, so keep only the exact ref.
   ref="refs/heads/$GITHUB_BASE_REF"
-  tip=''
-  if lines="$(git ls-remote origin "$ref")"; then
-    tip="$(awk -v ref="$ref" '$2 == ref { print $1 }' <<< "$lines")"
+  # A failed ls-remote (network, authentication) is not a missing branch. The git error stays visible.
+  if ! lines="$(git ls-remote origin "$ref")"; then
+    skip 'Drift report skipped. Cannot read the branches of origin. See the git error above.'
   fi
+  tip="$(awk -v ref="$ref" '$2 == ref { print $1 }' <<< "$lines")"
   if [ -z "$tip" ]; then
-    skip "Drift report skipped. Cannot find the base branch $GITHUB_BASE_REF on origin."
+    skip "Drift report skipped. Cannot find the base branch \"$GITHUB_BASE_REF\" on origin."
   fi
   need_commit "$tip"
   git update-ref "refs/remotes/origin/$GITHUB_BASE_REF" "$tip"
