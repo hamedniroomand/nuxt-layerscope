@@ -331,11 +331,11 @@ Also takes `--config`, `--prepare`, `--source` and `--verbose`. Exits `0`.
 
 ## `--source`
 
-| Value      | Behavior                                                                                                                              |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `auto`     | The [module's registry](../guide/nuxt-module) when it exists and is current, otherwise the generated `.d.ts` files                    |
-| `registry` | The registry; exit `2` when it is missing, from an incompatible version, or from an older release without the modules and public dirs |
-| `types`    | The generated `.d.ts` files, even when a registry exists                                                                              |
+| Value      | Behavior                                                                                                                                                        |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auto`     | The [module's registry](../guide/nuxt-module) when it exists and is current, otherwise the generated `.d.ts` files                                              |
+| `registry` | The registry; exit `2` when it is missing, from an incompatible version, or from an older release that lacks data this release needs (run `nuxi prepare` again) |
+| `types`    | The generated `.d.ts` files, even when a registry exists                                                                                                        |
 
 ## Exit codes
 

@@ -1,5 +1,7 @@
 import type { Component, ComponentsDir, Nuxt } from '@nuxt/schema';
 
+import type { ScanDir, ScanOptions } from './import-dirs.ts';
+
 export type { Component, ComponentsDir, Nuxt };
 
 /** The slice of unimport the module reads, for app and server auto-imports alike. */
@@ -19,7 +21,11 @@ export interface Unimport {
 
 export interface Nitro {
   unimport?: Unimport;
-  options: { alias?: Record<string, string> };
+  options: {
+    alias?: Record<string, string>;
+    /** Nitro gives this object to unimport, so its dirs and scan options are the real ones. */
+    imports?: false | { dirs?: ScanDir[]; dirsScanOptions?: ScanOptions };
+  };
 }
 
 type NitroInitHook = (name: 'nitro:init', handler: (nitro: Nitro) => void) => unknown;

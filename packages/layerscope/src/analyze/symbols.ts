@@ -23,7 +23,14 @@ export function loadSymbols(buildDir: string, source: SourceOption): Symbols {
   if (read?.kind === 'ok') {
     const { file, registry } = read;
     const table = tableFromRegistry(registry, buildDir);
-    return { source: 'registry', sourceFile: file, registry, table, notes: [] };
+    // The module could not read the auto-import dirs, so it printed why and recorded `null`.
+    const notes =
+      registry.importDirs === null
+        ? [
+            `${file} has no list of auto-import dirs, so layerscope does not find new auto-import files. "nuxi prepare" prints the reason.`,
+          ]
+        : [];
+    return { source: 'registry', sourceFile: file, registry, table, notes };
   }
   const notes: string[] = [];
   if (read?.kind === 'incompatible') {
@@ -34,7 +41,7 @@ export function loadSymbols(buildDir: string, source: SourceOption): Symbols {
     }
     notes.push(`${message} Falling back to the generated .d.ts files.`);
   } else if (read?.kind === 'stale') {
-    const message = `${read.file} was written by an older nuxt-layerscope and has no modules or public dir for its layers.`;
+    const message = `${read.file} is from an older nuxt-layerscope, or it is damaged: it has no data that this release needs.`;
     if (source === 'registry') {
       throw new LayerscopeError(`${message} Run "nuxi prepare" to write it again.`);
     }

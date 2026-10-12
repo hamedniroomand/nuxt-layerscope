@@ -22,6 +22,7 @@ const REGISTRY = {
   components: [],
   shadowedComponents: [],
   componentDirs: [],
+  importDirs: [],
   imports: { app: [], server: [], shared: [] },
   config: { preset: 'layered' },
 };

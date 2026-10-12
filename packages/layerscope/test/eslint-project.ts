@@ -27,6 +27,7 @@ export function createProject(): { dir: string; registryFile: string; consumer: 
     components: [],
     shadowedComponents: [],
     componentDirs: [],
+    importDirs: [],
     imports: { app: [{ name: 'useCart', from: composable }], server: [], shared: [] },
   };
   const registryFile = join(dir, '.nuxt/layerscope/registry.json');

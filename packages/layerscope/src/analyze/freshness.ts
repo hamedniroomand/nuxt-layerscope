@@ -10,7 +10,7 @@ import type { Registry } from '#src/registry/schema.ts';
 import type { Layer } from '#src/types.ts';
 import { pascalCase } from '#src/utils/strings.ts';
 
-const RERUN_HINT = 'Run "nuxi prepare" again, or pass --prepare.';
+import { assertImportDirsFresh, RERUN_HINT } from './import-dirs-fresh.ts';
 
 // `Button.client.global.vue` is the component `Button`.
 const COMPONENT_SUFFIX = /(?:\.(?:client|server))?(?:\.global|\.island)*$/u;
@@ -75,9 +75,7 @@ export async function assertFresh(table: SymbolTable, layers: Layer[]): Promise<
   }
 }
 
-/** With the registry, every dir Nuxt scanned (`components:dirs`) is compared, not just the default. */
-export async function assertRegistryFresh(table: SymbolTable, registry: Registry): Promise<void> {
-  assertNoDeletedTargets(allTargets(table));
+async function assertComponentDirsFresh(registry: Registry): Promise<void> {
   for (const dir of registry.componentDirs) {
     if (dir.path.includes('/node_modules/') || !existsSync(dir.path)) {
       continue;
@@ -91,4 +89,14 @@ export async function assertRegistryFresh(table: SymbolTable, registry: Registry
       throw new LayerscopeError(`${added} is missing from the layerscope registry. ${RERUN_HINT}`);
     }
   }
+}
+
+/**
+ * With the registry, every dir Nuxt scanned is compared, not just the default: the component dirs
+ * (`components:dirs`) and the auto-import dirs (`imports:dirs` and the dirs of Nitro).
+ */
+export async function assertRegistryFresh(table: SymbolTable, registry: Registry): Promise<void> {
+  assertNoDeletedTargets(allTargets(table));
+  await assertComponentDirsFresh(registry);
+  await assertImportDirsFresh(registry.importDirs ?? []);
 }

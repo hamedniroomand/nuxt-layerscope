@@ -51,6 +51,7 @@ function project(config = ''): string {
     ],
     shadowedComponents: [],
     componentDirs: [],
+    importDirs: [],
     imports: { app: [{ name: 'useCart', from: useCart }], server: [], shared: [] },
   };
   write(root, '.nuxt/layerscope/registry.json', JSON.stringify(registry));
