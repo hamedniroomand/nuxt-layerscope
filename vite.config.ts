@@ -56,6 +56,7 @@ export default defineConfig({
       // A plain Node script. The root has no `@types/node`, so type-aware rules cannot read it.
       'scripts/verify-example.mjs',
       'scripts/sync-example-range.mjs',
+      'scripts/sync-action-version.mjs',
       // Plain Node scripts that run the CLI and a child process; the pure parts are linted.
       'packages/layerscope/bench/{generate,run,in-process}.ts',
       'packages/layerscope/bench/rss-hook.mjs',

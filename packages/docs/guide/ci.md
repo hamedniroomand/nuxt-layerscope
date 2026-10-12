@@ -33,8 +33,9 @@ jobs:
       - uses: hamedniroomand/nuxt-layerscope@v0
 ```
 
-`@v0` follows the newest 0.x release. To pin a release, use a full tag such as `@v0.4.0`. The action runs the `nuxt-layerscope` your project installs, or the
-action's `version` input through `npx` when the project does not install it.
+`@v0` follows the newest 0.x release. From the first release after 0.7.0, a full tag pins the
+action and the CLI that it runs when the project does not install it. If the project installs
+`nuxt-layerscope`, the action runs that version.
 
 ### Drift and baseline size
 

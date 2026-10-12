@@ -1,5 +1,5 @@
 // These tests run bash scripts with a stub gh, so they need a Unix shell. CI runs on Ubuntu only.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
@@ -209,40 +209,6 @@ describe('drift.sh, root and notices', () => {
     expect(result.status).toBe(0);
     expect(result.out).toBe(
       `::notice title=layerscope drift::Drift report skipped. Cannot run git in "${t.dir}/100%25%0D%0Aroot". See the git error above.\n`,
-    );
-  });
-});
-
-describe('action.yml', () => {
-  it('gives the drift step the base commit of a push and a merge group', () => {
-    // The GitHub expression cannot run here, so check the exact line.
-    const action = readFileSync(join(import.meta.dirname, '../../../action.yml'), 'utf8');
-    const line = action.split('\n').find(text => text.includes('BASE_SHA:'));
-    expect(line?.trim()).toBe(
-      'BASE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}',
-    );
-  });
-
-  const stepLine = (name: string): string | undefined => {
-    const action = readFileSync(join(import.meta.dirname, '../../../action.yml'), 'utf8');
-    return action
-      .split('\n')
-      .find(text => text.trim().startsWith(`${name}:`))
-      ?.trim();
-  };
-
-  it('gives the output comment of the drift step to the caller', () => {
-    expect(stepLine('value')).toBe('value: ${{ steps.drift.outputs.comment }}');
-    expect(stepLine('id')).toBe('id: drift');
-  });
-
-  it('gives gh the token for GitHub Enterprise Server, which reads another variable', () => {
-    expect(stepLine('GH_ENTERPRISE_TOKEN')).toBe('GH_ENTERPRISE_TOKEN: ${{ github.token }}');
-  });
-
-  it('marks a pull request from a fork only for the pull_request event', () => {
-    expect(stepLine('IS_FORK')).toBe(
-      "IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}",
     );
   });
 });

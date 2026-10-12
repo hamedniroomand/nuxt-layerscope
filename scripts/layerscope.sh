@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Runs the layerscope the project installs, else the pinned version through npx.
-# Usage: INPUT_ROOT=. INPUT_VERSION=latest layerscope.sh <args>
+# Runs the layerscope the project installs, else nuxt-layerscope@$INPUT_VERSION through npx.
+# Usage: INPUT_ROOT=. INPUT_VERSION=0.7.0 layerscope.sh <args>
 set -euo pipefail
 
 if [ -x "$INPUT_ROOT/node_modules/.bin/layerscope" ]; then

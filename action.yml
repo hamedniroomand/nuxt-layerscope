@@ -22,13 +22,13 @@ inputs:
     description: Post the drift report as a pull request comment, one for each root. Needs `pull-requests` write permission. Skipped on a `pull_request` event from a fork.
     default: 'false'
   version:
-    description: nuxt-layerscope version to run when the project does not install it.
-    default: latest
+    description: nuxt-layerscope version to run when the project does not install it. The default is the version of this action release.
+    default: 0.7.0
 
 outputs:
   comment:
     description: What the action did with the pull request comment, `created`, `updated`, `skipped` or `failed`.
-    value: ${{ steps.drift.outputs.comment }}
+    value: ${{ steps.post.outputs.comment }}
 
 runs:
   using: composite
@@ -47,8 +47,9 @@ runs:
         if [ "$INPUT_PREPARE" = "true" ]; then args+=(--prepare); fi
         "$GITHUB_ACTION_PATH/scripts/layerscope.sh" "${args[@]}"
 
-    - name: Report drift
-      id: drift
+    # The CLI runs in this step. The action does not give it the token.
+    - name: Build the drift report
+      id: report
       if: ${{ always() }}
       shell: bash
       continue-on-error: true
@@ -57,11 +58,22 @@ runs:
         INPUT_CONFIG: ${{ inputs.config }}
         INPUT_PREPARE: ${{ inputs.prepare }}
         INPUT_BASELINE: ${{ inputs.baseline }}
-        INPUT_COMMENT: ${{ inputs.comment }}
         INPUT_VERSION: ${{ inputs.version }}
+        BASE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}
+      run: '"$GITHUB_ACTION_PATH/scripts/drift.sh"'
+
+    # This step runs gh and node, never the CLI.
+    - name: Post the drift comment
+      id: post
+      if: ${{ always() }}
+      shell: bash
+      continue-on-error: true
+      env:
+        INPUT_ROOT: ${{ inputs.root }}
+        INPUT_COMMENT: ${{ inputs.comment }}
+        REPORT_DIR: ${{ steps.report.outputs.dir }}
         GH_TOKEN: ${{ github.token }}
         GH_ENTERPRISE_TOKEN: ${{ github.token }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
         IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
-        BASE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}
-      run: '"$GITHUB_ACTION_PATH/scripts/drift.sh"'
+      run: '"$GITHUB_ACTION_PATH/scripts/comment.sh"'

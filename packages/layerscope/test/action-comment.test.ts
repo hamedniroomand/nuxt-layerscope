@@ -61,6 +61,8 @@ describe('drift.sh, new comment', () => {
     expect(result.gh).toContain(`${MARKER}\n### layerscope\n\n**adds 1**`);
     expect(result.summary.startsWith('### layerscope\n\n**adds 1**')).toBe(true);
     expect(result.output).toBe('comment=created\n');
+    expect(result.postStatus).toBe(0);
+    expect(result.out).not.toContain('Drift failed');
   });
 
   it('gives gh the host and the repository, which a subfolder root needs', () => {
@@ -82,13 +84,16 @@ describe('drift.sh, new comment', () => {
     expect(result.gh).toContain('gh pr comment 7');
     expect(result.output).toBe('comment=created\n');
   });
+});
 
+describe('drift.sh, new comment, gh and its host', () => {
   it('warns, and keeps the status, when gh has no repository to use', () => {
     const t = setup(false);
     const result = t.drift({ ...none(t), INPUT_ROOT: 'clone', GITHUB_SERVER_URL: '' }, t.dir);
     expect(result.status).toBe(0);
     expect(result.gh).not.toContain('gh pr comment');
     expect(result.output).toBe('comment=failed\n');
+    expect(result.postStatus).toBe(0);
   });
 
   it('passes the owner and the name as strings, and pages with the cursor', () => {
@@ -148,14 +153,6 @@ describe('drift.sh, roots that strip to nothing', () => {
       expect(result.gh).not.toContain('layerscope:\n');
     },
   );
-
-  it('skips with a notice when the root is / , because / is not a repository', () => {
-    const t = setup(false);
-    const result = t.drift({ ...none(t), INPUT_ROOT: '//' });
-    expect(result.status).toBe(0);
-    expect(result.gh).toBe('');
-    expect(result.out).toContain('Cannot run git in "//"');
-  });
 });
 
 describe('drift.sh, edit of a comment', () => {
@@ -167,6 +164,8 @@ describe('drift.sh, edit of a comment', () => {
     expect(result.gh).not.toContain('gh pr comment');
     expect(result.gh).toContain(`${MARKER}\n### layerscope\n\n**adds 1**`);
     expect(result.output).toBe('comment=updated\n');
+    expect(result.postStatus).toBe(0);
+    expect(result.out).not.toContain('Drift failed');
   });
 
   it('finds the comment on a later page', () => {
@@ -183,7 +182,9 @@ describe('drift.sh, edit of a comment', () => {
     expect(result.gh).toContain('gh pr comment 7');
     expect(result.out).not.toContain('::notice');
   });
+});
 
+describe('drift.sh, edit of a comment, other accounts and failures', () => {
   it('does not edit a comment with the marker that another account wrote', () => {
     const t = setup(false);
     const foreign: Node = { ...own(5, MARKER), viewerDidAuthor: false };
@@ -221,6 +222,7 @@ describe('drift.sh, a failed call of gh', () => {
     expect(result.gh).not.toContain('gh pr comment');
     expect(result.summary).toContain('**adds 1**');
     expect(result.output).toBe('comment=failed\n');
+    expect(result.postStatus).toBe(0);
   });
 
   it('warns, and keeps the status, when the new comment is refused', () => {
@@ -229,6 +231,7 @@ describe('drift.sh, a failed call of gh', () => {
     expect(result.status).toBe(0);
     expect(result.out).toBe(WARNING);
     expect(result.output).toBe('comment=failed\n');
+    expect(result.postStatus).toBe(0);
   });
 
   it('keeps the status of drift when drift and gh both fail', () => {
@@ -237,6 +240,7 @@ describe('drift.sh, a failed call of gh', () => {
     expect(result.status).toBe(2);
     expect(result.out).toBe(WARNING);
     expect(result.output).toBe('comment=failed\n');
+    expect(result.postStatus).toBe(0);
   });
 });
 

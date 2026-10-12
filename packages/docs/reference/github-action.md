@@ -9,7 +9,7 @@ inline on the pull request diff and the job fails on errors.
     root: .
 ```
 
-`@v0` follows the newest 0.x release. To pin a release, use a full tag such as `@v0.4.0`.
+`@v0` follows the newest 0.x release. To pin a release, use a full tag (see [Versioning](#versioning)).
 
 The action does not install dependencies or run `nuxi prepare` for you unless asked: install
 first, then either run `npx nuxi prepare` or set `prepare: true`. See
@@ -17,19 +17,19 @@ first, then either run `npx nuxi prepare` or set `prepare: true`. See
 
 ## Inputs
 
-| Input      | Default                    | Description                                                                                                                                             |
-| ---------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `root`     | `.`                        | Nuxt project root, relative to the repository                                                                                                           |
-| `config`   |                            | Config file; defaults to `layerscope.config.*` in the root                                                                                              |
-| `prepare`  | `false`                    | `true` runs `nuxi prepare` first; needs the project's dependencies installed                                                                            |
-| `baseline` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                                                                                |
-| `comment`  | `false`                    | `true` posts the drift report as a pull request comment, one for each root; needs `pull-requests: write`. Skipped on a `pull_request` event from a fork |
-| `version`  | `latest`                   | `nuxt-layerscope` version to run through `npx` when the project does not install it                                                                     |
+| Input      | Default                                                                                                             | Description                                                                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `root`     | `.`                                                                                                                 | Nuxt project root, relative to the repository                                                                                                           |
+| `config`   |                                                                                                                     | Config file; defaults to `layerscope.config.*` in the root                                                                                              |
+| `prepare`  | `false`                                                                                                             | `true` runs `nuxi prepare` first; needs the project's dependencies installed                                                                            |
+| `baseline` | `layerscope-baseline.json`                                                                                          | [Baseline](../guide/baseline) file, relative to the root                                                                                                |
+| `comment`  | `false`                                                                                                             | `true` posts the drift report as a pull request comment, one for each root; needs `pull-requests: write`. Skipped on a `pull_request` event from a fork |
+| `version`  | the version of the action release (for `@main` or a commit, the version in `action.yml`, normally the last release) | `nuxt-layerscope` version to run through `npx` when the project does not install it                                                                     |
 
 ## Drift summary
 
-After the check, the action runs [`layerscope drift`](./cli#layerscope-drift) against the base commit
-and writes the result to the job summary: how many violations the change adds and fixes, and how the
+After the check, the step `Build the drift report` runs [`layerscope drift`](./cli#layerscope-drift)
+against the base commit and writes the result to the job summary: how many violations the change adds and fixes, and how the
 baseline size changed. On a pull request, it compares with the latest commit of the base branch. On a
 push, it compares with the commit before the push. In a merge queue, it compares with the base
 commit of the merge group. If the clone does not have that commit, the step fetches it. If the step
@@ -38,7 +38,7 @@ push of a new branch, or a manual run), the step skips the report and prints a n
 The step never fails the job. If `drift` fails, for example because the baseline on the base branch
 is not valid, the step prints the error in its log and writes no summary.
 
-With `comment: true`, the action also posts the report as a pull request comment, one comment for
+With `comment: true`, the step `Post the drift comment` also posts the report as a pull request comment, one comment for
 each root. Later runs update the comment that the same account wrote. Two steps or workflows with
 the same root and the same account share one comment. If they run at the same time, each can post its own comment. If the action cannot find, update or post the
 comment, it prints a warning. If drift succeeds, the job summary still has the report. If drift fails, the comment
@@ -47,6 +47,12 @@ says so. If the step skips the report, the old comment stays as it is.
 On a `pull_request` event from a fork, the token is read-only, so the action skips the comment and
 prints a notice. With `pull_request_target`, the action posts the comment. A Dependabot pull request
 also has a read-only token: the action prints a warning.
+
+The action does not give its token to the steps that run the CLI. A token that your workflow sets in
+the workflow or job env still reaches the CLI. This is not full isolation: code that runs in the job
+can still get the token, for example from the git config that `actions/checkout` keeps (unless you
+set `persist-credentials: false`), or through a later step. Do not run untrusted code in a job that
+has write permissions or secrets.
 
 ## Outputs
 
@@ -65,5 +71,6 @@ the [Nuxt module](../guide/nuxt-module) and the CLI in step.
 
 ## Versioning
 
-Pin the action to a release tag such as `v0.1.0`. Each release of the npm package has a matching
-tag in the repository.
+Pin the action to a release tag. From the first release after 0.7.0, a full tag such as `vX.Y.Z`
+also runs `nuxt-layerscope` X.Y.Z when the project does not install it. Older tags run the newest
+version. `@v0` follows the newest 0.x release, so it runs that release.
