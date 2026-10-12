@@ -2,6 +2,8 @@
 export interface FileScan {
   /** Identifiers without a local binding. */
   free: Named[];
+  /** The names in `typeof x` in a type that have no local binding: uses in a type position. */
+  typeFree: Named[];
   /** Identifiers a template reads from the component instance (`_ctx.x`). */
   templateIdents: Named[];
   components: Named[];
@@ -55,6 +57,7 @@ export type OffsetMapper = (offset: number) => number;
 export function emptyScan(): FileScan {
   return {
     free: [],
+    typeFree: [],
     templateIdents: [],
     components: [],
     dynamicComponents: [],

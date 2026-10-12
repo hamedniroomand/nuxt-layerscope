@@ -58,6 +58,7 @@ function fingerprint(result: AnalyzeResult): string {
       JSON.stringify([
         usesOf(result.edges),
         usesOf(result.extraEdges),
+        usesOf(result.typeEdges),
         symbolsOf(result.symbols),
         result.dynamicComponentFiles,
         result.unreadFiles,

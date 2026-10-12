@@ -331,9 +331,8 @@ Other things to know:
 - Types in a `.vue` file come from the same imports, for example `defineProps<Props>()` with an
   imported `Props`. The `<script>` and `<script setup>` blocks follow the same rule.
 - `import('...').Type` and `typeof import('...')` are never counted, with either value.
-- [`layerscope unused`](./cli#layerscope-unused) counts only dependencies. With `'ignore'`, a
-  component or auto-import that other layers use only through a type-only import can show as
-  unused. Do not delete it before you check the types.
+- [`layerscope unused`](./cli#layerscope-unused) counts a type-only import and a `typeof x` in a
+  type as a use, with either value.
 - Change this value and layerscope reads the files again. `check --watch`, the DevTools tab and
   `layerscope mcp` do this when the config file changes.
 

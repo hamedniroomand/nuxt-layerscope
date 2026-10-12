@@ -221,6 +221,11 @@ export interface AnalyzeResult {
    * `unused` reads them. Empty when the run is limited to some files.
    */
   extraEdges: Edge[];
+  /**
+   * The uses in type positions (`typeof x`, and `import type` when `typeImports` is `'ignore'`).
+   * Only `findUnused` reads them.
+   */
+  typeEdges: Edge[];
   /** Files with code that layerscope cannot read: their uses are missing from `edges`. */
   unreadFiles: UnreadFile[];
   /** Set when a baseline was applied; `findings` then holds only the new ones. */

@@ -74,6 +74,26 @@ describe('the DevTools revision and the Unused view', () => {
   });
 });
 
+describe('the DevTools revision and a type use', () => {
+  it('changes when only a typeof use changes', async () => {
+    const page = (name: string): string =>
+      `<script setup lang="ts">\ntype T = typeof ${name};\nvoid (null as T | null);\n</script>\n<template><div /></template>\n`;
+    const root = writeProject(
+      {
+        'layers/web/app/utils/x.ts': 'export const x = () => 1;\n',
+        'layers/web/app/utils/y.ts': 'export const y = () => 1;\n',
+        'layers/web/app/pages/index.vue': page('x'),
+      },
+      { x: 'layers/web/app/utils/x.ts', y: 'layers/web/app/utils/y.ts' },
+    );
+    const analyzer = new Analyzer(sessionOptions(root, join(root, '.nuxt')));
+    const before = await analyzer.get();
+    writeFileSync(join(root, 'layers/web/app/pages/index.vue'), page('y'));
+    const after = await analyzer.refresh();
+    expect(after.rev).toBe(before.rev + 1);
+  });
+});
+
 describe('the analyzer option extraFiles', () => {
   async function optionsOf(extraFiles?: boolean): Promise<AnalyzeOptions> {
     const run = vi.fn<(options: AnalyzeOptions) => Promise<AnalyzeResult>>();

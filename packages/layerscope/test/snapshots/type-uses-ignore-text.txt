@@ -1,0 +1,8 @@
+exit 1
+<root>/layers/web/app/pages/index.vue
+  3:37    error  Import "../../../base/app/utils/pair" crosses from layer "web" into "base"  layer-boundary
+                 ../../../base/app/utils/pair → <root>/layers/base/app/utils/pair.ts
+                 allowed for "web": no other layers
+                 suggestion: allow "web" to use "pairUtil" from "base" (adds 1 edge, clears 1 finding)
+
+✖ 1 problem (1 error, 0 warnings)

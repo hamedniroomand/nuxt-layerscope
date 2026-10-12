@@ -118,6 +118,11 @@ interface ExtraInput {
   env: AnalysisEnv;
 }
 
+/** The edges of a file that lead to other files: the uses that the rules see and the type uses. */
+function usesOf(analysis: FileAnalysis): Edge[] {
+  return [...analysis.edges, ...analysis.typeEdges];
+}
+
 /** A file that could not be read: it counts as unread, and it never stops the run. */
 function unreadStub(file: string, layer: Layer, env: AnalysisEnv, reason: string): FileAnalysis {
   const analysis = new FileAnalysis(file, '', layer, env);
@@ -193,7 +198,7 @@ async function analyzeExtraFiles(input: ExtraInput): Promise<FileAnalysis[]> {
     const analysis = layer === null ? null : analyzeOrFail(file, layer, env);
     if (analysis !== null) {
       analyses.push(analysis);
-      queue(analysis.edges);
+      queue(usesOf(analysis));
       // eslint-disable-next-line no-await-in-loop -- yields between files
       await pause();
     }
@@ -217,7 +222,7 @@ export async function analyzeProject(
 ): Promise<{ checked: FileAnalysis[]; extra: FileAnalysis[] }> {
   const { layers, env, config, collected } = project;
   const checked = await analyzeFiles(files, env, options.cache, options.envKey);
-  const edges = checked.flatMap(analysis => analysis.edges);
+  const edges = checked.flatMap(analysis => usesOf(analysis));
   const ignore = config.ignore ?? [];
   const extra =
     options.extraFiles === true && options.only === undefined

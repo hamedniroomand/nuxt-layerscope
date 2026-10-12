@@ -1,6 +1,6 @@
 import type { Node } from 'oxc-parser';
 import type { ScopeTracker, ScopeTrackerNode, WalkerThisContextEnter } from 'oxc-walker';
-import { isReferenceIdentifier } from 'oxc-walker';
+import { isReferenceIdentifier, walk } from 'oxc-walker';
 
 import { fixedPath, importedName, reexportedName, requiredNames, stringLiteral } from './ast.ts';
 import type { FileScan, ImportRef, OffsetMapper, Unread } from './types.ts';
@@ -11,6 +11,11 @@ export interface VisitContext {
   mapOffset: OffsetMapper;
   /** Declarations of the names that `createRequire(...)` was assigned to. */
   requireBindings: Set<ScopeTrackerNode>;
+  /**
+   * The local names of type-only imports. The scope tracker does not declare them, but they
+   * shadow an auto-import of the same name: `import type { useA }` is not the auto-import.
+   */
+  typeBindings: Set<string>;
 }
 
 type Visitor = (
@@ -20,7 +25,50 @@ type Visitor = (
   ctx: VisitContext,
 ) => void;
 
-function skip(this: WalkerThisContextEnter): void {
+/**
+ * A `typeof x` in a type is not a runtime reference, so `check` does not count it. It is a use for
+ * `unused`: a name with no local binding in the file is recorded in `typeFree`. The check is the
+ * one that value identifiers use (`tracker.isDeclared`).
+ */
+function recordTypeQuery(
+  node: Node,
+  { scan, tracker, mapOffset, typeBindings }: VisitContext,
+): void {
+  if (node.type !== 'TSTypeQuery') {
+    return;
+  }
+  let name = node.exprName;
+  while (name.type === 'TSQualifiedName') {
+    name = name.left;
+  }
+  if (
+    name.type === 'Identifier' &&
+    !tracker.isDeclared(name.name) &&
+    !typeBindings.has(name.name)
+  ) {
+    scan.typeFree.push({ name: name.name, offset: mapOffset(name.start) });
+  }
+}
+
+/**
+ * Skips a type, so its names are not read as values, but still finds the `typeof x` in it. The
+ * scope tracker does not enter the type, so a name that the type declares itself (a parameter of a
+ * function type, a `namespace` member) is not known here and counts as a use of the auto-import of
+ * the same name. The same holds for an `import type` inside `declare module` or `declare global`:
+ * only the imports of the file itself shadow. This is rare, and it can only hide an entry from
+ * the list, never add one.
+ */
+function skipType(
+  this: WalkerThisContextEnter,
+  node: Node,
+  _parent: Node | null,
+  ctx: VisitContext,
+): void {
+  walk(node, {
+    enter(inner) {
+      recordTypeQuery(inner, ctx);
+    },
+  });
   this.skip();
 }
 
@@ -149,16 +197,17 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
       });
     }
   },
-  TSModuleDeclaration: skip,
-  TSImportType: skip,
-  // Type-only syntax has no runtime references: `typeof x`, `[id: string]`, `(...next: T[]) => void`.
-  TSTypeQuery: skip,
-  TSNamedTupleMember: skip,
-  TSFunctionType: skip,
-  TSConstructorType: skip,
-  TSMethodSignature: skip,
-  TSCallSignatureDeclaration: skip,
-  TSConstructSignatureDeclaration: skip,
+  // Type-only syntax has no runtime references: `[id: string]`, `(...next: T[]) => void`. It is
+  // skipped, but a `typeof x` inside it is a use for `unused`.
+  TSModuleDeclaration: skipType,
+  TSImportType: skipType,
+  TSTypeQuery: skipType,
+  TSNamedTupleMember: skipType,
+  TSFunctionType: skipType,
+  TSConstructorType: skipType,
+  TSMethodSignature: skipType,
+  TSCallSignatureDeclaration: skipType,
+  TSConstructSignatureDeclaration: skipType,
   TSImportEqualsDeclaration(node, _parent, { scan, mapOffset }) {
     // `import x = require('./y')`, the import form of a `.cts` file. `import type x = require()`
     // is type-only.

@@ -59,6 +59,12 @@ interface AnalyzeResult {
   /** The edges of the extra files, with `extraFiles`. Only `findUnused` reads them. */
   extraEdges: Edge[];
   /**
+   * The uses in type positions (`typeof x`, and `import type` when `typeImports` is `'ignore'`).
+   * With `extraFiles`, it also holds the type uses of the extra files. Only `findUnused` reads
+   * them.
+   */
+  typeEdges: Edge[];
+  /**
    * Files that render a component chosen at runtime.
    * Can hold extra files that are not in `files`.
    */

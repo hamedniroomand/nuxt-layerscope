@@ -302,7 +302,8 @@ layers installed as packages. Test files are `*.test.*`, `*.spec.*` and `__tests
 the layer source dirs is not read when it is not in an extra auto-import or component dir and no
 counted file imports it. `unused` also counts the uses in `nuxt.config.*`, in the Nuxt `modules/`
 dir, in files of extra auto-import and component dirs, and in the project files that counted files
-import. The last line of the text report names the uses that it does not count.
+import. It also counts `typeof x` in a type, and `import type` when `typeImports` is `'ignore'`. The
+last line of the text report names the uses that it does not count.
 
 After the symbols, it lists each file that it could not read in full. These are files with a parse
 error, a template that layerscope does not read (a `lang` other than HTML, a `src` attribute, or an

@@ -63,6 +63,7 @@ export function makeResult(overrides: Partial<AnalyzeResult> = {}): AnalyzeResul
     },
     dynamicComponentFiles: [],
     extraEdges: [],
+    typeEdges: [],
     unreadFiles: [],
     ...overrides,
   };

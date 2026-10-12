@@ -103,7 +103,7 @@ export function findUnused(result: AnalyzeResult): UnusedSymbol[] {
     const layer = target.file === null ? null : ownerOf(target.file);
     return layer === null || isPackageLayer(layer) ? null : layer.name;
   };
-  const uses = collectUses([...result.edges, ...result.extraEdges]);
+  const uses = collectUses([...result.edges, ...result.extraEdges, ...result.typeEdges]);
   const possiblyUsed = result.dynamicComponentFiles.length > 0;
   const unused: UnusedSymbol[] = [];
   for (const [file, names] of componentsByFile(result.symbols.components)) {
