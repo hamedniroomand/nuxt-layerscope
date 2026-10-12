@@ -1,5 +1,5 @@
 // These tests run bash scripts with a stub gh, so they need a Unix shell. CI runs on Ubuntu only.
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
@@ -190,14 +190,17 @@ describe('drift.sh, root and notices', () => {
     expect(result.summary).toBe('');
   });
 
-  it('shows the git error, and skips with the same notice, when git refuses the repository', () => {
+  it('shows the git error, and skips with the same notice, when git cannot read the repository', () => {
     const t = setup(false);
-    const result = t.drift({ BASE_SHA: t.main, GIT_TEST_ASSUME_DIFFERENT_OWNER: '1' });
+    // A broken HEAD makes git fail on every machine, with no dependence on the git configuration.
+    writeFileSync(join(t.clone, '.git/HEAD'), 'not a ref\n');
+    const result = t.drift({ BASE_SHA: t.main });
     expect(result.status).toBe(0);
-    expect(result.err).toContain('dubious ownership');
+    expect(result.err).not.toBe('');
     expect(result.out).toBe(
       '::notice title=layerscope drift::Drift report skipped. Cannot run git in ".". See the git error above.\n',
     );
+    expect(result.summary).toBe('');
   });
 
   it('escapes %, CR and LF in a notice', () => {
