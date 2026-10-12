@@ -4,7 +4,7 @@ import { prepareApply, realIo, runApply } from '#src/fix/apply.ts';
 import { formatStopped } from '#src/report/applied.ts';
 
 import { CART, MOVED, read, repoProject, shown } from './fix-apply-project.ts';
-import { cartProject, plan, WEB, SHARED, ADMIN, SHOP } from './fix-project.ts';
+import { ADMIN, SHARED, SHOP, WEB, cartProject, plan, write } from './fix-project.ts';
 import { git } from './git-project.ts';
 
 afterEach(() => {
@@ -82,5 +82,38 @@ describe('fix --apply stops half way, and git can miss changes', () => {
       'The project is not in git, so the lists above are the only record of the changes.\n',
     );
     expect(text).not.toContain('git status');
+  });
+});
+
+describe('fix --apply and a file that changes after the check', () => {
+  it('stops before it writes over a newer text of an importer', async () => {
+    const root = repoProject();
+    const prepared = prepareApply(await plan(root), root, { allowDirty: false, cwd: cwd() });
+    const newer = `${read(root, 'layers/admin/app/pages/admin.vue')}// saved by an editor\n`;
+    write(root, 'layers/admin/app/pages/admin.vue', newer);
+    const result = runApply(prepared, realIo(root));
+    expect(result.failure).toContain('admin.vue changed since the check');
+    expect(result.done).toEqual([]);
+    expect(read(root, 'layers/admin/app/pages/admin.vue')).toBe(newer);
+    expect(result.partial).toBeNull();
+  });
+});
+
+describe('fix --apply and a write that fails', () => {
+  it('says that the file can be partly written, in place of "not done"', async () => {
+    const root = repoProject();
+    const prepared = prepareApply(await plan(root), root, { allowDirty: false, cwd: cwd() });
+    const result = runApply(prepared, {
+      ...realIo(root),
+      write: () => {
+        throw new Error('disk full');
+      },
+    });
+    const text = formatStopped(result, prepared, cwd());
+    expect(text).toContain(
+      `  ${shown(root, 'layers/admin/app/pages/admin.vue')}: the write failed, so the file can be partly written. Check it with \`git diff\`.\n`,
+    );
+    expect(text).not.toContain(`updated ${shown(root, 'layers/admin/app/pages/admin.vue')}`);
+    expect(text).toContain(`updated ${shown(root, 'layers/shop/app/pages/shop.vue')}`);
   });
 });

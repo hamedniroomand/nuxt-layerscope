@@ -1,4 +1,4 @@
-import { mkdirSync, renameSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 
 import { dirname, relative } from 'pathe';
 
@@ -39,6 +39,7 @@ export interface Prepared {
 
 /** The writes of `runApply`. A test can replace them to make one fail. */
 export interface ApplyIo {
+  read: (file: string) => string;
   mkdir: (dir: string) => void;
   write: (file: string, text: string) => void;
   /** `tracked` is true when git tracks the file: then `git mv` keeps its history. */
@@ -50,10 +51,13 @@ export interface ApplyResult {
   pending: Step[];
   /** The message of the first failure; `null` when all steps are done. */
   failure: string | null;
+  /** The file whose write failed: it can be partly written. */
+  partial: string | null;
 }
 
 export function realIo(rootDir: string): ApplyIo {
   return {
+    read: file => readFileSync(file, 'utf8'),
     mkdir: dir => {
       mkdirSync(dir, { recursive: true });
     },
@@ -72,6 +76,10 @@ export function realIo(rootDir: string): ApplyIo {
       }
     },
   };
+}
+
+function gitErrors(state: GitState, rootDir: string, cwd: string): string[] {
+  return state.error === null ? [] : gitRefusals(state, rootDir, cwd);
 }
 
 /**
@@ -141,8 +149,9 @@ export function prepareApply(
   );
   const changed = new Set([...moves.map(move => move.from), ...files]);
   const targets = moves.map(move => move.to);
+  // `--allow-dirty` passes "no repository", but not an error of git: it could be a repository.
   const gitReasons = options.allowDirty
-    ? []
+    ? gitErrors(state, rootDir, cwd)
     : [
         ...gitRefusals(state, rootDir, cwd),
         ...(state.top === null ? [] : trackingRefusals(state, changed, targets, cwd)),
@@ -177,17 +186,29 @@ export function prepareApply(
 export function runApply(prepared: Prepared, io: ApplyIo): ApplyResult {
   const done: Step[] = [];
   for (const [index, step] of prepared.steps.entries()) {
+    let writing: string | null = null;
     try {
       if (step.kind === 'edit') {
+        // Another program can save the file after the checks, and this write would replace it.
+        if (io.read(step.edit.file) !== step.edit.source) {
+          throw new Error(`${step.edit.file} changed since the check`);
+        }
+        writing = step.edit.file;
         io.write(step.edit.file, step.edit.text);
+        writing = null;
       } else {
         io.mkdir(dirname(step.move.to));
         io.move(step.move.from, step.move.to, step.tracked);
       }
     } catch (error) {
-      return { done, pending: prepared.steps.slice(index), failure: message(error) };
+      return {
+        done,
+        pending: prepared.steps.slice(index),
+        failure: message(error),
+        partial: writing,
+      };
     }
     done.push(step);
   }
-  return { done, pending: [], failure: null };
+  return { done, pending: [], failure: null, partial: null };
 }

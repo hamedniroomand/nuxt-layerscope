@@ -47,8 +47,10 @@ function readIndex(
   const submodules: string[] = [];
   for (const entry of splitNul(git(rootDir, 'ls-files', '-s', '-z', '--full-name'))) {
     // `<mode> <object> <stage>\t<path>`
-    const [info, path] = entry.split('\t');
-    const [mode, , stage] = info.split(' ');
+    // A path can hold a tab, so split at the first one only.
+    const tab = entry.indexOf('\t');
+    const path = entry.slice(tab + 1);
+    const [mode, , stage] = entry.slice(0, tab).split(' ');
     if (mode === SUBMODULE_MODE) {
       submodules.push(join(top, path));
     } else if (stage === '0') {

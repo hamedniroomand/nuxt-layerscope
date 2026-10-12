@@ -174,6 +174,20 @@ describe('fix --apply and a file with two names', () => {
   );
 });
 
+describe('fix --apply when the state of git cannot be read', () => {
+  it.each([[[]], [['--allow-dirty']]])(
+    'refuses with the line of git, also with a config that git cannot read (%j)',
+    async flags => {
+      const root = repoProject();
+      writeFileSync(join(root, '.git/config'), 'this is not a config\n');
+      const output = silence();
+      expect(await run(applyArgs(root, ...flags))).toBe(EXIT_ERROR);
+      expect(output.stderr()).toMatch(/Cannot read the git state of .*: fatal: bad config/u);
+      expect(existsSync(join(root, CART))).toBe(true);
+    },
+  );
+});
+
 describe('fix --apply when git itself fails', () => {
   it('refuses with the line of git, and gives no advice to use --allow-dirty', async () => {
     const root = repoProject();

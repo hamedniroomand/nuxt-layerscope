@@ -13,6 +13,8 @@ const UNSAFE = /[\\\r\n\u2028\u2029]/u;
 /** A change of one file: its new text, which is written at the path it has before the moves. */
 export interface Edit {
   file: string;
+  /** The text that the plan was made from. The file must still have it before the write. */
+  source: string;
   text: string;
   /** Imports that the edit rewrites. */
   imports: number;
@@ -103,7 +105,7 @@ export function prepareEdits(
     }
     const changed = rewrite(text, list);
     if (typeof changed === 'string') {
-      edits.push({ file, text: changed, imports: list.length });
+      edits.push({ file, source: text, text: changed, imports: list.length });
     } else {
       refusals.push(`${relative(cwd, file)}:${changed.update.line} ${changed.reason}`);
     }

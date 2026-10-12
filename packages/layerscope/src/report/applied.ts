@@ -6,7 +6,10 @@ import { plural } from '#src/utils/strings.ts';
 import type { MoveNotes } from './moves.ts';
 import { NOT_SCANNED, formatBaseline, formatOthers } from './moves.ts';
 
-function formatStep(step: Step, cwd: string): string {
+function formatStep(step: Step, cwd: string, partial: string | null): string {
+  if (step.kind === 'edit' && step.edit.file === partial) {
+    return `${relative(cwd, partial)}: the write failed, so the file can be partly written. Check it with \`git diff\`.`;
+  }
   return step.kind === 'edit'
     ? `updated ${relative(cwd, step.edit.file)}`
     : `moved ${relative(cwd, step.move.from)} → ${relative(cwd, step.move.to)}`;
@@ -68,7 +71,8 @@ function gitLines(prepared: Prepared): string[] {
 
 /** What `fix --apply` printed when a step failed. */
 export function formatStopped(result: ApplyResult, prepared: Prepared, cwd: string): string {
-  const list = (steps: Step[]): string[] => steps.map(step => `  ${formatStep(step, cwd)}`);
+  const list = (steps: Step[]): string[] =>
+    steps.map(step => `  ${formatStep(step, cwd, result.partial)}`);
   const lines = [
     `fix --apply stopped: ${result.failure ?? ''}`,
     'Done:',
