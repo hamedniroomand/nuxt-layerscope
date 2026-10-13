@@ -15,11 +15,21 @@ not from the `.d.ts` files. The file can be any new file in an auto-import dir, 
 composable. For example, the `server/utils/**/*` pattern of Nitro also matches a `README.md` or a
 backup file such as `x.ts~`. Run `nuxi prepare` again, and the file is part of the registry.
 
-## "Could not read … (EACCES)"
+## "Could not read …"
 
-layerscope could not open a dir that the registry lists for auto-imports, so it cannot look for
-new files there. Fix the access to the dir, or pass `--source types` to use the generated `.d.ts`
-files, which do not check auto-import dirs.
+layerscope could not open a component dir or an auto-import dir, so it cannot look for new files
+there. The code in the brackets tells the cause. EACCES means that layerscope has no read access to
+the dir. Other codes, such as ELOOP or EMFILE, mean that the OS could not open the dir. Fix the
+cause. As a workaround, pass `--source types`. It uses the generated `.d.ts` files. It does not
+check custom component dirs or auto-import dirs. The message gives this workaround only for an
+auto-import dir. For a component dir, fix the cause.
+
+## "Generated types reference …, which layerscope could not read"
+
+layerscope could not reach a file that the generated types refer to, for example because a parent
+dir has no access, so it cannot tell if the file still exists. The code in the brackets tells the
+cause, as for "Could not read …". Fix the file or its access. A file that layerscope can reach but
+cannot read does not stop the check. layerscope lists it as unread.
 
 ## "nuxt-layerscope could not read the auto-import dirs of Nuxt"
 

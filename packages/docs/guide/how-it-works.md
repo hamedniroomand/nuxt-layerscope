@@ -55,7 +55,8 @@ layerscope stops with exit code `2` when they are clearly stale:
 
 - a component or auto-import points at a file that no longer exists, or
 - a component file exists that Nuxt has not registered. With the registry, every component dir
-  Nuxt scanned is compared with the files recorded when it was written; with the `types` source
+  Nuxt scanned is compared with the files recorded when it was written, but a dir in
+  `node_modules` is not checked; with the `types` source
   the default `components/` dirs are checked (overridden and island components are expected to be
   missing there), or
 - an auto-import file exists that is not in the registry. An example is a composable that
@@ -64,6 +65,11 @@ layerscope stops with exit code `2` when they are clearly stale:
   `imports.dirs` of each layer. A dir in `node_modules` is not checked. A dir that you add in
   `nuxt.config` is checked after the next `nuxi prepare`. The `types` source does not check
   auto-import dirs.
+
+layerscope does not check a dir that does not exist (or that has a file in its path). That dir has
+no new files. layerscope stops with exit code `2` when it cannot open a dir, for example because it
+has no read access. It cannot look for new files in that dir. It also stops when it cannot reach a
+file that the generated types refer to.
 
 File modification times are not used: Nuxt skips rewriting unchanged files, so they would
 report stale files that are not.

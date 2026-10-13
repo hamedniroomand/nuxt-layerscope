@@ -34,6 +34,21 @@ function isImportDir(entry: unknown): boolean {
   );
 }
 
+/** The check of a stored component dir: the type of each field, as for an auto-import dir. */
+function isComponentDir(entry: unknown): boolean {
+  if (typeof entry !== 'object' || entry === null) {
+    return false;
+  }
+  const record = entry as Record<string, unknown>;
+  const hasPattern = typeof record.pattern === 'string' || isStrings(record.pattern);
+  return (
+    typeof record.path === 'string' &&
+    hasPattern &&
+    isStrings(record.ignore) &&
+    isStrings(record.files)
+  );
+}
+
 export function readRegistry(buildDir: string): RegistryRead {
   const file = join(buildDir, REGISTRY_FILE);
   if (!existsSync(file)) {
@@ -46,15 +61,21 @@ export function readRegistry(buildDir: string): RegistryRead {
   const { layers } = registry as { layers?: unknown };
   // The file is stale when it lacks a field that this release needs: `modulesDir` or `publicDir`
   // of a layer (layerscope would scan the Nuxt modules and public dirs), or `importDirs` (the
-  // stale check of auto-import files). The file can also be damaged. Its layers are not used, but
-  // its `config` is kept: the `layerscope` options of `nuxt.config` are only stored there.
-  const { importDirs } = registry as { importDirs?: unknown };
+  // stale check of auto-import files). The file can also be damaged, for example a bad entry in
+  // `componentDirs`. Its layers are not used, but its `config` is kept: the `layerscope` options of
+  // `nuxt.config` are only stored there.
+  const { componentDirs, importDirs } = registry as {
+    componentDirs?: unknown;
+    importDirs?: unknown;
+  };
   const complete =
     Array.isArray(layers) &&
     layers.every(
       (layer: Record<string, unknown> | null) =>
         typeof layer?.modulesDir === 'string' && typeof layer.publicDir === 'string',
     ) &&
+    Array.isArray(componentDirs) &&
+    componentDirs.every(entry => isComponentDir(entry)) &&
     (importDirs === null ||
       (Array.isArray(importDirs) && importDirs.every(entry => isImportDir(entry))));
   return {

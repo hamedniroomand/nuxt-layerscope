@@ -1,16 +1,15 @@
-import { existsSync } from 'node:fs';
-
 import { basename, extname, join } from 'pathe';
 import { escapePath, glob } from 'tinyglobby';
 
 import { LayerscopeError } from '#src/errors.ts';
 import type { SymbolTable, SymbolTarget } from '#src/nuxt/symbols.ts';
-import { globComponents } from '#src/registry/component-files.ts';
 import type { Registry } from '#src/registry/schema.ts';
 import type { Layer } from '#src/types.ts';
 import { pascalCase } from '#src/utils/strings.ts';
 
-import { assertImportDirsFresh, RERUN_HINT } from './import-dirs-fresh.ts';
+import { assertComponentDirsFresh } from './component-dirs-fresh.ts';
+import { assertImportDirsFresh } from './import-dirs-fresh.ts';
+import { FIX_DIR, RERUN_HINT, isScanDirThere, isTargetThere } from './stale-check-fs.ts';
 
 // `Button.client.global.vue` is the component `Button`.
 const COMPONENT_SUFFIX = /(?:\.(?:client|server))?(?:\.global|\.island)*$/u;
@@ -23,7 +22,7 @@ function allTargets(table: SymbolTable): SymbolTarget[] {
 }
 
 function assertNoDeletedTargets(targets: SymbolTarget[]): void {
-  const deleted = targets.find(target => target.file !== null && !existsSync(target.file));
+  const deleted = targets.find(target => target.file !== null && !isTargetThere(target.file));
   if (deleted !== undefined && deleted.file !== null) {
     throw new LayerscopeError(
       `Generated types reference ${deleted.file}, which no longer exists. ${RERUN_HINT}`,
@@ -32,10 +31,14 @@ function assertNoDeletedTargets(targets: SymbolTarget[]): void {
 }
 
 async function defaultComponentFiles(layers: Layer[]): Promise<string[]> {
-  const dirs = layers
-    .filter(layer => layer.defaultComponents)
-    .map(layer => join(layer.srcDir, 'components'))
-    .filter(dir => existsSync(dir));
+  const dirs: string[] = [];
+  for (const layer of layers.filter(item => item.defaultComponents)) {
+    const dir = join(layer.srcDir, 'components');
+    // eslint-disable-next-line no-await-in-loop -- reports the first dir that cannot be read
+    if (await isScanDirThere(dir, 'new components', FIX_DIR)) {
+      dirs.push(dir);
+    }
+  }
   if (dirs.length === 0) {
     return [];
   }
@@ -75,28 +78,12 @@ export async function assertFresh(table: SymbolTable, layers: Layer[]): Promise<
   }
 }
 
-async function assertComponentDirsFresh(registry: Registry): Promise<void> {
-  for (const dir of registry.componentDirs) {
-    if (dir.path.includes('/node_modules/') || !existsSync(dir.path)) {
-      continue;
-    }
-    const recorded = new Set(dir.files);
-    // eslint-disable-next-line no-await-in-loop -- stops at the first stale dir
-    const added = (await globComponents(dir.path, dir.pattern, dir.ignore)).find(
-      file => !recorded.has(file),
-    );
-    if (added !== undefined) {
-      throw new LayerscopeError(`${added} is missing from the layerscope registry. ${RERUN_HINT}`);
-    }
-  }
-}
-
 /**
  * With the registry, every dir Nuxt scanned is compared, not just the default: the component dirs
  * (`components:dirs`) and the auto-import dirs (`imports:dirs` and the dirs of Nitro).
  */
 export async function assertRegistryFresh(table: SymbolTable, registry: Registry): Promise<void> {
   assertNoDeletedTargets(allTargets(table));
-  await assertComponentDirsFresh(registry);
+  await assertComponentDirsFresh(registry.componentDirs);
   await assertImportDirsFresh(registry.importDirs ?? []);
 }
