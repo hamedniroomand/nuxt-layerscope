@@ -131,21 +131,28 @@ describe('layer graph layout at scale', () => {
     }
   });
 
-  // A guard against an algorithmic blow-up, not a budget. It compares with a small layout timed
-  // in the same process, so a slow or busy machine slows both sides.
+  // A guard against an algorithmic blow-up. The ratio compares with a small layout timed in the
+  // same process, with the runs alternated, so a slow or busy machine slows both sides. The
+  // absolute limit is only a wide backstop.
   it('lays out 100 nodes in under 40 times the 15-layer time, as a regression guard', () => {
     const small = randomGraph(15, 3);
     const large = randomGraph(100, 3);
     layoutGraph(small.nodes, small.edges);
-    const runs = [0, 1, 2]
-      .map(() => timed(() => layoutGraph(small.nodes, small.edges)))
-      .toSorted((a, b) => a - b);
+    // 3 runs on each side, alternated, so one slow run or one load burst cannot fail the test.
+    const smallRuns: number[] = [];
+    const largeRuns: number[] = [];
+    for (let run = 0; run < 3; run += 1) {
+      smallRuns.push(timed(() => layoutGraph(small.nodes, small.edges)));
+      largeRuns.push(timed(() => layoutGraph(large.nodes, large.edges)));
+    }
+    const median = (runs: number[]): number =>
+      runs.toSorted((a, b) => a - b)[1] ?? Number.POSITIVE_INFINITY;
     // A floor of 1 ms, so timer noise on a very fast run cannot make the ratio explode.
-    const smallTime = Math.max(1, runs[1] ?? 1);
-    const largeTime = timed(() => layoutGraph(large.nodes, large.edges));
+    const smallTime = Math.max(1, median(smallRuns));
+    const largeTime = median(largeRuns);
     expect(largeTime, `${largeTime.toFixed(0)} ms vs ${smallTime.toFixed(1)} ms`).toBeLessThan(
       40 * smallTime,
     );
-    expect(largeTime).toBeLessThan(3000);
+    expect(largeTime).toBeLessThan(10_000);
   });
 });

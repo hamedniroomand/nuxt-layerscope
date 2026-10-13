@@ -105,6 +105,8 @@ afterEach(() => {
 });
 
 describe('a long findings list', () => {
+  // The test checks the row count, not the speed. Mounting 1000 rows can take more than the
+  // default 5 s on a busy machine.
   it('renders the first 200 of 1000 rows at once, and the rest on later frames', async () => {
     const fake = frames();
     vi.stubGlobal('requestAnimationFrame', fake.request);
@@ -121,5 +123,5 @@ describe('a long findings list', () => {
     await flushPromises();
     expect(wrapper.findAll('li.row')).toHaveLength(1000);
     expect(wrapper.get('h3.group').text()).toContain('1000');
-  });
+  }, 20_000);
 });
