@@ -68,7 +68,7 @@ layerscope stops with exit code `2` when they are clearly stale:
 
 layerscope does not check a dir that does not exist (or that has a file in its path). That dir has
 no new files. layerscope stops with exit code `2` when it cannot open a dir, for example because it
-has no read access. It cannot look for new files in that dir. It also stops when it cannot read a
+has no read access. It cannot look for new files in that dir. It also stops when it cannot reach a
 file that the generated types refer to.
 
 File modification times are not used: Nuxt skips rewriting unchanged files, so they would

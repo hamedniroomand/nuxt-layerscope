@@ -26,9 +26,10 @@ it comes from the `types` source (a default `components/` dir), so fix the cause
 
 ## "Generated types reference …, which layerscope could not read"
 
-layerscope could not read a file that the generated types refer to, so it cannot tell if the file
-still exists. The code in the brackets tells the cause, as for "Could not read …". Fix the file or
-its access.
+layerscope could not reach a file that the generated types refer to, for example because a parent
+dir has no access, so it cannot tell if the file still exists. The code in the brackets tells the
+cause, as for "Could not read …". Fix the file or its access. A file that layerscope can reach but
+cannot read does not stop the check. layerscope lists it as unread.
 
 ## "nuxt-layerscope could not read the auto-import dirs of Nuxt"
 

@@ -84,6 +84,12 @@ describe('a file that the generated types refer to', () => {
     },
   );
 
+  it('accepts a target that is a dir', async () => {
+    const table = emptyTable();
+    table.components.set('Chart', { file: tempDir(), module: null });
+    await expect(assertRegistryFresh(table, emptyRegistry())).resolves.toBeUndefined();
+  });
+
   it('is reported as deleted when its path has a file in it', async () => {
     const base = tempDir();
     writeFileSync(join(base, 'app'), 'not a dir');

@@ -57,9 +57,10 @@ export async function isScanDirThere(
 }
 
 /**
- * Whether a file that the generated types refer to is there. A file that is gone (ENOENT), or that
- * has a file in its path (ENOTDIR), is not there. Any other fs error stops the check, because
- * the file can be there.
+ * Whether a file that the generated types refer to is there. A `stat` is enough here: a file
+ * without read access is still there, so the registry is not stale. The analysis lists such a file
+ * as unread. A file that is gone (ENOENT), or that has a file in its path (ENOTDIR), is not there.
+ * Any other fs error stops the check, because the file can be there.
  */
 export function isTargetThere(file: string): boolean {
   try {
