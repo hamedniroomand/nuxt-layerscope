@@ -21,8 +21,8 @@ layerscope could not open a component dir or an auto-import dir, so it cannot lo
 there. The code in the brackets tells the cause. EACCES means that layerscope has no read access to
 the dir. Other codes, such as ELOOP or EMFILE, mean that the OS could not open the dir. Fix the
 cause. As a workaround, pass `--source types`. It uses the generated `.d.ts` files. It does not
-check custom component dirs or auto-import dirs. When the message does not give this workaround,
-it comes from the `types` source (a default `components/` dir), so fix the cause.
+check custom component dirs or auto-import dirs. The message gives this workaround only for an
+auto-import dir. For a component dir, fix the cause.
 
 ## "Generated types reference …, which layerscope could not read"
 

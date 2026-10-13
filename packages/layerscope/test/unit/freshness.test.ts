@@ -107,7 +107,7 @@ describe('assertRegistryFresh for component dirs that cannot be read', () => {
         await expect(
           assertRegistryFresh(emptyTable(), registryWith([emptyEntry(dir)])),
         ).rejects.toThrow(
-          `Could not read ${dir} (EACCES), so layerscope cannot check it for new components. Fix the dir or its access, or pass --source types.`,
+          `Could not read ${dir} (EACCES), so layerscope cannot check it for new components. Fix the dir or its access.`,
         );
       } finally {
         chmodSync(dir, 0o700);
