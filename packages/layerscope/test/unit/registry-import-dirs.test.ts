@@ -33,6 +33,7 @@ function buildDirWith(extra: Record<string, unknown>): string {
       version: 1,
       layers: [layer],
       components: [],
+      componentDirs: [],
       imports: { app: [], server: [], shared: [] },
       ...extra,
     }),
@@ -63,6 +64,30 @@ describe('readRegistry and the auto-import dirs', () => {
     ['has a file that is not a string', { importDirs: [{ ...GOOD, files: [1] }] }],
   ])('marks the registry as stale when importDirs %s', (_name, extra) => {
     expect(readRegistry(buildDirWith(extra)).kind).toBe('stale');
+  });
+});
+
+const DIR = { path: '/p/app/components', pattern: '**/*.vue', ignore: [], files: [] };
+
+describe('readRegistry and the component dirs', () => {
+  it.each([
+    ['a pattern string', DIR],
+    ['a pattern list', { ...DIR, pattern: ['**/*.vue', '**/*.tsx'] }],
+  ])('reads a component dir with %s', (_name, entry) => {
+    expect(readRegistry(buildDirWith({ importDirs: [], componentDirs: [entry] })).kind).toBe('ok');
+  });
+
+  it.each([
+    ['is missing', { componentDirs: undefined }],
+    ['is not an array', { componentDirs: {} }],
+    ['has an entry that is not an object', { componentDirs: [null] }],
+    ['has an entry with a path that is not a string', { componentDirs: [{ ...DIR, path: null }] }],
+    ['has an entry with no pattern', { componentDirs: [{ ...DIR, pattern: undefined }] }],
+    ['has a pattern that is not a string', { componentDirs: [{ ...DIR, pattern: [1] }] }],
+    ['has an entry with ignore that is not a list', { componentDirs: [{ ...DIR, ignore: 'a' }] }],
+    ['has a file that is not a string', { componentDirs: [{ ...DIR, files: [1] }] }],
+  ])('marks the registry as stale when componentDirs %s', (_name, extra) => {
+    expect(readRegistry(buildDirWith({ importDirs: [], ...extra })).kind).toBe('stale');
   });
 });
 

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
@@ -68,6 +68,69 @@ describe('assertRegistryFresh', () => {
     ]);
     await expect(assertRegistryFresh(emptyTable(), registry)).resolves.toBeUndefined();
   });
+});
+
+/** A component dir that the registry records with no files. */
+function emptyEntry(path: string): RegistryComponentDir {
+  return { path, pattern: '**/*.vue', ignore: [], files: [] };
+}
+
+describe('assertRegistryFresh for component dirs that are gone', () => {
+  it('passes when the dir is gone, or has a file in its path', async () => {
+    const base = tempDir();
+    writeFileSync(join(base, 'app'), 'not a dir');
+    const registry = registryWith([
+      emptyEntry(join(base, 'missing')),
+      emptyEntry(join(base, 'app/components')),
+    ]);
+    await expect(assertRegistryFresh(emptyTable(), registry)).resolves.toBeUndefined();
+  });
+
+  it('skips the node_modules dir itself, and a dir below it', async () => {
+    const base = tempDir();
+    const modules = join(base, 'node_modules');
+    mkdirSync(join(modules, 'pkg'), { recursive: true });
+    writeFileSync(join(modules, 'New.vue'), '<template />');
+    writeFileSync(join(modules, 'pkg/New.vue'), '<template />');
+    const registry = registryWith([emptyEntry(modules), emptyEntry(join(modules, 'pkg'))]);
+    await expect(assertRegistryFresh(emptyTable(), registry)).resolves.toBeUndefined();
+  });
+});
+
+describe('assertRegistryFresh for component dirs that cannot be read', () => {
+  it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+    'does not read a dir without read access (stat passes) as an empty dir',
+    async () => {
+      const dir = widgetsDir();
+      chmodSync(dir, 0o000);
+      try {
+        await expect(
+          assertRegistryFresh(emptyTable(), registryWith([emptyEntry(dir)])),
+        ).rejects.toThrow(
+          `Could not read ${dir} (EACCES), so layerscope cannot check it for new components. Fix the dir or its access, or pass --source types.`,
+        );
+      } finally {
+        chmodSync(dir, 0o700);
+      }
+    },
+  );
+
+  it.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+    'does not read a dir that it cannot reach as an empty dir',
+    async () => {
+      const parent = join(tempDir(), 'locked');
+      const dir = join(parent, 'widgets');
+      mkdirSync(dir, { recursive: true });
+      chmodSync(parent, 0o000);
+      try {
+        await expect(
+          assertRegistryFresh(emptyTable(), registryWith([emptyEntry(dir)])),
+        ).rejects.toThrow(`Could not read ${dir} (EACCES)`);
+      } finally {
+        chmodSync(parent, 0o700);
+      }
+    },
+  );
 });
 
 describe('assertFresh without the registry', () => {

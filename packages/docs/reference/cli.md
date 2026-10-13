@@ -342,11 +342,11 @@ Also takes `--config`, `--prepare`, `--source` and `--verbose`. Exits `0`.
 Every command works with flags only and never prompts, so it is safe in scripts, CI and for
 [coding assistants](../guide/coding-tools).
 
-| Code | Meaning                                                                                                                                                                                           |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran                                                                    |
-| `1`  | `check` found at least one error that is not in the baseline                                                                                                                                      |
-| `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, `why` found no use, invalid baseline file, empty `--baseline` value, a refused or stopped `fix --apply` |
+| Code | Meaning                                                                                                                                                                                                                                                                                                     |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran                                                                                                                                                                              |
+| `1`  | `check` found at least one error that is not in the baseline                                                                                                                                                                                                                                                |
+| `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, a component or auto-import dir, or a file that the generated types refer to, that layerscope cannot open, `why` found no use, invalid baseline file, empty `--baseline` value, a refused or stopped `fix --apply` |
 
 ## Output streams
 

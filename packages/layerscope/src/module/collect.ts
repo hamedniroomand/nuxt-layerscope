@@ -3,7 +3,7 @@ import { isAbsolute, resolve } from 'pathe';
 import type { ProjectConfig } from '#src/config/effective.ts';
 import type { NuxtOptions } from '#src/nuxt/kit.ts';
 import { layersForModule } from '#src/nuxt/layers.ts';
-import { globComponents } from '#src/registry/component-files.ts';
+import { recordedComponents } from '#src/registry/component-files.ts';
 import type {
   ComponentMode,
   Registry,
@@ -217,10 +217,7 @@ export class RegistryCollector {
       const pattern =
         dir.pattern ?? (exts.length > 1 ? `**/*.{${exts.join(',')}}` : `**/*.${exts[0] ?? '*'}`);
       const ignore = [...COMPONENT_IGNORE, ...(dir.ignore ?? [])];
-      // Dependencies are not checked, so their files are not recorded.
-      const files = path.includes('/node_modules/')
-        ? []
-        : await globComponents(path, pattern, ignore);
+      const files = await recordedComponents(path, pattern, ignore);
       return { path, pattern, ignore, files };
     });
     const dirs = await Promise.all(jobs);

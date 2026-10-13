@@ -79,6 +79,9 @@ export function currentDir(): string {
   return realPath(process.cwd());
 }
 
+/** A dependency is not checked: `node_modules` as a whole segment, also at the end of the path. */
+export const IN_NODE_MODULES = /(?:^|\/)node_modules(?:\/|$)/u;
+
 /** The root with one trailing slash; the root `/` or `C:/` already has it. */
 export function rootPrefix(rootDir: string): string {
   return rootDir.endsWith('/') ? rootDir : `${rootDir}/`;
