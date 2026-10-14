@@ -35,7 +35,7 @@ export async function drift(root: string | undefined, flags: DriftFlags): Promis
 export function registerDrift(cli: Cli): void {
   withCommonOptions(
     cli
-      .command('drift [root]', 'Say how many violations the code adds and fixes against a git ref')
+      .command('drift [root]', 'Say how many errors the code adds and fixes against a git ref')
       .option('--base <ref>', 'Git ref whose baseline is compared', { default: 'origin/main' })
       .option('--format <format>', `Output format: ${DRIFT_FORMATS.join(', ')}`, {
         default: 'text',

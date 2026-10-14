@@ -10,7 +10,7 @@ layerscope <command> [options]
 | Command                                  | Description                                                                                |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------ |
 | [`init [root]`](#layerscope-init)        | Write a starter config from today's dependencies                                           |
-| [`drift [root]`](#layerscope-drift)      | Say how many violations the code adds and fixes                                            |
+| [`drift [root]`](#layerscope-drift)      | Say how many errors the code adds and fixes                                                |
 | [`fix [root]`](#layerscope-fix)          | Print or make the file moves that fix boundary findings (only moves, no other suggestions) |
 | [`check [root]`](#layerscope-check)      | Check layer boundaries, including auto-imports                                             |
 | [`why <symbol> [root]`](#layerscope-why) | List every use of a symbol and the layers it crosses                                       |
@@ -151,13 +151,30 @@ hook.
 layerscope drift [root] [--base origin/main] [--format text|markdown|json]
 ```
 
-Compares the violations the code has now with the [baseline](../guide/baseline) committed on the
+Compares the errors that the code has now with the [baseline](../guide/baseline) committed on the
 base ref, and prints `adds 3, fixes 5`, the entries behind both, and the baseline size on the base
-and now. A base without a baseline file counts as empty. The baseline file must be in the git
+and now.
+
+Only the rules that the current config sets to `error` count, on both sides. Warnings do not
+count. Warnings do not fail `check`, so they can get to the base branch without a baseline entry.
+`drift` does not analyze the code on the base. So:
+
+- An error counts as added when the base baseline does not have it. This is also true for an error
+  that was already on the base, for example when `check` fails on the base, or when the current
+  config changes a rule from `warn` to `error`.
+- An entry of the base baseline counts as fixed when the code does not have it now. This is also
+  true for an entry that was fixed on the base without `--update-baseline`.
+- If the current config sets a rule to `warn` or `off`, the entries of that rule do not count as
+  added or fixed.
+
+The baseline size counts all entries, warnings too. So it can change when `adds` and `fixes` do
+not. A base without a baseline file counts as empty. The baseline file must be in the git
 repository. A baseline that is a symbolic link on the base ref stops `drift` with an error. A
 baseline file that is not valid stops `drift` with an error, on the base ref and in the working
-tree. Also takes `--baseline`, `--config`, `--prepare` and `--source`. Exits `0`. Exits `2` for a
-root that is not in a git work tree, an unknown ref, an invalid baseline, a baseline outside the git
+tree.
+
+Also takes `--baseline`, `--config`, `--prepare` and `--source`. Exits `0`. Exits `2` for a root
+that is not in a git work tree, an unknown ref, an invalid baseline, a baseline outside the git
 repository, or a baseline that is a symbolic link on the base ref.
 
 ## `layerscope fix`
