@@ -135,10 +135,11 @@ export class RegistryWriter {
     try {
       await writeFile(temp, content);
       // After a soft restart of `nuxi dev`, the new Nuxt writes the file. The old writer must not
-      // replace it. A close between this check and the rename can still replace it once, and the
-      // next write of the new Nuxt corrects it.
+      // replace it. One window stays: on Windows, a rename can wait about 1 s between tries
+      // (EPERM, EACCES or EBUSY). A soft restart in that wait can let the old write replace the
+      // new file. The next write of the new Nuxt, on the next file event, corrects it.
       if (this.closed) {
-        await rm(temp);
+        await rm(temp, { force: true });
         return;
       }
       await renameWithRetry(temp, this.file);
