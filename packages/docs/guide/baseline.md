@@ -32,8 +32,9 @@ npx layerscope check
     layers/admin/app/utils/exportCsv.ts  layer-boundary #layers/shop/app/composables/useCart → shop
   ```
 
-  Fixed entries never fail the check. Run `--update-baseline` again to drop them, so the file
-  only ever shrinks.
+  By default, fixed entries do not fail the check. A fixed entry that stays in the file accepts the
+  violation again if it comes back. With `--strict-baseline`, fixed entries fail the check, so the
+  file is updated when a violation is fixed. Use it in CI.
 
 ## What counts as the same finding
 
@@ -81,10 +82,11 @@ A file outside the root has a path that starts with `../`.
 
 ## Options
 
-| Option              | Description                                                                                                      |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| `--baseline <file>` | Baseline path, relative to the root. Default: the `baseline` key of the config, else `layerscope-baseline.json`. |
-| `--update-baseline` | Write every current finding (errors and warnings) and exit `0`.                                                  |
+| Option              | Description                                                                                                                        |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `--baseline <file>` | Baseline path, relative to the root. Default: the `baseline` key of the config, else `layerscope-baseline.json`.                   |
+| `--update-baseline` | Write every current finding (errors and warnings) and exit `0`.                                                                    |
+| `--strict-baseline` | Fail when the baseline has fixed entries. With `--staged`, `--changed` or `--since`, only the entries of the selected files count. |
 
 Set the [`baseline`](../reference/config#baseline) key in the config to use another file in
 `check`, `fix`, `drift`, `mcp`, the DevTools tab and the GitHub Action. `init --baseline` always
@@ -108,12 +110,14 @@ new one. `check --watch` prints the error, and `mcp` returns it to the assistant
 so you can fix the file.
 
 In JSON output the accepted findings are listed under `baseline.suppressed` and fixed entries under
-`baseline.removable`; with `--format github` fixed entries become `::notice` annotations.
+`baseline.removable`; with `--format github` fixed entries become `::notice` annotations, or
+`::error` annotations with `--strict-baseline`.
 
 ## A workflow that works
 
 1. Add layerscope with the rules you want, and run `--update-baseline` once.
-2. Turn the check on in CI. New violations are blocked from now on.
+2. Turn the check on in CI with `--strict-baseline` (the action input `strict-baseline: true`). New
+   violations are blocked, and a fixed violation must leave the file in the same pull request.
 3. Fix accepted violations when you work in those files, and run `--update-baseline` in the same
    pull request.
 4. Delete the file when it is empty.
