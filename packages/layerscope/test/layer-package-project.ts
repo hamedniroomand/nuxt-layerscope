@@ -25,7 +25,7 @@ export const KIT_EXPORTS = {
   './cjs': { require: './app/cjs.ts' },
   './package.json': './package.json',
   './app/private/*': null,
-  './app/*': { types: './app/*.d.ts', import: './app/*.ts', require: './app/*.ts' },
+  './app/*': { types: './app/*.d.ts', import: './app/*.ts' },
   './require-first': { require: './x.cjs', import: './x.mjs' },
   './import-first': { import: './x.mjs', require: './x.cjs' },
   './node-only': { node: './n.ts' },

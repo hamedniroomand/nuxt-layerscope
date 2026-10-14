@@ -28,21 +28,27 @@ async function targets(
 }
 
 describe('the exports condition of an import by the package name of a layer', () => {
-  it('is import for an import and require for a require(), whatever the key order', async () => {
+  it('is import only for an import, whatever the key order', async () => {
     expect(
       await targets({
         'import.ts': "import x from '@acme/kit/require-first';\n",
         'export-from.ts': "export { default } from '@acme/kit/require-first';\n",
         'dynamic.ts': "export const x = import('@acme/kit/require-first');\n",
-        'require.cts': "const x = require('@acme/kit/import-first');\n",
-        'import-equals.cts': "import x = require('@acme/kit/import-first');\n",
+      }),
+    ).toEqual({ 'import.ts': 'x.mjs', 'export-from.ts': 'x.mjs', 'dynamic.ts': 'x.mjs' });
+  });
+
+  it('is require and import for a require(), and the key order picks', async () => {
+    expect(
+      await targets({
+        'require.cts': "const x = require('@acme/kit/require-first');\n",
+        'import-equals.cts': "import x = require('@acme/kit/require-first');\n",
+        'require-import-first.cts': "const x = require('@acme/kit/import-first');\n",
       }),
     ).toEqual({
-      'import.ts': 'x.mjs',
-      'export-from.ts': 'x.mjs',
-      'dynamic.ts': 'x.mjs',
       'require.cts': 'x.cjs',
       'import-equals.cts': 'x.cjs',
+      'require-import-first.cts': 'x.mjs',
     });
   });
 
@@ -72,21 +78,16 @@ describe('the exports condition of an import by the package name of a layer', ()
   });
 });
 
-describe('a require() in server code', () => {
-  it('also uses the import condition, as Nitro does', async () => {
+describe('a require() of an import-only target', () => {
+  it('resolves in server, app and shared code, as Nitro and the SSR build of Nuxt do', async () => {
     const files = {
       'require.cts': "const x = require('@acme/kit/x');\n",
       'import-equals.cts': "import x = require('@acme/kit/x');\n",
     };
-    expect(await targets(files, 'layers/admin/server/utils')).toEqual({
-      'require.cts': 'x.ts',
-      'import-equals.cts': 'x.ts',
-    });
-    // App code gets the `require` condition only.
-    expect(await targets(files)).toEqual({
-      'require.cts': 'Cannot resolve import "@acme/kit/x"',
-      'import-equals.cts': 'Cannot resolve import "@acme/kit/x"',
-    });
+    const resolved = { 'require.cts': 'x.ts', 'import-equals.cts': 'x.ts' };
+    expect(await targets(files, 'layers/admin/server/utils')).toEqual(resolved);
+    expect(await targets(files, 'layers/admin/app/utils')).toEqual(resolved);
+    expect(await targets(files, 'layers/admin/shared/utils')).toEqual(resolved);
   });
 
   it('gives the boundary finding', async () => {

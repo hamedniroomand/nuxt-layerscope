@@ -14,18 +14,16 @@ import { LOOKUP_EXTENSIONS, resolveFile } from './file.ts';
 export type LayerPackages = ReadonlyMap<string, string>;
 
 /** How a file loads a module: through `require()`, and with the `type` keyword on the statement. */
-export type ImportForm = Pick<ImportRef, 'require' | 'typeStatement'> & {
-  /** The importing file is server code, which Nitro bundles. */
-  server?: boolean;
-};
+export type ImportForm = Pick<ImportRef, 'require' | 'typeStatement'>;
 
 /**
  * The `exports` conditions for an import of a layer. A target of `exports` cannot leave its
  * package, so each condition gives a file of the same layer. exsolve takes the first matching key
  * of the `exports` object, so when two conditions match, the order of the keys chooses the file.
- * An import uses `import` only. A `require()` uses `require` only, except in server code: Nitro
+ * An import uses `import` only. A `require()` uses `require` and `import`, in every context: Nitro
  * adds `import` to the export conditions of every preset, and `@rollup/plugin-node-resolve` uses
- * those for a `require()` too, so there the key order picks between `require` and `import`. Each
+ * them for a `require()` too. Nuxt copies these conditions into the Vite SSR build, and Vite adds
+ * `require` for a `require()`. So for a `require()` the key order picks between the two. Each
  * context gets both `browser` and `node`: app code runs in the client and in the SSR bundle, and
  * Nitro uses `browser` and not `node` for edge presets. `types` is not in the list: packages put
  * it first, and it gives a `.d.ts` file, not the source. A statement with the `type` keyword tries
@@ -35,8 +33,7 @@ export type ImportForm = Pick<ImportRef, 'require' | 'typeStatement'> & {
 const COMMON_CONDITIONS = ['module', 'node', 'browser', 'development', 'default'];
 
 function conditionsOf(form: ImportForm, types: boolean): string[] {
-  const serverImport = form.server === true ? ['import'] : [];
-  const loaders = form.require === true ? ['require', ...serverImport] : ['import'];
+  const loaders = form.require === true ? ['require', 'import'] : ['import'];
   return [...loaders, ...COMMON_CONDITIONS, ...(types ? ['types'] : [])];
 }
 

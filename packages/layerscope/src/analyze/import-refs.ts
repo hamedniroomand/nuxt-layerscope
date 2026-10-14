@@ -56,7 +56,7 @@ export function resolveImportRef(
     env.aliases,
     env.buildDir,
     env.layerPackages,
-    { require: ref.require, typeStatement: ref.typeStatement, server: context === 'server' },
+    ref,
   );
   if (resolution.kind === 'missing') {
     return [{ resolved: false, message: `Cannot resolve import "${ref.specifier}"` }];
