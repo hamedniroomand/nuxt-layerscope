@@ -91,8 +91,8 @@ class WatchRun {
     this.analyzer = createWatchAnalyzer({
       rootDir: this.rootDir,
       baseline: options.baseline,
-      // `nuxi dev` does not write the registry again after every new file (for example a server
-      // util), so each run checks again.
+      // Under `nuxi dev`, the registry can be old for a short time after a file change, and a file
+      // that Nuxt ignores does not cause a new write. So each run checks again.
       analyze: { configFile: options.configFile, source: options.source, recheckStale: true },
       envKey: async (): Promise<string> => {
         const buildDir = await buildDirOf(this.rootDir, options.configFile);

@@ -12,15 +12,18 @@ export function prepareFixture(dir: string): void {
 
 /**
  * A private copy of the nuxt4 fixture after `nuxi prepare`, so that no other test sees the files
- * that a test adds or deletes. The caller removes it.
+ * that a test adds or deletes. The caller removes it. A test that starts `nuxi dev` does not need
+ * the `nuxi prepare`.
  */
-export function privateFixture(): string {
+export function privateFixture(prepare = true): string {
   const copy = mkdtempSync(join(NUXT4_ROOT, '..', 'nuxt4-private-'));
   cpSync(NUXT4_ROOT, copy, {
     recursive: true,
     filter: source => !/\/(?:node_modules|\.nuxt[^/]*)(?:\/|$)/u.test(source),
   });
   symlinkSync(join(NUXT4_ROOT, 'node_modules'), join(copy, 'node_modules'));
-  prepareFixture(copy);
+  if (prepare) {
+    prepareFixture(copy);
+  }
   return copy;
 }

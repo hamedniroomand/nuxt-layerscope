@@ -1,7 +1,5 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-
 import { defineNuxtModule } from '@nuxt/kit';
-import { dirname, join } from 'pathe';
+import { join } from 'pathe';
 
 import type { ProjectConfig } from '#src/config/effective.ts';
 import { pickProjectConfig } from '#src/config/effective.ts';
@@ -10,6 +8,8 @@ import { REGISTRY_FILE } from '#src/registry/schema.ts';
 import { packageVersion } from '#src/version.ts';
 
 import { RegistryCollector } from './collect.ts';
+import { writeOnDevChanges, writeOnPrepareTypes } from './dev-writes.ts';
+import { RegistryWriter } from './writer.ts';
 
 export interface ModuleOptions extends ProjectConfig {
   /** Write `.nuxt/layerscope/registry.json`. Defaults to `true`. */
@@ -20,12 +20,6 @@ export interface ModuleOptions extends ProjectConfig {
    * to `/__layerscope/` in the public output.
    */
   devtools: boolean | { static?: boolean };
-}
-
-async function writeRegistry(collector: RegistryCollector, buildDir: string): Promise<void> {
-  const file = join(buildDir, REGISTRY_FILE);
-  await mkdir(dirname(file), { recursive: true });
-  await writeFile(file, `${JSON.stringify(await collector.collect(), null, 2)}\n`);
 }
 
 /**
@@ -46,16 +40,31 @@ export const layerscopeModule = defineNuxtModule<ModuleOptions>({
     }
     const collector = new RegistryCollector(nuxt, pickProjectConfig(options));
     collector.install();
-    const write = async (): Promise<void> => {
-      await writeRegistry(collector, nuxt.options.buildDir);
-    };
+    const writer = new RegistryWriter(join(nuxt.options.buildDir, REGISTRY_FILE), async () => {
+      return `${JSON.stringify(await collector.collect(), null, 2)}\n`;
+    });
+    // A soft restart of `nuxi dev` makes a new Nuxt, and the old handlers can still run.
+    nuxt.hook('close', () => {
+      writer.close();
+    });
     // Runs on `nuxi prepare`, `nuxi build` and the first `nuxi dev` build.
-    nuxt.hook('prepare:types', write);
+    writeOnPrepareTypes(nuxt, async () => {
+      await writer.request();
+    });
     if (nuxt.options.dev) {
-      // Components and imports are rescanned while `nuxi dev` runs.
-      nuxt.hook('app:templatesGenerated', write);
+      let invalidateTab = (): void => undefined;
+      writeOnDevChanges(nuxt, {
+        request: async () => {
+          await writer.request();
+        },
+        isNitroImportFile: file => collector.isNitroImportFile(file),
+        afterWatchWrite: () => {
+          invalidateTab();
+        },
+      });
+      // After the write hooks: the tab handles `app:templatesGenerated` after the write.
       if (options.devtools !== false) {
-        setupDevtools(nuxt);
+        invalidateTab = setupDevtools(nuxt);
       }
     } else if (typeof options.devtools === 'object' && options.devtools.static === true) {
       setupStaticDevtools(nuxt);

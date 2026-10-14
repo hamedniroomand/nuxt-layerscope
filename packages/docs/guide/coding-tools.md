@@ -121,7 +121,8 @@ Every tool only reads. The tools never write a file or edit `allow` or the basel
 The server checks the generated files each time it runs the analysis. Calls that come less than
 300 ms apart share one analysis. After you add or delete a component or an auto-import file, a
 tool call can fail with an error that names the file. Run `nuxi prepare` to fix it. Under
-`nuxi dev`, the error can show for a short time after you add a component or a composable.
+`nuxi dev`, the error can show for a short time after you add or delete a component or an
+auto-import file. The layerscope module then writes the registry again.
 
 The server refuses a path outside the project root. There is one exception: `can_use` and
 `suggest` also accept the path of a file that belongs to a layer, for example a file in a layer

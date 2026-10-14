@@ -1,12 +1,13 @@
-import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { assertImportDirsFresh } from '#src/analyze/import-dirs-fresh.ts';
-import { collectImportDirs, loadUnimport } from '#src/module/import-dirs.ts';
+import { ImportDirRecorder, collectImportDirs, loadUnimport } from '#src/module/import-dirs.ts';
 import type { UnimportScan } from '#src/module/import-dirs.ts';
+import type { Nitro } from '#src/module/nuxt.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
 
 /** The unimport that Nuxt uses for the fixture: the real code that makes the globs of a scan. */
@@ -97,5 +98,18 @@ describe('collectImportDirs with a relative dir and a new ignored file', () => {
     await expect(assertImportDirsFresh(recorded)).rejects.toThrow(/helper\.d\.ts is missing/u);
     const again = await collectImportDirs(scans, unimport);
     await expect(assertImportDirsFresh(again)).resolves.toBeUndefined();
+  });
+});
+
+describe('ImportDirRecorder.isNitroFile', () => {
+  it('finds a file of a Nitro dir by its real path and by a path through a symlink', async () => {
+    const base = project({ 'real/server/utils/a.ts': '' });
+    symlinkSync(join(base, 'real'), join(base, 'link'));
+    const nitro = { options: { imports: { dirs: [join(base, 'link/server/utils')] } } } as Nitro;
+    const recorder = new ImportDirRecorder();
+    await recorder.recordNitro(NUXT4_ROOT, nitro);
+    expect(recorder.isNitroFile(join(base, 'real/server/utils/a.ts'))).toBe(true);
+    expect(recorder.isNitroFile(join(base, 'link/server/utils/a.ts'))).toBe(true);
+    expect(recorder.isNitroFile(join(base, 'real/server/utils/b.ts'))).toBe(false);
   });
 });

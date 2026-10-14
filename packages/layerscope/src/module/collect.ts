@@ -3,78 +3,37 @@ import { isAbsolute, resolve } from 'pathe';
 import type { ProjectConfig } from '#src/config/effective.ts';
 import type { NuxtOptions } from '#src/nuxt/kit.ts';
 import { layersForModule } from '#src/nuxt/layers.ts';
-import { recordedComponents } from '#src/registry/component-files.ts';
 import type {
   ComponentMode,
   Registry,
   RegistryComponent,
   RegistryComponentDir,
-  RegistryImport,
+  RegistryImportDir,
   ShadowedComponent,
 } from '#src/registry/schema.ts';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
-import { compareStrings } from '#src/utils/strings.ts';
 import { packageVersion } from '#src/version.ts';
 
-import { ImportDirRecorder } from './import-dirs.ts';
+import { recordComponentDirs, shadowedBy } from './components.ts';
+import { ImportDirRecorder, mergeImportDirs } from './import-dirs.ts';
+import { NitroImports, activeImports, registryImports, resolveAlias } from './imports.ts';
 import type { Component, ComponentsDir, Nitro, Nuxt, Unimport, UnimportImport } from './nuxt.ts';
 import { onNitroInit } from './nuxt.ts';
 
-// Same defaults as Nuxt's components module.
-const COMPONENT_IGNORE = [
-  '**/*{M,.m,-m}ixin.{js,ts,jsx,tsx}',
-  '**/*.{d.ts,d.mts,d.cts,d.vue.ts,d.vue.mts,d.vue.cts}',
-];
-
-// Written by hand into `shared-imports.d.ts`: available in both app and server code.
-const SHARED_BUILTINS: RegistryImport[] = [
-  { name: 'useRuntimeConfig', from: 'nuxt' },
-  { name: 'useAppConfig', from: 'nuxt' },
-  { name: 'defineAppConfig', from: 'nuxt' },
-  { name: 'createError', from: 'h3' },
-  { name: 'setResponseStatus', from: 'h3' },
-];
-const SHARED_BUILTIN_NAMES = new Set(SHARED_BUILTINS.map(entry => entry.name));
-
 const SERVER_PLACEHOLDER = '/components/server-placeholder';
-
-type AliasMap = Record<string, string>;
-
-function resolveAlias(path: string, aliases: AliasMap): string {
-  const key = Object.keys(aliases)
-    .toSorted((a, b) => b.length - a.length)
-    .find(alias => path === alias || path.startsWith(`${alias}/`));
-  return key === undefined ? path : aliases[key] + path.slice(key.length);
-}
 
 function toMode(mode: string | undefined): ComponentMode {
   return mode === 'client' || mode === 'server' ? mode : 'all';
 }
 
-function byName<T extends { name: string }>(entries: T[]): T[] {
-  return entries.toSorted((a, b) => compareStrings(a.name, b.name));
-}
-
-function importName(entry: UnimportImport): string {
-  return entry.as ?? entry.name;
-}
-
-async function activeImports(context: Unimport | null | undefined): Promise<UnimportImport[]> {
-  const imports = context === null || context === undefined ? [] : await context.getImports();
-  return imports.filter(entry => entry.type !== true && entry.disabled !== true);
-}
-
-function toRegistryImports(imports: UnimportImport[], aliases: AliasMap): RegistryImport[] {
-  return byName(
-    imports.map(entry => {
-      const from = resolveAlias(entry.from, aliases);
-      return { name: importName(entry), from: isAbsolute(from) ? resolve(from) : from };
-    }),
-  );
-}
-
-function withoutDot(extension: string): string {
-  return extension.replace(/^\./u, '');
+/** What Nuxt's own scan of the app gives: components, app auto-imports and their dirs. */
+interface AppPart {
+  componentDirs: RegistryComponentDir[];
+  components: RegistryComponent[];
+  shadowedComponents: ShadowedComponent[];
+  /** Not resolved yet: the shared imports compare the raw `from` with the server imports. */
+  imports: UnimportImport[];
+  importDirs: RegistryImportDir[] | null;
 }
 
 /**
@@ -94,6 +53,11 @@ export class RegistryCollector {
   private appImports: Unimport | null = null;
   private nitro: Nitro | null = null;
   private readonly importDirs = new ImportDirRecorder();
+  private readonly nitroImports = new NitroImports();
+  /** The app part of the last collect. */
+  private app: AppPart | null = null;
+  /** Nuxt scanned the app again after the last collect read the app part. */
+  private appScanned = true;
 
   public constructor(nuxt: Nuxt, config: ProjectConfig) {
     this.config = config;
@@ -114,6 +78,11 @@ export class RegistryCollector {
       // Nuxt scans every dir before this hook, so this pass is complete.
       this.lastScan = [...this.scanned.values()];
       this.scanned.clear();
+      this.appScanned = true;
+    });
+    // Nuxt writes its templates after it scans components and app auto-imports again.
+    nuxt.hook('app:templatesGenerated', () => {
+      this.appScanned = true;
     });
     // Nuxt keeps this array and modules add to it, so it is read when the registry is written.
     nuxt.hook('imports:dirs', dirs => {
@@ -122,8 +91,11 @@ export class RegistryCollector {
     nuxt.hook('imports:context', context => {
       this.appImports = context;
     });
-    onNitroInit(nuxt, nitro => {
+    onNitroInit(nuxt, async nitro => {
       this.nitro = nitro;
+      if (nuxt.options.dev) {
+        await this.nitroImports.start(nitro.unimport);
+      }
     });
   }
 
@@ -143,17 +115,40 @@ export class RegistryCollector {
     }
   }
 
+  /**
+   * Builds and returns the registry from two parts: the app part (components and app
+   * auto-imports) and the Nitro part (server auto-imports).
+   *
+   * The app part comes only from the scan of Nuxt. Under `nuxi dev`, a write can start from a
+   * watcher event before Nuxt scans the app again. Then the globs of the dirs find a new
+   * component, but the list of Nuxt does not have it yet. The stale check would pass, and the
+   * analysis would miss the component. So the app part is read again only after
+   * `components:extend` or `app:templatesGenerated`. Else the last app part is used. Its file
+   * lists and its symbols agree, so a new file gives the stale error until Nuxt scans again.
+   *
+   * Limit: Nuxt starts `generateApp` with a leading debounce of 25 ms. It does not run again for a
+   * call in the 25 ms after the call before. A file that is added in that time can stay out of the
+   * scan of Nuxt until the next file event. The stale error for that file then stays until the
+   * next scan or `nuxi prepare`.
+   *
+   * The Nitro part is read again in each collect, in any order: the collect scans the dirs of
+   * Nitro again with Nitro's own unimport (see `NitroImports`).
+   */
   public async collect(): Promise<Registry> {
-    const [componentDirs, imports, importDirs] = await Promise.all([
-      this.componentDirs(),
-      this.imports(),
-      this.importDirs.record(this.nuxt.options.rootDir, this.nitro),
+    const { rootDir } = this.nuxt.options;
+    const [app, nitroDirs, server] = await Promise.all([
+      this.appPart(),
+      this.importDirs.recordNitro(rootDir, this.nitro),
+      this.nitroImports.read(this.nitro?.unimport, this.nuxt.options.rootDir),
     ]);
+    const importDirs =
+      app.importDirs === null || nitroDirs === null
+        ? null
+        : mergeImportDirs([app.importDirs, nitroDirs]);
     // From the project's own kit, as the CLI does. The fields that layerscope reads are the same in
     // the schema type and in its own subset type.
     const { options } = this.nuxt;
-    const layers = await layersForModule(options.rootDir, options as unknown as NuxtOptions);
-    const components = this.components();
+    const layers = await layersForModule(rootDir, options as unknown as NuxtOptions);
     return {
       version: REGISTRY_VERSION,
       generator: {
@@ -162,13 +157,40 @@ export class RegistryCollector {
         nuxt: this.nuxt._version,
       },
       layers,
-      components,
-      shadowedComponents: this.shadowed(components),
-      componentDirs,
+      components: app.components,
+      shadowedComponents: app.shadowedComponents,
+      componentDirs: app.componentDirs,
       importDirs,
-      imports,
+      imports: this.imports(app.imports, server),
       ...(Object.keys(this.config).length > 0 ? { config: this.config } : {}),
     };
+  }
+
+  /** Whether the last collect recorded the file in an import dir of Nitro. */
+  public isNitroImportFile(file: string): boolean {
+    return this.importDirs.isNitroFile(file);
+  }
+
+  private async appPart(): Promise<AppPart> {
+    if (this.app !== null && !this.appScanned) {
+      return this.app;
+    }
+    // Cleared before the reads: a scan during them sets it again for the next collect.
+    this.appScanned = false;
+    const [componentDirs, imports, importDirs] = await Promise.all([
+      this.componentDirs(),
+      activeImports(this.appImports),
+      this.importDirs.recordApp(this.nuxt.options.rootDir),
+    ]);
+    const components = this.components();
+    this.app = {
+      componentDirs,
+      components,
+      shadowedComponents: this.shadowed(components),
+      imports,
+      importDirs,
+    };
+    return this.app;
   }
 
   private toFile(path: string): string {
@@ -193,56 +215,26 @@ export class RegistryCollector {
   }
 
   private shadowed(registered: RegistryComponent[]): ShadowedComponent[] {
-    const files = new Set(registered.map(component => component.file));
-    const shadowed = this.lastScan
-      .map(component => this.toComponent(component))
-      .filter(component => !files.has(component.file))
-      .flatMap(component => {
-        // Nuxt replaces a component of the same name whose mode is `all` or the same.
-        const winner = registered.find(
-          other =>
-            other.name === component.name &&
-            (other.mode === 'all' || component.mode === 'all' || other.mode === component.mode),
-        );
-        return winner === undefined ? [] : [{ ...component, shadowedBy: winner.file }];
-      });
-    return shadowed.toSorted((a, b) => compareStrings(a.file, b.file));
+    return shadowedBy(
+      this.lastScan.map(component => this.toComponent(component)),
+      registered,
+    );
   }
 
   private async componentDirs(): Promise<RegistryComponentDir[]> {
     const { alias, extensions } = this.nuxt.options;
-    const jobs = this.dirs.map(async dir => {
-      const path = resolve(resolveAlias(dir.path, alias));
-      const exts = (dir.extensions ?? extensions).map(ext => withoutDot(ext));
-      const pattern =
-        dir.pattern ?? (exts.length > 1 ? `**/*.{${exts.join(',')}}` : `**/*.${exts[0] ?? '*'}`);
-      const ignore = [...COMPONENT_IGNORE, ...(dir.ignore ?? [])];
-      const files = await recordedComponents(path, pattern, ignore);
-      return { path, pattern, ignore, files };
-    });
-    const dirs = await Promise.all(jobs);
+    const dirs = await recordComponentDirs(
+      this.dirs.map(dir => ({ ...dir, path: resolve(resolveAlias(dir.path, alias)) })),
+      extensions,
+    );
     return dirs;
   }
 
-  private async imports(): Promise<Registry['imports']> {
-    const serverContext = this.nitro?.unimport;
-    // Nitro scans its import dirs when it writes types, which may run after this hook.
-    await serverContext?.init?.();
-    const app = await activeImports(this.appImports);
-    const server = await activeImports(serverContext);
-    // Nuxt's rule for `shared-imports.d.ts`: same name and same unresolved source in both.
-    const serverFrom = new Map(server.map(entry => [importName(entry), entry.from]));
-    const shared = app.filter(
-      entry =>
-        !SHARED_BUILTIN_NAMES.has(importName(entry)) &&
-        serverFrom.get(importName(entry)) === entry.from,
-    );
+  private imports(app: UnimportImport[], server: UnimportImport[]): Registry['imports'] {
     const nuxtAliases = this.nuxt.options.alias;
-    const serverAliases = { ...nuxtAliases, ...this.nitro?.options.alias };
-    return {
-      app: toRegistryImports(app, nuxtAliases),
-      server: toRegistryImports(server, serverAliases),
-      shared: byName([...SHARED_BUILTINS, ...toRegistryImports(shared, nuxtAliases)]),
-    };
+    return registryImports(app, server, nuxtAliases, {
+      ...nuxtAliases,
+      ...this.nitro?.options.alias,
+    });
   }
 }

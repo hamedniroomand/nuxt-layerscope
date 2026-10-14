@@ -151,10 +151,10 @@ layerscope check --watch
   file, run `nuxi prepare`. If a new file is missing from the generated files, or the generated
   files name a file that is gone, each run stops with an error that names that file. The watch
   reads the registry again when it changes. The option `--prepare` runs `nuxi prepare` once, at
-  the start. When `nuxi dev` runs, the error can show for a short time after you add a component
-  or a composable. Nuxt then writes the registry again, and the next run is clean. Nuxt does not
-  write the registry again after you add a server util, or a file that Nuxt ignores, such as a
-  test file. Then run `nuxi prepare`.
+  the start. When `nuxi dev` runs, the error can show for a short time after you add or delete a
+  component or an auto-import file. The layerscope module then writes the registry again, and the
+  next run is clean. The module does not write the registry again after you add a file that Nuxt
+  ignores, such as a test file. If the error stays, run `nuxi prepare`.
 - A change to `layerscope.config.*` applies on the next run, in every config format. A local file
   that the config imports is not read again: change the config file as well (for example, add a
   comment), or start the watch again.

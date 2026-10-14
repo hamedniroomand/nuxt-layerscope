@@ -18,10 +18,9 @@ type WatchHook = (name: 'builder:watch', handler: () => void) => unknown;
 
 /**
  * The options of the analyzer behind the tab. The Unused view counts the extra files too. The tab
- * does not set `recheckStale`. It runs only under `nuxi dev`, which writes the registry and the
- * `.d.ts` files again after a new component or composable, so the env key changes. After a new
- * server util, Nuxt does not write them, so the tab can keep the old symbol table until the next
- * template change. A check on each run would show a stale error in the tab instead.
+ * does not set `recheckStale`. It runs only under `nuxi dev`, where the module writes the registry
+ * again after a new or deleted file, so the env key changes. A check on each run would show a
+ * stale error in the tab for a short time after each new file.
  */
 export function sessionOptions(rootDir: string, buildDir: string): AnalyzerOptions {
   return {
@@ -32,8 +31,11 @@ export function sessionOptions(rootDir: string, buildDir: string): AnalyzerOptio
   };
 }
 
-/** A Nuxt DevTools tab with the layer report, served while `nuxi dev` runs. */
-export function setupDevtools(nuxt: Nuxt): void {
+/**
+ * A Nuxt DevTools tab with the layer report, served while `nuxi dev` runs. Returns the function
+ * that marks the analysis of the tab as old, for a registry write that comes after `builder:watch`.
+ */
+export function setupDevtools(nuxt: Nuxt): () => void {
   const { rootDir, buildDir, app } = nuxt.options;
   // Created on the first request; until then the hooks below do nothing.
   let session: Session | undefined;
@@ -61,6 +63,7 @@ export function setupDevtools(nuxt: Nuxt): void {
       view: { type: 'iframe', src: DEVTOOLS_ROUTE },
     });
   });
+  return invalidate;
 }
 
 /** The slice of Nitro's config the snapshot changes; typed by Nuxt's Nitro integration. */
