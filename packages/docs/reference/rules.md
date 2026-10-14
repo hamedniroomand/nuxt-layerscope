@@ -23,14 +23,14 @@ layers/admin/app/components/AdminPanel.vue
 
 These kinds of dependency are checked:
 
-| Kind                     | Example                                                                                                                          |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| Auto-imported composable | `useCart()` in a script or <code v-pre>{{ formatPrice(total) }}</code> in a template                                             |
-| Component                | `<CartSummary>`, `<cart-summary>`, `<LazyCartSummary>`, `resolveComponent('cart-summary')`, `h(CartSummary)` (see below)         |
-| Nitro server util        | `getCartStore()` in `server/api/*.ts`                                                                                            |
-| Shared util              | `formatMoney()` from another layer's `shared/utils`                                                                              |
-| Explicit import          | `import { useCart } from '#layers/web/app/composables/useCart'`, `~/…`, relative paths, `@acme/ui-layer/app/composables/useAcme` |
-| Virtual module import    | `import { useCart } from '#imports'`, `import { CartSummary } from '#components'`                                                |
+| Kind                     | Example                                                                                                                                            |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auto-imported composable | `useCart()` in a script or <code v-pre>{{ formatPrice(total) }}</code> in a template                                                               |
+| Component                | `<CartSummary>`, `<cart-summary>`, `<LazyCartSummary>`, `resolveComponent('cart-summary')`, `h(CartSummary)`, `<CartSummary />` in JSX (see below) |
+| Nitro server util        | `getCartStore()` in `server/api/*.ts`                                                                                                              |
+| Shared util              | `formatMoney()` from another layer's `shared/utils`                                                                                                |
+| Explicit import          | `import { useCart } from '#layers/web/app/composables/useCart'`, `~/…`, relative paths, `@acme/ui-layer/app/composables/useAcme`                   |
+| Virtual module import    | `import { useCart } from '#imports'`, `import { CartSummary } from '#components'`                                                                  |
 
 `<NuxtIsland name="X">` is a use of the island component `X`. layerscope sees it only with the
 registry, because the `.d.ts` files do not list island components.
@@ -58,6 +58,12 @@ local binding has that name. Nuxt reads the text of the name and does not look a
 changes such an `h()` call to an import of the component. Nuxt does not change `h()` in a `.ts` or
 `.js` file or in the `server/` dir, so there `unresolved-reference` reports a name that has no
 binding.
+
+In a `.jsx` or `.tsx` file, or a `<script lang="jsx">` or `<script lang="tsx">` block, outside the
+`server/` dir, a JSX tag such as `<CartSummary />` or `<cart-summary />` is a use of that component
+when it is not an HTML or SVG element, not `Fragment`, not a local binding and not a JavaScript
+global such as `Map`. Vue's JSX plugin compiles such a tag to `resolveComponent()`, and Nuxt changes
+it to an import. A tag that is a local binding is a use of that binding, as in a script.
 
 A component name can have more than one file: a `.client` file, a `.server` file and a file with no
 suffix, in one layer or in different layers. Nuxt uses one file in the browser and one file on the

@@ -18,7 +18,7 @@ import type { ImportEnv, ImportOutcome, ImportTarget } from './import-refs.ts';
 import { isIgnored, lookupAutoImports, outcomesOf } from './import-refs.ts';
 import { GLOBALS_HINT, unresolvedName } from './unresolved-messages.ts';
 
-/** The files whose `h(CartSummary)` Nuxt changes to the component: its loader reads no others. */
+/** The files whose `h(CartSummary)` and JSX tags Nuxt changes to the component: its loader reads no others. */
 const RENDER_FILE = /\.(?:vue|jsx|tsx)$/u;
 
 export interface AnalysisEnv extends ImportEnv {
@@ -154,7 +154,9 @@ export class FileAnalysis {
   }
 
   private addComponents(scan: FileScan): void {
-    for (const ref of scan.components) {
+    // Vue's JSX plugin compiles a JSX tag to `resolveComponent()`; Nuxt resolves it outside Nitro.
+    const jsxTags = RENDER_FILE.test(this.file) && this.context !== 'server' ? scan.jsxTags : [];
+    for (const ref of [...scan.components, ...jsxTags]) {
       if (!this.addComponentEdges(ref) && !this.env.components.has(ref.name)) {
         this.addUnresolved(
           ref.name,
