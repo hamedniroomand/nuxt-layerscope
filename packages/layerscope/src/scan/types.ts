@@ -7,6 +7,11 @@ export interface FileScan {
   /** Identifiers a template reads from the component instance (`_ctx.x`). */
   templateIdents: Named[];
   components: Named[];
+  /**
+   * The identifiers that are the first argument of `h()`, as in `h(CartSummary)`. In a `.vue`,
+   * `.jsx` or `.tsx` file, Nuxt changes such a name to its component by its text, whatever binds it.
+   */
+  renderArgs: Named[];
   /** Offsets of `<component :is>` bound to a runtime value. */
   dynamicComponents: number[];
   /**
@@ -67,6 +72,7 @@ export function emptyScan(): FileScan {
     typeFree: [],
     templateIdents: [],
     components: [],
+    renderArgs: [],
     dynamicComponents: [],
     quietDynamicComponents: [],
     imports: [],

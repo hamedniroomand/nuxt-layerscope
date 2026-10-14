@@ -1,9 +1,6 @@
-import { readFileSync } from 'node:fs';
-
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
 import type { SymbolTarget } from '#src/nuxt/symbols.ts';
-import { scanFile } from '#src/scan/index.ts';
-import type { FileScan, ImportRef } from '#src/scan/types.ts';
+import type { FileScan, ImportRef, Named } from '#src/scan/types.ts';
 import type {
   Context,
   Edge,
@@ -22,6 +19,9 @@ import { isIgnored, lookupAutoImports, outcomesOf } from './import-refs.ts';
 
 /** Runtime registrations (plugins, `app.component`, `vueApp.use`) are invisible statically. */
 const GLOBALS_HINT = 'if it is registered at runtime, add it to "globals" in layerscope.config.ts';
+
+/** The files whose `h(CartSummary)` Nuxt changes to the component: its loader reads no others. */
+const RENDER_FILE = /\.(?:vue|jsx|tsx)$/u;
 
 export interface AnalysisEnv extends ImportEnv {
   ownerOf: OwnerLookup;
@@ -111,7 +111,20 @@ export class FileAnalysis {
   }
 
   private addIdentifiers(scan: FileScan): void {
+    // Nuxt changes `h(CartSummary)` by its text, so a local or imported `CartSummary` is the
+    // component too. Such a free name is then not an auto-import or a warning. The loader of Nuxt
+    // is not in the Nitro build, so a server file keeps its names.
+    const components = new Set<number>();
+    const isRendered = RENDER_FILE.test(this.file) && this.context !== 'server';
+    for (const ref of isRendered ? scan.renderArgs : []) {
+      if (this.addComponentEdges(ref)) {
+        components.add(ref.offset);
+      }
+    }
     for (const ref of scan.free) {
+      if (components.has(ref.offset)) {
+        continue;
+      }
       const targets = lookupAutoImports(this.env.table, this.contexts, ref.name);
       if (targets.length > 0) {
         this.addAutoImports(ref.name, ref.offset, targets);
@@ -144,16 +157,7 @@ export class FileAnalysis {
 
   private addComponents(scan: FileScan): void {
     for (const ref of scan.components) {
-      const targets = this.env.table.components.get(ref.name);
-      if (targets !== undefined) {
-        // Each file of the name is a dependency: Nuxt can use one in the browser and one on the server.
-        for (const target of targets) {
-          this.addEdge('component', ref.name, ref.offset, {
-            to: target.file,
-            external: target.module,
-          });
-        }
-      } else if (!this.env.components.has(ref.name)) {
+      if (!this.addComponentEdges(ref) && !this.env.components.has(ref.name)) {
         this.addUnresolved(
           ref.name,
           ref.offset,
@@ -170,6 +174,16 @@ export class FileAnalysis {
         'Dynamic component bound to a runtime value cannot be resolved statically',
       );
     }
+  }
+
+  /** An edge to each file of a component name; `false` when the name is not a component. */
+  private addComponentEdges({ name, offset }: Named): boolean {
+    const targets = this.env.table.components.get(name) ?? [];
+    // Each file of the name is a dependency: Nuxt can use one in the browser and one on the server.
+    for (const { file, module } of targets) {
+      this.addEdge('component', name, offset, { to: file, external: module });
+    }
+    return targets.length > 0;
   }
 
   private addImports(scan: FileScan): void {
@@ -280,15 +294,4 @@ export class FileAnalysis {
       message,
     });
   }
-}
-
-/** Reads, scans and analyzes one source file. */
-export function analyzeFile(
-  file: string,
-  layer: Layer,
-  env: AnalysisEnv,
-  anyContext = false,
-): FileAnalysis {
-  const source = readFileSync(file, 'utf8');
-  return new FileAnalysis(file, source, layer, env, anyContext).run(scanFile(source, file));
 }

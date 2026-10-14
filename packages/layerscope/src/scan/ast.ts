@@ -5,7 +5,10 @@ export function stringLiteral(node: Node | null | undefined): string | null {
   return node?.type === 'Literal' && typeof node.value === 'string' ? node.value : null;
 }
 
-/** The path of `import()` or `require()` when it is fixed: a string, or a template literal with no `${}`. */
+/**
+ * The path of `import()` or `require()`, or the name in `resolveComponent()`, when it is fixed: a
+ * string, or a template literal with no `${}`.
+ */
 export function fixedPath(node: Node | null | undefined): string | null {
   if (node?.type === 'TemplateLiteral' && node.expressions.length === 0) {
     return node.quasis[0]?.value.cooked ?? null;

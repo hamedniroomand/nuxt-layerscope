@@ -1,14 +1,26 @@
-import { statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 
 import type { SymbolTable } from '#src/nuxt/symbols.ts';
+import { scanFile } from '#src/scan/index.ts';
 import type { AnalyzeResult, Edge, Layer, LayerscopeConfig } from '#src/types.ts';
 import { realPath } from '#src/utils/fs.ts';
 import { createYielder, yieldTurn } from '#src/utils/yield.ts';
 
 import type { Environment } from './environment.ts';
 import type { AnalysisEnv } from './file-analysis.ts';
-import { analyzeFile, FileAnalysis } from './file-analysis.ts';
+import { FileAnalysis } from './file-analysis.ts';
 import { extraSeeds, isExtraFile } from './files.ts';
+
+/** Reads, scans and analyzes one source file. */
+export function analyzeFile(
+  file: string,
+  layer: Layer,
+  env: AnalysisEnv,
+  anyContext = false,
+): FileAnalysis {
+  const source = readFileSync(file, 'utf8');
+  return new FileAnalysis(file, source, layer, env, anyContext).run(scanFile(source, file));
+}
 
 /** The files that render a dynamic component, and the files with code that is not read. */
 export function fileLists(
