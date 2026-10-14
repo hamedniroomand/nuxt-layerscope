@@ -113,3 +113,24 @@ describe('the baseline writes of the tab, while a run is in flight', () => {
     expect(existsSync(join(root, 'one.json'))).toBe(false);
   });
 });
+
+describe('the baseline writes of the tab, when the config changes during the analysis', () => {
+  it('refuses the write with 409, and writes no file', async () => {
+    const { root, app, post, meta, nameFile } = await setup();
+    const before = await meta();
+    nameFile('two.json');
+    const held = Promise.withResolvers<ReturnType<typeof makeResult>>();
+    app.run.mockReturnValueOnce(held.promise);
+    const written = post('/api/baseline/ignore', { ...before, keys: [KEY] });
+    // The write request sees the change and starts a run. The config changes again while it runs.
+    await vi.waitFor(() => {
+      expect(app.run).toHaveBeenCalledTimes(2);
+    });
+    nameFile('three.json');
+    held.resolve(makeResult({ findings: [cart], config: { baseline: 'two.json' } }));
+    expect((await written).status).toBe(409);
+    for (const name of ['one.json', 'two.json', 'three.json']) {
+      expect(existsSync(join(root, name))).toBe(false);
+    }
+  });
+});

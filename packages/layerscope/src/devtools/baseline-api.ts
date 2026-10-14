@@ -78,6 +78,13 @@ async function edit(path: string, body: EditBody, session: Session): Promise<Rep
     return { status: 400, body: { error: 'Unknown finding keys', keys: unknown } };
   }
   const { ignoreFindings, removeEntries } = await import('#src/baseline/edit.ts');
+  // The config can change while the analysis runs. Then the snapshot can name an old baseline file.
+  if (await analyzer.invalidateIfChanged()) {
+    return {
+      status: 409,
+      body: { error: 'The findings changed', id: snapshot.id, rev: snapshot.rev },
+    };
+  }
   const { result } = snapshot;
   const file = analyzer.baselineFileOf(result);
   const all = [...result.findings, ...(result.baseline?.suppressed ?? [])];
