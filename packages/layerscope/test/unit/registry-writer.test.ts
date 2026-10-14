@@ -1,4 +1,12 @@
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import * as fsPromises from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
@@ -8,13 +16,21 @@ import { beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 import { RegistryWriter } from '#src/module/writer.ts';
 
 /** The next `renameFailures` renames fail with `renameCode`. */
-const fs = vi.hoisted(() => ({ renameFailures: 0, renameCode: 'EPERM' }));
+const fs = vi.hoisted(() => ({
+  renameFailures: 0,
+  renameCode: 'EPERM',
+  /** When set, writeFile waits for it before it writes. */
+  writeGate: null as Promise<void> | null,
+}));
 
 vi.mock('node:fs/promises', async importOriginal => {
   const real = await importOriginal<typeof fsPromises>();
   return {
     ...real,
-    writeFile: vi.fn(real.writeFile),
+    writeFile: vi.fn(async (...args: Parameters<typeof real.writeFile>) => {
+      await fs.writeGate;
+      await real.writeFile(...args);
+    }),
     rename: vi.fn(async (from: string, to: string) => {
       if (fs.renameFailures > 0) {
         fs.renameFailures -= 1;
@@ -28,6 +44,7 @@ vi.mock('node:fs/promises', async importOriginal => {
 beforeEach(() => {
   fs.renameFailures = 0;
   fs.renameCode = 'EPERM';
+  fs.writeGate = null;
   vi.mocked(fsPromises.writeFile).mockClear();
   vi.mocked(fsPromises.rename).mockClear();
 });
@@ -156,6 +173,28 @@ describe('RegistryWriter and a reader of the file', () => {
     expect(new Set(temps).size).toBe(2);
     expect(['one', 'two']).toContain(readFileSync(first.file, 'utf8'));
     expect(readdirSync(dirname(first.file))).toEqual([basename(first.file)]);
+  });
+});
+
+describe('RegistryWriter after close', () => {
+  it('does not replace the file when it closes during a write', async () => {
+    const { writer, file } = setup();
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, 'other');
+    let release = (): void => undefined;
+    fs.writeGate = new Promise<void>(resolve => {
+      release = resolve;
+    });
+    const request = writer.request();
+    await vi.waitFor(() => {
+      expect(fsPromises.writeFile).toHaveBeenCalled();
+    });
+    // A soft restart of `nuxi dev` closes the old writer while its write runs.
+    writer.close();
+    release();
+    await request;
+    expect(readFileSync(file, 'utf8')).toBe('other');
+    expect(readdirSync(dirname(file))).toEqual([basename(file)]);
   });
 
   it('does nothing after close', async () => {

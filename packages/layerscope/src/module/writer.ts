@@ -134,6 +134,13 @@ export class RegistryWriter {
     const temp = `${this.file}.${process.pid}.${tempCount}.tmp`;
     try {
       await writeFile(temp, content);
+      // After a soft restart of `nuxi dev`, the new Nuxt writes the file. The old writer must not
+      // replace it. A close between this check and the rename can still replace it once, and the
+      // next write of the new Nuxt corrects it.
+      if (this.closed) {
+        await rm(temp);
+        return;
+      }
       await renameWithRetry(temp, this.file);
     } catch (error) {
       await removeTemp(temp, error);
