@@ -26,10 +26,10 @@ module is better in three ways:
 
 ## When it runs
 
-The registry is written whenever Nuxt generates types:
+The registry is written whenever Nuxt generates types, and under `nuxi dev` also when files change:
 
 - `nuxi prepare` (and `layerscope check --prepare`)
-- `nuxi dev`, again after each change that adds or removes components or auto-imports
+- `nuxi dev`, again after you add or delete a file, and after you edit a server auto-import file
 - `nuxi build`
 
 It adds no code to your app and does nothing at runtime.

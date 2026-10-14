@@ -8,7 +8,9 @@ layerscope reads files Nuxt generates. Run `npx nuxi prepare`, or pass `--prepar
 
 The generated files are older than your code: a component or composable was added, renamed or
 deleted since `nuxi prepare` last ran. Run it again, or pass `--prepare`. In CI, make sure
-`nuxi prepare` runs after checkout; restoring `.nuxt` from a cache is a common cause.
+`nuxi prepare` runs after checkout; restoring `.nuxt` from a cache is a common cause. Under
+`nuxi dev`, the generated files are written again after a short time, and the error goes away.
+If it stays, run `nuxi prepare`.
 
 "… is missing from the layerscope registry" names the new file. It comes only from the registry,
 not from the `.d.ts` files. The file can be any new file in an auto-import dir, not only a

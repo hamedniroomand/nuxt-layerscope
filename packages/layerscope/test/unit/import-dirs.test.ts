@@ -87,8 +87,8 @@ describe.each([
 
   it('records null, warns once with the cause, and does not throw', async () => {
     const recorder = new ImportDirRecorder();
-    expect(await recorder.record('/p', null)).toBeNull();
-    expect(await recorder.record('/p', null)).toBeNull();
+    expect(await recorder.recordApp('/p')).toBeNull();
+    expect(await recorder.recordNitro('/p', null)).toBeNull();
     expect(kit.warn).toHaveBeenCalledTimes(1);
     expect(kit.warn.mock.calls[0]?.[0]).toContain(cause);
     expect(kit.warn.mock.calls[0]?.[0]).toMatch(

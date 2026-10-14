@@ -17,6 +17,20 @@ export interface Unimport {
   getImports: () => Promise<UnimportImport[]>;
   /** Scans the configured dirs; Nitro calls it before writing its types. */
   init?: () => Promise<void>;
+  /**
+   * Scans the dirs of the instance again, as `init()` does, and gives the imports of this scan.
+   * An older unimport can lack it.
+   */
+  scanImportsFromDir?: () => Promise<UnimportImport[]>;
+  /**
+   * The state of the instance. `options.dirs` are the dirs that `init()` scans. `getImports()`
+   * dedupes `staticImports` (with the presets) and `dynamicImports` (from the scans and modules).
+   */
+  getInternalContext?: () => {
+    options?: { dirs?: unknown[] } & Record<string, unknown>;
+    staticImports?: UnimportImport[];
+    dynamicImports?: UnimportImport[];
+  };
 }
 
 export interface Nitro {
@@ -28,10 +42,13 @@ export interface Nitro {
   };
 }
 
-type NitroInitHook = (name: 'nitro:init', handler: (nitro: Nitro) => void) => unknown;
+type NitroInitHook = (
+  name: 'nitro:init',
+  handler: (nitro: Nitro) => Promise<void> | void,
+) => unknown;
 
 /** `nitro:init` is typed by Nuxt's Nitro integration, not by `@nuxt/schema`. */
-export function onNitroInit(nuxt: Nuxt, handler: (nitro: Nitro) => void): void {
+export function onNitroInit(nuxt: Nuxt, handler: (nitro: Nitro) => Promise<void> | void): void {
   (nuxt.hook as unknown as NitroInitHook)('nitro:init', handler);
 }
 

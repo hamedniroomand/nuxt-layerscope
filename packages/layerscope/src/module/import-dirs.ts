@@ -5,9 +5,10 @@ import { join, resolve } from 'pathe';
 
 import { globImportFiles } from '#src/registry/import-files.ts';
 import type { RegistryImportDir } from '#src/registry/schema.ts';
+import { realPath } from '#src/utils/fs.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
-import type { Nitro } from './nuxt.ts';
+import type { Nitro, Unimport } from './nuxt.ts';
 
 /** A dir of an auto-import scan: a path or a glob, or an object that also sets `types`. */
 export type ScanDir = string | { glob: string; types?: boolean };
@@ -21,6 +22,8 @@ export interface ScanOptions {
 /** The part of unimport that makes the globs of a scan. It is the code of the real scan. */
 export interface UnimportScan {
   normalizeScanDirs: (dirs: ScanDir[], options?: ScanOptions) => { glob: string }[];
+  /** Makes an instance. The collector uses one to dedupe Nitro's imports in the real way. */
+  createUnimport?: (options: Record<string, unknown>) => Unimport;
 }
 
 export interface ImportScan {
@@ -103,7 +106,23 @@ async function recordScan(scan: ImportScan, unimport: UnimportScan): Promise<Reg
   return recorded;
 }
 
-/** The auto-import dirs of the app and of Nitro, with the files that their scans match. */
+/**
+ * The dirs of several scans as one list. `shared/utils` is in the scan of the app and in the scan
+ * of Nitro, so a dir with the same globs is kept once. The first entry stays: the collector gives
+ * the app scan first, which can be older than the Nitro scan.
+ */
+export function mergeImportDirs(lists: RegistryImportDir[][]): RegistryImportDir[] {
+  const unique = new Map<string, RegistryImportDir>();
+  for (const entry of lists.flat()) {
+    const key = JSON.stringify([entry.dir, entry.globs]);
+    if (!unique.has(key)) {
+      unique.set(key, entry);
+    }
+  }
+  return [...unique.values()].toSorted((a, b) => compareStrings(a.dir, b.dir));
+}
+
+/** The auto-import dirs of the scans, with the files that their scans match. */
 export async function collectImportDirs(
   scans: ImportScan[],
   unimport: UnimportScan,
@@ -114,10 +133,7 @@ export async function collectImportDirs(
       return dirs;
     }),
   );
-  const recorded = perScan.flat();
-  // `shared/utils` is in the scan of the app and in the scan of Nitro.
-  const unique = new Map(recorded.map(entry => [JSON.stringify([entry.dir, entry.globs]), entry]));
-  return [...unique.values()].toSorted((a, b) => compareStrings(a.dir, b.dir));
+  return mergeImportDirs(perScan);
 }
 
 /** Keeps what the hooks of Nuxt and Nitro give, and records it when the registry is written. */
@@ -125,18 +141,44 @@ export class ImportDirRecorder {
   /** The list that Nuxt gives to `imports:dirs`. Modules change it, so it is read at the end. */
   public appDirs: string[] = [];
   private warned = false;
+  /** The real paths of the files of the last Nitro record. */
+  private nitroFiles = new Set<string>();
+
+  /** The dirs of the app scan, or `null` when they cannot be read. */
+  public async recordApp(rootDir: string): Promise<RegistryImportDir[] | null> {
+    const dirs = await this.record(rootDir, [{ dirs: this.appDirs }]);
+    return dirs;
+  }
+
+  /** The dirs of the Nitro scan, or `null` when they cannot be read. */
+  public async recordNitro(
+    rootDir: string,
+    nitro: Nitro | null,
+  ): Promise<RegistryImportDir[] | null> {
+    const imports = nitro?.options.imports;
+    const scans =
+      imports === undefined || imports === false
+        ? []
+        : [{ dirs: imports.dirs ?? [], options: imports.dirsScanOptions }];
+    const dirs = await this.record(rootDir, scans);
+    this.nitroFiles = new Set(dirs?.flatMap(dir => dir.files.map(file => realPath(file))));
+    return dirs;
+  }
+
+  /**
+   * Whether the last Nitro record has the file. Both sides are real paths: a watcher can give the
+   * real path of a file that the scan found through a symlink.
+   */
+  public isNitroFile(file: string): boolean {
+    return this.nitroFiles.has(realPath(file));
+  }
 
   /** The dirs, or `null` when they cannot be read: the check is then off, and the CLI says so. */
-  public async record(rootDir: string, nitro: Nitro | null): Promise<RegistryImportDir[] | null> {
+  private async record(rootDir: string, scans: ImportScan[]): Promise<RegistryImportDir[] | null> {
     const loaded = await loadUnimport(rootDir);
     if (loaded.kind === 'failed') {
       this.warn(loaded.cause);
       return null;
-    }
-    const scans: ImportScan[] = [{ dirs: this.appDirs }];
-    const imports = nitro?.options.imports;
-    if (imports !== undefined && imports !== false) {
-      scans.push({ dirs: imports.dirs ?? [], options: imports.dirsScanOptions });
     }
     try {
       const dirs = await collectImportDirs(scans, loaded.unimport);
