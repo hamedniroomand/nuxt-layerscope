@@ -27,24 +27,40 @@ describe('<NuxtIsland> in a template', () => {
     expect(scan.dynamicComponents).toEqual([]);
   });
 
+  it('does not read the name of another element', () => {
+    const scan = scanFile(template('<BaseInput name="IslandOnly" />'), '/app/page.vue');
+    expect(scan.islands).toEqual([]);
+  });
+});
+
+describe('<NuxtIsland> with v-bind', () => {
   it('gives a quiet runtime use for v-bind of an object, which can hold the name', () => {
     const scan = scanFile(template('<NuxtIsland v-bind="{ name: n }" />'), '/app/page.vue');
     expect(scan.islands).toEqual([]);
     expect(scan.quietDynamicComponents).toHaveLength(1);
   });
 
-  it('keeps the static name over v-bind of an object', () => {
+  it('keeps the static name and gives a quiet runtime use for v-bind of an object too', () => {
     const scan = scanFile(
-      template('<NuxtIsland name="IslandOnly" v-bind="{ lazy: true }" />'),
+      template('<NuxtIsland name="IslandOnly" v-bind="{ name: n }" />'),
       '/app/page.vue',
     );
     expect(scan.islands.map(island => island.name)).toEqual(['IslandOnly']);
-    expect(scan.quietDynamicComponents).toEqual([]);
+    expect(scan.quietDynamicComponents).toHaveLength(1);
   });
 
-  it('does not read the name of another element', () => {
-    const scan = scanFile(template('<BaseInput name="IslandOnly" />'), '/app/page.vue');
+  it('gives a quiet runtime use for v-bind with a dynamic argument', () => {
+    const scan = scanFile(template('<NuxtIsland v-bind:[n]="n" />'), '/app/page.vue');
     expect(scan.islands).toEqual([]);
+    expect(scan.quietDynamicComponents).toHaveLength(1);
+  });
+
+  it('gives no runtime use for v-bind of another static prop', () => {
+    const scan = scanFile(
+      template('<NuxtIsland name="IslandOnly" :lazy="true" />'),
+      '/app/page.vue',
+    );
+    expect(scan.quietDynamicComponents).toEqual([]);
   });
 });
 

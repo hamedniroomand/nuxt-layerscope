@@ -27,7 +27,7 @@ export interface VueAstNode {
   name?: string;
   value?: { content: string };
   exp?: VueAstNode;
-  arg?: VueAstNode & { content?: string };
+  arg?: VueAstNode & { content?: string; isStatic?: boolean };
   content?: VueAstNode | string;
 }
 
@@ -41,27 +41,30 @@ function isBind(prop: VueAstNode, arg: string): boolean {
   return prop.name === 'bind' && prop.arg?.content === arg;
 }
 
+/** A `v-bind` that can set the `name` prop: `:name`, `v-bind="obj"` or `v-bind:[key]`. */
+function bindsName(prop: VueAstNode): boolean {
+  if (prop.type !== DIRECTIVE || prop.name !== 'bind') {
+    return false;
+  }
+  return prop.arg === undefined || prop.arg.isStatic === false || prop.arg.content === 'name';
+}
+
 /**
- * The `name` of a `<NuxtIsland>`: the static value, and whether `:name` binds one. A
- * `v-bind="obj"` can also give the name, unless a static `name` is there.
+ * The `name` of a `<NuxtIsland>`: the static value, and whether a `v-bind` can set it at runtime.
+ * Such a `v-bind` marks the name as chosen at runtime also when a static `name` is there.
  */
 function islandOf(node: VueAstNode): Pick<TemplateElement, 'islandName' | 'dynamicIslandName'> {
   let islandName: string | null = null;
   let dynamicIslandName = false;
-  let bindsObject = false;
   if (pascalCase(node.tag ?? '') === 'NuxtIsland') {
     for (const prop of node.props ?? []) {
       if (prop.type === ATTRIBUTE && prop.name === 'name') {
         islandName = prop.value?.content ?? null;
       }
-      dynamicIslandName ||= prop.type === DIRECTIVE && isBind(prop, 'name');
-      bindsObject ||= prop.type === DIRECTIVE && prop.name === 'bind' && prop.arg === undefined;
+      dynamicIslandName ||= bindsName(prop);
     }
   }
-  return {
-    islandName,
-    dynamicIslandName: dynamicIslandName || (bindsObject && islandName === null),
-  };
+  return { islandName, dynamicIslandName };
 }
 
 function indexElement(node: VueAstNode, index: TemplateIndex): void {
