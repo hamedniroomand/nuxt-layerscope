@@ -46,6 +46,15 @@ a function, and `createRequire` taken with `const { createRequire } = require('m
 is the name that `createRequire` was assigned to, so a later reassignment of that name does not
 change what counts.
 
+A component name can have more than one file: a `.client` file, a `.server` file and a file with no
+suffix, in one layer or in different layers. Nuxt uses one file in the browser and one file on the
+server, and the file can be different for a tag and for an import from `#components`. layerscope
+checks a use of the name against each file that Nuxt keeps. So a use can also get a finding for a
+file that Nuxt does not use for it. For example, a higher layer has `Pair.client.vue` and
+`Pair.server.vue`, and a lower layer has `Pair.vue`: Nuxt does not use `Pair.vue` for `<Pair />`. If
+both files are in a layer that is not allowed, one use gives one finding for each file. The baseline
+entry then has a `count` of 2.
+
 A type-only import (`import type { A } from '...'`) counts as an explicit import, unless
 [`typeImports`](./config#typeimports) is `'ignore'`. Then it makes no dependency and no rule
 reports it.

@@ -47,21 +47,22 @@ function resolveFrom(input: string, result: AnalyzeResult, session: ProjectSessi
 
 interface Found {
   kind: 'component' | 'auto-import';
-  target: SymbolTarget;
+  /** One file for an auto-import; one or more for a component (see `ComponentMap`). */
+  targets: SymbolTarget[];
 }
 
 function findSymbol(name: string, from: From, result: AnalyzeResult): Found | undefined {
   const wanted = componentName(name);
-  for (const [key, target] of result.symbols.components) {
+  for (const [key, targets] of result.symbols.components) {
     if (componentName(key) === wanted) {
-      return { kind: 'component', target };
+      return { kind: 'component', targets };
     }
   }
   const contexts = from.file === null ? CONTEXTS : [contextOf(from.file, from.layer)];
   for (const context of contexts) {
     const target = result.symbols.imports[context].get(name);
     if (target !== undefined) {
-      return { kind: 'auto-import', target };
+      return { kind: 'auto-import', targets: [target] };
     }
   }
   return undefined;
@@ -181,22 +182,34 @@ export const canUseTool: Tool = {
     if (found === undefined) {
       return checkLayer(from, to, result);
     }
-    const { target, kind } = found;
-    const owner = target.file === null ? null : createOwnerLookup(result.layers)(target.file);
-    const edge: Edge = {
-      file: from.file ?? '',
-      line: 1,
-      column: 1,
-      kind,
-      symbol: to,
-      fromLayer: from.layer.name,
-      to: owner === null ? null : target.file,
-      toLayer: owner?.name ?? null,
-      external: owner === null ? (target.module ?? 'unknown') : null,
-    };
-    const status = edgeStatus(edge, result.config, result.layers);
+    const ownerOf = createOwnerLookup(result.layers);
+    const checks = found.targets.map(target => {
+      const owner = target.file === null ? null : ownerOf(target.file);
+      const edge: Edge = {
+        file: from.file ?? '',
+        line: 1,
+        column: 1,
+        kind: found.kind,
+        symbol: to,
+        fromLayer: from.layer.name,
+        to: owner === null ? null : target.file,
+        toLayer: owner?.name ?? null,
+        external: owner === null ? (target.module ?? 'unknown') : null,
+      };
+      const status = edgeStatus(edge, result.config, result.layers);
+      return {
+        edge,
+        owner,
+        kind: found.kind,
+        status,
+        allowed: status !== 'not-allowed' && status !== 'not-exposed',
+      };
+    });
+    // A use of a component depends on each of its files, so the first file that is not allowed decides.
+    const { edge, owner, kind, status, allowed } =
+      checks.find(check => !check.allowed) ?? checks[0];
     return {
-      allowed: status !== 'not-allowed' && status !== 'not-exposed',
+      allowed,
       status,
       reason: reasonOf(status, edge, result),
       from: {

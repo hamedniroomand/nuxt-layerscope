@@ -25,7 +25,8 @@ export function listSymbols(result: AnalyzeResult): SymbolEntry[] {
   const layerOf = (file: string | null): string | null =>
     file === null ? null : (ownerOf(file)?.name ?? null);
   const entries = new Map<string, SymbolEntry>();
-  for (const [name, target] of result.symbols.components) {
+  for (const [name, [target]] of result.symbols.components) {
+    // A name with more than one file shows the layer of the first; the trace lists each file.
     if (!LAZY.test(name)) {
       entries.set(`component:${name}`, {
         name,

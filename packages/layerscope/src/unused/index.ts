@@ -1,6 +1,6 @@
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import { isOutsideRoot, isPackageLayer } from '#src/nuxt/package-layer.ts';
-import type { SymbolMap, SymbolTarget } from '#src/nuxt/symbols.ts';
+import type { ComponentMap, SymbolTarget } from '#src/nuxt/symbols.ts';
 import { exposureOf } from '#src/rules/layer-internal.ts';
 import type { AnalyzeResult, Context, Edge, Layer } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
@@ -58,11 +58,13 @@ function isUsed(uses: Uses, file: string, names: string[]): boolean {
 }
 
 /** Component names by file; `BaseButton` and `LazyBaseButton` are one component. */
-function componentsByFile(components: SymbolMap): Map<string, string[]> {
+function componentsByFile(components: ComponentMap): Map<string, string[]> {
   const byFile = new Map<string, string[]>();
-  for (const [name, target] of components) {
-    if (target.file !== null) {
-      byFile.set(target.file, [...(byFile.get(target.file) ?? []), name]);
+  for (const [name, targets] of components) {
+    for (const { file } of targets) {
+      if (file !== null) {
+        byFile.set(file, [...(byFile.get(file) ?? []), name]);
+      }
     }
   }
   return byFile;

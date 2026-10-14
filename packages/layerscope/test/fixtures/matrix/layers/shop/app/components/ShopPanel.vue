@@ -9,6 +9,7 @@ const flag = useRemoteFlag('sale');
     <FlatThing />
     <WChart />
     <Clock />
+    <Pair />
     <NpmBadge />
     <NuxtIsland name="Weather" />
     {{ formatMoney(price) }} {{ x }} {{ flag }}

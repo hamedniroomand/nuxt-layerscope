@@ -144,12 +144,15 @@ export class FileAnalysis {
 
   private addComponents(scan: FileScan): void {
     for (const ref of scan.components) {
-      const target = this.env.table.components.get(ref.name);
-      if (target !== undefined) {
-        this.addEdge('component', ref.name, ref.offset, {
-          to: target.file,
-          external: target.module,
-        });
+      const targets = this.env.table.components.get(ref.name);
+      if (targets !== undefined) {
+        // Each file of the name is a dependency: Nuxt can use one in the browser and one on the server.
+        for (const target of targets) {
+          this.addEdge('component', ref.name, ref.offset, {
+            to: target.file,
+            external: target.module,
+          });
+        }
       } else if (!this.env.components.has(ref.name)) {
         this.addUnresolved(
           ref.name,

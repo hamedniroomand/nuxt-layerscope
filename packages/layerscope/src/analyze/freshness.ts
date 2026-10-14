@@ -16,7 +16,7 @@ const COMPONENT_SUFFIX = /(?:\.(?:client|server))?(?:\.global|\.island)*$/u;
 
 function allTargets(table: SymbolTable): SymbolTarget[] {
   return [
-    ...table.components.values(),
+    ...[...table.components.values()].flat(),
     ...Object.values(table.imports).flatMap(map => Array.from(map.values())),
   ];
 }

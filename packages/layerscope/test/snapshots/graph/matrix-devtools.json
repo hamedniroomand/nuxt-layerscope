@@ -5,8 +5,8 @@
       "name": "base",
       "root": "layers/base",
       "allow": [],
-      "files": 3,
-      "refsIn": 5,
+      "files": 4,
+      "refsIn": 6,
       "refsOut": 0
     },
     {
@@ -45,7 +45,7 @@
       ],
       "files": 3,
       "refsIn": 1,
-      "refsOut": 10
+      "refsOut": 13
     },
     {
       "id": "theme",
@@ -54,8 +54,8 @@
       "allow": [
         "base"
       ],
-      "files": 4,
-      "refsIn": 2,
+      "files": 5,
+      "refsIn": 4,
       "refsOut": 0
     }
   ],
@@ -71,7 +71,7 @@
     {
       "from": "shop",
       "to": "base",
-      "count": 5,
+      "count": 6,
       "status": "allowed",
       "violations": 0,
       "severity": null
@@ -95,9 +95,9 @@
     {
       "from": "shop",
       "to": "theme",
-      "count": 2,
+      "count": 4,
       "status": "not-allowed",
-      "violations": 2,
+      "violations": 4,
       "severity": "error"
     }
   ],
@@ -112,7 +112,7 @@
     {
       "from": "shop",
       "to": "base",
-      "count": 5,
+      "count": 6,
       "status": "allowed",
       "violations": 0
     },
@@ -133,9 +133,9 @@
     {
       "from": "shop",
       "to": "theme",
-      "count": 2,
+      "count": 4,
       "status": "not-allowed",
-      "violations": 2
+      "violations": 4
     }
   ],
   "layout": {
