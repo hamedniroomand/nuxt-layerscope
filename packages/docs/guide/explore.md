@@ -113,13 +113,14 @@ layers and referenced nowhere. A few rules keep it honest:
   layerscope cannot see which one is picked.
 - `<NuxtIsland name="X">` counts as a use of the island component `X`.
 - A global component (in `components/global/`, with a `.global` suffix, or in a dir registered as
-  global) is always marked "possibly used at runtime": Vue can render it by a name that is chosen at
-  runtime. When the project uses Nuxt Content, every component is marked, because a content file can
-  use any component by its name.
+  global) is marked "possibly used at runtime" when it is listed as unused: Vue can render it by a
+  name that is chosen at runtime. When the project uses Nuxt Content, every component is marked,
+  because a content file can use any component by its name.
 - With `--source types`, `unused` does not list island components (in `components/islands/` or with
   an `.island.vue` suffix), because the .d.ts files do not have them. With `--source types`, a
   component in a dir that a module or config registers as global is not marked, because the .d.ts
-  files do not have the global setting.
+  files do not have the global setting. Nuxt Content is found only when a `modules` list names it as
+  the string `'@nuxt/content'`.
 
 `unused` cannot see all uses. It can miss uses in these places:
 
@@ -140,9 +141,10 @@ layers and referenced nowhere. A few rules keep it honest:
 
 The report has one line that names the uses that `unused` does not count: test files, `ignore` and
 package layers, when they apply. When a layer is outside the project root and is not installed as a
-package, a second line names it. The report lists the files that could not be read before these
-lines. The report does not name the other places in this list. Layerscope cannot see them. Treat the
-list as a starting point for review, not a delete list.
+package, a second line names it. When the project uses Nuxt Content, one more line says that every
+component is marked "possibly used at runtime". The report lists the files that could not be read
+before these lines. The report does not name the other places in this list. Layerscope cannot see
+them. Treat the list as a starting point for review, not a delete list.
 
 `why` shows only the uses that `check` reads. A use that only `unused` counts, for example in
 `nuxt.config.ts`, does not show in `why`.

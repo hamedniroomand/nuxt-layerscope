@@ -106,7 +106,7 @@
             v-if="row.global"
             class="chip"
           >
-            global (possibly used at runtime)
+            global component (possibly used at runtime)
           </span>
           <FileLocation
             class="muted"
