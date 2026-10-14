@@ -66,6 +66,11 @@ layerscope stops with exit code `2` when they are clearly stale:
   `nuxt.config` is checked after the next `nuxi prepare`. The `types` source does not check
   auto-import dirs.
 
+With the registry, the check skips a new file that Nuxt ignores (`ignore`, `ignorePrefix` or
+`.nuxtignore`) in a component dir and in an auto-import dir of the app. It does not skip such a
+file in an auto-import dir of Nitro, such as `server/utils` and `shared/utils`, because Nitro
+auto-imports it.
+
 layerscope does not check a dir that does not exist (or that has a file in its path). That dir has
 no new files. layerscope stops with exit code `2` when it cannot open a dir, for example because it
 has no read access. It cannot look for new files in that dir. It also stops when it cannot reach a

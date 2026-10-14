@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vite-plus/test';
 import { loadSymbols } from '#src/analyze/symbols.ts';
 import { readRegistry } from '#src/registry/read.ts';
 import { REGISTRY_FILE } from '#src/registry/schema.ts';
+import { noNuxtIgnore } from '#test/factories.ts';
 
 const created: string[] = [];
 
@@ -34,6 +35,7 @@ function buildDirWith(extra: Record<string, unknown>): string {
       layers: [layer],
       components: [],
       componentDirs: [],
+      nuxtIgnore: noNuxtIgnore(),
       imports: { app: [], server: [], shared: [] },
       ...extra,
     }),
@@ -41,7 +43,12 @@ function buildDirWith(extra: Record<string, unknown>): string {
   return buildDir;
 }
 
-const GOOD = { dir: '/p/app/composables', globs: ['/p/app/composables'], files: [] };
+const GOOD = {
+  dir: '/p/app/composables',
+  globs: ['/p/app/composables'],
+  scanner: 'nuxt',
+  files: [],
+};
 
 describe('readRegistry and the auto-import dirs', () => {
   it('reads a registry with a good importDirs list', () => {
@@ -62,6 +69,8 @@ describe('readRegistry and the auto-import dirs', () => {
     ['has an entry with globs that are not strings', { importDirs: [{ ...GOOD, globs: [1] }] }],
     ['has an entry with files that is not an array', { importDirs: [{ ...GOOD, files: 'a' }] }],
     ['has a file that is not a string', { importDirs: [{ ...GOOD, files: [1] }] }],
+    ['has an entry with no scanner', { importDirs: [{ ...GOOD, scanner: undefined }] }],
+    ['has an entry with an unknown scanner', { importDirs: [{ ...GOOD, scanner: 'vite' }] }],
   ])('marks the registry as stale when importDirs %s', (_name, extra) => {
     expect(readRegistry(buildDirWith(extra)).kind).toBe('stale');
   });
@@ -88,6 +97,28 @@ describe('readRegistry and the component dirs', () => {
     ['has a file that is not a string', { componentDirs: [{ ...DIR, files: [1] }] }],
   ])('marks the registry as stale when componentDirs %s', (_name, extra) => {
     expect(readRegistry(buildDirWith({ importDirs: [], ...extra })).kind).toBe('stale');
+  });
+});
+
+const RULES = noNuxtIgnore();
+
+describe('readRegistry and the ignore rules of Nuxt', () => {
+  it('reads rules with options', () => {
+    const nuxtIgnore = { ...RULES, options: { ignorecase: false } };
+    expect(readRegistry(buildDirWith({ importDirs: [], nuxtIgnore })).kind).toBe('ok');
+  });
+
+  it.each([
+    ['are missing', undefined],
+    ['are not an object', 'a'],
+    ['have a rootDir that is not a string', { ...RULES, rootDir: 1 }],
+    ['have roots that are not strings', { ...RULES, roots: [1] }],
+    ['have no patterns', { ...RULES, patterns: undefined }],
+    ['have a pattern that is not a string', { ...RULES, patterns: [null] }],
+    ['have no options', { ...RULES, options: undefined }],
+    ['have options that are a list', { ...RULES, options: [] }],
+  ])('marks the registry as stale when the rules %s', (_name, nuxtIgnore) => {
+    expect(readRegistry(buildDirWith({ importDirs: [], nuxtIgnore })).kind).toBe('stale');
   });
 });
 

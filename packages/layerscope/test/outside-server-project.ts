@@ -8,6 +8,7 @@ import { layersForModule } from '#src/nuxt/layers.ts';
 import type { Registry } from '#src/registry/schema.ts';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
 
+import { noNuxtIgnore } from './factories.ts';
 import { NUXT4_ROOT } from './fixtures.ts';
 
 export interface OutsideServerProject {
@@ -99,6 +100,7 @@ export async function writeOutsideRegistry(
     shadowedComponents: [],
     componentDirs: [],
     importDirs: [],
+    nuxtIgnore: noNuxtIgnore(),
     imports: { app: [], server, shared: [] },
   };
   const file = join(project.root, '.nuxt/layerscope/registry.json');

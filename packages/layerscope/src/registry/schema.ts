@@ -1,6 +1,8 @@
 import type { ProjectConfig } from '#src/config/effective.ts';
 import type { Context, Layer } from '#src/types.ts';
 
+import type { NuxtIgnore } from './nuxt-ignore.ts';
+
 /** Bumped on breaking changes to `registry.json`; readers fall back to the `.d.ts` files. */
 export const REGISTRY_VERSION = 1;
 
@@ -39,6 +41,11 @@ export interface RegistryImportDir {
   dir: string;
   /** The absolute globs that the scan used for the dir. */
   globs: string[];
+  /**
+   * The scan of the dir: `nuxt` for the app, `nitro` for the auto-import scan of Nitro. Only the
+   * scan of the app uses the ignore rules of Nuxt.
+   */
+  scanner: 'nuxt' | 'nitro';
   /** Files that the globs matched when the registry was written, before Nuxt's ignore rules. */
   files: string[];
 }
@@ -63,6 +70,8 @@ export interface Registry {
    * module could not read them (it printed the reason): the check is off for this file.
    */
   importDirs: RegistryImportDir[] | null;
+  /** The ignore rules of Nuxt. The stale check skips the new files that they match. */
+  nuxtIgnore: NuxtIgnore;
   imports: Record<Context, RegistryImport[]>;
   /** The `layerscope` key of `nuxt.config`, when it sets layers or rules. Added in 0.1.0. */
   config?: ProjectConfig;

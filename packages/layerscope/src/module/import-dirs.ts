@@ -88,7 +88,11 @@ function dirOf(dir: ScanDir, options: ScanOptions | undefined): string {
  * The dirs of one scan, each with the globs that unimport makes for it. A glob that starts with
  * `!` leaves files out of the whole scan, so every dir keeps them.
  */
-async function recordScan(scan: ImportScan, unimport: UnimportScan): Promise<RegistryImportDir[]> {
+async function recordScan(
+  scan: ImportScan,
+  unimport: UnimportScan,
+  scanner: RegistryImportDir['scanner'],
+): Promise<RegistryImportDir[]> {
   const leftOut = unimport
     .normalizeScanDirs(scan.dirs, scan.options)
     .map(entry => entry.glob)
@@ -100,21 +104,27 @@ async function recordScan(scan: ImportScan, unimport: UnimportScan): Promise<Reg
         ...unimport.normalizeScanDirs([dir], scan.options).map(entry => entry.glob),
         ...leftOut,
       ];
-      return { dir: dirOf(dir, scan.options), globs, files: await globImportFiles(globs) };
+      return {
+        dir: dirOf(dir, scan.options),
+        globs,
+        scanner,
+        files: await globImportFiles(globs),
+      };
     });
   const recorded = await Promise.all(jobs);
   return recorded;
 }
 
 /**
- * The dirs of several scans as one list. `shared/utils` is in the scan of the app and in the scan
- * of Nitro, so a dir with the same globs is kept once. The first entry stays: the collector gives
- * the app scan first, which can be older than the Nitro scan.
+ * The dirs of several scans as one list. A dir with the same globs and the same scanner is kept
+ * once, and the first entry stays. `shared/utils` is in the scan of the app and in the auto-import
+ * scan of Nitro. Both entries stay, because the auto-import scan of Nitro does not use the ignore
+ * rules of Nuxt.
  */
 export function mergeImportDirs(lists: RegistryImportDir[][]): RegistryImportDir[] {
   const unique = new Map<string, RegistryImportDir>();
   for (const entry of lists.flat()) {
-    const key = JSON.stringify([entry.dir, entry.globs]);
+    const key = JSON.stringify([entry.dir, entry.globs, entry.scanner]);
     if (!unique.has(key)) {
       unique.set(key, entry);
     }
@@ -126,10 +136,11 @@ export function mergeImportDirs(lists: RegistryImportDir[][]): RegistryImportDir
 export async function collectImportDirs(
   scans: ImportScan[],
   unimport: UnimportScan,
+  scanner: RegistryImportDir['scanner'],
 ): Promise<RegistryImportDir[]> {
   const perScan = await Promise.all(
     scans.map(async scan => {
-      const dirs = await recordScan(scan, unimport);
+      const dirs = await recordScan(scan, unimport, scanner);
       return dirs;
     }),
   );
@@ -146,7 +157,7 @@ export class ImportDirRecorder {
 
   /** The dirs of the app scan, or `null` when they cannot be read. */
   public async recordApp(rootDir: string): Promise<RegistryImportDir[] | null> {
-    const dirs = await this.record(rootDir, [{ dirs: this.appDirs }]);
+    const dirs = await this.record(rootDir, [{ dirs: this.appDirs }], 'nuxt');
     return dirs;
   }
 
@@ -160,7 +171,7 @@ export class ImportDirRecorder {
       imports === undefined || imports === false
         ? []
         : [{ dirs: imports.dirs ?? [], options: imports.dirsScanOptions }];
-    const dirs = await this.record(rootDir, scans);
+    const dirs = await this.record(rootDir, scans, 'nitro');
     this.nitroFiles = new Set(dirs?.flatMap(dir => dir.files.map(file => realPath(file))));
     return dirs;
   }
@@ -174,14 +185,18 @@ export class ImportDirRecorder {
   }
 
   /** The dirs, or `null` when they cannot be read: the check is then off, and the CLI says so. */
-  private async record(rootDir: string, scans: ImportScan[]): Promise<RegistryImportDir[] | null> {
+  private async record(
+    rootDir: string,
+    scans: ImportScan[],
+    scanner: RegistryImportDir['scanner'],
+  ): Promise<RegistryImportDir[] | null> {
     const loaded = await loadUnimport(rootDir);
     if (loaded.kind === 'failed') {
       this.warn(loaded.cause);
       return null;
     }
     try {
-      const dirs = await collectImportDirs(scans, loaded.unimport);
+      const dirs = await collectImportDirs(scans, loaded.unimport, scanner);
       return dirs;
     } catch (error) {
       this.warn(causeOf(error));

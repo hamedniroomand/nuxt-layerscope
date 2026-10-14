@@ -6,7 +6,7 @@ import { join } from 'pathe';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
 import type { Registry } from '#src/registry/schema.ts';
 
-import { makeLayer } from './factories.ts';
+import { makeLayer, noNuxtIgnore } from './factories.ts';
 
 /** A Nuxt-like project where the `web` layer calls an auto-import that the `shop` layer owns. */
 export function createProject(): { dir: string; registryFile: string; consumer: string } {
@@ -28,6 +28,7 @@ export function createProject(): { dir: string; registryFile: string; consumer: 
     shadowedComponents: [],
     componentDirs: [],
     importDirs: [],
+    nuxtIgnore: noNuxtIgnore(),
     imports: { app: [{ name: 'useCart', from: composable }], server: [], shared: [] },
   };
   const registryFile = join(dir, '.nuxt/layerscope/registry.json');

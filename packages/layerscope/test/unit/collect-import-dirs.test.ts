@@ -5,9 +5,15 @@ import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { assertImportDirsFresh } from '#src/analyze/import-dirs-fresh.ts';
-import { ImportDirRecorder, collectImportDirs, loadUnimport } from '#src/module/import-dirs.ts';
+import {
+  ImportDirRecorder,
+  collectImportDirs,
+  loadUnimport,
+  mergeImportDirs,
+} from '#src/module/import-dirs.ts';
 import type { UnimportScan } from '#src/module/import-dirs.ts';
 import type { Nitro } from '#src/module/nuxt.ts';
+import { noNuxtIgnore } from '#test/factories.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
 
 /** The unimport that Nuxt uses for the fixture: the real code that makes the globs of a scan. */
@@ -33,6 +39,7 @@ describe('collectImportDirs with the unimport of Nuxt', () => {
     const dirs = await collectImportDirs(
       [{ dirs: [join(base, 'a'), join(base, 'b'), `!${join(base, 'a/skip.ts')}`] }],
       unimport,
+      'nuxt',
     );
     expect(dirs.map(entry => entry.dir)).toEqual([join(base, 'a'), join(base, 'b')]);
     for (const entry of dirs) {
@@ -49,6 +56,7 @@ describe('collectImportDirs with the unimport of Nuxt', () => {
         { dirs: [join(base, 'server')], options: { filePatterns: ['*.custom'] } },
       ],
       unimport,
+      'nuxt',
     );
     expect(dirs.map(entry => entry.files)).toEqual([
       [join(base, 'app/one.ts')],
@@ -59,11 +67,22 @@ describe('collectImportDirs with the unimport of Nuxt', () => {
 });
 
 describe('collectImportDirs with a dir in two scans', () => {
-  it('records a dir that is in the scan of the app and in the scan of Nitro once', async () => {
+  it('records a dir that is in two scans of the same scanner once', async () => {
     const base = project({ 'shared/utils/one.ts': '' });
     const dir = join(base, 'shared/utils');
-    const dirs = await collectImportDirs([{ dirs: [dir] }, { dirs: [dir] }], unimport);
+    const dirs = await collectImportDirs([{ dirs: [dir] }, { dirs: [dir] }], unimport, 'nuxt');
     expect(dirs.map(entry => entry.dir)).toEqual([dir]);
+  });
+
+  it('keeps the entry of the app and the entry of Nitro for a dir in both scans', async () => {
+    const base = project({ 'shared/utils/one.ts': '' });
+    const dir = join(base, 'shared/utils');
+    const [app, nitro] = await Promise.all([
+      collectImportDirs([{ dirs: [dir] }], unimport, 'nuxt'),
+      collectImportDirs([{ dirs: [dir] }], unimport, 'nitro'),
+    ]);
+    const merged = mergeImportDirs([app, nitro]);
+    expect(merged.map(entry => entry.scanner)).toEqual(['nuxt', 'nitro']);
   });
 
   it('keeps both entries when the scan options differ, because the globs differ', async () => {
@@ -72,6 +91,7 @@ describe('collectImportDirs with a dir in two scans', () => {
     const dirs = await collectImportDirs(
       [{ dirs: [dir] }, { dirs: [dir], options: { filePatterns: ['*.custom'] } }],
       unimport,
+      'nuxt',
     );
     expect(dirs).toHaveLength(2);
   });
@@ -83,21 +103,28 @@ describe('collectImportDirs with a relative dir and a new ignored file', () => {
     const dirs = await collectImportDirs(
       [{ dirs: ['late-rel'], options: { cwd: base } }],
       unimport,
+      'nuxt',
     );
     expect(dirs[0]?.dir).toBe(join(base, 'late-rel'));
     writeFileSync(join(base, 'late-rel/new.ts'), 'export const y = 1;\n');
     // The test process has another cwd than `base`.
-    await expect(assertImportDirsFresh(dirs)).rejects.toThrow(/new\.ts is missing/u);
+    await expect(assertImportDirsFresh(dirs, noNuxtIgnore())).rejects.toThrow(
+      /new\.ts is missing/u,
+    );
   });
 
-  it('counts a new file that Nuxt ignores once, and one more record clears it', async () => {
-    const base = project({ 'composables/use.ts': '' });
-    const scans = [{ dirs: [join(base, 'composables')] }];
-    const recorded = await collectImportDirs(scans, unimport);
-    writeFileSync(join(base, 'composables/helper.d.ts'), 'export {};\n');
-    await expect(assertImportDirsFresh(recorded)).rejects.toThrow(/helper\.d\.ts is missing/u);
-    const again = await collectImportDirs(scans, unimport);
-    await expect(assertImportDirsFresh(again)).resolves.toBeUndefined();
+  it('counts a new file of a Nitro dir that Nuxt ignores, and one more record clears it', async () => {
+    const base = project({ 'server/utils/use.ts': '' });
+    const scans = [{ dirs: [join(base, 'server/utils')] }];
+    const recorded = await collectImportDirs(scans, unimport, 'nitro');
+    const rules = { ...noNuxtIgnore(), rootDir: base, patterns: ['**/*.d.ts'] };
+    writeFileSync(join(base, 'server/utils/helper.d.ts'), 'export {};\n');
+    // Nitro does not use the ignore rules of Nuxt, so the check counts the file.
+    await expect(assertImportDirsFresh(recorded, rules)).rejects.toThrow(
+      /helper\.d\.ts is missing/u,
+    );
+    const again = await collectImportDirs(scans, unimport, 'nitro');
+    await expect(assertImportDirsFresh(again, rules)).resolves.toBeUndefined();
   });
 });
 

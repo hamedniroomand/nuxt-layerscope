@@ -71,7 +71,12 @@ describe('a check without --prepare after a new auto-import file', () => {
     const dir = mkdtempSync(join(tmpdir(), 'layerscope-new-composable-'));
     created.push(dir);
     writeFileSync(join(dir, 'useNotice.ts'), 'export const useNotice = () => 1;\n');
-    const buildDir = buildDirWith({ dir, globs: [dir, join(dir, '*.ts')], files: [] });
+    const buildDir = buildDirWith({
+      dir,
+      globs: [dir, join(dir, '*.ts')],
+      scanner: 'nuxt',
+      files: [],
+    });
     await expect(
       loadEnvironment({ rootDir: NUXT4_ROOT, buildDir, config: {}, source: 'registry' }),
     ).rejects.toThrow(/useNotice\.ts is missing from the layerscope registry/u);

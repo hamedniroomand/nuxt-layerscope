@@ -1,3 +1,4 @@
+import type { NuxtIgnore } from '#src/registry/nuxt-ignore.ts';
 import type { Registry } from '#src/registry/schema.ts';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
 import type { AnalyzeResult, Edge, Finding, Layer } from '#src/types.ts';
@@ -69,6 +70,11 @@ export function makeResult(overrides: Partial<AnalyzeResult> = {}): AnalyzeResul
   };
 }
 
+/** Ignore rules with no pattern: the stale check skips no file. */
+export function noNuxtIgnore(): NuxtIgnore {
+  return { rootDir: '/', roots: [], patterns: [], options: null };
+}
+
 /** A registry holding only shadowed components, given as `[name, file, shadowedBy]`. */
 export function makeRegistry(
   shadowed: [name: string, file: string, shadowedBy: string][] = [],
@@ -88,6 +94,7 @@ export function makeRegistry(
     })),
     componentDirs: [],
     importDirs: [],
+    nuxtIgnore: noNuxtIgnore(),
     imports: { app: [], server: [], shared: [] },
   };
 }

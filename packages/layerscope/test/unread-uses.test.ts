@@ -7,7 +7,7 @@ import { REGISTRY_VERSION } from '#src/registry/schema.ts';
 import type { Registry } from '#src/registry/schema.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 
-import { makeLayer } from './factories.ts';
+import { makeLayer, noNuxtIgnore } from './factories.ts';
 import { tempDir, write } from './watch-project.ts';
 
 const NON_NULL = `<script setup lang="ts">
@@ -52,6 +52,7 @@ function project(config = ''): string {
     shadowedComponents: [],
     componentDirs: [],
     importDirs: [],
+    nuxtIgnore: noNuxtIgnore(),
     imports: { app: [{ name: 'useCart', from: useCart }], server: [], shared: [] },
   };
   write(root, '.nuxt/layerscope/registry.json', JSON.stringify(registry));
