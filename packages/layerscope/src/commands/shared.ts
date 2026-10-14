@@ -107,12 +107,14 @@ function assertSummaryName(value: unknown): asserts value is string {
 }
 
 /** Writes the summary of the findings to the file. The file is empty when there is no finding. */
-export function writeSummary(summary: unknown, findings: Finding[]): void {
+/** `stale` is the Markdown of the fixed entries that fail `--strict-baseline`, or empty. */
+export function writeSummary(summary: unknown, findings: Finding[], stale = ''): void {
   if (typeof summary !== 'string') {
     return;
   }
+  const parts = [formatFindingsSummary(findings, currentDir()), stale].filter(part => part !== '');
   try {
-    writeFileSync(resolve(currentDir(), summary), formatFindingsSummary(findings, currentDir()));
+    writeFileSync(resolve(currentDir(), summary), parts.join('\n'));
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     throw new LayerscopeError(`The summary file cannot be written: ${reason}`);

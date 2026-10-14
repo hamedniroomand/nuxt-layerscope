@@ -6,7 +6,7 @@ import type { OutputFormat } from '#src/report/index.ts';
 import { repoRoot } from '#src/report/paths.ts';
 import { paintFor } from '#src/utils/style.ts';
 
-import { updateBaseline } from './check-baseline.ts';
+import { assertStrictFlags, reportStrict, updateBaseline } from './check-baseline.ts';
 import { deletedNote, selectTarget, splitArguments } from './check-files.ts';
 import { checkNothing } from './check-nothing.ts';
 import type { Cli, CommonFlags } from './shared.ts';
@@ -25,6 +25,7 @@ import {
 export interface CheckFlags extends CommonFlags {
   baseline?: string;
   updateBaseline?: boolean;
+  strictBaseline?: boolean;
   watch?: boolean;
   staged?: boolean;
   changed?: boolean;
@@ -81,6 +82,7 @@ export async function check(
   if (flags.watch === true && flags.updateBaseline === true) {
     throw new LayerscopeError('--watch cannot be used with --update-baseline.');
   }
+  assertStrictFlags(flags);
   const { rootDir, selection } = selectTarget(root, files, flags);
   if (flags.updateBaseline === true) {
     return updateBaseline(rootDir, flags);
@@ -105,13 +107,14 @@ export async function check(
   }
   // Only `sarif` and `gitlab` read the repository root; the others do not run git.
   const repository = format === 'sarif' || format === 'gitlab' ? repoRoot(rootDir) : rootDir;
-  process.stdout.write(
-    formatResult(result, format, currentDir(), paintFor(process.stdout), repository),
-  );
-  writeSummary(flags.summary, result.findings);
+  const strict = flags.strictBaseline === true;
+  const paint = paintFor(process.stdout);
+  process.stdout.write(formatResult(result, format, currentDir(), paint, repository, strict));
+  const stale = reportStrict(result, root, flags);
+  writeSummary(flags.summary, result.findings, stale.summary);
   writeNotes(result, flags.verbose === true);
-  // Only findings missing from the baseline fail the check.
-  return result.findings.some(finding => finding.severity === 'error')
+  // Findings missing from the baseline fail the check, and with --strict-baseline fixed entries too.
+  return result.findings.some(finding => finding.severity === 'error') || stale.failed
     ? EXIT_VIOLATIONS
     : EXIT_CLEAN;
 }
@@ -128,6 +131,10 @@ export function registerCheck(cli: Cli): void {
         'Findings to accept, relative to the root. Default: the "baseline" key of the config, else layerscope-baseline.json',
       )
       .option('--update-baseline', 'Write every current finding to the baseline file')
+      .option(
+        '--strict-baseline',
+        'Fail when the baseline has fixed entries, so that they are removed',
+      )
       .option('--staged', 'Check only the files staged for commit')
       .option('--changed', 'Check only the files that changed since the default branch')
       .option(

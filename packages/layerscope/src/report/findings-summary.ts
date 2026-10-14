@@ -1,8 +1,9 @@
 import { relative } from 'pathe';
 
-import type { Finding } from '#src/types.ts';
+import type { BaselineEntry, Finding } from '#src/types.ts';
 import { plural } from '#src/utils/strings.ts';
 
+import { describeEntry } from './baseline.ts';
 import { summarize } from './summary.ts';
 
 /** The most lines in the list of the summary. */
@@ -47,6 +48,27 @@ export function formatFindingsSummary(findings: Finding[], cwd: string): string 
   if (findings.length > SUMMARY_LINE_LIMIT) {
     parts.push(
       `The list stops at ${SUMMARY_LINE_LIMIT} lines. Run layerscope check to see all findings.`,
+    );
+  }
+  return `${parts.join('\n\n')}\n`;
+}
+
+/**
+ * Markdown for the fixed entries that fail `--strict-baseline`: `sentence` and a list of the
+ * entries, in the same form and with the same limit as the findings. Empty when there is none.
+ */
+export function formatStaleSummary(entries: BaselineEntry[], sentence: string): string {
+  if (entries.length === 0) {
+    return '';
+  }
+  const lines = entries
+    .slice(0, SUMMARY_LINE_LIMIT)
+    .map(entry => `${entry.file}  ${describeEntry(entry)}`);
+  const fence = fenceFor(lines);
+  const parts = [sentence, `${fence}\n${lines.join('\n')}\n${fence}`];
+  if (entries.length > SUMMARY_LINE_LIMIT) {
+    parts.push(
+      `The list stops at ${SUMMARY_LINE_LIMIT} lines. Run layerscope check to see all fixed entries.`,
     );
   }
   return `${parts.join('\n\n')}\n`;

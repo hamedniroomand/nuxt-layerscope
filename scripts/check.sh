@@ -14,6 +14,7 @@ args=(check "$INPUT_ROOT" --format github --summary "$summary")
 if [ -n "$INPUT_BASELINE" ]; then args+=(--baseline "$INPUT_BASELINE"); fi
 if [ -n "$INPUT_CONFIG" ]; then args+=(--config "$INPUT_CONFIG"); fi
 if [ "$INPUT_PREPARE" = "true" ]; then args+=(--prepare); fi
+if [ "${INPUT_STRICT_BASELINE:-false}" = "true" ]; then args+=(--strict-baseline); fi
 
 status=0
 "$(dirname "$0")/layerscope.sh" "${args[@]}" || status=$?
