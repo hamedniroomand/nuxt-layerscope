@@ -117,8 +117,9 @@ async function recordScan(
 
 /**
  * The dirs of several scans as one list. A dir with the same globs and the same scanner is kept
- * once, and the first entry stays. `shared/utils` is in the scan of the app and in the scan of
- * Nitro. Both entries stay, because only the app scan uses the ignore rules of Nuxt.
+ * once, and the first entry stays. `shared/utils` is in the scan of the app and in the auto-import
+ * scan of Nitro. Both entries stay, because the auto-import scan of Nitro does not use the ignore
+ * rules of Nuxt.
  */
 export function mergeImportDirs(lists: RegistryImportDir[][]): RegistryImportDir[] {
   const unique = new Map<string, RegistryImportDir>();

@@ -42,8 +42,8 @@ export interface RegistryImportDir {
   /** The absolute globs that the scan used for the dir. */
   globs: string[];
   /**
-   * The scan of the dir: `nuxt` for the app, `nitro` for Nitro. Only the scan of the app uses the
-   * ignore rules of Nuxt.
+   * The scan of the dir: `nuxt` for the app, `nitro` for the auto-import scan of Nitro. Only the
+   * scan of the app uses the ignore rules of Nuxt.
    */
   scanner: 'nuxt' | 'nitro';
   /** Files that the globs matched when the registry was written, before Nuxt's ignore rules. */

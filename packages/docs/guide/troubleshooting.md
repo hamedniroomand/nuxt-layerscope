@@ -18,8 +18,9 @@ composable. For example, the `server/utils/**/*` pattern of Nitro also matches a
 backup file such as `x.ts~`. Run `nuxi prepare` again, and the file is part of the registry.
 A new file that Nuxt ignores (`ignore`, `ignorePrefix` or `.nuxtignore`), such as a test file, does
 not cause this error in a component dir or in an auto-import dir of the app. Nitro auto-imports
-such a file from its dirs, such as `server/utils` and `shared/utils`, so there it causes this error
-until you run `nuxi prepare`.
+such a file from its dirs, such as `server/utils` and `shared/utils`. There the file causes this
+error until the module writes the registry again for another change, or until you run
+`nuxi prepare`.
 
 ## "Could not read …"
 

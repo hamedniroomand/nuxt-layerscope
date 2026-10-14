@@ -16,7 +16,10 @@ export interface NuxtIgnore {
 
 /**
  * The test that tells if Nuxt ignores a file. It is a copy of `isIgnored()` of `@nuxt/kit`: kit
- * has no form of it that runs without a Nuxt instance, and the CLI has no Nuxt instance.
+ * has no form of it that runs without a Nuxt instance, and the CLI has no Nuxt instance. The copy
+ * matches `isIgnored()` of kit 3.21 and 4.5, the kits of the oracle test. Older kits (for example
+ * 4.0.x) make the path relative to the cwd of the layer, with no trailing slash. So for a dir next
+ * to a layer with the same prefix (`layers/ui-extra` next to `layers/ui`), the result can differ.
  */
 export function createNuxtIgnore(rules: NuxtIgnore): (file: string) => boolean {
   const matcher = ignore((rules.options ?? undefined) as Options | undefined).add(rules.patterns);

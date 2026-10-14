@@ -19,8 +19,8 @@ async function isChecked(entry: RegistryImportDir): Promise<boolean> {
 }
 
 /**
- * A new file that Nuxt ignores is not an error in a dir of the app scan: Nuxt skips it too. Nitro
- * does not use these rules, so a dir of the Nitro scan reports the file.
+ * A new file that Nuxt ignores is not an error in a dir of the app scan: Nuxt skips it too. The
+ * auto-import scan of Nitro does not use these rules, so a dir of that scan reports the file.
  */
 export async function assertImportDirsFresh(
   dirs: RegistryImportDir[],
