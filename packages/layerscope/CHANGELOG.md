@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.8.1
+
+### Patch Changes
+
+- [#156](https://github.com/hamedniroomand/nuxt-layerscope/pull/156) [`fa655fc`](https://github.com/hamedniroomand/nuxt-layerscope/commit/fa655fc1f33f00479dbface661fa76f19a74cb21) - The stale check now stops with exit code 2 when it cannot open a component dir or an auto-import dir, for example because it has no read access, or cannot reach a file that the generated types refer to. Before, layerscope treated such a dir as empty, so it did not find a new component there and could use an old registry with no error. It also reported such a file as deleted. The message shows the path and the error code. A dir or file that does not exist is handled as before.
+
+- [#161](https://github.com/hamedniroomand/nuxt-layerscope/pull/161) [`c4b1441`](https://github.com/hamedniroomand/nuxt-layerscope/commit/c4b1441a1ab609e14e9b36ed097b33b6c31be995) - `drift` now finds the `--baseline` file in the same way as `check`, so an absolute path and a path with backslashes now work. `drift` stops with exit code 2 and a message when the baseline is outside the git repository, or when the baseline is a symbolic link on the base ref. Before, `drift` counted the base as empty with no message, or said that the link is not valid JSON. On a file system that ignores case, `drift` now also finds a baseline file name in the wrong case.
+
+- [#164](https://github.com/hamedniroomand/nuxt-layerscope/pull/164) [`31c3ecf`](https://github.com/hamedniroomand/nuxt-layerscope/commit/31c3ecf6d216727c6d507c0061262150a3c2d692) - `drift` now counts only the findings of rules that the current config sets to `error`. Before, `drift` counted a warning on the base as added on each pull request when the base baseline did not have it.
+
+- [#165](https://github.com/hamedniroomand/nuxt-layerscope/pull/165) [`f437aac`](https://github.com/hamedniroomand/nuxt-layerscope/commit/f437aac628be34a216288137c6df689fe6f973a3) - Check an explicit import of an npm or workspace layer by its package name, for example `@acme/ui-layer/app/composables/useAcme`, and a `require()` of it. Before, such an import was always allowed. The import resolves to the file in the layer, with the `exports` of the layer's `package.json` when it has them. A path that the layer does not have or does not export is reported by `unresolved-reference`. An import of a layer by its package name that Node cannot find from the importing file is now reported by `unresolved-reference`. A layer with a `package.json` that exists but cannot be read, or that is not valid JSON, now stops the run with an error.
+
+- [#166](https://github.com/hamedniroomand/nuxt-layerscope/pull/166) [`5b094c5`](https://github.com/hamedniroomand/nuxt-layerscope/commit/5b094c5f4ddf37b068ba681537d6454c2c5f8148) - Under `nuxi dev`, the module now writes the registry again after you add or delete a file, also when Nuxt does not generate its templates again, for example after you add a server util. Before, `check --watch` and the MCP server stopped with the stale error until `nuxi prepare` ran, and the DevTools tab kept the old symbols. After you delete a server util or remove its exports, the registry no longer lists its auto-imports.
+
+- [#161](https://github.com/hamedniroomand/nuxt-layerscope/pull/161) [`c4b1441`](https://github.com/hamedniroomand/nuxt-layerscope/commit/c4b1441a1ab609e14e9b36ed097b33b6c31be995) - `check` reports (SARIF and GitLab), `drift` and `fix` now find the git repository when the name of its dir ends with a space.
+
+- [#160](https://github.com/hamedniroomand/nuxt-layerscope/pull/160) [`a34fcfb`](https://github.com/hamedniroomand/nuxt-layerscope/commit/a34fcfb176e3e69d59096c7a8ebf1467f153087e) - `check --watch` and the MCP server now run the stale check on each run, not only when the generated files change. A new component or auto-import file, or a deleted one, now gives the stale error until `nuxi prepare` writes the generated files again. Under `nuxi dev`, the layerscope module writes the registry again after such a change. Before this change, `check --watch` and the MCP server kept the old symbol table with no error.
+
+- [#163](https://github.com/hamedniroomand/nuxt-layerscope/pull/163) [`728c67d`](https://github.com/hamedniroomand/nuxt-layerscope/commit/728c67dfc5926e4dfc2667b5bde3f9c5aeba09e4) - `check --watch` now checks again after it starts to watch a layer dir outside the project root. A file saved in such a dir during the first check is now in the report. An error from the file watcher no longer stops the watch, also an error at the start for a dir that it cannot read. layerscope prints a warning, and the watch goes on.
+
 ## 0.8.0
 
 ### Minor Changes

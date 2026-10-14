@@ -23,7 +23,7 @@ inputs:
     default: 'false'
   version:
     description: nuxt-layerscope version to run when the project does not install it. The default is the version of this action release.
-    default: 0.8.0
+    default: 0.8.1
 
 outputs:
   comment:
