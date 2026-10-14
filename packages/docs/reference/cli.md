@@ -320,7 +320,10 @@ layerscope unused [root] [options]
 
 Components and auto-imports (app, server and shared) registered by the project's own layers that
 nothing references. An explicit import of a file counts as using all of its exports. If any file
-renders a component chosen at runtime, unused components are marked "possibly used at runtime".
+renders a component chosen at runtime (`<component :is>` bound to a value, `resolveComponent(x)`,
+`resolveDynamicComponent(x)` or `<NuxtIsland :name>`), unused components are marked "possibly used
+at runtime". `<NuxtIsland name="X">` counts as a use of the island component `X`. With
+`--source types`, island components are not listed, because the .d.ts files do not have them.
 
 `unused` does not count uses in test files, in files that match [`ignore`](./config#ignore), or in
 layers installed as packages. Test files are `*.test.*`, `*.spec.*` and `__tests__/`. A file outside

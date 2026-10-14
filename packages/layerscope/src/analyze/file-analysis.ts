@@ -165,6 +165,10 @@ export class FileAnalysis {
         );
       }
     }
+    // The .d.ts files do not list island components, so an unknown name gives no finding.
+    for (const ref of scan.islands) {
+      this.addComponentEdges(ref);
+    }
     this.hasDynamicComponent =
       scan.dynamicComponents.length > 0 || scan.quietDynamicComponents.length > 0;
     for (const offset of scan.dynamicComponents) {

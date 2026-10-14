@@ -6,3 +6,4 @@ error layer-boundary shop:app/components/ShopPanel.vue:11:5 Clock (shop) → the
 error layer-boundary shop:app/components/ShopPanel.vue:11:5 Clock (shop) → theme:app/components/Clock.server.vue
 error layer-boundary shop:app/components/ShopPanel.vue:12:5 Pair (shop) → theme:app/components/Pair.client.vue
 error layer-boundary shop:app/components/ShopPanel.vue:13:5 NpmBadge (shop) → npm:app/components/NpmBadge.vue
+error layer-boundary shop:app/components/ShopPanel.vue:14:5 Weather (shop) → theme:app/components/islands/Weather.vue

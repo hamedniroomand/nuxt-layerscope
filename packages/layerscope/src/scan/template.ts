@@ -69,6 +69,21 @@ function readRender(
 }
 
 /**
+ * `<NuxtIsland name="X">` renders the island component `X` on the server by that exact name, so
+ * the render code holds no reference to it.
+ */
+function readIslands(index: TemplateIndex, scan: FileScan): void {
+  for (const element of index.elements) {
+    if (element.islandName !== null) {
+      scan.islands.push({ name: element.islandName, offset: element.offset });
+    }
+    if (element.dynamicIslandName) {
+      scan.quietDynamicComponents.push(element.offset);
+    }
+  }
+}
+
+/**
  * Compiles the template like Vue does and reads what the render function resolves at runtime:
  * `_resolveComponent("X")` for components and `_ctx.x` for identifiers without a setup binding.
  * The compiler already handles v-for and slot scopes, so no template scope analysis is needed.
@@ -121,4 +136,5 @@ export function scanTemplate(
     identOffset: name => firstIdentOffset(name, source, index) ?? templateStart,
   };
   readRender(compiled.code, renderLang, ctx, templateStart);
+  readIslands(index, scan);
 }

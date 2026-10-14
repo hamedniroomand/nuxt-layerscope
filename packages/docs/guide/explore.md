@@ -107,9 +107,11 @@ layers and referenced nowhere. A few rules keep it honest:
   outside `node_modules` (`~/.cache/c12`), because another app can use them. Uses in these layers
   still count. A second line of the report names these layers. When any layer is not listed, an
   empty list says "No unused symbol found in the listed layers."
-- If any file renders a component chosen at runtime (`<component :is>` bound to a value, or
-  `resolveComponent(name)`), unused components are marked **possibly used at runtime**, because
-  layerscope cannot see which one is picked.
+- If any file renders a component chosen at runtime (`<component :is>` bound to a value,
+  `resolveComponent(x)`, `resolveDynamicComponent(x)` or `<NuxtIsland :name>`), unused components
+  are marked **possibly used at runtime**, because layerscope cannot see which one is picked.
+- `<NuxtIsland name="X">` counts as a use of the island component `X`. With `--source types`,
+  island components are not listed, because the .d.ts files do not have them.
 
 `unused` cannot see all uses. It can miss uses in these places:
 

@@ -1,7 +1,8 @@
-import { relative } from 'pathe';
+import { join, relative } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { analyze } from '#src/analyze/index.ts';
+import { readRegistry } from '#src/registry/read.ts';
 import type { AnalyzeResult, Finding } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 import { MATRIX_ROOT, NUXT3_ROOT, NUXT4_ROOT } from '#test/fixtures.ts';
@@ -14,6 +15,13 @@ function layerPath(file: string, layerName: string | null, result: AnalyzeResult
 
 function describeTarget(finding: Finding, result: AnalyzeResult): string {
   return finding.target === null ? '' : ` → ${layerPath(finding.target, finding.toLayer, result)}`;
+}
+
+/** The names of the island components in the registry of the fixture. */
+function islandNames(root: string): Set<string> {
+  const read = readRegistry(join(root, '.nuxt'));
+  const components = read.kind === 'ok' ? read.registry.components : [];
+  return new Set(components.filter(c => c.island).map(c => c.name));
 }
 
 function snapshot(result: AnalyzeResult): string {
@@ -36,13 +44,20 @@ describe.each([
     await expect(snapshot(result)).toMatchFileSnapshot(`snapshots/findings/${name}.txt`);
   });
 
-  it('are the same from the .d.ts fallback, except for shadowed components', async () => {
+  it('are the same from the .d.ts fallback, except for shadowed and island components', async () => {
     const [registry, types] = await Promise.all([
       analyze({ rootDir: root, source: 'registry' }),
       analyze({ rootDir: root, source: 'types' }),
     ]);
-    const withoutShadowed = registry.findings.filter(f => f.rule !== 'shadowed-component');
-    expect(types.findings).toEqual(withoutShadowed);
+    // The .d.ts files do not list island components, so only the registry finds a use in
+    // `<NuxtIsland name>`. Its suggestions count that use, so they are not compared then.
+    const islands = islandNames(root);
+    const hasIsland = registry.findings.some(f => islands.has(f.symbol));
+    const comparable = (f: Finding): Finding => (hasIsland ? { ...f, suggestion: undefined } : f);
+    const expected = registry.findings.filter(
+      f => f.rule !== 'shadowed-component' && !islands.has(f.symbol),
+    );
+    expect(types.findings.map(f => comparable(f))).toEqual(expected.map(f => comparable(f)));
   });
 });
 
@@ -84,11 +99,17 @@ describe('matrix fixture', () => {
       ['Clock', 'theme'],
       ['NpmBadge', 'npm'],
       ['NuxtIsland', null],
+      // `<NuxtIsland name="Weather">`.
+      ['Weather', 'theme'],
     ]);
   });
+});
 
+describe('shared utils of the matrix fixture', () => {
   it('resolves shared utils in app, server and shared code', async () => {
-    const uses = (await result).edges.filter(e => e.symbol === 'formatMoney');
+    const uses = (await analyze({ rootDir: MATRIX_ROOT })).edges.filter(
+      e => e.symbol === 'formatMoney',
+    );
     expect(uses.map(e => [relative(MATRIX_ROOT, e.file), e.toLayer])).toEqual([
       ['layers/shop/app/components/ShopPanel.vue', 'base'],
       ['layers/shop/server/api/total.get.ts', 'base'],
