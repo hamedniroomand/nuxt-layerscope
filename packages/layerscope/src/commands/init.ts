@@ -58,7 +58,7 @@ export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
 
 export async function init(root: string | undefined, flags: InitFlags): Promise<number> {
   const rootDir = projectRoot(root);
-  const customConfig = flags.config === undefined ? undefined : resolve(flags.config);
+  const customConfig = flags.config === undefined ? undefined : resolve(rootDir, flags.config);
   // One value for every check: the config file that exists, whatever its name. `--force` replaces
   // that file, so a second config never appears next to it. With `--config`, the file is the one named.
   const existing = findExistingConfig(rootDir, customConfig);

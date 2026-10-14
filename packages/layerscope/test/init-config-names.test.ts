@@ -74,8 +74,7 @@ describe('init with a layerscope.config.mjs', () => {
 
   it('writes the file that --config names and keeps the .mjs file', async () => {
     const root = project({ files: [['layerscope.config.mjs', MJS]] });
-    const custom = relative(process.cwd(), join(root, 'other.config.ts'));
-    const { code } = await init(root, '--config', custom);
+    const { code } = await init(root, '--config', 'other.config.ts');
     expect(code).toBe(EXIT_CLEAN);
     expect(read(root, 'other.config.ts')).toContain('defineConfig');
     expect(read(root, 'layerscope.config.mjs')).toBe(MJS);

@@ -1,3 +1,5 @@
+import { realpathSync } from 'node:fs';
+
 import { join, relative } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
@@ -49,6 +51,25 @@ describe('layerscope check', () => {
     const output = captureOutput();
     expect(await run(checkArgv('--format', 'xml'))).toBe(EXIT_ERROR);
     expect(output.stderr()).toContain('Unknown format "xml"');
+  });
+});
+
+describe('layerscope check --config', () => {
+  const config = join(CONFIGS_DIR, 'permissive.config.ts');
+
+  it('reads a relative path from the root, not from the current directory', async () => {
+    const output = captureOutput();
+    expect(await run(checkArgv('--config', relative(NUXT4_ROOT, config)))).toBe(EXIT_CLEAN);
+    expect(output.stdout()).toContain('✔ No problems');
+  });
+
+  it('does not read a path from the current directory when a root is given', async () => {
+    const output = captureOutput();
+    const fromCwd = relative(process.cwd(), config);
+    expect(await run(checkArgv('--config', fromCwd))).toBe(EXIT_ERROR);
+    expect(output.stderr()).toContain(
+      `Config file not found: ${join(realpathSync(NUXT4_ROOT), fromCwd)}`,
+    );
   });
 });
 

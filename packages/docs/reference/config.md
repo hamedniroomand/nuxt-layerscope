@@ -1,8 +1,8 @@
 # Config
 
 layerscope reads `layerscope.config.ts` from the project root. `.mts`, `.js` and `.mjs` work too.
-Another path can be given with [`--config`](./cli#layerscope-check). Without a config file every
-layer is unrestricted.
+Another path can be given with [`--config`](./cli#layerscope-check), relative to the root. Without
+a config file every layer is unrestricted.
 
 ```ts [layerscope.config.ts]
 import { defineConfig } from 'nuxt-layerscope';

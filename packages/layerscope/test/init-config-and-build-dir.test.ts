@@ -1,4 +1,3 @@
-import { join, relative } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { EXIT_CLEAN, run } from '#src/cli.ts';
@@ -108,7 +107,7 @@ describe('init and the Nuxt build directory, with an existing config', () => {
     const { code, stderr } = await init(
       root,
       '--config',
-      relative(process.cwd(), join(root, 'custom.config.mjs')),
+      'custom.config.mjs',
       '--force',
       '--verbose',
     );

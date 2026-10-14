@@ -10,7 +10,7 @@ inputs:
     description: Nuxt project root, relative to the repository.
     default: .
   config:
-    description: Path to layerscope.config.ts. Defaults to the one in the root.
+    description: Path to layerscope.config.ts, relative to the root. Defaults to the one in the root.
     default: ''
   prepare:
     description: Run "nuxi prepare" before checking. Needs the project's dependencies installed.

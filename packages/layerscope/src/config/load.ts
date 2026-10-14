@@ -32,7 +32,7 @@ function defineConfigModule(): string {
 
 function findConfigFile(rootDir: string, configFile?: string): string | null {
   if (configFile !== undefined) {
-    const file = realPath(resolve(process.cwd(), configFile));
+    const file = realPath(resolve(rootDir, configFile));
     if (!existsSync(file)) {
       throw new LayerscopeError(`Config file not found: ${file}`);
     }
