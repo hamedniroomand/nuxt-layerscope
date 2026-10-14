@@ -110,7 +110,7 @@ export async function check(
   const strict = flags.strictBaseline === true;
   const paint = paintFor(process.stdout);
   process.stdout.write(formatResult(result, format, currentDir(), paint, repository, strict));
-  const stale = reportStrict(result, root, flags);
+  const stale = reportStrict(result, splitArguments(root, files).root, flags);
   writeSummary(flags.summary, result.findings, stale.summary);
   writeNotes(result, flags.verbose === true);
   // Findings missing from the baseline fail the check, and with --strict-baseline fixed entries too.

@@ -25,7 +25,7 @@ function projectWith(entries: Entry[], name = FILE): string {
 }
 
 const STALE: Entry = { rule: 'unresolved-reference', file: GONE, symbol: './x', toLayer: null };
-const LINE = `1 fixed entry in the baseline fails the check (--strict-baseline). Run "layerscope check --update-baseline" and commit ${FILE}.`;
+const LINE = `1 baseline entry no longer occurs and fails the check (--strict-baseline). Run "layerscope check --update-baseline" and commit ${FILE}.`;
 
 describe('check --strict-baseline', () => {
   it('fails on a fixed entry, with a red last line in the text format', async () => {
@@ -74,20 +74,40 @@ describe('check --strict-baseline, the command in the message', () => {
   });
 });
 
+describe('check --strict-baseline, the config in the command', () => {
+  it('names the --config of the run in the command', async () => {
+    const repo = gitProject();
+    repo.write(
+      'configs/my.config.mjs',
+      "export default { layers: { a: { path: 'layers/a' } }, baseline: 'ci/baseline.json' };\n",
+    );
+    repo.write('ci/baseline.json', `${JSON.stringify({ version: 1, entries: [STALE] })}\n`);
+    const result = await check(
+      ['--config', 'configs/my.config.mjs', '--strict-baseline', '--format', 'github'],
+      repo.root,
+    );
+    expect(result.code).toBe(EXIT_VIOLATIONS);
+    expect(result.err).toContain(
+      'Run "layerscope check --config configs/my.config.mjs --update-baseline" and commit ci/baseline.json.',
+    );
+  });
+});
+
 describe('check --strict-baseline, which entries count', () => {
-  it('counts the part of a count that no finding uses', async () => {
+  it('counts an entry with a count', async () => {
     const root = projectWith([{ ...STALE, file: 'layers/a/app/pages/p0.vue', count: 2 }]);
     const result = await check(['--strict-baseline'], root);
     expect(result.code).toBe(EXIT_VIOLATIONS);
   });
 
-  it('counts only the entries of the selected files', async () => {
+  it('counts only the entries of the selected files, and gives the command without them', async () => {
     const root = projectWith([STALE]);
     const outside = await check(['--strict-baseline', 'layers/a/app/pages/p0.vue'], root);
     expect(outside.code).toBe(EXIT_CLEAN);
     const inside = projectWith([{ ...STALE, file: 'layers/a/app/pages/p0.vue' }]);
     const result = await check(['--strict-baseline', 'layers/a/app/pages/p0.vue'], inside);
     expect(result.code).toBe(EXIT_VIOLATIONS);
+    expect(result.out).toContain(`Run "layerscope check --update-baseline" and commit ${FILE}.`);
   });
 
   it('does not count a shadowed-component entry with the .d.ts source', async () => {
@@ -111,7 +131,7 @@ describe('check --strict-baseline, the summary and the refusals', () => {
     const summary = join(root, 'summary.md');
     await check(['--strict-baseline', '--format', 'github', '--summary', summary], root);
     expect(readFileSync(summary, 'utf8')).toBe(
-      `1 fixed entry in the baseline fails the check (--strict-baseline). Run \`layerscope check --update-baseline\` and commit ${FILE}.\n\n\`\`\`\n${GONE}  unresolved-reference ./x\n\`\`\`\n`,
+      `1 baseline entry no longer occurs and fails the check (--strict-baseline). Run \`layerscope check --update-baseline\` and commit ${FILE}.\n\n\`\`\`\n${GONE}  unresolved-reference ./x\n\`\`\`\n`,
     );
   });
 

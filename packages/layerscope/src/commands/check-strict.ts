@@ -10,6 +10,7 @@ import { currentDir } from './shared.ts';
 
 interface StrictFlags {
   baseline?: string;
+  config?: string;
   strictBaseline?: boolean;
   updateBaseline?: boolean;
   watch?: boolean;
@@ -34,13 +35,16 @@ function shellWord(value: string): string {
 }
 
 /**
- * The command that removes the fixed entries: the same root and the same `--baseline` as this run.
+ * The command that removes the fixed entries: the same root, `--config` and `--baseline` as this run.
  * A `baseline` key in the config needs nothing, because the config names the file.
  */
 function updateCommand(root: string | undefined, flags: StrictFlags): string {
   const words = ['layerscope', 'check'];
   if (root !== undefined) {
     words.push(shellWord(root));
+  }
+  if (flags.config !== undefined) {
+    words.push('--config', shellWord(flags.config));
   }
   if (flags.baseline !== undefined) {
     words.push('--baseline', shellWord(flags.baseline));
@@ -71,8 +75,8 @@ export function reportStrict(
   const file = relative(currentDir(), result.baseline.file);
   const count =
     entries.length === 1
-      ? '1 fixed entry in the baseline fails'
-      : `${entries.length} fixed entries in the baseline fail`;
+      ? '1 baseline entry no longer occurs and fails'
+      : `${entries.length} baseline entries no longer occur and fail`;
   const head = `${count} the check (--strict-baseline).`;
   if (flags.format === 'text') {
     const paint = paintFor(process.stdout);

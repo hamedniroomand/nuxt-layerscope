@@ -106,8 +106,10 @@ function assertSummaryName(value: unknown): asserts value is string {
   throw new LayerscopeError(`The option --summary needs a file name.${hint}`);
 }
 
-/** Writes the summary of the findings to the file. The file is empty when there is no finding. */
-/** `stale` is the Markdown of the fixed entries that fail `--strict-baseline`, or empty. */
+/**
+ * Writes the summary of the findings to the file, and `stale`: the Markdown of the fixed entries that
+ * fail `--strict-baseline`, or empty. The file is empty when there is no finding and no such entry.
+ */
 export function writeSummary(summary: unknown, findings: Finding[], stale = ''): void {
   if (typeof summary !== 'string') {
     return;
