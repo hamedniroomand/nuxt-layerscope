@@ -164,8 +164,15 @@ describe('a template literal that is a name, not a path', () => {
     expect(scan.components).toEqual([]);
   });
 
-  it('keeps resolveComponent() with a template literal as a dynamic component', () => {
+  it('takes resolveComponent() with a template literal with no ${} as that component', () => {
     const scan = scanFile('<script setup>\nresolveComponent(`Foo`)\n</script>', 'a.vue');
+    expect(scan.dynamicComponents).toEqual([]);
+    expect(scan.components.map(ref => ref.name)).toEqual(['Foo']);
+    expect(scan.imports).toEqual([]);
+  });
+
+  it('keeps resolveComponent() with a template literal with ${} as a dynamic component', () => {
+    const scan = scanFile('<script setup>\nresolveComponent(`Foo${x}`)\n</script>', 'a.vue');
     expect(scan.dynamicComponents).toHaveLength(1);
     expect(scan.components).toEqual([]);
   });

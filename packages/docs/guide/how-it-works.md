@@ -87,9 +87,9 @@ Every source file of every checked layer is parsed:
 
 - **Scripts** (`.ts`, `.js`, `.tsx`, `.jsx`, `.mts`, `.cts`, `.mjs`, `.cjs`, and `<script>` blocks of
   `.vue` files) are parsed with [oxc-parser](https://oxc.rs) and scope-tracked. An identifier that is not
-  declared, imported or a known global is a _free_ identifier: it is either auto-imported or
-  unresolved. A local `const useCart = ...` shadows the auto-import of the same name, just as it
-  does at runtime.
+  declared, imported or a known global is a _free_ identifier: it is auto-imported, a component (as
+  in `h(CartSummary)` in a `.vue`, `.jsx` or `.tsx` file) or unresolved. A local
+  `const useCart = ...` shadows the auto-import of the same name, just as it does at runtime.
 - **Templates** are compiled with `@vue/compiler-sfc`, the compiler Vue uses. The render function
   shows which components Nuxt resolves (`resolveComponent("CartSummary")`) and which identifiers
   the template reads from the component instance (`_ctx.formatPrice`). `<component :is>` bound to

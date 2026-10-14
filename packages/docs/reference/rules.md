@@ -26,7 +26,7 @@ Every kind of dependency is checked:
 | Kind                     | Example                                                                                                                          |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
 | Auto-imported composable | `useCart()` in a script or <code v-pre>{{ formatPrice(total) }}</code> in a template                                             |
-| Component                | `<CartSummary>`, `<cart-summary>`, `<LazyCartSummary>`                                                                           |
+| Component                | `<CartSummary>`, `<cart-summary>`, `<LazyCartSummary>`, `resolveComponent('cart-summary')`, `h(CartSummary)`                     |
 | Nitro server util        | `getCartStore()` in `server/api/*.ts`                                                                                            |
 | Shared util              | `formatMoney()` from another layer's `shared/utils`                                                                              |
 | Explicit import          | `import { useCart } from '#layers/web/app/composables/useCart'`, `~/…`, relative paths, `@acme/ui-layer/app/composables/useAcme` |
@@ -45,6 +45,13 @@ string (the `unresolved-reference` rule reports it), and a `createRequire` bindi
 a function, and `createRequire` taken with `const { createRequire } = require('module')`. A binding
 is the name that `createRequire` was assigned to, so a later reassignment of that name does not
 change what counts.
+
+In a script, `resolveComponent()` with a fixed name (a string literal, or a template literal with no
+`${}`) is a use of that component. The name can be in PascalCase or in kebab-case. In a `.vue`,
+`.jsx` or `.tsx` file, `h(CartSummary)` is also a use of the component, also when an import or a
+local binding has the name `CartSummary`: Nuxt changes the name by its text, not by its scope. In
+these three file kinds, Nuxt changes such a use to an import of the component. Nuxt does not change
+`h(CartSummary)` in a `.ts` or `.js` file, so there `unresolved-reference` reports it.
 
 A component name can have more than one file: a `.client` file, a `.server` file and a file with no
 suffix, in one layer or in different layers. Nuxt uses one file in the browser and one file on the
@@ -183,6 +190,8 @@ Something could not be resolved, so layerscope will not call it safe:
   by its name, and layerscope cannot follow a global name to a file, so that prop is not reported.
   `unused` still treats such a file as one that can use a component by name.
   A `string` prop with no default, or with a default that is not an element name, is still reported.
+- `resolveComponent()` with a name that is not fixed, such as a variable or a template literal with
+  `${}`.
 - a template that layerscope cannot read: a template expression that it cannot parse (for example
   TypeScript syntax in a component without a TypeScript script), a `lang` other than HTML, or a
   `src` attribute. Uses in that template are not checked.

@@ -3,6 +3,7 @@ import type { ScopeTracker, ScopeTrackerNode, WalkerThisContextEnter } from 'oxc
 import { isReferenceIdentifier, walk } from 'oxc-walker';
 
 import { fixedPath, importedName, reexportedName, requiredNames, stringLiteral } from './ast.ts';
+import { recordComponentCall } from './component-calls.ts';
 import type { FileScan, ImportRef, OffsetMapper, Unread } from './types.ts';
 
 export interface VisitContext {
@@ -264,15 +265,7 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
       }
       return;
     }
-    if (node.callee.name !== 'resolveComponent' || arg === undefined) {
-      return;
-    }
-    const name = stringLiteral(arg);
-    if (name === null) {
-      scan.dynamicComponents.push(mapOffset(arg.start));
-    } else {
-      scan.components.push({ name, offset: mapOffset(arg.start) });
-    }
+    recordComponentCall(node.callee.name, arg, ctx);
   },
   Identifier(node, parent, { scan, tracker, mapOffset }) {
     if (
