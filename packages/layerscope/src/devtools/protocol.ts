@@ -113,7 +113,7 @@ export type TraceView = WhyReport;
 
 /** A row of the Unused view. */
 export interface UnusedViewRow extends UnusedRow {
-  /** The kind and the marks of the symbol, as `layerscope unused` shows them. */
+  /** The kind, the context and the marks of the symbol, as `layerscope unused` shows them. */
   label: string;
 }
 

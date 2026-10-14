@@ -38,7 +38,7 @@ describe('the context of an unused auto-import', () => {
       },
       SHARED,
       undefined,
-      SHARED,
+      {},
     );
     expect((await rows(root)).map(([name, context]) => [name, context])).toEqual([
       ['sharedLabel', 'shared'],

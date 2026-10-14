@@ -14,7 +14,7 @@ export function isUnusedFormat(value: string): value is UnusedFormat {
   return (UNUSED_FORMATS as readonly string[]).includes(value);
 }
 
-/** The kind and the marks of an unused symbol, as the text report shows them. */
+/** The kind, the context and the marks of an unused symbol, as the text report shows them. */
 export function unusedLabel(symbol: UnusedSymbol): string {
   const exposed = symbol.exposed ? ', exposed' : '';
   if (symbol.kind === 'component') {
