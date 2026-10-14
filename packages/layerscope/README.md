@@ -85,8 +85,9 @@ link in its path, or when a target path exists. `--allow-dirty` skips the git ch
 
 ### `layerscope drift [root]`
 
-Prints how many violations the code adds and fixes against the baseline committed on `--base`
-(default `origin/main`), and the baseline size before and after. `--format text|markdown|json`.
+Prints how many errors the code adds and fixes against the baseline committed on `--base` (default
+`origin/main`), and the baseline size before and after. Only the rules that the current config sets
+to `error` count. `--format text|markdown|json`.
 
 ### Baseline
 
