@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 
 import { dirname, join } from 'pathe';
+import { onTestFinished } from 'vite-plus/test';
 
 import { RegistryCollector } from '#src/module/collect.ts';
 import { loadUnimport } from '#src/module/import-dirs.ts';
@@ -119,7 +119,12 @@ async function setupHooks(project: CollectProject): Promise<void> {
 
 /** `nitroImports`: the static imports of Nitro's unimport, as presets and modules give them. */
 export async function collectProject(nitroImports: UnimportImport[] = []): Promise<CollectProject> {
-  const base = realpathSync(mkdtempSync(join(tmpdir(), 'layerscope-collect-')));
+  // Next to the fixture (git ignores `nuxt4-private-*`), so the dir is below the cwd of the tests.
+  // A glob of a dir outside the cwd takes about 1 s, and a collect runs several globs.
+  const base = realpathSync(mkdtempSync(join(NUXT4_ROOT, '..', 'nuxt4-private-collect-')));
+  onTestFinished(() => {
+    rmSync(base, { recursive: true, force: true });
+  });
   const { nuxt, call } = fakeNuxt(base);
   const nitroDirs = [join(base, 'server/utils'), join(base, 'shared/utils')];
   const project: CollectProject = {
