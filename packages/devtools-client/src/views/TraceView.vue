@@ -93,7 +93,7 @@
         <ul class="uses">
           <li
             v-for="use in group.uses"
-            :key="`${use.file}:${use.line}:${use.column}`"
+            :key="`${use.file}:${use.line}:${use.column}:${use.target.file ?? use.target.external}`"
           >
             <FileLocation
               :file="use.absFile ?? use.file"
@@ -102,6 +102,7 @@
             >
               {{ use.file }}:{{ use.line }}:{{ use.column }}
             </FileLocation>
+            <span class="mono">→ {{ use.target.file ?? use.target.external }}</span>
             <span class="muted">{{ STATUS_LABELS[use.status] }}</span>
           </li>
         </ul>
