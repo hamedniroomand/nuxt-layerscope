@@ -21,7 +21,7 @@ layers/admin/app/components/AdminPanel.vue
                  allowed for "admin": shared, auth
 ```
 
-Every kind of dependency is checked:
+These kinds of dependency are checked:
 
 | Kind                     | Example                                                                                                                          |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -68,6 +68,13 @@ entry then has a `count` of 2.
 A type-only import (`import type { A } from '...'`) counts as an explicit import, unless
 [`typeImports`](./config#typeimports) is `'ignore'`. Then it makes no dependency and no rule
 reports it.
+
+A use of a layout or of route middleware by its name is not checked:
+`definePageMeta({ layout: 'shop', middleware: ['shop-only'] })`, `<NuxtLayout name="shop">` and
+`setPageLayout('shop')`. Global middleware (`middleware/*.global.ts`) runs on every route, so each
+page uses it with no reference in the code. A use by URL is not checked either, for example
+`navigateTo('/shop')` or `$fetch('/api/cart')` to a page or a server route of another layer. In
+these cases, a layer can use a layer that it may not use, and no rule reports it.
 
 To fix a finding, either move the symbol to a layer both may use (often `shared`), or allow the
 dependency if it is intended.
