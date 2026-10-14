@@ -14,26 +14,30 @@ import { LOOKUP_EXTENSIONS, resolveFile } from './file.ts';
 export type LayerPackages = ReadonlyMap<string, string>;
 
 /** How a file loads a module: through `require()`, and with the `type` keyword on the statement. */
-export type ImportForm = Pick<ImportRef, 'require' | 'typeStatement'>;
+export type ImportForm = Pick<ImportRef, 'require' | 'typeStatement'> & {
+  /** The importing file is server code, which Nitro bundles. */
+  server?: boolean;
+};
 
 /**
  * The `exports` conditions for an import of a layer. A target of `exports` cannot leave its
- * package, so each condition gives a file of the same layer. An import uses `import` and a
- * `require()` uses `require`, never both: exsolve takes the first matching key of the `exports`
- * object, so with both, the order of the keys and not the import would choose the file. `types`
- * is not in the list: packages put it first, and it gives a `.d.ts` file, not the source. A
- * statement with the `type` keyword tries `types` when no other condition gives a file.
- * `development` is in the list and `production` is not: layerscope reads the source, as
- * `nuxi dev` does.
+ * package, so each condition gives a file of the same layer. exsolve takes the first matching key
+ * of the `exports` object, so when two conditions match, the order of the keys chooses the file.
+ * An import uses `import` only. A `require()` uses `require` only, except in server code: Nitro
+ * adds `import` to the export conditions of every preset, and `@rollup/plugin-node-resolve` uses
+ * those for a `require()` too, so there the key order picks between `require` and `import`. Each
+ * context gets both `browser` and `node`: app code runs in the client and in the SSR bundle, and
+ * Nitro uses `browser` and not `node` for edge presets. `types` is not in the list: packages put
+ * it first, and it gives a `.d.ts` file, not the source. A statement with the `type` keyword tries
+ * `types` when no other condition gives a file. `development` is in the list and `production` is
+ * not: layerscope reads the source, as `nuxi dev` does.
  */
-const SHARED_CONDITIONS = ['module', 'node', 'browser', 'development', 'default'];
+const COMMON_CONDITIONS = ['module', 'node', 'browser', 'development', 'default'];
 
 function conditionsOf(form: ImportForm, types: boolean): string[] {
-  return [
-    form.require === true ? 'require' : 'import',
-    ...SHARED_CONDITIONS,
-    ...(types ? ['types'] : []),
-  ];
+  const serverImport = form.server === true ? ['import'] : [];
+  const loaders = form.require === true ? ['require', ...serverImport] : ['import'];
+  return [...loaders, ...COMMON_CONDITIONS, ...(types ? ['types'] : [])];
 }
 
 function resolveModule(id: string, fromFile: string, conditions: string[]): string | undefined {
