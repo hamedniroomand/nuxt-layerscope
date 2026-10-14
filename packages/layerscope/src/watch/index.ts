@@ -66,7 +66,8 @@ function outputKey(result: AnalyzeResult): string {
     result.findings,
     result.notes,
     result.files.length,
-    // The text report counts these and the JSON report lists them.
+    // The text report counts these and the JSON report lists them, with the file.
+    baseline?.file,
     baseline?.suppressed,
     baseline?.removable,
   ]);

@@ -186,3 +186,29 @@ describe('watchCheck inputs of the report', () => {
     await session.stop();
   });
 });
+
+describe('watchCheck and the baseline key of the config', () => {
+  it('prints the report again when the config names another baseline file with the same entries', async () => {
+    const root = project();
+    write(root, 'layers/a/app/pages/bad.vue', page('./missing'));
+    const found = await analyze({ rootDir: root });
+    for (const name of ['one.json', 'two.json']) {
+      writeBaseline(join(root, name), createBaseline(found.findings, root));
+    }
+    const config = (name: string): string =>
+      `export default { baseline: '${name}', layers: { a: { path: 'layers/a' } } };\n`;
+    write(root, 'layerscope.config.mjs', config('one.json'));
+    const session = start(root, 'json', false, { baseline: undefined });
+    await vi.waitFor(() => {
+      expect(session.out.length).toBe(1);
+    });
+    write(root, 'layerscope.config.mjs', config('two.json'));
+    session.change({ config: true });
+    await vi.waitFor(() => {
+      expect(session.out.length).toBe(2);
+    });
+    await session.stop();
+    expect(session.out[0]).toContain('one.json');
+    expect(session.out[1]).toContain('two.json');
+  });
+});
