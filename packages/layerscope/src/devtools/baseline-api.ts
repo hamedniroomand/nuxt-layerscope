@@ -62,10 +62,10 @@ function knownKeys(result: AnalyzeResult, path: string): Set<string> {
 
 async function edit(path: string, body: EditBody, session: Session): Promise<Reply> {
   const { analyzer, writes } = session;
-  // A config edit can name another baseline file. The rev check below then refuses a request
-  // whose findings changed.
-  await analyzer.invalidateIfChanged();
-  const snapshot = await analyzer.get();
+  // A config edit can name another baseline file. A run in flight can have the old config, so a
+  // change needs a new run. The rev check below then refuses a request whose findings changed.
+  const changed = await analyzer.invalidateIfChanged();
+  const snapshot = changed ? await analyzer.refresh() : await analyzer.get();
   if (body.id !== snapshot.id || body.rev !== snapshot.rev) {
     return {
       status: 409,

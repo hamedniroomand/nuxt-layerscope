@@ -2,7 +2,7 @@ import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
-import { describe, expect, it } from 'vite-plus/test';
+import { describe, expect, it, vi } from 'vite-plus/test';
 
 import { findingKey } from '#src/devtools/finding-keys.ts';
 import { server } from '#test/devtools-server.ts';
@@ -11,7 +11,10 @@ import { makeFinding, makeResult } from '#test/factories.ts';
 const cart = makeFinding();
 const KEY = findingKey(cart, '/app');
 
-/** A tab whose session has no baseline option, so the config of each result names the file. */
+/**
+ * A tab whose session has no baseline option, so the config of each result names the file. The env
+ * key changes with the file name, as it does when the config file changes.
+ */
 async function setup(): Promise<{
   root: string;
   app: Awaited<ReturnType<typeof server>>;
@@ -20,8 +23,10 @@ async function setup(): Promise<{
   nameFile: (name: string) => void;
 }> {
   const root = mkdtempSync(join(tmpdir(), 'layerscope-key-'));
-  const app = await server(root, { baseline: undefined });
+  const env = { key: '' };
+  const app = await server(root, { baseline: undefined, envKey: () => env.key });
   const nameFile = (name: string): void => {
+    env.key = name;
     app.run.mockResolvedValue(makeResult({ findings: [cart], config: { baseline: name } }));
   };
   nameFile('one.json');
@@ -78,5 +83,33 @@ describe('the baseline writes of the tab, with the baseline key of the config', 
     await post('/api/baseline/undo', { id: written.id, writeId: written.writeId });
     expect(readFileSync(join(root, 'one.json'), 'utf8')).toBe(empty);
     expect(readFileSync(join(root, 'two.json'), 'utf8')).toBe(empty.replace('1', '1 '));
+  });
+});
+
+describe('the baseline writes of the tab, while a run is in flight', () => {
+  it('writes the new file when the config changes while a run with the old config is in flight', async () => {
+    const { root, app, post, meta, nameFile } = await setup();
+    const before = await meta();
+    const old = Promise.withResolvers<ReturnType<typeof makeResult>>();
+    app.run.mockReturnValueOnce(old.promise);
+    app.session.live.invalidate();
+    const inflight = app.session.analyzer.get();
+    await vi.waitFor(() => {
+      expect(app.run).toHaveBeenCalledTimes(2);
+    });
+    nameFile('two.json');
+    const check = vi.spyOn(app.session.analyzer, 'invalidateIfChanged');
+    const written = post('/api/baseline/ignore', { ...before, keys: [KEY] });
+    // The old run ends only after the write request has checked the config, so that request sees
+    // the run in flight.
+    await vi.waitFor(() => {
+      expect(check).toHaveBeenCalled();
+    });
+    await check.mock.results[0]?.value;
+    old.resolve(makeResult({ findings: [cart], config: { baseline: 'one.json' } }));
+    await inflight;
+    expect((await written).status).toBe(200);
+    expect(existsSync(join(root, 'two.json'))).toBe(true);
+    expect(existsSync(join(root, 'one.json'))).toBe(false);
   });
 });

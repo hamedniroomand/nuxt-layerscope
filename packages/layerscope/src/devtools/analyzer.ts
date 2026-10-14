@@ -119,14 +119,16 @@ export class Analyzer {
   }
 
   /**
-   * Marks the snapshot stale when the env key changed after the last run. An edit of
-   * `layerscope.config.*` fires no Nuxt hook, so without this check the tab can keep a config
-   * that names an old baseline file.
+   * Marks the snapshot stale when the env key changed after the last run started, and returns
+   * `true` then. An edit of `layerscope.config.*` fires no Nuxt hook, so without this check the
+   * tab can keep a config that names an old baseline file.
    */
-  public async invalidateIfChanged(): Promise<void> {
-    if (this.snapshot !== undefined && (await this.options.envKey()) !== this.lastEnvKey) {
-      this.invalidate();
+  public async invalidateIfChanged(): Promise<boolean> {
+    if (this.snapshot === undefined || (await this.options.envKey()) === this.lastEnvKey) {
+      return false;
     }
+    this.invalidate();
+    return true;
   }
 
   public async get(): Promise<Snapshot> {
