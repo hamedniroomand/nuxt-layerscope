@@ -18,7 +18,7 @@ import { recordComponentDirs, shadowedBy } from './components.ts';
 import { ImportDirRecorder, mergeImportDirs } from './import-dirs.ts';
 import { NitroImports, activeImports, registryImports, resolveAlias } from './imports.ts';
 import type { Component, ComponentsDir, Nitro, Nuxt, Unimport, UnimportImport } from './nuxt.ts';
-import { onNitroInit } from './nuxt.ts';
+import { onNitroInit, readNuxtIgnore } from './nuxt.ts';
 
 const SERVER_PLACEHOLDER = '/components/server-placeholder';
 
@@ -161,6 +161,7 @@ export class RegistryCollector {
       shadowedComponents: app.shadowedComponents,
       componentDirs: app.componentDirs,
       importDirs,
+      nuxtIgnore: readNuxtIgnore(this.nuxt),
       imports: this.imports(app.imports, server),
       ...(Object.keys(this.config).length > 0 ? { config: this.config } : {}),
     };

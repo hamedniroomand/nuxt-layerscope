@@ -4,6 +4,7 @@ import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { analyze } from '#src/analyze/index.ts';
+import { noNuxtIgnore } from '#test/factories.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
 import { tempDir, write } from '#test/watch-project.ts';
 
@@ -15,6 +16,7 @@ const REGISTRY = {
   shadowedComponents: [],
   componentDirs: [],
   importDirs: [],
+  nuxtIgnore: noNuxtIgnore(),
   imports: { app: [], server: [], shared: [] },
 };
 

@@ -10,7 +10,13 @@ function fakeNuxt(): { nuxt: Nuxt; call: (name: string, ...args: unknown[]) => P
   const hooks = new Map<string, Handler[]>();
   const nuxt = {
     _version: '0.0.0',
-    options: { _layers: [], alias: {}, extensions: ['.vue'], buildDir: '/p/.nuxt' },
+    options: {
+      _layers: [],
+      alias: {},
+      ignore: [],
+      extensions: ['.vue'],
+      buildDir: '/p/.nuxt',
+    },
     hook: (name: string, handler: Handler): void => {
       hooks.set(name, [...(hooks.get(name) ?? []), handler]);
     },

@@ -84,6 +84,6 @@ export async function assertFresh(table: SymbolTable, layers: Layer[]): Promise<
  */
 export async function assertRegistryFresh(table: SymbolTable, registry: Registry): Promise<void> {
   assertNoDeletedTargets(allTargets(table));
-  await assertComponentDirsFresh(registry.componentDirs);
-  await assertImportDirsFresh(registry.importDirs ?? []);
+  await assertComponentDirsFresh(registry.componentDirs, registry.nuxtIgnore);
+  await assertImportDirsFresh(registry.importDirs ?? [], registry.nuxtIgnore);
 }

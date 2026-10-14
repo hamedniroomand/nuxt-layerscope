@@ -153,8 +153,11 @@ layerscope check --watch
   reads the registry again when it changes. The option `--prepare` runs `nuxi prepare` once, at
   the start. When `nuxi dev` runs, the error can show for a short time after you add or delete a
   component or an auto-import file. The layerscope module then writes the registry again, and the
-  next run is clean. The module does not write the registry again after you add a file that Nuxt
-  ignores, such as a test file. If the error stays, run `nuxi prepare`.
+  next run is clean. A new file that Nuxt ignores, such as `composables/useCart.spec.ts`, does not
+  cause the error. But Nitro auto-imports such a file from its dirs, such as `server/utils` and
+  `shared/utils`, and under `nuxi dev` the module does not write the registry again for it. Then
+  each run stops until you run `nuxi prepare`. If the error stays for another file, run
+  `nuxi prepare`.
 - A change to `layerscope.config.*` applies on the next run, in every config format. A local file
   that the config imports is not read again: change the config file as well (for example, add a
   comment), or start the watch again.

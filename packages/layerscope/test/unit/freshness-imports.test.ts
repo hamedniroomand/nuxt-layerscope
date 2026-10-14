@@ -6,8 +6,10 @@ import { describe, expect, it } from 'vite-plus/test';
 
 import { assertRegistryFresh } from '#src/analyze/freshness.ts';
 import type { SymbolTable } from '#src/nuxt/symbols.ts';
+import type { NuxtIgnore } from '#src/registry/nuxt-ignore.ts';
 import type { Registry, RegistryImportDir } from '#src/registry/schema.ts';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
+import { noNuxtIgnore } from '#test/factories.ts';
 
 const EXTENSIONS = '*.{mts,cts,ts,tsx,mjs,cjs,js,jsx}';
 
@@ -18,7 +20,10 @@ function emptyTable(): SymbolTable {
   };
 }
 
-function registryWith(importDirs: RegistryImportDir[]): Registry {
+function registryWith(
+  importDirs: RegistryImportDir[],
+  nuxtIgnore: NuxtIgnore = noNuxtIgnore(),
+): Registry {
   return {
     version: REGISTRY_VERSION,
     generator: { name: 'nuxt-layerscope', version: '0.0.0', nuxt: '4.0.0' },
@@ -27,6 +32,7 @@ function registryWith(importDirs: RegistryImportDir[]): Registry {
     shadowedComponents: [],
     componentDirs: [],
     importDirs,
+    nuxtIgnore,
     imports: { app: [], server: [], shared: [] },
   } as Registry;
 }
@@ -36,8 +42,22 @@ function tempDir(): string {
 }
 
 /** The entry that the module records for a dir: the dir and the globs that Nuxt scans it with. */
-function entry(dir: string, files: string[]): RegistryImportDir {
-  return { dir, globs: [dir, join(dir, EXTENSIONS)], files };
+function entry(
+  dir: string,
+  files: string[],
+  scanner: RegistryImportDir['scanner'] = 'nuxt',
+): RegistryImportDir {
+  return { dir, globs: [dir, join(dir, EXTENSIONS)], scanner, files };
+}
+
+/** Rules as `resolveIgnorePatterns()` gives them, for a project at `root`. */
+function rulesFor(root: string): NuxtIgnore {
+  return {
+    rootDir: root,
+    roots: [`${root}/`],
+    patterns: ['**/*.d.ts', '**/*.spec.ts', '**/-*.*'],
+    options: null,
+  };
 }
 
 function composables(files: string[]): string {
@@ -75,11 +95,17 @@ describe('assertRegistryFresh for auto-import dirs', () => {
     );
   });
 
-  it('fails on a new file that Nuxt would ignore: one more prepare clears it', async () => {
-    const dir = composables(['helper.d.ts']);
-    const registry = registryWith([entry(dir, [])]);
+  it('skips a new file that the ignore rules of Nuxt match, in a dir of the app scan', async () => {
+    const dir = composables(['useCart.spec.ts', '-draft.ts', 'helper.d.ts']);
+    const registry = registryWith([entry(dir, [])], rulesFor(join(dir, '../../../..')));
+    await expect(assertRegistryFresh(emptyTable(), registry)).resolves.toBeUndefined();
+  });
+
+  it('fails on such a file in a dir of the Nitro scan, because Nitro auto-imports it', async () => {
+    const dir = composables(['useCart.spec.ts']);
+    const registry = registryWith([entry(dir, [], 'nitro')], rulesFor(join(dir, '../../../..')));
     await expect(assertRegistryFresh(emptyTable(), registry)).rejects.toThrow(
-      /helper\.d\.ts is missing from the layerscope registry/u,
+      /useCart\.spec\.ts is missing from the layerscope registry/u,
     );
   });
 
@@ -137,7 +163,7 @@ describe('assertRegistryFresh for auto-import dirs that are globs', () => {
     mkdirSync(join(dir, 'cart'), { recursive: true });
     writeFileSync(join(dir, 'cart/index.ts'), 'export const x = 1;\n');
     const glob = join(dir, '*/index.ts');
-    const registry = registryWith([{ dir: glob, globs: [glob], files: [] }]);
+    const registry = registryWith([{ dir: glob, globs: [glob], scanner: 'nuxt', files: [] }]);
     await expect(assertRegistryFresh(emptyTable(), registry)).rejects.toThrow(
       /cart\/index\.ts is missing from the layerscope registry/u,
     );

@@ -74,6 +74,7 @@ function fakeNuxt(base: string): Pick<CollectProject, 'nuxt' | 'call'> {
     options: {
       _layers: [],
       alias: {},
+      ignore: [],
       extensions: ['.vue'],
       buildDir: join(base, '.nuxt'),
       rootDir: NUXT4_ROOT,

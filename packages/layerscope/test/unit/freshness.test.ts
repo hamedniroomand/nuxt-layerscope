@@ -10,6 +10,7 @@ import type { SymbolTable } from '#src/nuxt/symbols.ts';
 import type { Registry, RegistryComponentDir } from '#src/registry/schema.ts';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
 import type { Layer } from '#src/types.ts';
+import { noNuxtIgnore } from '#test/factories.ts';
 
 function emptyTable(): SymbolTable {
   return {
@@ -27,6 +28,7 @@ function registryWith(componentDirs: RegistryComponentDir[]): Registry {
     shadowedComponents: [],
     componentDirs,
     importDirs: [],
+    nuxtIgnore: noNuxtIgnore(),
     imports: { app: [], server: [], shared: [] },
   };
 }

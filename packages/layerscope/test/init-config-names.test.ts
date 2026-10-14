@@ -4,6 +4,7 @@ import { join, relative } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { EXIT_CLEAN, EXIT_ERROR } from '#src/cli.ts';
+import { noNuxtIgnore } from '#test/factories.ts';
 
 import { init, project, read, removeProjects } from './init-project.ts';
 
@@ -23,6 +24,7 @@ const REGISTRY = {
   shadowedComponents: [],
   componentDirs: [],
   importDirs: [],
+  nuxtIgnore: noNuxtIgnore(),
   imports: { app: [], server: [], shared: [] },
   config: { preset: 'layered' },
 };

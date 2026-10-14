@@ -78,20 +78,23 @@ describe('the Nitro part of the collector', () => {
     );
   });
 
-  it('keeps the app entry of a dir that is in both scans, so a new file there gives the stale error', async () => {
+  it('keeps the app entry and the Nitro entry of a dir in both scans, so a new file there gives the stale error', async () => {
     const project = await collectProject();
     await project.collect();
     project.write('shared/utils/format.ts');
     const registry = await project.collect();
     const shared = (registry.importDirs ?? []).filter(dir => dir.dir.endsWith('shared/utils'));
-    expect(shared).toHaveLength(1);
-    expect(shared[0]?.files).toEqual([]);
+    // The app entry is the last app scan. The Nitro entry is read again in each collect.
+    expect(Object.fromEntries(shared.map(dir => [dir.scanner, dir.files]))).toEqual({
+      nuxt: [],
+      nitro: [join(project.base, 'shared/utils/format.ts')],
+    });
     expect(project.collector.isNitroImportFile(join(project.base, 'shared/utils/format.ts'))).toBe(
       true,
     );
-    await expect(assertImportDirsFresh(registry.importDirs ?? [])).rejects.toThrow(
-      /shared\/utils\/format\.ts is missing from the layerscope registry/u,
-    );
+    await expect(
+      assertImportDirsFresh(registry.importDirs ?? [], registry.nuxtIgnore),
+    ).rejects.toThrow(/shared\/utils\/format\.ts is missing from the layerscope registry/u);
   });
 });
 
@@ -102,12 +105,14 @@ describe('a write before Nuxt scans the app again', () => {
     project.write('components/New.vue');
     // The watcher event comes before Nuxt's scan: the write must not record the file alone.
     const early = await project.collect();
-    await expect(assertComponentDirsFresh(early.componentDirs)).rejects.toThrow(
+    await expect(assertComponentDirsFresh(early.componentDirs, early.nuxtIgnore)).rejects.toThrow(
       /components\/New\.vue is missing from the layerscope registry/u,
     );
     await project.scanComponents(['components/New.vue']);
     const late = await project.collect();
-    await expect(assertComponentDirsFresh(late.componentDirs)).resolves.toBeUndefined();
+    await expect(
+      assertComponentDirsFresh(late.componentDirs, late.nuxtIgnore),
+    ).resolves.toBeUndefined();
     expect(late.components.map(item => item.name)).toEqual(['New']);
   });
 });

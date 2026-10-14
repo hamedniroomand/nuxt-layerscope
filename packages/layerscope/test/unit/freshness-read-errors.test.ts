@@ -10,6 +10,7 @@ import { resolveLayers } from '#src/nuxt/layers.ts';
 import type { SymbolTable } from '#src/nuxt/symbols.ts';
 import type { Registry } from '#src/registry/schema.ts';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
+import { noNuxtIgnore } from '#test/factories.ts';
 
 const CANNOT_DENY = process.platform === 'win32' || process.getuid?.() === 0;
 
@@ -29,6 +30,7 @@ function emptyRegistry(): Registry {
     shadowedComponents: [],
     componentDirs: [],
     importDirs: [],
+    nuxtIgnore: noNuxtIgnore(),
     imports: { app: [], server: [], shared: [] },
   };
 }

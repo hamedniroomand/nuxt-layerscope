@@ -1,4 +1,7 @@
+import { getLayerDirectories, resolveIgnorePatterns, runWithNuxtContext } from '@nuxt/kit';
 import type { Component, ComponentsDir, Nuxt } from '@nuxt/schema';
+
+import type { NuxtIgnore } from '#src/registry/nuxt-ignore.ts';
 
 import type { ScanDir, ScanOptions } from './import-dirs.ts';
 
@@ -39,6 +42,18 @@ export interface Nitro {
     alias?: Record<string, string>;
     /** Nitro gives this object to unimport, so its dirs and scan options are the real ones. */
     imports?: false | { dirs?: ScanDir[]; dirsScanOptions?: ScanOptions };
+  };
+}
+
+/** The ignore rules of Nuxt, read with the functions that `isIgnored()` of kit uses. */
+export function readNuxtIgnore(nuxt: Nuxt): NuxtIgnore {
+  // `resolveIgnorePatterns()` reads Nuxt from the context. Without the context, it gives no rules.
+  const patterns = runWithNuxtContext(nuxt, () => resolveIgnorePatterns());
+  return {
+    rootDir: nuxt.options.rootDir,
+    roots: getLayerDirectories(nuxt).map(dirs => dirs.root),
+    patterns,
+    options: (nuxt.options.ignoreOptions as Record<string, unknown> | undefined) ?? null,
   };
 }
 

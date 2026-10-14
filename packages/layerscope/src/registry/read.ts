@@ -30,7 +30,27 @@ function isImportDir(entry: unknown): boolean {
   // The module always writes at least one glob, so an entry without one is damaged.
   const hasGlobs = Array.isArray(record.globs) && record.globs.length > 0;
   return (
-    typeof record.dir === 'string' && hasGlobs && isStrings(record.globs) && isStrings(record.files)
+    typeof record.dir === 'string' &&
+    hasGlobs &&
+    isStrings(record.globs) &&
+    (record.scanner === 'nuxt' || record.scanner === 'nitro') &&
+    isStrings(record.files)
+  );
+}
+
+/** The check of the stored ignore rules of Nuxt: the type of each field, as for a dir. */
+function isNuxtIgnore(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const record = value as Record<string, unknown>;
+  const { options } = record;
+  const hasOptions = options === null || (typeof options === 'object' && !Array.isArray(options));
+  return (
+    typeof record.rootDir === 'string' &&
+    isStrings(record.roots) &&
+    isStrings(record.patterns) &&
+    hasOptions
   );
 }
 
@@ -60,13 +80,14 @@ export function readRegistry(buildDir: string): RegistryRead {
   }
   const { layers } = registry as { layers?: unknown };
   // The file is stale when it lacks a field that this release needs: `modulesDir` or `publicDir`
-  // of a layer (layerscope would scan the Nuxt modules and public dirs), or `importDirs` (the
-  // stale check of auto-import files). The file can also be damaged, for example a bad entry in
-  // `componentDirs`. Its layers are not used, but its `config` is kept: the `layerscope` options of
-  // `nuxt.config` are only stored there.
-  const { componentDirs, importDirs } = registry as {
+  // of a layer (layerscope would scan the Nuxt modules and public dirs), or `importDirs` and
+  // `nuxtIgnore` (the stale check of new files). The file can also be damaged, for example a bad
+  // entry in `componentDirs`. Its layers are not used, but its `config` is kept: the `layerscope`
+  // options of `nuxt.config` are only stored there.
+  const { componentDirs, importDirs, nuxtIgnore } = registry as {
     componentDirs?: unknown;
     importDirs?: unknown;
+    nuxtIgnore?: unknown;
   };
   const complete =
     Array.isArray(layers) &&
@@ -76,6 +97,7 @@ export function readRegistry(buildDir: string): RegistryRead {
     ) &&
     Array.isArray(componentDirs) &&
     componentDirs.every(entry => isComponentDir(entry)) &&
+    isNuxtIgnore(nuxtIgnore) &&
     (importDirs === null ||
       (Array.isArray(importDirs) && importDirs.every(entry => isImportDir(entry))));
   return {

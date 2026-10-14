@@ -34,6 +34,7 @@ function fakeNuxt(): Nuxt {
     options: {
       _layers: [],
       alias: {},
+      ignore: [],
       extensions: ['.vue'],
       buildDir: '/p/.nuxt',
       rootDir: '/p',
