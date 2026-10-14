@@ -213,7 +213,10 @@ export interface AnalyzeResult {
   notes: string[];
   /** Every auto-import and component Nuxt registered, by context. */
   symbols: SymbolTable;
-  /** Files rendering a component chosen at runtime (`<component :is>`, `resolveComponent(x)`). */
+  /**
+   * Files rendering a component chosen at runtime (`<component :is>`, `<NuxtIsland :name>`,
+   * `resolveComponent(x)` or `resolveDynamicComponent(x)`).
+   */
   dynamicComponentFiles: string[];
   /**
    * The edges of files that the rules do not check, but that can use a symbol: `nuxt.config.*`,

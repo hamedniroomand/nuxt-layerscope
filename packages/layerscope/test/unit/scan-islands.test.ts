@@ -27,6 +27,21 @@ describe('<NuxtIsland> in a template', () => {
     expect(scan.dynamicComponents).toEqual([]);
   });
 
+  it('gives a quiet runtime use for v-bind of an object, which can hold the name', () => {
+    const scan = scanFile(template('<NuxtIsland v-bind="{ name: n }" />'), '/app/page.vue');
+    expect(scan.islands).toEqual([]);
+    expect(scan.quietDynamicComponents).toHaveLength(1);
+  });
+
+  it('keeps the static name over v-bind of an object', () => {
+    const scan = scanFile(
+      template('<NuxtIsland name="IslandOnly" v-bind="{ lazy: true }" />'),
+      '/app/page.vue',
+    );
+    expect(scan.islands.map(island => island.name)).toEqual(['IslandOnly']);
+    expect(scan.quietDynamicComponents).toEqual([]);
+  });
+
   it('does not read the name of another element', () => {
     const scan = scanFile(template('<BaseInput name="IslandOnly" />'), '/app/page.vue');
     expect(scan.islands).toEqual([]);
@@ -42,6 +57,15 @@ describe('resolveDynamicComponent', () => {
     expect(scan.quietDynamicComponents).toHaveLength(1);
     expect(scan.dynamicComponents).toEqual([]);
     expect(scan.components).toEqual([]);
+  });
+
+  it('gives nothing for a template literal without expressions, a fixed name too', () => {
+    const scan = scanModule(
+      "import { resolveDynamicComponent } from 'vue';\nexport const c = resolveDynamicComponent(`BaseButton`);",
+      'file.ts',
+    );
+    expect(scan.components).toEqual([]);
+    expect(scan.quietDynamicComponents).toEqual([]);
   });
 
   it('gives no component use for a fixed name, which Nuxt does not resolve', () => {

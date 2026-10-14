@@ -40,8 +40,9 @@
       class="banner"
     >
       The project renders components chosen at runtime (<code>&lt;component :is&gt;</code>,
-      <code>resolveComponent(x)</code>, <code>resolveDynamicComponent(x)</code> or
-      <code>&lt;NuxtIsland :name&gt;</code>), so a component listed here may still be used.
+      <code>&lt;NuxtIsland :name&gt;</code>, and <code>resolveComponent(x)</code> or
+      <code>resolveDynamicComponent(x)</code> with a value that is not a fixed string), so a
+      component listed here may still be used.
     </p>
     <p
       v-for="line in unused.data.value?.blindSpotLines ?? []"

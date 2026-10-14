@@ -32,6 +32,9 @@ Every kind of dependency is checked:
 | Explicit import          | `import { useCart } from '#layers/web/app/composables/useCart'`, `~/…`, relative paths, `@acme/ui-layer/app/composables/useAcme` |
 | Virtual module import    | `import { useCart } from '#imports'`, `import { CartSummary } from '#components'`                                                |
 
+`<NuxtIsland name="X">` is a use of the island component `X`. layerscope sees it only with the
+registry, because the `.d.ts` files do not list island components.
+
 A `require('...')` with a fixed path (a string literal, or a template literal with no `${}`) is an
 explicit import, also when it is called through a name that `createRequire(...)` gave.
 `createRequire` is the one that `module` or `node:module` exports, imported by name (also

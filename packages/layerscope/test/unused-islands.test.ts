@@ -35,6 +35,7 @@ describe('unused and island components (#119)', () => {
   it('counts <NuxtIsland name> as a use of the island component, from the registry', async () => {
     const result = await analyze({ rootDir: copy });
     expect(result.source).toBe('registry');
+    expect(result.symbols.components.has('IslandOnly')).toBe(true);
     expect(findUnused(result).map(symbol => symbol.name)).not.toContain('IslandOnly');
   }, 120_000);
 
