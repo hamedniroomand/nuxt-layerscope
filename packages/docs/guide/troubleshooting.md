@@ -61,10 +61,10 @@ Check the following:
   see imports available in both. A composable from `app/composables` is not available in `server/`.
   Then the message names the context that has it, for example `"useCart" is an auto-import only in
   the app context, not in the server context`, and does not suggest `globals`: move the code, or
-  move the symbol to `shared/`.
-- **Is it a component?** Nuxt does not auto-import a component as a name in code. Then the message
-  says that the name is a component. Use it in a template, with `resolveComponent()`, or import it
-  from `#components`.
+  move the symbol to `shared/` (when the symbol is your code).
+- **Is it a component?** A component is not an auto-import in code, except in `h()` in a `.vue`,
+  `.jsx` or `.tsx` file. Then the message says that the name is a component. In the app context, use
+  it in a template or import it from `#components`. Server and shared code cannot use a component.
 - **Is it auto-imported at all?** Nested directories such as `composables/cart/useCart.ts` are
   not scanned by default. Configure [`imports.dirs`](https://nuxt.com/docs/guide/directory-structure/composables#how-files-are-scanned)
   in Nuxt, run `nuxi prepare`, and layerscope follows.
