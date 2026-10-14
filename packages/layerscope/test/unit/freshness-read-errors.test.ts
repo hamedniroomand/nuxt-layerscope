@@ -31,6 +31,7 @@ function emptyRegistry(): Registry {
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),
+    nuxtContent: false,
     imports: { app: [], server: [], shared: [] },
   };
 }

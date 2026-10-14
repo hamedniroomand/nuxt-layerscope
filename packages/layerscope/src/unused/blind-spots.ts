@@ -7,6 +7,8 @@ export type BlindSpot =
   | { kind: 'ignored' }
   | { kind: 'package-layers' }
   | { kind: 'outside-root'; layers: string[] }
+  /** Nuxt Content can render any component by its name, so every component is marked. */
+  | { kind: 'nuxt-content' }
   | { kind: 'unreadable'; files: UnreadFile[] };
 
 /** The blind spots that apply to this run. Test files always apply: layerscope never scans them. */
@@ -23,6 +25,9 @@ export function findBlindSpots(result: AnalyzeResult): BlindSpot[] {
   );
   if (outside.length > 0) {
     spots.push({ kind: 'outside-root', layers: outside.map(layer => layer.name) });
+  }
+  if (result.nuxtContent) {
+    spots.push({ kind: 'nuxt-content' });
   }
   if (result.unreadFiles.length > 0) {
     spots.push({ kind: 'unreadable', files: result.unreadFiles });

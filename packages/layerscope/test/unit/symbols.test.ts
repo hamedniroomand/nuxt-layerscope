@@ -78,6 +78,7 @@ describe('tableFromRegistry', () => {
       file,
       mode,
       island: false,
+      global: false,
       priority: 1,
     });
     const registry = makeRegistry();

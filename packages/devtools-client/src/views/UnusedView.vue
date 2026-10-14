@@ -102,6 +102,12 @@
           >
             {{ row.context }}
           </span>
+          <span
+            v-if="row.global"
+            class="chip"
+          >
+            global component (possibly used at runtime)
+          </span>
           <FileLocation
             class="muted"
             :file="row.absFile ?? row.file"

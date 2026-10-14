@@ -224,6 +224,13 @@ export interface AnalyzeResult {
    */
   dynamicComponentFiles: string[];
   /**
+   * Files of global components: Vue can render one by a name chosen at runtime. With the `.d.ts`
+   * files, only the components in a `components/global/` dir or with a `.global` suffix.
+   */
+  globalComponentFiles: string[];
+  /** The project uses Nuxt Content, which can render any component by its name from a content file. */
+  nuxtContent: boolean;
+  /**
    * The edges of files that the rules do not check, but that can use a symbol: `nuxt.config.*`,
    * local modules, files of extra auto-import dirs and the project files that they import. Only
    * `unused` reads them. Empty when the run is limited to some files.

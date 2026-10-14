@@ -73,6 +73,9 @@ function fakeNuxt(base: string): Pick<CollectProject, 'nuxt' | 'call'> {
     // `rootDir` finds the unimport of Nuxt, so it is the fixture.
     options: {
       _layers: [],
+      // `hasNuxtModule()` of kit reads both lists.
+      _installedModules: [],
+      modules: [],
       alias: {},
       ignore: [],
       extensions: ['.vue'],

@@ -37,6 +37,8 @@ export interface Environment {
   sourceFile: string;
   /** `null` with the `.d.ts` fallback, which only lists the winning components. */
   registry: Registry | null;
+  /** The Nuxt build dir, which holds the generated files. */
+  buildDir: string;
   layers: Layer[];
   env: AnalysisEnv;
   notes: string[];
@@ -112,6 +114,7 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
     recordedFile,
     notes: [...symbols.notes, ...notes, ...(stale === null ? [] : [stale])],
     registry,
+    buildDir,
     layers,
     env: createAnalysisEnv(table, ownerOf, buildDir, config, layers),
   };

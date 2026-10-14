@@ -107,6 +107,7 @@ describe('unused view', () => {
           absFile: '/app/ui/BaseCard.vue',
           layer: 'ui',
           exposed: false,
+          global: false,
           possiblyUsed: true,
         },
       ],

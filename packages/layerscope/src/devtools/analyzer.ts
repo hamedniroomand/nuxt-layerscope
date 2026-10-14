@@ -65,6 +65,8 @@ function fingerprint(result: AnalyzeResult): string {
         usesOf(result.typeEdges),
         symbolsOf(result.symbols),
         result.dynamicComponentFiles,
+        result.globalComponentFiles,
+        result.nuxtContent,
         result.unreadFiles,
       ]),
     )

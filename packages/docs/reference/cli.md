@@ -322,11 +322,18 @@ layerscope unused [root] [options]
 
 Components and auto-imports (app, server and shared) registered by the project's own layers that
 nothing references. An explicit import of a file counts as using all of its exports. If any file
-renders a component chosen at runtime (`<component :is>` bound to a value, `<NuxtIsland :name>`,
-and `resolveComponent(x)` or `resolveDynamicComponent(x)` with a value that is not a fixed string),
+renders a component chosen at runtime (`<component :is>` bound to a value, `<NuxtIsland :name>`, and
+`resolveComponent(x)` or `resolveDynamicComponent(x)` with a value that is not a fixed string),
 unused components are marked "possibly used at runtime". `<NuxtIsland name="X">` counts as a use of
-the island component `X`. With `--source types`, `unused` does not list island components (in `components/islands/` or
-with an `.island.vue` suffix), because the .d.ts files do not have them.
+the island component `X`. A global component (in `components/global/`, with a `.global` suffix, or
+in a dir registered as global) is marked "possibly used at runtime" when it is listed as unused: Vue
+can render it by a name that is chosen at runtime. When the project uses Nuxt Content, every
+component is marked, because a content file can use any component by its name. With
+`--source types`, `unused` does not list island components (in `components/islands/` or with an
+`.island.vue` suffix), because the .d.ts files do not have them. With `--source types`, a component
+in a dir that a module or config registers as global is not marked, because the .d.ts files do not
+have the global setting. Nuxt Content is found only when a `modules` list names it as the string
+`'@nuxt/content'`.
 
 `unused` does not count uses in test files, in files that match [`ignore`](./config#ignore), or in
 layers installed as packages. Test files are `*.test.*`, `*.spec.*` and `__tests__/`. A file outside
@@ -336,7 +343,9 @@ dir, in files of extra auto-import and component dirs, and in the project files 
 import. It also counts `typeof x` in a type, and `import type` when `typeImports` is `'ignore'`. The
 text report has a line that names the uses that it does not count. `unused` does not list the
 symbols of layers outside the project root that are not installed as packages, for example workspace
-packages, because another app can use them. When such layers exist, a second line names them.
+packages, because another app can use them. When such layers exist, a second line names them. When
+the project uses Nuxt Content, one more line says that every component is marked "possibly used at
+runtime".
 
 After the symbols, it lists each file that it could not read in full. These are files with a parse
 error, a template that layerscope does not read (a `lang` other than HTML, a `src` attribute, or an

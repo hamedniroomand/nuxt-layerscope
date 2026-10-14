@@ -18,6 +18,8 @@ export interface RegistryComponent {
   file: string;
   mode: ComponentMode;
   island: boolean;
+  /** Registered with `app.component()`, so Vue can render it by a name chosen at runtime. */
+  global: boolean;
   priority: number;
 }
 
@@ -72,6 +74,8 @@ export interface Registry {
   importDirs: RegistryImportDir[] | null;
   /** The ignore rules of Nuxt. The stale check skips the new files that they match. */
   nuxtIgnore: NuxtIgnore;
+  /** The project uses Nuxt Content, which can render any component by its name from a content file. */
+  nuxtContent: boolean;
   imports: Record<Context, RegistryImport[]>;
   /** The `layerscope` key of `nuxt.config`, when it sets layers or rules. Added in 0.1.0. */
   config?: ProjectConfig;

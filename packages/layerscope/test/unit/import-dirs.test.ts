@@ -33,6 +33,9 @@ function fakeNuxt(): Nuxt {
     _version: '0.0.0',
     options: {
       _layers: [],
+      // `hasNuxtModule()` of kit reads both lists.
+      _installedModules: [],
+      modules: [],
       alias: {},
       ignore: [],
       extensions: ['.vue'],

@@ -70,6 +70,13 @@ interface AnalyzeResult {
    */
   dynamicComponentFiles: string[];
   /**
+   * Files of global components: Vue can render one by a name chosen at runtime. With the `.d.ts`
+   * files, only the components in a `components/global/` dir or with a `.global` suffix.
+   */
+  globalComponentFiles: string[];
+  /** The project uses Nuxt Content, which can render any component by its name from a content file. */
+  nuxtContent: boolean;
+  /**
    * Files with code that layerscope cannot read. Each file is an absolute path.
    * Can hold extra files that are not in `files`.
    */
@@ -131,12 +138,13 @@ Each edge has `from`, `to`, `count` and `status`, the worst status of the refere
 
 The components and auto-imports `layerscope unused` lists. It counts the uses in the extra files
 only when `result` comes from `analyze` with `extraFiles: true`. Each entry has `name`, `kind`
-(`component` or `auto-import`), `context`, `file`, `layer` and `possiblyUsed`.
+(`component` or `auto-import`), `context`, `file`, `layer`, `global` and `possiblyUsed`.
 
 ## `findBlindSpots(result)`
 
 What `layerscope unused` does not see in this run. Each entry has a `kind`: `test-files`, `ignored`
 (the config has `ignore` patterns), `package-layers` (a layer is installed as a package),
+`nuxt-content` (the project uses Nuxt Content, so every component has `possiblyUsed: true`),
 `unreadable` or `outside-root`. An `unreadable` entry also has `files`: the files that layerscope
 could not read, each with a `file` (an absolute path) and a `reason`. An `outside-root` entry has
 `layers`: the names of the layers outside the project root that are not installed as packages.

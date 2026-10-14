@@ -1,4 +1,9 @@
-import { getLayerDirectories, resolveIgnorePatterns, runWithNuxtContext } from '@nuxt/kit';
+import {
+  getLayerDirectories,
+  hasNuxtModule,
+  resolveIgnorePatterns,
+  runWithNuxtContext,
+} from '@nuxt/kit';
 import type { Component, ComponentsDir, Nuxt } from '@nuxt/schema';
 
 import type { NuxtIgnore } from '#src/registry/nuxt-ignore.ts';
@@ -55,6 +60,11 @@ export function readNuxtIgnore(nuxt: Nuxt): NuxtIgnore {
     patterns,
     options: (nuxt.options.ignoreOptions as Record<string, unknown> | undefined) ?? null,
   };
+}
+
+/** Whether the project installs Nuxt Content, also from a layer, by the check of kit. */
+export function usesNuxtContent(nuxt: Nuxt): boolean {
+  return hasNuxtModule('@nuxt/content', nuxt);
 }
 
 type NitroInitHook = (
