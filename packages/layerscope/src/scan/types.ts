@@ -13,6 +13,12 @@ export interface FileScan {
    */
   renderArgs: Named[];
   /**
+   * Component tags in JSX, such as `<CartSummary />` or `<cart-summary />`, with the name in
+   * PascalCase: not an HTML or SVG element, not `Fragment` and not a local binding. Vue's JSX plugin
+   * compiles each to `resolveComponent()`, and outside the `server/` dir Nuxt changes it to an import.
+   */
+  jsxTags: Named[];
+  /**
    * The names in `<NuxtIsland name="X">`. A name that is not in the symbol table gives no finding:
    * the generated .d.ts files do not list island components.
    */
@@ -79,6 +85,7 @@ export function emptyScan(): FileScan {
     templateIdents: [],
     components: [],
     renderArgs: [],
+    jsxTags: [],
     islands: [],
     dynamicComponents: [],
     quietDynamicComponents: [],
