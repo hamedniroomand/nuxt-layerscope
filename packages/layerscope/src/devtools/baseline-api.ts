@@ -79,9 +79,9 @@ async function edit(path: string, body: EditBody, session: Session): Promise<Rep
   const all = [...result.findings, ...(result.baseline?.suppressed ?? [])];
   const change =
     path === '/api/baseline/ignore'
-      ? ignoreFindings(analyzer.baselineFile, body.keys, all, result.rootDir)
+      ? ignoreFindings(analyzer.baselineFileOf(result), body.keys, all, result.rootDir)
       : removeEntries(
-          analyzer.baselineFile,
+          analyzer.baselineFileOf(result),
           body.keys,
           new Map(
             (result.baseline?.removable ?? []).map(entry => [
@@ -111,7 +111,7 @@ async function undo(body: UndoBody, session: Session): Promise<Reply> {
     };
   }
   const { restoreBaseline } = await import('#src/baseline/edit.ts');
-  restoreBaseline(analyzer.baselineFile, last.before);
+  restoreBaseline(analyzer.baselineFileOf(snapshot.result), last.before);
   writes.forget();
   const next = await analyzer.rebaseline();
   return { status: 200, body: { ...(await withReport(next, session)), writeId: writes.latest } };

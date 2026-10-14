@@ -40,7 +40,7 @@ fits, `init` suggests it, because it is stricter.
 | Option            | Default               | Description                                                                                                                         |
 | ----------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `--config <file>` | `layerscope.config.*` | Where to write the config, relative to the root. By default, the existing config file, or `layerscope.config.ts` when there is none |
-| `--baseline`      |                       | Also write a baseline of the findings still reported                                                                                |
+| `--baseline`      |                       | Also write `layerscope-baseline.json` with the findings still reported. It does not use the `baseline` key                          |
 | `--force`         |                       | Replace the existing config file or baseline                                                                                        |
 | `--dry-run`       |                       | Print the proposal and write nothing                                                                                                |
 
@@ -73,20 +73,20 @@ findings change after you install the module, run `layerscope init --dry-run` an
 layerscope check [root] [files...] [options]
 ```
 
-| Option              | Default                    | Description                                                                                                                                                                                                                                                |
-| ------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--format <format>` | `text`                     | [Output format](./output): `text`, `github`, `json`, `sarif` or `gitlab`                                                                                                                                                                                   |
-| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the root                                                                                                                                                                                                                          |
-| `--prepare`         |                            | Run `nuxi prepare` before checking                                                                                                                                                                                                                         |
-| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                                                                                                                                                                                                    |
-| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                                                                                                                                                                                   |
-| `--update-baseline` |                            | Write every current finding to the baseline file and exit `0`                                                                                                                                                                                              |
-| `--watch`           |                            | Check again after each change, until Ctrl+C. See [Watch mode](../guide/editor#watch-mode)                                                                                                                                                                  |
-| `--staged`          |                            | Check only the files staged for commit. See [Git hooks](../guide/ci#git-hooks)                                                                                                                                                                             |
-| `--changed`         |                            | Check only the files that changed since the default branch, and untracked files                                                                                                                                                                            |
-| `--since <ref>`     |                            | Check only the files that changed since the merge base with a git ref (implies `--changed`)                                                                                                                                                                |
-| `--summary <file>`  |                            | Write the count and the list of the findings to a file, relative to the current directory, as Markdown, up to 200 findings. Use it only with `--format github`. When there is no finding, the file is empty. The GitHub Action uses it for the job summary |
-| `--verbose`         |                            | Print where symbols were read from                                                                                                                                                                                                                         |
+| Option              | Default                                                   | Description                                                                                                                                                                                                                                                |
+| ------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--format <format>` | `text`                                                    | [Output format](./output): `text`, `github`, `json`, `sarif` or `gitlab`                                                                                                                                                                                   |
+| `--config <file>`   | `layerscope.config.*`                                     | Config file, relative to the root                                                                                                                                                                                                                          |
+| `--prepare`         |                                                           | Run `nuxi prepare` before checking                                                                                                                                                                                                                         |
+| `--source <source>` | `auto`                                                    | [Symbol source](#source): `auto`, `registry` or `types`                                                                                                                                                                                                    |
+| `--baseline <file>` | `baseline` of the config, else `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root. Overrides the [`baseline`](./config#baseline) key of the config                                                                                                                                  |
+| `--update-baseline` |                                                           | Write every current finding to the baseline file and exit `0`                                                                                                                                                                                              |
+| `--watch`           |                                                           | Check again after each change, until Ctrl+C. See [Watch mode](../guide/editor#watch-mode)                                                                                                                                                                  |
+| `--staged`          |                                                           | Check only the files staged for commit. See [Git hooks](../guide/ci#git-hooks)                                                                                                                                                                             |
+| `--changed`         |                                                           | Check only the files that changed since the default branch, and untracked files                                                                                                                                                                            |
+| `--since <ref>`     |                                                           | Check only the files that changed since the merge base with a git ref (implies `--changed`)                                                                                                                                                                |
+| `--summary <file>`  |                                                           | Write the count and the list of the findings to a file, relative to the current directory, as Markdown, up to 200 findings. Use it only with `--format github`. When there is no finding, the file is empty. The GitHub Action uses it for the job summary |
+| `--verbose`         |                                                           | Print where symbols were read from                                                                                                                                                                                                                         |
 
 ```bash
 layerscope check                                  # current directory
@@ -168,10 +168,12 @@ count. Warnings do not fail `check`, so they can get to the base branch without 
   added or fixed.
 
 The baseline size counts all entries, warnings too. So it can change when `adds` and `fixes` do
-not. A base without a baseline file counts as empty. The baseline file must be in the git
-repository. A baseline that is a symbolic link on the base ref stops `drift` with an error. A
-baseline file that is not valid stops `drift` with an error, on the base ref and in the working
-tree.
+not. A base without a baseline file counts as empty. Without `--baseline`, the `baseline` key of the
+config in the working tree names the file. `drift` reads the same path on the base ref. If you
+rename the file, the base ref has no file at the new path, and `drift` counts its baseline as empty.
+The baseline file must be in the git repository. A baseline that is a symbolic link on the base ref
+stops `drift` with an error. A baseline file that is not valid stops `drift` with an error, on the
+base ref and in the working tree.
 
 Also takes `--baseline`, `--config`, `--prepare` and `--source`. Exits `0`. Exits `2` for a root
 that is not in a git work tree, an unknown ref, an invalid baseline, a baseline outside the git
@@ -249,7 +251,7 @@ tree is there so that `git status` and `git diff` show only the changes of `--ap
 If the project is not in git, the lists are the only record of the changes.
 
 Use `--dry-run` or `--apply`, not both and not none. `--dry-run` moves nothing. Findings that
-`--baseline` accepts are skipped, as in `check`. Options: `--baseline`, `--config`, `--prepare`,
+the baseline accepts are skipped, as in `check`. Options: `--baseline`, `--config`, `--prepare`,
 `--source`, `--verbose` and, with `--apply`, `--allow-dirty`.
 
 ## `layerscope why`
@@ -301,13 +303,13 @@ Starts an [MCP server](../guide/coding-tools#mcp-server) over stdio for coding a
 JSON-RPC from stdin and writes only JSON-RPC to stdout; notes and errors go to stderr. It ends when
 stdin closes or on `SIGINT` and `SIGTERM`, with exit code `0`.
 
-| Option              | Default                    | Description                                                                              |
-| ------------------- | -------------------------- | ---------------------------------------------------------------------------------------- |
-| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the root                                                        |
-| `--prepare`         |                            | Run `nuxi prepare` once, before the server starts; it writes the generated `.nuxt` files |
-| `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                                  |
-| `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                 |
-| `--verbose`         |                            | Print where symbols were read from                                                       |
+| Option              | Default                                                   | Description                                                                                                               |
+| ------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `--config <file>`   | `layerscope.config.*`                                     | Config file, relative to the root                                                                                         |
+| `--prepare`         |                                                           | Run `nuxi prepare` once, before the server starts; it writes the generated `.nuxt` files                                  |
+| `--source <source>` | `auto`                                                    | [Symbol source](#source): `auto`, `registry` or `types`                                                                   |
+| `--baseline <file>` | `baseline` of the config, else `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root. Overrides the [`baseline`](./config#baseline) key of the config |
+| `--verbose`         |                                                           | Print where symbols were read from                                                                                        |
 
 A problem with the project (a config error, a missing registry) does not stop the server: the
 tool call that hits it returns the message, and the next call tries again.

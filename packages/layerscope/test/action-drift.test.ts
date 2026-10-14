@@ -212,3 +212,19 @@ describe('drift.sh, root and notices', () => {
     );
   });
 });
+
+describe('drift.sh, the baseline input', () => {
+  it('gives no --baseline when the input is empty, so the config names the file', () => {
+    const t = setup(false);
+    const result = t.drift({ BASE_SHA: t.main, INPUT_BASELINE: '' });
+    expect(result.status).toBe(0);
+    expect(result.summary).toContain(`--base ${t.main}`);
+    expect(result.summary).not.toContain('--baseline');
+  });
+
+  it('gives --baseline when the input names a file', () => {
+    const t = setup(false);
+    const result = t.drift({ BASE_SHA: t.main, INPUT_BASELINE: 'ci/base.json' });
+    expect(result.summary).toContain(`--base ${t.main} --baseline ci/base.json`);
+  });
+});

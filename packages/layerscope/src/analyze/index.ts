@@ -1,4 +1,9 @@
-import { applyBaselineFile, assertBaselineName, baselinePath } from '#src/baseline/index.ts';
+import {
+  applyBaselineFile,
+  assertBaselineName,
+  baselineName,
+  baselinePath,
+} from '#src/baseline/index.ts';
 import { compareByPosition } from '#src/rules/compare.ts';
 import { runRules } from '#src/rules/index.ts';
 import { withRootNotes, withSuggestions } from '#src/suggest/index.ts';
@@ -29,9 +34,10 @@ export interface AnalyzeOptions {
   source?: SourceOption;
   /**
    * Baseline file, relative to the root. Findings it lists are moved to `baseline.suppressed`.
-   * Ignored when the file does not exist.
+   * Ignored when the file does not exist. `true`: the `baseline` key of the config, else
+   * `layerscope-baseline.json`. Not set: no baseline is applied.
    */
-  baseline?: string;
+  baseline?: string | true;
   /**
    * Report only the findings in these files (absolute paths), and scan only them, so a check of a
    * few files is fast. The environment still loads for the whole project. With the `layer-cycle`
@@ -48,8 +54,20 @@ export interface AnalyzeOptions {
   recheckStale?: boolean;
 }
 
+/** The result with the baseline of `option` applied. See `AnalyzeOptions.baseline`. */
+function withBaseline(
+  result: AnalyzeResult,
+  option: string | true | undefined,
+  inScope?: (relativeFile: string) => boolean,
+): AnalyzeResult {
+  const name = option === true ? baselineName(undefined, result.config) : option;
+  return name === undefined
+    ? result
+    : applyBaselineFile(result, baselinePath(result.rootDir, name), inScope);
+}
+
 export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResult> {
-  if (options.baseline !== undefined) {
+  if (typeof options.baseline === 'string') {
     assertBaselineName(options.baseline);
   }
   const rootDir = projectRoot(options.rootDir);
@@ -92,10 +110,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     typeEdges: [...checked, ...extra].flatMap(analysis => analysis.typeEdges),
     ...fileLists([...checked, ...extra]),
   };
-  const reported =
-    options.baseline === undefined
-      ? result
-      : applyBaselineFile(result, baselinePath(rootDir, options.baseline), scope?.hasRelative);
+  const reported = withBaseline(result, options.baseline, scope?.hasRelative);
   return scope === undefined ? withSuggestions(reported) : reported;
 }
 

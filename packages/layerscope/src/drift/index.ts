@@ -1,6 +1,7 @@
 import { analyze } from '#src/analyze/index.ts';
 import type { AnalyzeOptions } from '#src/analyze/index.ts';
 import {
+  baselineName,
   baselinePath,
   baselineSize,
   createBaseline,
@@ -8,6 +9,7 @@ import {
   readBaseline,
 } from '#src/baseline/index.ts';
 import type { Baseline } from '#src/baseline/index.ts';
+import { loadConfig } from '#src/config/load.ts';
 import { ruleSeverity } from '#src/config/rules.ts';
 import type { BaselineEntry, LayerscopeConfig } from '#src/types.ts';
 
@@ -35,13 +37,20 @@ function errorsOnly(baseline: Baseline, config: LayerscopeConfig): Baseline {
 
 /**
  * Compares the errors in the code as it is now with the baseline committed on `base`. Only rules
- * that the config sets to `error` count. Nothing is stored.
+ * that the config sets to `error` count. Nothing is stored. Without `baselineOption`, the config
+ * in the working tree names the baseline file, on `base` too. The config is loaded before the git
+ * read, so a bad ref still stops the run before the analysis.
  */
 export async function measureDrift(
   options: AnalyzeOptions & { rootDir: string },
   base: string,
-  baselineFile: string,
+  baselineOption?: string,
 ): Promise<Drift> {
+  const config =
+    baselineOption === undefined
+      ? (options.config ?? (await loadConfig(options.rootDir, options.configFile)))
+      : {};
+  const baselineFile = baselineName(baselineOption, config);
   const before = baselineAt(options.rootDir, base, baselineFile);
   const result = await analyze({ ...options, baseline: undefined });
   const now = createBaseline(result.findings, options.rootDir);

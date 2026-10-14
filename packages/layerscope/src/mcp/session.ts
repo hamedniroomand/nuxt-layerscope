@@ -16,7 +16,8 @@ export interface SessionOptions {
   rootDir: string;
   configFile?: string;
   source: SourceOption;
-  baseline: string;
+  /** Overrides the `baseline` key of the config. */
+  baseline?: string;
   now?: () => number;
   /** A problem from before the server started, such as a failed `nuxi prepare`; shown once. */
   startupError?: string;

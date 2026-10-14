@@ -3,7 +3,8 @@ import { statSync, writeFileSync } from 'node:fs';
 import type { cac } from 'cac';
 import { relative, resolve } from 'pathe';
 
-import { baselinePath } from '#src/baseline/index.ts';
+import { baselineName, baselinePath } from '#src/baseline/index.ts';
+import { loadConfig } from '#src/config/load.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatFindingsSummary } from '#src/report/findings-summary.ts';
 import type { AnalyzeResult, Finding, SourceOption } from '#src/types.ts';
@@ -135,14 +136,16 @@ function sameFile(a: string, b: string): boolean {
 /**
  * The `--summary` option: a file name, only with `--format github`, and not with `--watch` or
  * `--update-baseline`, which do not make a list of findings. It empties the file at once, so an
- * old list cannot stay when the check stops with an error later.
+ * old list cannot stay when the check stops with an error later. Without `--baseline`, it loads
+ * the config to find the baseline file. So a config error stops the run before the file is emptied,
+ * and an old list stays in it. The action makes a new file for each run.
  */
-export function prepareSummary(
+export async function prepareSummary(
   summary: unknown,
   format: string,
-  flags: { watch?: boolean; updateBaseline?: boolean; baseline?: string },
+  flags: { watch?: boolean; updateBaseline?: boolean; baseline?: string; config?: string },
   rootDir: string,
-): void {
+): Promise<void> {
   if (summary === undefined) {
     return;
   }
@@ -158,9 +161,10 @@ export function prepareSummary(
   }
   // The summary path is from the current directory, the baseline path is from the root. Emptying
   // the baseline file would lose its entries.
-  const baseline = flags.baseline === undefined ? undefined : baselinePath(rootDir, flags.baseline);
-  if (baseline !== undefined && sameFile(resolve(currentDir(), summary), baseline)) {
-    throw new LayerscopeError('--summary and --baseline name the same file.');
+  const config = flags.baseline === undefined ? await loadConfig(rootDir, flags.config) : {};
+  const baseline = baselinePath(rootDir, baselineName(flags.baseline, config));
+  if (sameFile(resolve(currentDir(), summary), baseline)) {
+    throw new LayerscopeError('--summary and the baseline name the same file.');
   }
   writeSummary(summary, []);
 }

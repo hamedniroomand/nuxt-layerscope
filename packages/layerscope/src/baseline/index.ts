@@ -18,11 +18,13 @@ import {
 } from './input.ts';
 
 export {
+  assertBaselineKey,
   assertBaselineName,
   assertBaselineOption,
   assertNotDirectory,
   BASELINE_FILE,
   BASELINE_VERSION,
+  baselineName,
   baselinePath,
   cannotRead,
 } from './input.ts';

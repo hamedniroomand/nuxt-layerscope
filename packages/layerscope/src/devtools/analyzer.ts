@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 
 import { AnalysisCache, createEnvironmentCache } from '#src/analyze/cache.ts';
 import type { AnalyzeOptions } from '#src/analyze/index.ts';
-import { baselinePath } from '#src/baseline/index.ts';
+import { baselineName, baselinePath } from '#src/baseline/index.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { projectRoot } from '#src/utils/fs.ts';
 
@@ -21,8 +21,8 @@ export interface Snapshot {
 
 export interface AnalyzerOptions {
   rootDir: string;
-  /** Baseline file relative to `rootDir`. */
-  baseline: string;
+  /** Baseline file relative to `rootDir`. Defaults to the `baseline` key of the config. */
+  baseline?: string;
   envKey: () => Promise<string> | string;
   /**
    * Also read the files that only `unused` reads, for the Unused view. Only the DevTools server
@@ -151,9 +151,9 @@ export class Analyzer {
     return snapshot;
   }
 
-  /** The baseline file the tab reads and writes. */
-  public get baselineFile(): string {
-    return baselinePath(this.options.rootDir, this.options.baseline);
+  /** The baseline file that applies to `result`: the tab reads and writes it. */
+  public baselineFileOf(result: AnalyzeResult): string {
+    return baselinePath(this.options.rootDir, baselineName(this.options.baseline, result.config));
   }
 
   /**
@@ -188,7 +188,7 @@ export class Analyzer {
     );
     const fresh = { ...result, findings: all, baseline: undefined };
     // The suggestions count the findings that are shown, so they are made again.
-    const applied = await withSuggestions(applyBaselineFile(fresh, this.baselineFile));
+    const applied = await withSuggestions(applyBaselineFile(fresh, this.baselineFileOf(result)));
     return this.commit(applied, started, 'baseline');
   }
 
@@ -201,7 +201,7 @@ export class Analyzer {
       const result = await run({
         ...this.options.analyze,
         rootDir: this.options.rootDir,
-        baseline: this.options.baseline,
+        baseline: this.options.baseline ?? true,
         cache: this.cache,
         environment: this.environment,
         envKey: await this.options.envKey(),

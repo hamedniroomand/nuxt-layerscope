@@ -51,7 +51,7 @@ describe('the CLI', () => {
     const result = await cli([command, repo.root, ...extra, '--baseline', '']);
     expect(result.code).toBe(EXIT_ERROR);
     expect(result.err).toBe(
-      `layerscope: --baseline needs a file name. Leave it out to use ${FILE}.\n`,
+      `layerscope: --baseline needs a file name. Leave it out to use the baseline file of the config, or ${FILE}.\n`,
     );
   });
 

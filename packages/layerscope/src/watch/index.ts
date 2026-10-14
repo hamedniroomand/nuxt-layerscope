@@ -32,7 +32,8 @@ export interface WatchOptions {
   rootDir: string;
   configFile?: string;
   source: SourceOption;
-  baseline: string;
+  /** Overrides the `baseline` key of the config. */
+  baseline?: string;
   prepare: boolean;
   /** The report of one result, in the format the user chose. */
   render: (result: AnalyzeResult) => string;
