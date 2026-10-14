@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, renameSync, rmSync, symlinkSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, renameSync, rmSync, symlinkSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
@@ -13,6 +13,9 @@ import { tempDir, write } from '#test/watch-project.ts';
 const ENTRY = { rule: 'unresolved-reference', file: 'a.ts', symbol: 'x', toLayer: null };
 const FILE = 'layerscope-baseline.json';
 const BODY = JSON.stringify({ version: BASELINE_VERSION, entries: [ENTRY] });
+
+// A mode without read access changes nothing on Windows and for root.
+const CAN_DENY = process.platform !== 'win32' && process.getuid?.() !== 0;
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -161,6 +164,40 @@ describe('baseline at a ref, symbolic links', () => {
     expect(() => baselineAt(repo.root, 'HEAD', FILE)).toThrow(
       `${FILE} at HEAD is a symbolic link. drift does not follow links in git. Commit the baseline file itself, or use --baseline with the path of the file that the link points to, if that file is in the repository.`,
     );
+  });
+});
+
+describe('baseline at a ref, the name of a link in the working tree', () => {
+  it.skipIf(!existsSync(join(tempDir(), '.').toUpperCase()))(
+    'finds a link typed in the wrong case, on a file system that ignores case',
+    () => {
+      const repo = gitProject();
+      repo.write(FILE, BODY);
+      repo.commit('baseline');
+      rmSync(join(repo.root, FILE));
+      repo.write('other.json', '{}');
+      symlinkSync('other.json', join(repo.root, FILE));
+      expect(baselineAt(repo.root, 'HEAD', FILE.toUpperCase()).entries).toEqual([ENTRY]);
+      repo.commit('link');
+      expect(() => baselineAt(repo.root, 'HEAD', FILE.toUpperCase())).toThrow(
+        `${FILE.toUpperCase()} at HEAD is a symbolic link.`,
+      );
+    },
+  );
+
+  it.skipIf(!CAN_DENY)('stops when it cannot list the dir of a link', () => {
+    const repo = gitProject();
+    repo.write('cfg/other.json', '{}');
+    symlinkSync('other.json', join(repo.root, 'cfg/b.json'));
+    const dir = join(repo.root, 'cfg');
+    chmodSync(dir, 0o100);
+    try {
+      expect(() => baselineAt(repo.root, 'HEAD', 'cfg/b.json')).toThrow(
+        `Cannot read ${dir} (EACCES).`,
+      );
+    } finally {
+      chmodSync(dir, 0o700);
+    }
   });
 
   it('reads the file at the name of a link that is in the working tree only', () => {

@@ -1,7 +1,9 @@
+import { readdirSync } from 'node:fs';
+
 import { basename, dirname, isAbsolute, join, relative } from 'pathe';
 
 import type { Baseline } from '#src/baseline/index.ts';
-import { baselinePath, parseBaselineText } from '#src/baseline/index.ts';
+import { baselinePath, cannotRead, parseBaselineText } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { isSymlink } from '#src/fix/paths.ts';
 import { realPath } from '#src/utils/fs.ts';
@@ -39,6 +41,29 @@ function workTree(rootDir: string): string {
 }
 
 /**
+ * The name of the entry `name` in `dir` as the dir has it, without following a link. On a file
+ * system that ignores case, the typed name can differ in case. When no entry or more than one
+ * entry has the name in another case, or the dir is gone, keep the typed name.
+ */
+function entryName(dir: string, name: string): string {
+  let entries: string[];
+  try {
+    entries = readdirSync(dir);
+  } catch (error) {
+    const { code } = error as NodeJS.ErrnoException;
+    if (code === 'ENOENT' || code === 'ENOTDIR') {
+      return name;
+    }
+    throw cannotRead(dir, error);
+  }
+  if (entries.includes(name)) {
+    return name;
+  }
+  const same = entries.filter(entry => entry.toLowerCase() === name.toLowerCase());
+  return same.length === 1 ? same[0] : name;
+}
+
+/**
  * The paths of the baseline in git, relative to the repository root `top`. Try the typed path
  * first, then the real path. The real path fixes a symbolic link in a dir and a name in the wrong
  * case. Do not resolve the file name if it is a link: git stores the link at the link name. If the
@@ -48,7 +73,8 @@ function workTree(rootDir: string): string {
 function gitPaths(rootDir: string, top: string, ref: string, name: string): string[] {
   const root = realPath(rootDir);
   const file = baselinePath(root, name);
-  const real = isSymlink(file) ? join(realPath(dirname(file)), basename(file)) : realPath(file);
+  const dir = realPath(dirname(file));
+  const real = isSymlink(file) ? join(dir, entryName(dir, basename(file))) : realPath(file);
   const paths = [file, real]
     .map(path => relative(top, path))
     .filter(path => path !== '..' && !path.startsWith('../') && !isAbsolute(path));

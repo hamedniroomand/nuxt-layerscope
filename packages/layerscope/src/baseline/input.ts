@@ -48,7 +48,7 @@ export function assertBaselineName(name: string): void {
   }
 }
 
-function cannotRead(file: string, error: unknown): LayerscopeError {
+export function cannotRead(file: string, error: unknown): LayerscopeError {
   const { code } = error as NodeJS.ErrnoException;
   return new LayerscopeError(
     `Cannot read ${file} (${code ?? (error as Error).message}). Check the permissions of the file and of its folders.`,
