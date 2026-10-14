@@ -57,9 +57,14 @@ Check the following:
 - **Is it registered at runtime?** Globals added by a plugin (`nuxtApp.provide`,
   `app.config.globalProperties`) or `window` properties defined by a script are invisible to
   static analysis. List them in [`globals`](../reference/config#globals).
-- **Is it in the right context?** Server files only see Nitro auto-imports, and `shared/` files
-  only see imports available in both. A composable from `app/composables` is not available in
-  `server/`.
+- **Is it in the right context?** Server files only see Nitro auto-imports, and `shared/` files only
+  see imports available in both. A composable from `app/composables` is not available in `server/`.
+  Then the message names the context that has it, for example `"useCart" is an auto-import only in
+  the app context, not in the server context`, and does not suggest `globals`: move the code, or
+  move the symbol to `shared/`.
+- **Is it a component?** Nuxt does not auto-import a component as a name in code. Then the message
+  says that the name is a component. Use it in a template, with `resolveComponent()`, or import it
+  from `#components`.
 - **Is it auto-imported at all?** Nested directories such as `composables/cart/useCart.ts` are
   not scanned by default. Configure [`imports.dirs`](https://nuxt.com/docs/guide/directory-structure/composables#how-files-are-scanned)
   in Nuxt, run `nuxi prepare`, and layerscope follows.
@@ -68,14 +73,14 @@ To silence the rule entirely, set `'unresolved-reference': 'off'`.
 
 ## A component is reported as unresolved
 
-`Component <X> is not in components.d.ts` means Nuxt does not know the component: it is
-registered globally by a plugin (`app.component('X', ...)`), comes from a library without a Nuxt
-module, or lives in a directory that is not a component dir. Add it to `globals` or register the
-directory in `components` in `nuxt.config`.
+`Nuxt has no component <X>` means that Nuxt does not know the component: it is registered globally
+by a plugin (`app.component('X', ...)`), comes from a library without a Nuxt module, or lives in a
+directory that is not a component dir. Add it to `globals` or register the directory in `components`
+in `nuxt.config`.
 
 Some Nuxt modules register components at runtime instead of through Nuxt's registry. For example,
 `floating-vue/nuxt` calls `vueApp.use(FloatingVue)`, so `VDropdown`, `VTooltip` and `VMenu` never
-reach `components.d.ts`:
+reach the components that Nuxt registers:
 
 ```ts [layerscope.config.ts]
 import { defineConfig } from 'nuxt-layerscope';
