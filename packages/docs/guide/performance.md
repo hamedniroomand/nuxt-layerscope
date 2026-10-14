@@ -42,6 +42,9 @@ not counted. The in-process rows have no such run: the first analysis is a row o
 | In one process: after one file changed (cached)                  |         51 ms |   50 ms to 95 ms |      275 MB |
 | In one process: after one file was added                         |        472 ms | 455 ms to 514 ms |      311 MB |
 
+The in-process rows were measured before layerscope ran the stale check on each run. The check adds
+some milliseconds to each cached run.
+
 These are the numbers of one machine. Yours will differ; run the benchmark to see them.
 
 - The one-shot time is the wall time of the whole process, Node start included.
