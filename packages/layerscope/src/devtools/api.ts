@@ -34,6 +34,9 @@ async function post(path: string, session: Session): Promise<object> {
 }
 
 async function read(event: H3Event, path: string, session: Session): Promise<string> {
+  // Every GET route of the tab reads here. An edit of the config fires no Nuxt hook, so without
+  // this check the tab can show the old baseline file and findings.
+  await session.analyzer.invalidateIfChanged();
   const snapshot = await session.analyzer.get();
   const { live } = session;
   setResponseHeader(event, 'cache-control', 'no-cache');
