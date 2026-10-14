@@ -145,8 +145,8 @@ Draw the layer graph, trace a symbol with `why`, or list what nothing uses.
 
 ## How it works
 
-The Nuxt module records what Nuxt resolved while it prepares your app. The CLI parses your
-sources, turns every reference into an edge between two layers, and checks the edges against the
+The Nuxt module records what Nuxt resolved while it prepares your app. The CLI parses your sources,
+turns each reference that it finds into an edge between two layers, and checks the edges against the
 layers you allowed.
 
 ```mermaid
