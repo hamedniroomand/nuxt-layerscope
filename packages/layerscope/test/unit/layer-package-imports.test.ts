@@ -31,7 +31,7 @@ describe('the oracle: an import by package name', () => {
       // A component keeps its `.vue`; a composable drops `.ts`, as source imports do.
       return `${owner?.name}/${relative(owner?.dir ?? '', to).replace(/\.ts$/u, '')}`;
     });
-    // Only the first use of a specifier in a file makes an edge, so `require()` has its own file.
+    // An import and a `require()` of the same file make one edge, so `require()` has its own file.
     write(
       root,
       'layers/admin/app/utils/explicit.ts',

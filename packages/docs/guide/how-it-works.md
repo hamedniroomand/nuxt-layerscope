@@ -95,7 +95,7 @@ Every source file of every checked layer is parsed:
   external. `#imports` and `#components` are resolved by name through the symbol table.
 
 Each reference becomes an **edge**: from a file and its layer to a target file and its layer, or
-to a package. Only the first use of a symbol in a file is kept.
+to a package. Only the first use of a symbol in a file is kept for each target.
 
 ## 5. Rules
 

@@ -72,7 +72,9 @@ that root owns the files. Paths are compared after resolving symlinks, so pnpm's
   path in it, is checked like any other import. This applies to `import` and `require()`, and to
   every layer that has a `name`: npm, workspace and local layers, and the root layer. layerscope
   resolves the import from the importing file, as Node does. When the `package.json` has
-  `exports`, only the paths that `exports` gives a file for resolve. Without `exports`, layerscope
+  `exports`, only the paths that `exports` gives a file for resolve. An `import` uses the `import`
+  condition of `exports`, and a `require()` uses the `require` condition. In server code, a
+  `require()` can also use the `import` condition, as Nitro does. Without `exports`, layerscope
   looks up the path in the layer root, as it does for a relative path. If the importing file finds
   a copy of the package outside the layer, the import is external. A path that does not resolve is
   reported by [`unresolved-reference`](../reference/rules#unresolved-reference).
