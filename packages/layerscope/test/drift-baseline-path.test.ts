@@ -8,7 +8,7 @@ import { EXIT_ERROR, run } from '#src/cli.ts';
 import { baselineAt } from '#src/drift/git.ts';
 import { measureDrift } from '#src/drift/index.ts';
 import { git, gitProject } from '#test/git-project.ts';
-import { tempDir } from '#test/watch-project.ts';
+import { tempDir, write } from '#test/watch-project.ts';
 
 const ENTRY = { rule: 'unresolved-reference', file: 'a.ts', symbol: 'x', toLayer: null };
 const FILE = 'layerscope-baseline.json';
@@ -72,6 +72,16 @@ describe('baseline at a ref, the repository root and the work tree', () => {
     expect(() => baselineAt(dir, 'HEAD', FILE)).toThrow(
       `drift needs a git work tree. ${dir} is not in one.`,
     );
+  });
+
+  it('reads the file in a repository whose dir name ends with a space', () => {
+    const repo = join(tempDir(), 'repo ');
+    mkdirSync(repo);
+    git(repo, 'init', '-q', '-b', 'main');
+    write(repo, FILE, BODY);
+    git(repo, 'add', '-A');
+    git(repo, 'commit', '-q', '-m', 'baseline');
+    expect(baselineAt(repo, 'HEAD', FILE).entries).toEqual([ENTRY]);
   });
 
   it('stops when the root is not in a git work tree', () => {

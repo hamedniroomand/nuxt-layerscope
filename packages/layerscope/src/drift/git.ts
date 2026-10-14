@@ -31,7 +31,8 @@ function unreadable(file: string, ref: string, error: unknown): LayerscopeError 
 /** The top of the git work tree of `rootDir`, with its real path. */
 function workTree(rootDir: string): string {
   try {
-    return realPath(git(rootDir, 'rev-parse', '--show-toplevel').trim());
+    // Remove only the newline: a dir name can end with a space.
+    return realPath(git(rootDir, 'rev-parse', '--show-toplevel').replace(/\r?\n$/u, ''));
   } catch {
     throw new LayerscopeError(`drift needs a git work tree. ${rootDir} is not in one.`);
   }
@@ -41,8 +42,8 @@ function workTree(rootDir: string): string {
  * The paths of the baseline in git, relative to the repository root `top`. Try the typed path
  * first, then the real path. The real path fixes a symbolic link in a dir and a name in the wrong
  * case. Do not resolve the file name if it is a link: git stores the link at the link name. If the
- * file is gone, keep the name. Limit: a dir that is a link at the ref, and not the same link now,
- * is not found, so the ref has no baseline.
+ * file is gone, keep the name. Limit: if a dir on the path is a link that points to another dir at
+ * the ref, drift can read the file at the new target, or find none.
  */
 function gitPaths(rootDir: string, top: string, ref: string, name: string): string[] {
   const root = realPath(rootDir);
