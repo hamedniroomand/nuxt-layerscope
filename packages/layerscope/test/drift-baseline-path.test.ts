@@ -106,6 +106,16 @@ describe('baseline at a ref, a name that is not the same now', () => {
     expect(baselineAt(repo.root, 'HEAD~1', 'Baseline.json').entries).toEqual([ENTRY]);
   });
 
+  it('stops for a dir that is a link in git to a dir outside the repository', () => {
+    const repo = gitProject();
+    const target = tempDir();
+    write(target, FILE, BODY);
+    symlinkSync(target, join(repo.root, 'link'));
+    repo.commit('link');
+    const name = `link/${FILE}`;
+    expect(() => baselineAt(repo.root, 'HEAD', name)).toThrow(outside(name, repo.repo));
+  });
+
   it.each([
     ['in the repository', (root: string): string => join(root, 'shared/config')],
     ['outside the repository', (): string => join(tempDir(), 'config')],

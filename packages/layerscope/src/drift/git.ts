@@ -63,29 +63,32 @@ function entryName(dir: string, name: string): string {
   return same.length === 1 ? same[0] : name;
 }
 
+function isOutside(path: string): boolean {
+  return path === '..' || path.startsWith('../') || isAbsolute(path);
+}
+
 /**
- * The paths of the baseline in git, relative to the repository root `top`. Try the typed path
- * first, then the real path. The real path fixes a symbolic link in a dir and a name in the wrong
- * case. Do not resolve the file name if it is a link: git stores the link at the link name. If the
- * file is gone, keep the name. Limit: if a dir on the path is a link that points to another dir at
- * the ref, drift can read the file at the new target, or find none.
+ * The paths of the baseline in git, relative to the repository root `top`, and whether the real
+ * path is outside `top`. Try the typed path first, then the real path. The real path fixes a
+ * symbolic link in a dir and a name in the wrong case. Do not resolve the file name if it is a
+ * link: git stores the link at the link name. If the file is gone, keep the name. A path outside
+ * `top` is not tried. Limit: if a dir on the path is a link that points to another dir at the ref,
+ * drift can read the file at the new target, or find none.
  */
-function gitPaths(rootDir: string, top: string, ref: string, name: string): string[] {
+function gitPaths(
+  rootDir: string,
+  top: string,
+  name: string,
+): { paths: string[]; outside: boolean } {
   const root = realPath(rootDir);
   const file = baselinePath(root, name);
   const dir = realPath(dirname(file));
   const real = isSymlink(file) ? join(dir, entryName(dir, basename(file))) : realPath(file);
-  const paths = [file, real]
-    .map(path => relative(top, path))
-    .filter(path => path !== '..' && !path.startsWith('../') && !isAbsolute(path));
-  if (paths.length === 0) {
-    throw new LayerscopeError(
-      `${name} is outside the git repository ${top}. drift reads the baseline at ${ref} from git. Move the baseline file into the repository, or use --baseline with a path in the repository.`,
-    );
-  }
+  const candidates = [file, real].map(path => relative(top, path));
   // Put `./` first. Git then does not read a name that starts with `:` as a special form. The
   // repository root becomes `./`.
-  return [...new Set(paths.map(path => `./${path}`))];
+  const paths = candidates.filter(path => !isOutside(path)).map(path => `./${path}`);
+  return { paths: [...new Set(paths)], outside: isOutside(candidates[1]) };
 }
 
 /**
@@ -120,18 +123,28 @@ function typeAt(top: string, ref: string, name: string, path: string): string | 
   }
 }
 
-/** The first path of the baseline that `ref` has, with its git type, or `null` for none. */
+/**
+ * The first path of the baseline that `ref` has, with its git type, or `null` for none. When `ref`
+ * has no path and the real path is outside the repository, the baseline is outside: stop. For
+ * example, a dir that is a link to a dir outside the repository, and git stores that link.
+ */
 function entryAt(
   rootDir: string,
   top: string,
   ref: string,
   name: string,
 ): { path: string; type: string } | null {
-  for (const path of gitPaths(rootDir, top, ref, name)) {
+  const { paths, outside } = gitPaths(rootDir, top, name);
+  for (const path of paths) {
     const type = typeAt(top, ref, name, path);
     if (type !== null) {
       return { path, type };
     }
+  }
+  if (outside) {
+    throw new LayerscopeError(
+      `${name} is outside the git repository ${top}. drift reads the baseline at ${ref} from git. Move the baseline file into the repository, or use --baseline with a path in the repository.`,
+    );
   }
   return null;
 }
