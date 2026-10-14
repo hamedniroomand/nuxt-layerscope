@@ -36,8 +36,9 @@ Each use gets a status:
 | `✔ allowed`      | The using layer lists the target layer in `allow`.       |
 | `✖ not allowed`  | A boundary violation. `layerscope check` reports it.     |
 
-If a name resolves to different files in different contexts, for example a `useDb` server util
-and an app composable with the same name, each target is listed on its own.
+If a name resolves to more than one file, each target is listed on its own. The cause can be
+different contexts, for example a `useDb` server util and an app composable with the same name, or a
+component with a `.client` file and a `.server` file.
 
 ## Draw the graph
 
