@@ -4,6 +4,7 @@ import { resolveModulePath } from 'exsolve';
 import { dirname, join } from 'pathe';
 
 import { LayerscopeError } from '#src/errors.ts';
+import type { ImportRef } from '#src/scan/types.ts';
 import type { Layer } from '#src/types.ts';
 import { isGone, readJson } from '#src/utils/fs.ts';
 
@@ -12,15 +13,28 @@ import { LOOKUP_EXTENSIONS, resolveFile } from './file.ts';
 /** The layer name for each package name of a layer, with the package name in lower case. */
 export type LayerPackages = ReadonlyMap<string, string>;
 
+/** How a file loads a module: through `require()`, and with the `type` keyword on the statement. */
+export type ImportForm = Pick<ImportRef, 'require' | 'typeStatement'>;
+
 /**
  * The `exports` conditions for an import of a layer. A target of `exports` cannot leave its
- * package, so each condition gives a file of the same layer. `types` is not in the list: packages
- * put it first, and it gives a `.d.ts` file, not the source. A statement with the `type` keyword
- * tries `types` when no other condition gives a file. `development` is in the list and
- * `production` is not: layerscope reads the source, as `nuxi dev` does.
+ * package, so each condition gives a file of the same layer. An import uses `import` and a
+ * `require()` uses `require`, never both: exsolve takes the first matching key of the `exports`
+ * object, so with both, the order of the keys and not the import would choose the file. `types`
+ * is not in the list: packages put it first, and it gives a `.d.ts` file, not the source. A
+ * statement with the `type` keyword tries `types` when no other condition gives a file.
+ * `development` is in the list and `production` is not: layerscope reads the source, as
+ * `nuxi dev` does.
  */
-const CONDITIONS = ['import', 'require', 'module', 'node', 'browser', 'development', 'default'];
-const TYPE_CONDITIONS = [...CONDITIONS, 'types'];
+const SHARED_CONDITIONS = ['module', 'node', 'browser', 'development', 'default'];
+
+function conditionsOf(form: ImportForm, types: boolean): string[] {
+  return [
+    form.require === true ? 'require' : 'import',
+    ...SHARED_CONDITIONS,
+    ...(types ? ['types'] : []),
+  ];
+}
 
 function resolveModule(id: string, fromFile: string, conditions: string[]): string | undefined {
   // No resolution cache, so a watch run sees a file that was added. exsolve still keeps the
@@ -80,17 +94,19 @@ export function resolveLayerPackage(
   name: string,
   layer: string,
   fromFile: string,
-  typeStatement: boolean,
+  form: ImportForm,
 ): string | null {
   const resolved =
-    resolveModule(specifier, fromFile, CONDITIONS) ??
-    (typeStatement ? resolveModule(specifier, fromFile, TYPE_CONDITIONS) : undefined);
+    resolveModule(specifier, fromFile, conditionsOf(form, false)) ??
+    (form.typeStatement === true
+      ? resolveModule(specifier, fromFile, conditionsOf(form, true))
+      : undefined);
   if (resolved !== undefined) {
     return resolved;
   }
   // When the package has `exports`, `package.json` resolves only if `exports` allows it. A
   // package with `exports` gets no lookup of a relative path, and a gone file has no paths.
-  const manifestFile = resolveModule(`${name}/package.json`, fromFile, CONDITIONS);
+  const manifestFile = resolveModule(`${name}/package.json`, fromFile, conditionsOf(form, false));
   if (manifestFile === undefined || hasExportsOrIsGone(layer, manifestFile)) {
     return null;
   }

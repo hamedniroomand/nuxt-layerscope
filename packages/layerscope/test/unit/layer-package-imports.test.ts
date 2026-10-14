@@ -59,16 +59,11 @@ describe('the oracle: an import by package name', () => {
 });
 
 describe('an import by the package name of a layer', () => {
-  it('resolves through exports: a pattern, a require-only target, and not the types target', async () => {
-    const { root, rows } = await outcomes([
-      '@acme/kit/x',
-      '@acme/kit/cjs',
-      '@acme/kit/app/composables/useKit',
-    ]);
+  it('resolves through exports: a pattern, and not the types target', async () => {
+    const { root, rows } = await outcomes(['@acme/kit/x', '@acme/kit/app/composables/useKit']);
     const kit = realpathSync(join(root, KIT));
     expect(rows).toEqual([
       ['@acme/kit/x', join(kit, 'x.ts'), 'kit', null],
-      ['@acme/kit/cjs', join(kit, 'app/cjs.ts'), 'kit', null],
       ['@acme/kit/app/composables/useKit', join(kit, 'app/composables/useKit.ts'), 'kit', null],
     ]);
   });

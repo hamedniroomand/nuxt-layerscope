@@ -6,7 +6,7 @@ import type { AliasMap } from '#src/nuxt/aliases.ts';
 import { isFile, readJson, realPath } from '#src/utils/fs.ts';
 
 import { resolveFile } from './file.ts';
-import type { LayerPackages } from './layer-package.ts';
+import type { ImportForm, LayerPackages } from './layer-package.ts';
 import { resolveLayerPackage } from './layer-package.ts';
 import { packageName } from './package-name.ts';
 
@@ -60,8 +60,8 @@ export function resolveSpecifier(
   aliases: AliasMap,
   buildDir: string,
   layerPackages: LayerPackages,
-  /** A statement with the `type` keyword, which can also resolve through `types` in `exports`. */
-  typeStatement = false,
+  /** How the file loads the module, which picks the `exports` conditions of a layer. */
+  form: ImportForm = {},
 ): Resolution {
   if (isRelative(specifier)) {
     return resolvePath(resolve(dirname(fromFile), specifier), buildDir);
@@ -82,7 +82,7 @@ export function resolveSpecifier(
   // such as `events` wins over a layer with the same name, as in Node.
   const layer = isBuiltin(specifier) ? undefined : layerPackages.get(name.toLowerCase());
   if (layer !== undefined) {
-    const file = resolveLayerPackage(specifier, name, layer, fromFile, typeStatement);
+    const file = resolveLayerPackage(specifier, name, layer, fromFile, form);
     return file === null ? { kind: 'missing' } : resolvePath(file, buildDir);
   }
   return { kind: 'external', module: name };
