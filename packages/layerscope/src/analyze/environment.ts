@@ -113,6 +113,6 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
     notes: [...symbols.notes, ...notes, ...(stale === null ? [] : [stale])],
     registry,
     layers,
-    env: createAnalysisEnv(table, ownerOf, buildDir, config),
+    env: createAnalysisEnv(table, ownerOf, buildDir, config, layers),
   };
 }

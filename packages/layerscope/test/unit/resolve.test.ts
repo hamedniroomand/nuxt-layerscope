@@ -11,12 +11,19 @@ import { NUXT4_ROOT } from '#test/fixtures.ts';
 
 const buildDir = join(NUXT4_ROOT, '.nuxt');
 const aliases = loadAliases(buildDir);
+const NO_LAYER_PACKAGES = new Map<string, string>();
 const from = join(NUXT4_ROOT, 'layers/admin/app/utils/exportCsv.ts');
 
 describe('resolveSpecifier', () => {
   it('resolves #layers aliases to files', () => {
     expect(
-      resolveSpecifier('#layers/web/app/composables/useCart', from, aliases, buildDir),
+      resolveSpecifier(
+        '#layers/web/app/composables/useCart',
+        from,
+        aliases,
+        buildDir,
+        NO_LAYER_PACKAGES,
+      ),
     ).toEqual({
       kind: 'file',
       file: join(NUXT4_ROOT, 'layers/web/app/composables/useCart.ts'),
@@ -25,27 +32,31 @@ describe('resolveSpecifier', () => {
   });
 
   it('resolves relative paths with extension lookup', () => {
-    expect(resolveSpecifier('../composables/useAdminStats', from, aliases, buildDir)).toMatchObject(
-      {
-        kind: 'file',
-      },
-    );
+    expect(
+      resolveSpecifier('../composables/useAdminStats', from, aliases, buildDir, NO_LAYER_PACKAGES),
+    ).toMatchObject({
+      kind: 'file',
+    });
   });
 
   it('reports relative imports that do not exist', () => {
-    expect(resolveSpecifier('./nope', from, aliases, buildDir)).toEqual({ kind: 'missing' });
+    expect(resolveSpecifier('./nope', from, aliases, buildDir, NO_LAYER_PACKAGES)).toEqual({
+      kind: 'missing',
+    });
   });
 
   it('treats packages and virtual modules as external', () => {
-    expect(resolveSpecifier('@vueuse/core/x', from, aliases, buildDir)).toEqual({
+    expect(resolveSpecifier('@vueuse/core/x', from, aliases, buildDir, NO_LAYER_PACKAGES)).toEqual({
       kind: 'external',
       module: '@vueuse/core',
     });
-    expect(resolveSpecifier('virtual:pwa', from, aliases, buildDir)).toEqual({
+    expect(resolveSpecifier('virtual:pwa', from, aliases, buildDir, NO_LAYER_PACKAGES)).toEqual({
       kind: 'external',
       module: 'virtual:pwa',
     });
-    expect(resolveSpecifier('#build/fetch.mjs', from, aliases, buildDir)).toEqual({
+    expect(
+      resolveSpecifier('#build/fetch.mjs', from, aliases, buildDir, NO_LAYER_PACKAGES),
+    ).toEqual({
       kind: 'external',
       module: '#build',
     });
@@ -55,7 +66,7 @@ describe('resolveSpecifier', () => {
 describe('resolveSpecifier absolute and build paths', () => {
   it('resolves absolute paths the same as relatives', () => {
     const file = join(NUXT4_ROOT, 'layers/web/app/composables/useCart.ts');
-    expect(resolveSpecifier(file, from, aliases, buildDir)).toEqual({
+    expect(resolveSpecifier(file, from, aliases, buildDir, NO_LAYER_PACKAGES)).toEqual({
       kind: 'file',
       file,
       module: null,
@@ -63,7 +74,7 @@ describe('resolveSpecifier absolute and build paths', () => {
   });
 
   it('treats the build dir itself as the #build virtual module', () => {
-    expect(resolveSpecifier(buildDir, from, aliases, buildDir)).toEqual({
+    expect(resolveSpecifier(buildDir, from, aliases, buildDir, NO_LAYER_PACKAGES)).toEqual({
       kind: 'external',
       module: '#build',
     });
@@ -72,7 +83,7 @@ describe('resolveSpecifier absolute and build paths', () => {
 
 describe('resolveSpecifier under node_modules', () => {
   it('keeps the real file and the package, so a layer installed from npm can own it', () => {
-    const resolution = resolveSpecifier('#app', from, aliases, buildDir);
+    const resolution = resolveSpecifier('#app', from, aliases, buildDir, NO_LAYER_PACKAGES);
     expect(resolution).toMatchObject({ kind: 'file', module: 'nuxt' });
     expect(resolution.kind === 'file' && resolution.file).toContain('/node_modules/');
   });
@@ -94,18 +105,18 @@ describe('resolveSpecifier with hoisted packages', () => {
 
   it('treats an aliased package directory as an external module', () => {
     const map = hoisted(true);
-    expect(resolveSpecifier('ofetch', from, map, buildDir)).toEqual({
+    expect(resolveSpecifier('ofetch', from, map, buildDir, NO_LAYER_PACKAGES)).toEqual({
       kind: 'external',
       module: 'ofetch',
     });
-    expect(resolveSpecifier('ofetch/node', from, map, buildDir)).toEqual({
+    expect(resolveSpecifier('ofetch/node', from, map, buildDir, NO_LAYER_PACKAGES)).toEqual({
       kind: 'external',
       module: 'ofetch',
     });
   });
 
   it('still reports an alias whose target is neither a file nor a package', () => {
-    expect(resolveSpecifier('ofetch', from, hoisted(false), buildDir)).toEqual({
+    expect(resolveSpecifier('ofetch', from, hoisted(false), buildDir, NO_LAYER_PACKAGES)).toEqual({
       kind: 'missing',
     });
   });

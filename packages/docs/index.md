@@ -79,8 +79,8 @@ Nitro utils in `server/`, and the auto-imports available in `shared/`, each in i
 
 <Card title="Explicit imports" icon="code" wide>
 
-`#layers/web/…`, `~/…`, relative paths, `#imports` and `#components`, through Nuxt's own alias
-map.
+`#layers/web/…`, `~/…`, relative paths, the package name of a layer, `#imports` and
+`#components`, through Nuxt's alias map and the `package.json` of the layer.
 
 </Card>
 

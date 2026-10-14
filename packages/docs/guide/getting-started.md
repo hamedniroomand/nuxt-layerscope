@@ -101,7 +101,7 @@ export default defineConfig({
 
 - A layer in `layers/<name>` is called `<name>`, and the project itself is `root`. Layers from
   `extends`, npm and git are covered in [Layers](./layers#layer-names).
-- Dependencies inside a layer, and on npm packages, are always allowed.
+- Dependencies inside a layer, and on npm packages that are not layers, are always allowed.
 - A layer you leave out is unrestricted. Here `root` may use every layer.
 
 ### Run the check

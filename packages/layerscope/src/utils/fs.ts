@@ -2,6 +2,11 @@ import { readFileSync, realpathSync, statSync } from 'node:fs';
 
 import { basename, dirname, isAbsolute, join, normalize, resolve } from 'pathe';
 
+/** A path that is gone (ENOENT), or that has a file in its path (ENOTDIR). */
+export function isGone(code: string | undefined): boolean {
+  return code === 'ENOENT' || code === 'ENOTDIR';
+}
+
 export function isFile(path: string): boolean {
   try {
     return statSync(path).isFile();

@@ -1,5 +1,6 @@
 import type { AliasMap } from '#src/nuxt/aliases.ts';
 import type { SymbolMap, SymbolTable, SymbolTarget } from '#src/nuxt/symbols.ts';
+import type { LayerPackages } from '#src/resolve/layer-package.ts';
 import { resolveSpecifier } from '#src/resolve/specifier.ts';
 import type { ImportRef } from '#src/scan/types.ts';
 import type { Context } from '#src/types.ts';
@@ -18,6 +19,8 @@ export interface ImportEnv {
   table: SymbolTable;
   aliases: AliasMap;
   buildDir: string;
+  /** The package names of the layers, so an import by one of them resolves to a file. */
+  layerPackages: LayerPackages;
 }
 
 function virtualModule(specifier: string, context: Context, table: SymbolTable): SymbolMap | null {
@@ -47,7 +50,14 @@ export function resolveImportRef(
           };
     });
   }
-  const resolution = resolveSpecifier(ref.specifier, file, env.aliases, env.buildDir);
+  const resolution = resolveSpecifier(
+    ref.specifier,
+    file,
+    env.aliases,
+    env.buildDir,
+    env.layerPackages,
+    ref.typeStatement === true,
+  );
   if (resolution.kind === 'missing') {
     return [{ resolved: false, message: `Cannot resolve import "${ref.specifier}"` }];
   }

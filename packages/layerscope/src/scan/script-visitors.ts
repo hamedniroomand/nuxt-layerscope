@@ -92,9 +92,9 @@ function typeInfo(
   declaredType: boolean,
   names: string[],
   specifiers: Specifier[],
-): Pick<ImportRef, 'typeOnly' | 'typeNames'> {
+): Pick<ImportRef, 'typeOnly' | 'typeStatement' | 'typeNames'> {
   if (declaredType) {
-    return { typeOnly: true, typeNames: names };
+    return { typeOnly: true, typeStatement: true, typeNames: names };
   }
   const values = new Set(specifiers.filter(spec => !spec.type).map(spec => spec.name));
   return {

@@ -43,6 +43,6 @@ export function loadProject(rootDir: string): ProjectLoad {
       'unresolved-reference': 'warn',
     },
   };
-  const env = createAnalysisEnv(table, createOwnerLookup(layers), buildDir, lintConfig);
+  const env = createAnalysisEnv(table, createOwnerLookup(layers), buildDir, lintConfig, layers);
   return { ok: true, project: { rootDir, config: lintConfig, env, layers } };
 }
