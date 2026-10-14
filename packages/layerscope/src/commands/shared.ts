@@ -33,7 +33,7 @@ type Command = ReturnType<Cli['command']>;
 
 export function withCommonOptions(command: Command): Command {
   return command
-    .option('--config <file>', 'Path to layerscope.config.ts')
+    .option('--config <file>', 'Path to layerscope.config.ts, relative to the root')
     .option('--prepare', 'Run "nuxi prepare" before checking')
     .option('--source <source>', `Symbol source: ${SOURCE_OPTIONS.join(', ')}`, {
       default: 'auto',

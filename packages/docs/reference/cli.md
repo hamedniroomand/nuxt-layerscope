@@ -37,12 +37,12 @@ for the usual shape: shared code in root, and feature layers that use only root.
 under such a preset, so it fits only when root uses no other layer. When a plain preset
 fits, `init` suggests it, because it is stricter.
 
-| Option            | Default               | Description                                                                                                                                      |
-| ----------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `--config <file>` | `layerscope.config.*` | Where to write the config, relative to the current directory. By default, the existing config file, or `layerscope.config.ts` when there is none |
-| `--baseline`      |                       | Also write a baseline of the findings still reported                                                                                             |
-| `--force`         |                       | Replace the existing config file or baseline                                                                                                     |
-| `--dry-run`       |                       | Print the proposal and write nothing                                                                                                             |
+| Option            | Default               | Description                                                                                                                         |
+| ----------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `--config <file>` | `layerscope.config.*` | Where to write the config, relative to the root. By default, the existing config file, or `layerscope.config.ts` when there is none |
+| `--baseline`      |                       | Also write a baseline of the findings still reported                                                                                |
+| `--force`         |                       | Replace the existing config file or baseline                                                                                        |
+| `--dry-run`       |                       | Print the proposal and write nothing                                                                                                |
 
 Also takes `--prepare`, `--source` and `--verbose`. Without `--force`, `init` exits `2` when a
 config already exists, or a baseline with `--baseline`. It does not merge: use `--dry-run` and copy
@@ -76,7 +76,7 @@ layerscope check [root] [files...] [options]
 | Option              | Default                    | Description                                                                                                                                                                                                                                                |
 | ------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `--format <format>` | `text`                     | [Output format](./output): `text`, `github`, `json`, `sarif` or `gitlab`                                                                                                                                                                                   |
-| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                                                                                                                                                                                                             |
+| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the root                                                                                                                                                                                                                          |
 | `--prepare`         |                            | Run `nuxi prepare` before checking                                                                                                                                                                                                                         |
 | `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                                                                                                                                                                                                    |
 | `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                                                                                                                                                                                   |
@@ -265,7 +265,7 @@ layerscope why <symbol> [root] [options]
 | Option              | Default               | Description                        |
 | ------------------- | --------------------- | ---------------------------------- |
 | `--format <format>` | `text`                | `text` or `json`                   |
-| `--config <file>`   | `layerscope.config.*` | Config file                        |
+| `--config <file>`   | `layerscope.config.*` | Config file, relative to the root  |
 | `--prepare`         |                       | Run `nuxi prepare` first           |
 | `--source <source>` | `auto`                | Symbol source                      |
 | `--verbose`         |                       | Print where symbols were read from |
@@ -303,7 +303,7 @@ stdin closes or on `SIGINT` and `SIGTERM`, with exit code `0`.
 
 | Option              | Default                    | Description                                                                              |
 | ------------------- | -------------------------- | ---------------------------------------------------------------------------------------- |
-| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the current directory                                           |
+| `--config <file>`   | `layerscope.config.*`      | Config file, relative to the root                                                        |
 | `--prepare`         |                            | Run `nuxi prepare` once, before the server starts; it writes the generated `.nuxt` files |
 | `--source <source>` | `auto`                     | [Symbol source](#source): `auto`, `registry` or `types`                                  |
 | `--baseline <file>` | `layerscope-baseline.json` | [Baseline](../guide/baseline) file, relative to the root                                 |

@@ -48,7 +48,7 @@ Set `layerscope: { enabled: false }` in `nuxt.config` to turn the module off.
 | ------------------- | ------------------------------------------------------------------------ |
 | `[root]`            | Nuxt project root (default: current dir)                                 |
 | `--format <format>` | `text` (default), `github` or `json`                                     |
-| `--config <file>`   | Config path (default: `layerscope.config.ts`)                            |
+| `--config <file>`   | Config path, relative to the root (default: `layerscope.config.ts`)      |
 | `--prepare`         | Run `nuxi prepare` first                                                 |
 | `--baseline <file>` | Accepted findings, relative to the root (`layerscope-baseline.json`)     |
 | `--update-baseline` | Write every current finding to the baseline file and exit `0`            |

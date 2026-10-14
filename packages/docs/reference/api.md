@@ -24,7 +24,7 @@ problems (the CLI's exit code `2`).
 | Option       | Type                              | Default                       | Description                                                 |
 | ------------ | --------------------------------- | ----------------------------- | ----------------------------------------------------------- |
 | `rootDir`    | `string`                          | `process.cwd()`               | Nuxt project root                                           |
-| `configFile` | `string`                          | `layerscope.config.*` in root | Config file path                                            |
+| `configFile` | `string`                          | `layerscope.config.*` in root | Config file path, relative to `rootDir`                     |
 | `config`     | `LayerscopeConfig`                |                               | Config object, used instead of loading a file               |
 | `prepare`    | `boolean`                         | `false`                       | Run `nuxi prepare` first                                    |
 | `source`     | `'auto' \| 'registry' \| 'types'` | `'auto'`                      | Where symbols come from                                     |

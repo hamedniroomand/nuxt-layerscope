@@ -13,7 +13,7 @@ import { applyScope, planScan } from './scope.ts';
 export interface AnalyzeOptions {
   /** Defaults to `process.cwd()`. */
   rootDir?: string;
-  /** Defaults to `layerscope.config.*` in the root. */
+  /** Relative to `rootDir`. Defaults to `layerscope.config.*` in the root. */
   configFile?: string;
   /** Used instead of loading a config file. */
   config?: LayerscopeConfig;
