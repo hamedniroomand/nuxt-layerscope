@@ -1,3 +1,6 @@
+import { rmSync } from 'node:fs';
+
+import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { analyze } from '#src/analyze/index.ts';
@@ -80,24 +83,28 @@ describe('import = require() in a .cts file', () => {
 });
 
 describe('a destructured require and expose', () => {
-  const read = (form: string) => async (): Promise<string[]> => {
-    const root = twoLayers();
-    write(root, 'layers/a/app/utils/alias.cjs', form);
-    write(root, 'layers/a/app/utils/relative.js', 'export const x = 1;\n');
-    const result = await analyze({
-      rootDir: root,
-      config: {
-        layers: {
-          a: { path: 'layers/a', allow: ['b'] },
-          b: { path: 'layers/b', expose: ['open'] },
+  const read =
+    (form: string, file = 'alias.cjs') =>
+    async (): Promise<string[]> => {
+      const root = twoLayers();
+      // The require in the alias.cjs of `twoLayers` would add a finding of its own.
+      rmSync(join(root, 'layers/a/app/utils/alias.cjs'));
+      write(root, `layers/a/app/utils/${file}`, form);
+      write(root, 'layers/a/app/utils/relative.js', 'export const x = 1;\n');
+      const result = await analyze({
+        rootDir: root,
+        config: {
+          layers: {
+            a: { path: 'layers/a', allow: ['b'] },
+            b: { path: 'layers/b', expose: ['open'] },
+          },
         },
-      },
-    });
-    return result.findings
-      .filter(finding => finding.rule === 'layer-internal')
-      .map(finding => finding.symbol)
-      .toSorted();
-  };
+      });
+      return result.findings
+        .filter(finding => finding.rule === 'layer-internal')
+        .map(finding => finding.symbol)
+        .toSorted();
+    };
 
   it('is checked against expose like a named import', async () => {
     const fromRequire = await read(
@@ -105,6 +112,8 @@ describe('a destructured require and expose', () => {
     )();
     const fromImport = await read(
       "import { open, secret } from '#layers/b/app/utils/lib.cjs';\n",
+      // A `.cjs` file cannot hold an import statement, so this form is in an ESM file.
+      'alias.mjs',
     )();
     expect(fromRequire).toEqual(fromImport);
     expect(fromRequire.length).toBeGreaterThan(0);
