@@ -1,9 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 
-import { resolve } from 'pathe';
-
 import { AnalysisCache, createEnvironmentCache } from '#src/analyze/cache.ts';
 import type { AnalyzeOptions } from '#src/analyze/index.ts';
+import { baselinePath } from '#src/baseline/index.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { projectRoot } from '#src/utils/fs.ts';
 
@@ -149,7 +148,7 @@ export class Analyzer {
 
   /** The baseline file the tab reads and writes. */
   public get baselineFile(): string {
-    return resolve(this.options.rootDir, this.options.baseline);
+    return baselinePath(this.options.rootDir, this.options.baseline);
   }
 
   /**

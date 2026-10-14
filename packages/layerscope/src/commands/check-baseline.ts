@@ -1,7 +1,12 @@
-import { relative, resolve } from 'pathe';
+import { relative } from 'pathe';
 
 import { analyze } from '#src/analyze/index.ts';
-import { assertNotDirectory, createBaseline, writeBaseline } from '#src/baseline/index.ts';
+import {
+  assertNotDirectory,
+  baselinePath,
+  createBaseline,
+  writeBaseline,
+} from '#src/baseline/index.ts';
 import { currentDir } from '#src/utils/fs.ts';
 import { plural } from '#src/utils/strings.ts';
 
@@ -15,7 +20,7 @@ export async function updateBaseline(rootDir: string, flags: CheckFlags): Promis
     prepare: flags.prepare,
     source: toSource(flags.source),
   });
-  const file = resolve(rootDir, flags.baseline);
+  const file = baselinePath(rootDir, flags.baseline);
   assertNotDirectory(file);
   writeBaseline(file, createBaseline(result.findings, rootDir));
   const count = plural(result.findings.length, 'finding');

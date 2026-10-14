@@ -23,7 +23,7 @@ first, then either run `npx nuxi prepare` or set `prepare: true`. See
 | `root`     | `.`                                                                                                                 | Nuxt project root, relative to the repository                                                                                                           |
 | `config`   |                                                                                                                     | Config file; defaults to `layerscope.config.*` in the root                                                                                              |
 | `prepare`  | `false`                                                                                                             | `true` runs `nuxi prepare` first; needs the project's dependencies installed                                                                            |
-| `baseline` | `layerscope-baseline.json`                                                                                          | [Baseline](../guide/baseline) file, relative to the root                                                                                                |
+| `baseline` | `layerscope-baseline.json`                                                                                          | [Baseline](../guide/baseline) file, relative to the root. It must be in the git repository                                                              |
 | `comment`  | `false`                                                                                                             | `true` posts the drift report as a pull request comment, one for each root; needs `pull-requests: write`. Skipped on a `pull_request` event from a fork |
 | `version`  | the version of the action release (for `@main` or a commit, the version in `action.yml`, normally the last release) | `nuxt-layerscope` version to run through `npx` when the project does not install it                                                                     |
 
@@ -38,7 +38,8 @@ commit of the merge group. If the clone does not have that commit, the step fetc
 cannot fetch it, if git cannot run in the root, or if the event has no base commit (for example a
 push of a new branch, or a manual run), the step skips the report and prints a notice.
 The step never fails the job. If `drift` fails, for example because the baseline on the base branch
-is not valid, the step prints the error in its log and writes no summary.
+is not valid, is a symbolic link, or the `baseline` input names a file outside the git repository,
+the step prints the error in its log and writes no summary.
 
 With `comment: true`, the step `Post the drift comment` also posts the report as a pull request comment, one comment for
 each root. Later runs update the comment that the same account wrote. Two steps or workflows with

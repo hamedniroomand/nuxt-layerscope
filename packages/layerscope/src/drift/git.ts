@@ -1,6 +1,10 @@
+import { basename, dirname, isAbsolute, join, relative } from 'pathe';
+
 import type { Baseline } from '#src/baseline/index.ts';
-import { parseBaselineText } from '#src/baseline/index.ts';
+import { baselinePath, parseBaselineText } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
+import { isSymlink } from '#src/fix/paths.ts';
+import { realPath } from '#src/utils/fs.ts';
 import { git, splitNul } from '#src/utils/git.ts';
 
 function assertRef(rootDir: string, ref: string): void {
@@ -24,48 +28,113 @@ function unreadable(file: string, ref: string, error: unknown): LayerscopeError 
   );
 }
 
-/**
- * The git type of `file` at `ref` (`blob`, `tree`, `commit`), or `null` when the ref has no such
- * path. `ls-tree` only probes: it reads each tree on the path, so a missing tree is an error and
- * not "no such path". For a folder it lists the children, so the type comes from `cat-file`. The
- * path is read as given, relative to `rootDir`, and not as a pattern.
- */
-function typeAt(rootDir: string, ref: string, file: string): string | null {
+/** The top of the git work tree of `rootDir`, with its real path. */
+function workTree(rootDir: string): string {
   try {
-    const entries = splitNul(git(rootDir, '--literal-pathspecs', 'ls-tree', '-z', ref, '--', file));
+    return realPath(git(rootDir, 'rev-parse', '--show-toplevel').trim());
+  } catch {
+    throw new LayerscopeError(`drift needs a git work tree. ${rootDir} is not in one.`);
+  }
+}
+
+/**
+ * The paths of the baseline in git, relative to the repository root `top`. Try the typed path
+ * first, then the real path. The real path fixes a symbolic link in a dir and a name in the wrong
+ * case. Do not resolve the file name if it is a link: git stores the link at the link name. If the
+ * file is gone, keep the name. Limit: a dir that is a link at the ref, and not the same link now,
+ * is not found, so the ref has no baseline.
+ */
+function gitPaths(rootDir: string, top: string, ref: string, name: string): string[] {
+  const root = realPath(rootDir);
+  const file = baselinePath(root, name);
+  const real = isSymlink(file) ? join(realPath(dirname(file)), basename(file)) : realPath(file);
+  const paths = [file, real]
+    .map(path => relative(top, path))
+    .filter(path => path !== '..' && !path.startsWith('../') && !isAbsolute(path));
+  if (paths.length === 0) {
+    throw new LayerscopeError(
+      `${name} is outside the git repository ${top}. drift reads the baseline at ${ref} from git. Move the baseline file into the repository, or use --baseline with a path in the repository.`,
+    );
+  }
+  // Put `./` first. Git then does not read a name that starts with `:` as a special form. The
+  // repository root becomes `./`.
+  return [...new Set(paths.map(path => `./${path}`))];
+}
+
+/**
+ * The git type of `path` at `ref` (`blob`, `tree`, `commit`, `link`), or `null` when the ref has
+ * no such path. `ls-tree` only probes: it reads each tree on the path, so a missing tree is an
+ * error and not "no such path". It gives the entry of the path itself. `cat-file` gives the type,
+ * and it fails when the object is missing. The path is read as given, relative to `top`, and not
+ * as a pattern.
+ */
+function typeAt(top: string, ref: string, name: string, path: string): string | null {
+  // For `./`, `ls-tree` lists the children of the root and not the root itself.
+  if (path === './') {
+    return 'tree';
+  }
+  try {
+    const entries = splitNul(git(top, '--literal-pathspecs', 'ls-tree', '-z', ref, '--', path));
     if (entries.length === 0) {
       return null;
     }
+    const [mode, type] = entries[0].split(' ');
     // The commit of a submodule is not in this repository, so `cat-file` cannot read it.
-    if (entries.length === 1 && entries[0].split(' ')[1] === 'commit') {
+    if (entries.length === 1 && type === 'commit') {
       return 'commit';
     }
-    return git(rootDir, 'cat-file', '-t', `${ref}:./${file}`).trim();
+    // Git stores a symbolic link as a blob that holds the target path.
+    if (entries.length === 1 && mode === '120000') {
+      return 'link';
+    }
+    return git(top, 'cat-file', '-t', `${ref}:${path}`).trim();
   } catch (error) {
-    throw unreadable(file, ref, error);
+    throw unreadable(name, ref, error);
   }
+}
+
+/** The first path of the baseline that `ref` has, with its git type, or `null` for none. */
+function entryAt(
+  rootDir: string,
+  top: string,
+  ref: string,
+  name: string,
+): { path: string; type: string } | null {
+  for (const path of gitPaths(rootDir, top, ref, name)) {
+    const type = typeAt(top, ref, name, path);
+    if (type !== null) {
+      return { path, type };
+    }
+  }
+  return null;
 }
 
 // ponytail: a ref without a baseline file reads as "no violations", so a repo that has not adopted
 // a baseline yet sees every current finding as added. A file that is there but not valid is an
 // error: it is not the same as no file.
-export function baselineAt(rootDir: string, ref: string, file: string): Baseline {
+export function baselineAt(rootDir: string, ref: string, name: string): Baseline {
+  const top = workTree(rootDir);
   assertRef(rootDir, ref);
-  const type = typeAt(rootDir, ref, file);
-  if (type === null) {
+  const found = entryAt(rootDir, top, ref, name);
+  if (found === null) {
     return { version: 1, entries: [] };
+  }
+  const { path, type } = found;
+  if (type === 'link') {
+    throw new LayerscopeError(
+      `${name} at ${ref} is a symbolic link. drift does not follow links in git. Commit the baseline file itself, or use --baseline with the path of the file that the link points to, if that file is in the repository.`,
+    );
   }
   if (type !== 'blob') {
     throw new LayerscopeError(
-      `${file} at ${ref} is not a baseline file. Fix the file on ${ref}, or use another ref with --base.`,
+      `${name} at ${ref} is not a baseline file. Fix the file on ${ref}, or use another ref with --base.`,
     );
   }
   let text: string;
   try {
-    // The same path rules as in `typeAt`.
-    text = git(rootDir, 'show', `${ref}:./${file}`);
+    text = git(top, 'show', `${ref}:${path}`);
   } catch (error) {
-    throw unreadable(file, ref, error);
+    throw unreadable(name, ref, error);
   }
-  return parseBaselineText(text, file, ref);
+  return parseBaselineText(text, name, ref);
 }

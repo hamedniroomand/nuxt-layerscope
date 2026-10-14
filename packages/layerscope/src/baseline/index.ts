@@ -23,6 +23,7 @@ export {
   assertNotDirectory,
   BASELINE_FILE,
   BASELINE_VERSION,
+  baselinePath,
 } from './input.ts';
 
 export interface Baseline {

@@ -94,7 +94,9 @@ message names the file. When `--staged`, `--changed` or `--since` selects no fil
 and `github` the file is not read. These files are not valid: an empty file, a file that is not
 JSON, a directory, a file with an entry whose `count` is not a whole number above 0, a file with
 another version, and a file that layerscope cannot read. An empty `--baseline` value is also
-refused. For a file from a newer layerscope, update layerscope. Do not create the file again,
+refused. `drift` also stops for a baseline outside the git repository, and for a baseline that is a
+symbolic link on the base ref. Put the file in the repository. Commit the file itself, not a link.
+For a file from a newer layerscope, update layerscope. Do not create the file again,
 because that removes the newer data. For a directory, use another file name. For a file that cannot
 be read, check its permissions. In other cases, fix the file, or run `--update-baseline` to write a
 new one. `check --watch` prints the error, and `mcp` returns it to the assistant. Both keep running,

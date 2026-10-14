@@ -3,6 +3,7 @@ import { statSync, writeFileSync } from 'node:fs';
 import type { cac } from 'cac';
 import { relative, resolve } from 'pathe';
 
+import { baselinePath } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatFindingsSummary } from '#src/report/findings-summary.ts';
 import type { AnalyzeResult, Finding, SourceOption } from '#src/types.ts';
@@ -157,7 +158,7 @@ export function prepareSummary(
   }
   // The summary path is from the current directory, the baseline path is from the root. Emptying
   // the baseline file would lose its entries.
-  const baseline = flags.baseline === undefined ? undefined : resolve(rootDir, flags.baseline);
+  const baseline = flags.baseline === undefined ? undefined : baselinePath(rootDir, flags.baseline);
   if (baseline !== undefined && sameFile(resolve(currentDir(), summary), baseline)) {
     throw new LayerscopeError('--summary and --baseline name the same file.');
   }
