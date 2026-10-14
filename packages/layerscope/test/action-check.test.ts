@@ -102,8 +102,13 @@ describe('check.sh', () => {
   it('gives the CLI the format, the baseline, the summary file and the options', () => {
     const run = runCheck({ INPUT_CONFIG: 'my.config.ts', INPUT_PREPARE: 'true' });
     expect(run.args).toMatch(
-      /^check \. --format github --baseline layerscope-baseline\.json --summary \S+ --config my\.config\.ts --prepare\n$/u,
+      /^check \. --format github --summary \S+ --baseline layerscope-baseline\.json --config my\.config\.ts --prepare\n$/u,
     );
+  });
+
+  it('gives no --baseline when the input is empty, so the config names the file', () => {
+    const run = runCheck({ INPUT_BASELINE: '' });
+    expect(run.args).toMatch(/^check \. --format github --summary \S+\n$/u);
   });
 });
 

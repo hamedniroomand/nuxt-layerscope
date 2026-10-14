@@ -99,7 +99,7 @@ describe('check --summary, errors', () => {
       repo.root,
     );
     expect(result.code).toBe(2);
-    expect(result.err).toContain('--summary and --baseline name the same file.');
+    expect(result.err).toContain('--summary and the baseline name the same file.');
     expect(readFileSync(baseline, 'utf8')).toBe('{"entries":"keep"}\n');
   });
 });

@@ -122,7 +122,7 @@ DevTools tab, or paused, a saved file causes no analysis.
 
 ## Accept findings into the baseline
 
-You can add findings to `layerscope-baseline.json` from the tab:
+You can add findings to the baseline file from the tab:
 
 - one finding: select it and press <kbd>i</kbd>, or click **Ignore**,
 - some findings: pick them with the check boxes (or <kbd>x</kbd>, and shift-click for a range),
@@ -134,7 +134,9 @@ The tab asks first, inline, and says how many entries, findings and files the ch
 until the next change, and can remove entries.
 
 The file that the tab writes is the same file that `layerscope check --update-baseline` writes for
-those findings. Commit it to share it with your team.
+those findings, when you do not use `--baseline`: the [`baseline`](../reference/config#baseline)
+key of the config, else `layerscope-baseline.json` in the project root. Commit it to share it with
+your team.
 
 ### Why this is safe
 
@@ -148,8 +150,9 @@ when all of these are true:
 - the findings did not change since the tab loaded them. If they did, the server refuses with
   `409`, and the tab loads the new findings.
 
-The server writes one change at a time, and always to `layerscope-baseline.json` in the project
-root. The tab cannot read or use the `--baseline` path of the CLI.
+The server writes one change at a time, and only to the baseline file of the config, or, for undo,
+to the file of that change. The tab cannot read or use the `--baseline` path of the CLI: set the
+`baseline` key to use another file.
 
 ## Keyboard shortcuts
 

@@ -24,8 +24,6 @@ export interface BaselineActions {
   undo: () => Promise<void>;
 }
 
-const BASELINE = 'layerscope-baseline.json';
-
 function explain(error: unknown): string {
   if (error instanceof ApiError && error.status === 409) {
     return 'The findings changed. Review them and try again.';
@@ -51,7 +49,7 @@ async function undoLatest({ api, store, toast, lastWrite }: Parts): Promise<void
   }
   try {
     store.replace(await api.undo(store.state.data?.id ?? '', writeId));
-    toast.value = { message: `Undone. ${BASELINE} is back as it was.`, showsNew: false };
+    toast.value = { message: 'Undone. The baseline file is back as it was.', showsNew: false };
   } catch (error) {
     toast.value = { message: explain(error), showsNew: false };
   }
@@ -90,7 +88,7 @@ export function createActions(api: Api, store: Store, toast: Ref<Toast | null>):
       const written = await write(
         'ignore',
         keys,
-        `Added ${plural(keys.length, 'entry', 'entries')} to ${BASELINE}. Commit the file to share it.`,
+        `Added ${plural(keys.length, 'entry', 'entries')} to the baseline file. Commit the file to share it.`,
       );
       return written;
     },
@@ -98,7 +96,7 @@ export function createActions(api: Api, store: Store, toast: Ref<Toast | null>):
       const written = await write(
         'remove',
         keys,
-        `Removed ${plural(keys.length, 'entry', 'entries')} from ${BASELINE}.`,
+        `Removed ${plural(keys.length, 'entry', 'entries')} from the baseline file.`,
       );
       return written;
     },

@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 function outside(name: string, top: string): string {
-  return `${name} is outside the git repository ${top}. drift reads the baseline at HEAD from git. Move the baseline file into the repository, or use --baseline with a path in the repository.`;
+  return `${name} is outside the git repository ${top}. drift reads the baseline at HEAD from git. Move the baseline file into the repository, or use --baseline or the \`baseline\` key of the config with a path in the repository.`;
 }
 
 describe('baseline at a ref, the path of the file', () => {
@@ -172,7 +172,7 @@ describe('baseline at a ref, symbolic links', () => {
     symlinkSync('real.json', join(repo.root, FILE));
     repo.commit('link');
     expect(() => baselineAt(repo.root, 'HEAD', FILE)).toThrow(
-      `${FILE} at HEAD is a symbolic link. drift does not follow links in git. Commit the baseline file itself, or use --baseline with the path of the file that the link points to, if that file is in the repository.`,
+      `${FILE} at HEAD is a symbolic link. drift does not follow links in git. Commit the baseline file itself, or use --baseline or the \`baseline\` key of the config with the path of the file that the link points to, if that file is in the repository.`,
     );
   });
 });

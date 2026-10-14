@@ -96,14 +96,16 @@ describe('the baseline option', () => {
     expect(() => {
       assertBaselineOption(value);
     }).toThrow(
-      '--baseline needs a file name. Leave it out to use layerscope-baseline.json. For a file name that is a number, write it as ./<name>.',
+      '--baseline needs a file name. Leave it out to use the baseline file of the config, or layerscope-baseline.json. For a file name that is a number, write it as ./<name>.',
     );
   });
 
   it('gives no hint for 0, which is what the parser gives for an empty value', () => {
     expect(() => {
       assertBaselineOption(0);
-    }).toThrow(/^--baseline needs a file name\. Leave it out to use layerscope-baseline\.json\.$/u);
+    }).toThrow(
+      /^--baseline needs a file name\. Leave it out to use the baseline file of the config, or layerscope-baseline\.json\.$/u,
+    );
   });
 
   it('refuses a flag that is given twice', () => {

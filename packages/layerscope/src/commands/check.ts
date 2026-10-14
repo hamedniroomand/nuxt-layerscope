@@ -1,5 +1,5 @@
 import { analyzeReport } from '#src/analyze/index.ts';
-import { assertBaselineOption, BASELINE_FILE } from '#src/baseline/index.ts';
+import { assertBaselineOption } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { formatResult, isOutputFormat, OUTPUT_FORMATS } from '#src/report/index.ts';
 import type { OutputFormat } from '#src/report/index.ts';
@@ -23,7 +23,7 @@ import {
 } from './shared.ts';
 
 export interface CheckFlags extends CommonFlags {
-  baseline: string;
+  baseline?: string;
   updateBaseline?: boolean;
   watch?: boolean;
   staged?: boolean;
@@ -77,7 +77,7 @@ export async function check(
   if (!isOutputFormat(format)) {
     throw new LayerscopeError(`Unknown format "${format}". Use ${OUTPUT_FORMATS.join(', ')}.`);
   }
-  prepareSummary(flags.summary, format, flags, projectRoot(splitArguments(root, files).root));
+  await prepareSummary(flags.summary, format, flags, projectRoot(splitArguments(root, files).root));
   if (flags.watch === true && flags.updateBaseline === true) {
     throw new LayerscopeError('--watch cannot be used with --update-baseline.');
   }
@@ -96,7 +96,7 @@ export async function check(
     configFile: flags.config,
     prepare: flags.prepare,
     source: toSource(flags.source),
-    baseline: flags.baseline,
+    baseline: flags.baseline ?? true,
     ...(selection === undefined ? {} : { only: selection.files }),
   });
   const deleted = selection === undefined ? null : deletedNote(selection);
@@ -123,9 +123,10 @@ export function registerCheck(cli: Cli): void {
       .option('--format <format>', `Output format: ${OUTPUT_FORMATS.join(', ')}`, {
         default: 'text',
       })
-      .option('--baseline <file>', 'Findings to accept, relative to the root', {
-        default: BASELINE_FILE,
-      })
+      .option(
+        '--baseline <file>',
+        'Findings to accept, relative to the root. Default: the "baseline" key of the config, else layerscope-baseline.json',
+      )
       .option('--update-baseline', 'Write every current finding to the baseline file')
       .option('--staged', 'Check only the files staged for commit')
       .option('--changed', 'Check only the files that changed since the default branch')

@@ -21,15 +21,15 @@ small because Nuxt loads it at startup; the API is a separate entry for that rea
 Runs a check and resolves to an `AnalyzeResult`. Throws `LayerscopeError` for config and input
 problems (the CLI's exit code `2`).
 
-| Option       | Type                              | Default                       | Description                                                 |
-| ------------ | --------------------------------- | ----------------------------- | ----------------------------------------------------------- |
-| `rootDir`    | `string`                          | `process.cwd()`               | Nuxt project root                                           |
-| `configFile` | `string`                          | `layerscope.config.*` in root | Config file path, relative to `rootDir`                     |
-| `config`     | `LayerscopeConfig`                |                               | Config object, used instead of loading a file               |
-| `prepare`    | `boolean`                         | `false`                       | Run `nuxi prepare` first                                    |
-| `source`     | `'auto' \| 'registry' \| 'types'` | `'auto'`                      | Where symbols come from                                     |
-| `baseline`   | `string`                          |                               | Baseline file, relative to the root; applied when it exists |
-| `extraFiles` | `boolean`                         | `false`                       | See below                                                   |
+| Option       | Type                              | Default                       | Description                                                                                                                            |
+| ------------ | --------------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `rootDir`    | `string`                          | `process.cwd()`               | Nuxt project root                                                                                                                      |
+| `configFile` | `string`                          | `layerscope.config.*` in root | Config file path, relative to `rootDir`                                                                                                |
+| `config`     | `LayerscopeConfig`                |                               | Config object, used instead of loading a file                                                                                          |
+| `prepare`    | `boolean`                         | `false`                       | Run `nuxi prepare` first                                                                                                               |
+| `source`     | `'auto' \| 'registry' \| 'types'` | `'auto'`                      | Where symbols come from                                                                                                                |
+| `baseline`   | `string \| true`                  |                               | Baseline file, relative to the root, applied when it exists. `true`: the `baseline` key of the config, else `layerscope-baseline.json` |
+| `extraFiles` | `boolean`                         | `false`                       | See below                                                                                                                              |
 
 `extraFiles`: also read `nuxt.config.*`, the Nuxt `modules/` dir, files of extra auto-import and
 component dirs, and the project files that counted files import, so that `unused` counts their

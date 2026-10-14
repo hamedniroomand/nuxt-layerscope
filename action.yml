@@ -16,8 +16,8 @@ inputs:
     description: Run "nuxi prepare" before checking. Needs the project's dependencies installed.
     default: 'false'
   baseline:
-    description: Baseline file, relative to the root. It must be in the git repository.
-    default: layerscope-baseline.json
+    description: Baseline file, relative to the root. It must be in the git repository. Defaults to the baseline key of the config, else layerscope-baseline.json.
+    default: ''
   comment:
     description: Post the drift report as a pull request comment, one for each root. Needs `pull-requests` write permission. Skipped on a `pull_request` event from a fork.
     default: 'false'

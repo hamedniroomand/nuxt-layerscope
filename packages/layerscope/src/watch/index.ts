@@ -32,7 +32,8 @@ export interface WatchOptions {
   rootDir: string;
   configFile?: string;
   source: SourceOption;
-  baseline: string;
+  /** Overrides the `baseline` key of the config. */
+  baseline?: string;
   prepare: boolean;
   /** The report of one result, in the format the user chose. */
   render: (result: AnalyzeResult) => string;
@@ -65,7 +66,8 @@ function outputKey(result: AnalyzeResult): string {
     result.findings,
     result.notes,
     result.files.length,
-    // The text report counts these and the JSON report lists them.
+    // The text report counts these and the JSON report lists them, with the file.
+    baseline?.file,
     baseline?.suppressed,
     baseline?.removable,
   ]);

@@ -30,10 +30,23 @@ afterEach(() => {
 });
 
 /** A real HTTP server, as under `nuxi dev`: closing a connection ends the event stream. */
-/** `rootDir` holds the baseline file the tab writes; tests that write pass a temp dir. */
-export async function server(rootDir = '/app'): Promise<Server> {
+/**
+ * `rootDir` holds the baseline file the tab writes; tests that write pass a temp dir. `overrides`
+ * replace the options of the session: `baseline: undefined` lets the config of the result name the
+ * file, and `run: undefined` analyzes the project for real.
+ */
+export async function server(
+  rootDir = '/app',
+  overrides: Partial<Parameters<typeof createSession>[0]> = {},
+): Promise<Server> {
   const run = vi.fn<Run>().mockResolvedValue(makeResult());
-  const session = createSession({ rootDir, baseline: 'b.json', envKey: () => 'k', run });
+  const session = createSession({
+    rootDir,
+    baseline: 'b.json',
+    envKey: () => 'k',
+    run,
+    ...overrides,
+  });
   const app = createApp();
   app.use(
     DEVTOOLS_ROUTE,

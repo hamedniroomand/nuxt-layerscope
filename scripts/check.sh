@@ -10,7 +10,8 @@ source "$(dirname "$0")/root-heading.sh"
 
 summary="$(mktemp "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/layerscope-summary.XXXXXX")"
 trap 'rm -f "$summary"' EXIT
-args=(check "$INPUT_ROOT" --format github --baseline "$INPUT_BASELINE" --summary "$summary")
+args=(check "$INPUT_ROOT" --format github --summary "$summary")
+if [ -n "$INPUT_BASELINE" ]; then args+=(--baseline "$INPUT_BASELINE"); fi
 if [ -n "$INPUT_CONFIG" ]; then args+=(--config "$INPUT_CONFIG"); fi
 if [ "$INPUT_PREPARE" = "true" ]; then args+=(--prepare); fi
 

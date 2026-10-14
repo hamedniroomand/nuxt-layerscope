@@ -44,16 +44,16 @@ files, which gives the same boundary findings but cannot see overridden componen
 [`shadowed-component`](#rules)). `npx nuxt-layerscope check` works without installing anything.
 Set `layerscope: { enabled: false }` in `nuxt.config` to turn the module off.
 
-| Option              | Description                                                              |
-| ------------------- | ------------------------------------------------------------------------ |
-| `[root]`            | Nuxt project root (default: current dir)                                 |
-| `--format <format>` | `text` (default), `github` or `json`                                     |
-| `--config <file>`   | Config path, relative to the root (default: `layerscope.config.ts`)      |
-| `--prepare`         | Run `nuxi prepare` first                                                 |
-| `--baseline <file>` | Accepted findings, relative to the root (`layerscope-baseline.json`)     |
-| `--update-baseline` | Write every current finding to the baseline file and exit `0`            |
-| `--source <source>` | `auto` (default: registry when present), `registry` or `types` (`.d.ts`) |
-| `--verbose`         | Print where symbols were read from (to stderr)                           |
+| Option              | Description                                                                                                          |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `[root]`            | Nuxt project root (default: current dir)                                                                             |
+| `--format <format>` | `text` (default), `github` or `json`                                                                                 |
+| `--config <file>`   | Config path, relative to the root (default: `layerscope.config.ts`)                                                  |
+| `--prepare`         | Run `nuxi prepare` first                                                                                             |
+| `--baseline <file>` | Accepted findings, relative to the root (default: the `baseline` key of the config, else `layerscope-baseline.json`) |
+| `--update-baseline` | Write every current finding to the baseline file and exit `0`                                                        |
+| `--source <source>` | `auto` (default: registry when present), `registry` or `types` (`.d.ts`)                                             |
+| `--verbose`         | Print where symbols were read from (to stderr)                                                                       |
 
 Exit codes: `0` clean, `1` rule errors, `2` config or input error. Notes, such as a rule that
 could not run, go to stderr so stdout stays machine-readable.
@@ -124,9 +124,9 @@ jobs:
 It runs `layerscope check --format github`, so findings show up inline on the pull request. It
 writes the list of the findings (up to 200) and then the drift report to the job summary. Inputs:
 `root` (default `.`), `config`, `prepare` (`true` runs `nuxi prepare` instead of the separate
-step), `baseline` (default `layerscope-baseline.json`), `comment` (`true` posts the drift report on
-the pull request, one comment for each root) and `version` (used through `npx` when the
-project does not install `nuxt-layerscope`).
+step), `baseline` (default: the `baseline` key of the config, else `layerscope-baseline.json`),
+`comment` (`true` posts the drift report on the pull request, one comment for each root) and
+`version` (used through `npx` when the project does not install `nuxt-layerscope`).
 
 ### `layerscope why <symbol> [root]`
 

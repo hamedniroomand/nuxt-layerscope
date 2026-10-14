@@ -16,7 +16,7 @@ describe('ignore plan and picks', () => {
     const twin = { ...cart, line: 9 };
     const all = [cart, badge, button, twin];
     expect(planIgnore(all, [cart, twin]).message).toBe(
-      'Add 1 entry for 2 findings in 1 file to layerscope-baseline.json?',
+      'Add 1 entry for 2 findings in 1 file to the baseline file?',
     );
     expect(planIgnore(all, all).keys).toHaveLength(3);
   });

@@ -83,7 +83,7 @@ describe('baseline view actions', () => {
     window.location.hash = '#/baseline';
     const { wrapper, api } = await mountFindings();
     vi.mocked(api.baseline).mockResolvedValue({
-      file: 'layerscope-baseline.json',
+      file: 'ci/baseline.json',
       suppressed: sampleFindings().slice(0, 1),
       removable: [],
     });
@@ -108,7 +108,7 @@ describe('baseline view stale entries', () => {
     window.location.hash = '#/baseline';
     const { wrapper, api } = await mountFindings();
     vi.mocked(api.baseline).mockResolvedValue({
-      file: 'layerscope-baseline.json',
+      file: 'ci/baseline.json',
       suppressed: [],
       removable: [
         {

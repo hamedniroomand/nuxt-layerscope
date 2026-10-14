@@ -11,7 +11,7 @@ import { createMultiSelection } from './selection.ts';
 
 export interface IgnorePlan {
   keys: string[];
-  /** "Add 2 entries for 3 findings in 2 files to layerscope-baseline.json?" */
+  /** "Add 2 entries for 3 findings in 2 files to the baseline file?" */
   message: string;
 }
 
@@ -21,7 +21,7 @@ export function planIgnore(all: TabFinding[], picked: TabFinding[]): IgnorePlan 
   const wanted = new Set(keys);
   const covered = all.filter(finding => wanted.has(finding.key));
   const files = new Set(covered.map(finding => finding.file)).size;
-  const message = `Add ${plural(keys.length, 'entry', 'entries')} for ${plural(covered.length, 'finding')} in ${plural(files, 'file')} to layerscope-baseline.json?`;
+  const message = `Add ${plural(keys.length, 'entry', 'entries')} for ${plural(covered.length, 'finding')} in ${plural(files, 'file')} to the baseline file?`;
   return { keys, message };
 }
 

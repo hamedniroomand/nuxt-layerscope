@@ -4,7 +4,6 @@ import { cp, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative } from 'pathe';
 
 import { analyze } from '#src/analyze/index.ts';
-import { BASELINE_FILE } from '#src/baseline/index.ts';
 import { packageVersion } from '#src/version.ts';
 
 import { findingKey } from './finding-keys.ts';
@@ -67,7 +66,7 @@ export async function writeSnapshot(options: SnapshotOptions): Promise<string[]>
   const started = Date.now();
   const result = await analyze({
     rootDir: options.rootDir,
-    baseline: BASELINE_FILE,
+    baseline: true,
     // The Unused view of the snapshot counts the same uses as the live tab.
     extraFiles: true,
   });

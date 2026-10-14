@@ -1,5 +1,5 @@
 import { prepareNuxt } from '#src/analyze/prepare.ts';
-import { assertBaselineOption, BASELINE_FILE } from '#src/baseline/index.ts';
+import { assertBaselineOption } from '#src/baseline/index.ts';
 import { redirectStdout } from '#src/mcp/stdio.ts';
 import { projectRoot } from '#src/utils/fs.ts';
 import { packageVersion } from '#src/version.ts';
@@ -8,7 +8,7 @@ import type { Cli, CommonFlags } from './shared.ts';
 import { toSource, withCommonOptions } from './shared.ts';
 
 export interface McpFlags extends CommonFlags {
-  baseline: string;
+  baseline?: string;
 }
 
 export async function mcp(root: string | undefined, flags: McpFlags): Promise<number> {
@@ -55,8 +55,9 @@ export function registerMcp(cli: Cli): void {
   withCommonOptions(
     cli
       .command('mcp [root]', 'Start an MCP server over stdio for coding assistants')
-      .option('--baseline <file>', 'Findings to accept, relative to the root', {
-        default: BASELINE_FILE,
-      }),
+      .option(
+        '--baseline <file>',
+        'Findings to accept, relative to the root. Default: the "baseline" key of the config, else layerscope-baseline.json',
+      ),
   ).action(mcp);
 }

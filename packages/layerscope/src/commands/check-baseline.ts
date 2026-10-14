@@ -3,6 +3,7 @@ import { relative } from 'pathe';
 import { analyze } from '#src/analyze/index.ts';
 import {
   assertNotDirectory,
+  baselineName,
   baselinePath,
   createBaseline,
   writeBaseline,
@@ -20,7 +21,7 @@ export async function updateBaseline(rootDir: string, flags: CheckFlags): Promis
     prepare: flags.prepare,
     source: toSource(flags.source),
   });
-  const file = baselinePath(rootDir, flags.baseline);
+  const file = baselinePath(rootDir, baselineName(flags.baseline, result.config));
   assertNotDirectory(file);
   writeBaseline(file, createBaseline(result.findings, rootDir));
   const count = plural(result.findings.length, 'finding');

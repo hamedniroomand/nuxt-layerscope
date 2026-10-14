@@ -153,6 +153,11 @@ export interface LayerscopeConfig {
   typeImports?: TypeImports;
   /** Relative to the project root. Defaults to `.nuxt`. */
   buildDir?: string;
+  /**
+   * Baseline file, relative to the project root. Defaults to `layerscope-baseline.json`. The
+   * `--baseline` option and the `baseline` input of the action override it.
+   */
+  baseline?: string;
 }
 
 /**

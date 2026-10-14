@@ -1,5 +1,5 @@
 import { analyzeReport } from '#src/analyze/index.ts';
-import { assertBaselineOption, BASELINE_FILE } from '#src/baseline/index.ts';
+import { assertBaselineOption } from '#src/baseline/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { prepareApply, realIo, runApply } from '#src/fix/apply.ts';
 import { countBaselineEntries, countOtherFindings, planMoves } from '#src/fix/plan.ts';
@@ -11,7 +11,7 @@ import type { Cli, CommonFlags } from './shared.ts';
 import { EXIT_CLEAN, EXIT_ERROR, toSource, withCommonOptions, writeNotes } from './shared.ts';
 
 export interface FixFlags extends CommonFlags {
-  baseline: string;
+  baseline?: string;
   dryRun?: boolean;
   apply?: boolean;
   allowDirty?: boolean;
@@ -36,7 +36,7 @@ export async function fix(root: string | undefined, flags: FixFlags): Promise<nu
     configFile: flags.config,
     prepare: flags.prepare,
     source: toSource(flags.source),
-    baseline: flags.baseline,
+    baseline: flags.baseline ?? true,
   });
   const moves = planMoves(result);
   const notes = {
@@ -68,9 +68,10 @@ export function registerFix(cli: Cli): void {
         'fix [root]',
         'Print or make the file moves that fix boundary findings (only moves, no other suggestions)',
       )
-      .option('--baseline <file>', 'Findings to accept, relative to the root', {
-        default: BASELINE_FILE,
-      })
+      .option(
+        '--baseline <file>',
+        'Findings to accept, relative to the root. Default: the "baseline" key of the config, else layerscope-baseline.json',
+      )
       .option('--dry-run', 'Print the planned moves and change nothing')
       .option('--apply', 'Make the planned moves and rewrite the relative imports')
       .option(

@@ -69,7 +69,8 @@
       class="muted"
     >
       No baseline file. <code>layerscope check --update-baseline</code> writes one that accepts the
-      current findings. The tab reads the default file only.
+      current findings. The tab reads the file that the <code>baseline</code> key of the config
+      names, else <code>layerscope-baseline.json</code>.
     </p>
     <template v-else-if="baseline.data.value">
       <h3 class="group">

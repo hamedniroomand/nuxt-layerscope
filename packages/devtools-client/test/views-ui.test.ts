@@ -197,7 +197,7 @@ describe('baseline view', () => {
     mounted = wrapper;
     expect(wrapper.text()).toContain('No baseline file');
     vi.mocked(api.baseline).mockResolvedValue({
-      file: 'layerscope-baseline.json',
+      file: 'ci/baseline.json',
       suppressed: sampleFindings().slice(0, 1),
       removable: [
         {

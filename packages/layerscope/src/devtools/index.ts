@@ -1,7 +1,6 @@
 import { addDevServerHandler } from '@nuxt/kit';
 import { join } from 'pathe';
 
-import { BASELINE_FILE } from '#src/baseline/index.ts';
 import { onDevtoolsCustomTabs } from '#src/module/nuxt.ts';
 import type { Nuxt } from '#src/module/nuxt.ts';
 
@@ -26,7 +25,6 @@ export function sessionOptions(rootDir: string, buildDir: string): AnalyzerOptio
   return {
     extraFiles: true,
     rootDir,
-    baseline: BASELINE_FILE,
     envKey: (): string => computeEnvKey(rootDir, buildDir),
   };
 }

@@ -4,6 +4,7 @@ import type { Stats } from 'node:fs';
 import { resolve } from 'pathe';
 
 import { LayerscopeError } from '#src/errors.ts';
+import type { LayerscopeConfig } from '#src/types.ts';
 
 export const BASELINE_FILE = 'layerscope-baseline.json';
 
@@ -20,6 +21,9 @@ export function isCount(value: unknown): boolean {
  * value is a file name only when it is a non-empty string.
  */
 export function assertBaselineOption(value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
   if (Array.isArray(value)) {
     throw new LayerscopeError('--baseline was given more than once. Give it one time.');
   }
@@ -32,8 +36,27 @@ export function assertBaselineOption(value: unknown): void {
       ? ' For a file name that is a number, write it as ./<name>.'
       : '';
   throw new LayerscopeError(
-    `--baseline needs a file name. Leave it out to use ${BASELINE_FILE}.${hint}`,
+    `--baseline needs a file name. Leave it out to use the baseline file of the config, or ${BASELINE_FILE}.${hint}`,
   );
+}
+
+/** Stops when the `baseline` key of a config is set and is not a non-empty string. */
+export function assertBaselineKey(value: unknown, where: string): void {
+  if (value !== undefined && (typeof value !== 'string' || value === '')) {
+    throw new LayerscopeError(
+      `${where}: baseline must be a non-empty file name, got ${JSON.stringify(value)}`,
+    );
+  }
+}
+
+/**
+ * The name of the baseline file, relative to the root: the option, else the `baseline` key of the
+ * config, else the default. A config object that a caller gives is not validated, so the key is
+ * checked here too.
+ */
+export function baselineName(option: string | undefined, config: LayerscopeConfig): string {
+  assertBaselineKey(config.baseline, 'config');
+  return option ?? config.baseline ?? BASELINE_FILE;
 }
 
 /** The path of the baseline file. `check` and `drift` both use it, so they read the same file. */

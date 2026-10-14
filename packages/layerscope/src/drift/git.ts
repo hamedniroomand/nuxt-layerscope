@@ -142,7 +142,7 @@ function entryAt(
   }
   if (outside) {
     throw new LayerscopeError(
-      `${name} is outside the git repository ${top}. drift reads the baseline at ${ref} from git. Move the baseline file into the repository, or use --baseline with a path in the repository.`,
+      `${name} is outside the git repository ${top}. drift reads the baseline at ${ref} from git. Move the baseline file into the repository, or use --baseline or the \`baseline\` key of the config with a path in the repository.`,
     );
   }
   return null;
@@ -161,7 +161,7 @@ export function baselineAt(rootDir: string, ref: string, name: string): Baseline
   const { path, type } = found;
   if (type === 'link') {
     throw new LayerscopeError(
-      `${name} at ${ref} is a symbolic link. drift does not follow links in git. Commit the baseline file itself, or use --baseline with the path of the file that the link points to, if that file is in the repository.`,
+      `${name} at ${ref} is a symbolic link. drift does not follow links in git. Commit the baseline file itself, or use --baseline or the \`baseline\` key of the config with the path of the file that the link points to, if that file is in the repository.`,
     );
   }
   if (type !== 'blob') {

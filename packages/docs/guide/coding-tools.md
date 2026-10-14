@@ -149,7 +149,7 @@ This project uses layerscope to keep Nuxt layers apart.
   `suggestion` says. `npx layerscope fix --dry-run` lists the moves. `--apply` makes them. It
   refuses to run when a check fails (for example, a git working tree with changes). Do not use
   `--allow-dirty` without asking.
-- Do not edit `allow`, `rules`, `globals` or `layerscope-baseline.json` to silence a finding. Ask
+- Do not edit `allow`, `rules`, `globals` or the baseline file to silence a finding. Ask
   first: allowing a dependency is a design decision.
 - Optional: `npx layerscope mcp` is a read-only MCP server (`can_use`, `check`, `why`, `layers`,
   `suggest`, `graph`); call `can_use` before you use a symbol from another layer.

@@ -62,7 +62,10 @@ function knownKeys(result: AnalyzeResult, path: string): Set<string> {
 
 async function edit(path: string, body: EditBody, session: Session): Promise<Reply> {
   const { analyzer, writes } = session;
-  const snapshot = await analyzer.get();
+  // A config edit can name another baseline file. A run in flight can have the old config, so a
+  // change needs a new run. The rev check below then refuses a request whose findings changed.
+  const changed = await analyzer.invalidateIfChanged();
+  const snapshot = changed ? await analyzer.refresh() : await analyzer.get();
   if (body.id !== snapshot.id || body.rev !== snapshot.rev) {
     return {
       status: 409,
@@ -75,13 +78,21 @@ async function edit(path: string, body: EditBody, session: Session): Promise<Rep
     return { status: 400, body: { error: 'Unknown finding keys', keys: unknown } };
   }
   const { ignoreFindings, removeEntries } = await import('#src/baseline/edit.ts');
+  // The config can change while the analysis runs. Then the snapshot can name an old baseline file.
+  if (await analyzer.invalidateIfChanged()) {
+    return {
+      status: 409,
+      body: { error: 'The findings changed', id: snapshot.id, rev: snapshot.rev },
+    };
+  }
   const { result } = snapshot;
+  const file = analyzer.baselineFileOf(result);
   const all = [...result.findings, ...(result.baseline?.suppressed ?? [])];
   const change =
     path === '/api/baseline/ignore'
-      ? ignoreFindings(analyzer.baselineFile, body.keys, all, result.rootDir)
+      ? ignoreFindings(file, body.keys, all, result.rootDir)
       : removeEntries(
-          analyzer.baselineFile,
+          file,
           body.keys,
           new Map(
             (result.baseline?.removable ?? []).map(entry => [
@@ -90,7 +101,7 @@ async function edit(path: string, body: EditBody, session: Session): Promise<Rep
             ]),
           ),
         );
-  const writeId = writes.record(change.before);
+  const writeId = writes.record(file, change.before);
   const next = await analyzer.rebaseline();
   return { status: 200, body: { ...(await withReport(next, session)), writeId } };
 }
@@ -111,7 +122,7 @@ async function undo(body: UndoBody, session: Session): Promise<Reply> {
     };
   }
   const { restoreBaseline } = await import('#src/baseline/edit.ts');
-  restoreBaseline(analyzer.baselineFile, last.before);
+  restoreBaseline(last.file, last.before);
   writes.forget();
   const next = await analyzer.rebaseline();
   return { status: 200, body: { ...(await withReport(next, session)), writeId: writes.latest } };

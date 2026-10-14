@@ -1,3 +1,4 @@
+import { assertBaselineKey } from '#src/baseline/input.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { LayerscopeConfig, PresetOptions } from '#src/types.ts';
 
@@ -102,6 +103,7 @@ function validatePreset(preset: unknown, file: string): void {
 
 export function validateConfig(config: LayerscopeConfig, file: string): void {
   validatePreset(config.preset, file);
+  assertBaselineKey(config.baseline, file);
   if (
     config.typeImports !== undefined &&
     (typeof config.typeImports !== 'string' || !TYPE_IMPORTS.has(config.typeImports))

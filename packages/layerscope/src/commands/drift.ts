@@ -1,4 +1,4 @@
-import { assertBaselineOption, BASELINE_FILE } from '#src/baseline/index.ts';
+import { assertBaselineOption } from '#src/baseline/index.ts';
 import { measureDrift } from '#src/drift/index.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import { DRIFT_FORMATS, formatDrift, isDriftFormat } from '#src/report/drift.ts';
@@ -9,7 +9,7 @@ import { EXIT_CLEAN, toSource, withCommonOptions } from './shared.ts';
 
 export interface DriftFlags extends CommonFlags {
   base: string;
-  baseline: string;
+  baseline?: string;
 }
 
 export async function drift(root: string | undefined, flags: DriftFlags): Promise<number> {
@@ -40,8 +40,9 @@ export function registerDrift(cli: Cli): void {
       .option('--format <format>', `Output format: ${DRIFT_FORMATS.join(', ')}`, {
         default: 'text',
       })
-      .option('--baseline <file>', 'Baseline file, relative to the root', {
-        default: BASELINE_FILE,
-      }),
+      .option(
+        '--baseline <file>',
+        'Baseline file, relative to the root. Default: the "baseline" key of the config, else layerscope-baseline.json',
+      ),
   ).action(drift);
 }

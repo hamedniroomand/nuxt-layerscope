@@ -81,10 +81,14 @@ A file outside the root has a path that starts with `../`.
 
 ## Options
 
-| Option              | Description                                                              |
-| ------------------- | ------------------------------------------------------------------------ |
-| `--baseline <file>` | Baseline path, relative to the root. Default `layerscope-baseline.json`. |
-| `--update-baseline` | Write every current finding (errors and warnings) and exit `0`.          |
+| Option              | Description                                                                                                      |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `--baseline <file>` | Baseline path, relative to the root. Default: the `baseline` key of the config, else `layerscope-baseline.json`. |
+| `--update-baseline` | Write every current finding (errors and warnings) and exit `0`.                                                  |
+
+Set the [`baseline`](../reference/config#baseline) key in the config to use another file in
+`check`, `fix`, `drift`, `mcp`, the DevTools tab and the GitHub Action. `init --baseline` always
+writes `layerscope-baseline.json`.
 
 Without a baseline file, `check` behaves as if there were none.
 
@@ -94,8 +98,9 @@ message names the file. When `--staged`, `--changed` or `--since` selects no fil
 and `github` the file is not read. These files are not valid: an empty file, a file that is not
 JSON, a directory, a file with an entry whose `count` is not a whole number above 0, a file with
 another version, and a file that layerscope cannot read. An empty `--baseline` value is also
-refused. `drift` also stops for a baseline outside the git repository, and for a baseline that is a
-symbolic link on the base ref. Put the file in the repository. Commit the file itself, not a link.
+refused. A `baseline` key that is not a non-empty string is also refused. `drift` also stops for a
+baseline outside the git repository, and for a baseline that is a symbolic link on the base ref. Put
+the file in the repository. Commit the file itself, not a link.
 For a file from a newer layerscope, update layerscope. Do not create the file again,
 because that removes the newer data. For a directory, use another file name. For a file that cannot
 be read, check its permissions. In other cases, fix the file, or run `--update-baseline` to write a

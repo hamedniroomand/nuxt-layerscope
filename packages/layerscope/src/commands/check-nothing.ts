@@ -28,7 +28,7 @@ async function emptyReport(
       configFile: flags.config,
       prepare: flags.prepare,
       source: toSource(flags.source),
-      baseline: flags.baseline,
+      baseline: flags.baseline ?? true,
       only: [],
     });
     result.notes.push(...notes);

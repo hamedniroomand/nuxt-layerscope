@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 
 import { AnalysisCache, createEnvironmentCache } from '#src/analyze/cache.ts';
 import type { AnalyzeOptions } from '#src/analyze/index.ts';
-import { baselinePath } from '#src/baseline/index.ts';
+import { baselineName, baselinePath } from '#src/baseline/index.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { projectRoot } from '#src/utils/fs.ts';
 
@@ -21,8 +21,8 @@ export interface Snapshot {
 
 export interface AnalyzerOptions {
   rootDir: string;
-  /** Baseline file relative to `rootDir`. */
-  baseline: string;
+  /** Baseline file relative to `rootDir`. Defaults to the `baseline` key of the config. */
+  baseline?: string;
   envKey: () => Promise<string> | string;
   /**
    * Also read the files that only `unused` reads, for the Unused view. Only the DevTools server
@@ -71,6 +71,7 @@ function fingerprint(result: AnalyzeResult): string {
     .digest('hex');
   return JSON.stringify([
     result.findings,
+    result.baseline?.file,
     result.baseline?.suppressed,
     result.config.layers,
     result.config.typeImports,
@@ -89,6 +90,8 @@ export class Analyzer {
   private readonly environment = createEnvironmentCache();
   private snapshot: Snapshot | undefined;
   private lastFingerprint = '';
+  /** The env key of the last run. */
+  private lastEnvKey: string | undefined;
   private dirty = true;
   private readonly listeners = new Set<(snapshot: Snapshot) => void>();
   private inflight: Promise<Snapshot> | undefined;
@@ -113,6 +116,19 @@ export class Analyzer {
   /** Marks the snapshot stale; the next `get` re-analyzes. Does no work itself. */
   public invalidate(): void {
     this.dirty = true;
+  }
+
+  /**
+   * Marks the snapshot stale when the env key changed after the last run started, and returns
+   * `true` then. An edit of `layerscope.config.*` fires no Nuxt hook, so without this check the
+   * tab can keep a config that names an old baseline file.
+   */
+  public async invalidateIfChanged(): Promise<boolean> {
+    if (this.snapshot === undefined || (await this.options.envKey()) === this.lastEnvKey) {
+      return false;
+    }
+    this.invalidate();
+    return true;
   }
 
   public async get(): Promise<Snapshot> {
@@ -151,9 +167,9 @@ export class Analyzer {
     return snapshot;
   }
 
-  /** The baseline file the tab reads and writes. */
-  public get baselineFile(): string {
-    return baselinePath(this.options.rootDir, this.options.baseline);
+  /** The baseline file that applies to `result`: the tab reads and writes it. */
+  public baselineFileOf(result: AnalyzeResult): string {
+    return baselinePath(this.options.rootDir, baselineName(this.options.baseline, result.config));
   }
 
   /**
@@ -188,7 +204,7 @@ export class Analyzer {
     );
     const fresh = { ...result, findings: all, baseline: undefined };
     // The suggestions count the findings that are shown, so they are made again.
-    const applied = await withSuggestions(applyBaselineFile(fresh, this.baselineFile));
+    const applied = await withSuggestions(applyBaselineFile(fresh, this.baselineFileOf(result)));
     return this.commit(applied, started, 'baseline');
   }
 
@@ -198,13 +214,15 @@ export class Analyzer {
     const started = Date.now();
     try {
       const run = this.options.run ?? (await import('#src/analyze/index.ts')).analyze;
+      const envKey = await this.options.envKey();
+      this.lastEnvKey = envKey;
       const result = await run({
         ...this.options.analyze,
         rootDir: this.options.rootDir,
-        baseline: this.options.baseline,
+        baseline: this.options.baseline ?? true,
         cache: this.cache,
         environment: this.environment,
-        envKey: await this.options.envKey(),
+        envKey,
         extraFiles: this.options.extraFiles,
       });
       return this.commit(result, started, 'analysis');

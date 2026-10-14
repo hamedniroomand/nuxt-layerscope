@@ -72,7 +72,8 @@ else
   need_commit "$base"
 fi
 
-args=(drift "$INPUT_ROOT" --format markdown --base "$base" --baseline "$INPUT_BASELINE")
+args=(drift "$INPUT_ROOT" --format markdown --base "$base")
+if [ -n "$INPUT_BASELINE" ]; then args+=(--baseline "$INPUT_BASELINE"); fi
 if [ -n "$INPUT_CONFIG" ]; then args+=(--config "$INPUT_CONFIG"); fi
 if [ "$INPUT_PREPARE" = "true" ]; then args+=(--prepare); fi
 
