@@ -56,7 +56,7 @@ export function resolveImportRef(
     env.aliases,
     env.buildDir,
     env.layerPackages,
-    { require: ref.require, typeStatement: ref.typeStatement, server: context === 'server' },
+    ref,
   );
   if (resolution.kind === 'missing') {
     return [{ resolved: false, message: `Cannot resolve import "${ref.specifier}"` }];
@@ -89,7 +89,7 @@ const VIRTUAL_MODULES = new Set(['#imports', '#components']);
 /**
  * What an import stands for. A virtual module (`#imports`, `#components`) is looked up in each
  * context of the file, so an extra file that imports a server name gets it; the same target is
- * kept once. A path is resolved once, in the first context: the file's own context.
+ * kept once. A path resolves the same in every context, so it is resolved once.
  */
 export function outcomesOf(
   ref: ImportRef,
