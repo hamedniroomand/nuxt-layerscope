@@ -1,8 +1,12 @@
-import { join } from 'pathe';
-
 import { analyze } from '#src/analyze/index.ts';
 import type { AnalyzeOptions } from '#src/analyze/index.ts';
-import { baselineSize, createBaseline, diffBaselines, readBaseline } from '#src/baseline/index.ts';
+import {
+  baselinePath,
+  baselineSize,
+  createBaseline,
+  diffBaselines,
+  readBaseline,
+} from '#src/baseline/index.ts';
 import type { BaselineEntry } from '#src/types.ts';
 
 import { baselineAt } from './git.ts';
@@ -24,7 +28,7 @@ export async function measureDrift(
   const before = baselineAt(options.rootDir, base, baselineFile);
   const result = await analyze({ ...options, baseline: undefined });
   const now = createBaseline(result.findings, options.rootDir);
-  const committed = readBaseline(join(options.rootDir, baselineFile))?.entries ?? [];
+  const committed = readBaseline(baselinePath(options.rootDir, baselineFile))?.entries ?? [];
   return {
     base,
     ...diffBaselines(before, now),

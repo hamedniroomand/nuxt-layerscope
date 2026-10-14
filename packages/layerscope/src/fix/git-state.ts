@@ -1,7 +1,7 @@
 import { join, normalize, relative } from 'pathe';
 
 import { realPath } from '#src/utils/fs.ts';
-import { git, splitNul, tryGit } from '#src/utils/git.ts';
+import { git, splitNul, topLevel } from '#src/utils/git.ts';
 import { plural } from '#src/utils/strings.ts';
 
 import { existingDir } from './paths.ts';
@@ -70,7 +70,7 @@ function readIndex(
 export function readState(rootDir: string): GitState {
   let top: string;
   try {
-    top = normalize(realPath(git(rootDir, 'rev-parse', '--show-toplevel').trim()));
+    top = normalize(realPath(topLevel(rootDir)));
   } catch (error) {
     const line = firstLine(error);
     return emptyState(/not a git repository/iu.test(line) ? null : line);
@@ -176,6 +176,11 @@ export function gitMoveProblem(
  * index of the outer repository, and `git status` of it would not show the file in the nested one.
  */
 export function inSameRepository(target: string, top: string): boolean {
-  const found = tryGit(existingDir(target), 'rev-parse', '--show-toplevel');
-  return found !== null && normalize(realPath(found.trim())) === top;
+  let found: string;
+  try {
+    found = topLevel(existingDir(target));
+  } catch {
+    return false;
+  }
+  return normalize(realPath(found)) === top;
 }

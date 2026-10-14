@@ -23,6 +23,8 @@ export {
   assertNotDirectory,
   BASELINE_FILE,
   BASELINE_VERSION,
+  baselinePath,
+  cannotRead,
 } from './input.ts';
 
 export interface Baseline {

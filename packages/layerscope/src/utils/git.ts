@@ -38,6 +38,11 @@ export function cleanGitEnv(env: NodeJS.ProcessEnv = process.env): NodeJS.Proces
   return clean;
 }
 
+/** Git output that is one path, without the final newline. A dir name can end with a space. */
+export function pathOutput(out: string): string {
+  return out.replace(/\r?\n$/u, '');
+}
+
 /**
  * Whether the index file is directly in `gitDir`, as every index file of a hook is. A folder below
  * it is the git directory of a linked worktree or a submodule, which is another index. The file can
@@ -65,7 +70,7 @@ export function gitEnv(rootDir: string): NodeJS.ProcessEnv {
       env,
       stdio: 'pipe',
     });
-    if (indexInGitDir(index, out.trim())) {
+    if (indexInGitDir(index, pathOutput(out))) {
       env.GIT_INDEX_FILE = resolve(process.cwd(), index);
     }
   } catch {
@@ -82,6 +87,11 @@ export function git(rootDir: string, ...args: string[]): string {
     stdio: 'pipe',
     maxBuffer: 256 * 1024 * 1024,
   });
+}
+
+/** The top dir of the work tree of `dir`, as git gives it. Throws when git fails. */
+export function topLevel(dir: string): string {
+  return pathOutput(git(dir, 'rev-parse', '--show-toplevel'));
 }
 
 /** Like `git`, but `null` instead of a throw. */

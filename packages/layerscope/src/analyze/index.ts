@@ -1,6 +1,4 @@
-import { resolve } from 'pathe';
-
-import { applyBaselineFile, assertBaselineName } from '#src/baseline/index.ts';
+import { applyBaselineFile, assertBaselineName, baselinePath } from '#src/baseline/index.ts';
 import { compareByPosition } from '#src/rules/compare.ts';
 import { runRules } from '#src/rules/index.ts';
 import { withRootNotes, withSuggestions } from '#src/suggest/index.ts';
@@ -97,7 +95,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
   const reported =
     options.baseline === undefined
       ? result
-      : applyBaselineFile(result, resolve(rootDir, options.baseline), scope?.hasRelative);
+      : applyBaselineFile(result, baselinePath(rootDir, options.baseline), scope?.hasRelative);
   return scope === undefined ? withSuggestions(reported) : reported;
 }
 

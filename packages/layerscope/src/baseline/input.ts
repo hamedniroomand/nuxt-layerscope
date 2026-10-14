@@ -1,6 +1,8 @@
 import { readFileSync, statSync } from 'node:fs';
 import type { Stats } from 'node:fs';
 
+import { resolve } from 'pathe';
+
 import { LayerscopeError } from '#src/errors.ts';
 
 export const BASELINE_FILE = 'layerscope-baseline.json';
@@ -34,6 +36,11 @@ export function assertBaselineOption(value: unknown): void {
   );
 }
 
+/** The path of the baseline file. `check` and `drift` both use it, so they read the same file. */
+export function baselinePath(rootDir: string, name: string): string {
+  return resolve(rootDir, name);
+}
+
 /** The check for the public API: it must not name a command line flag. */
 export function assertBaselineName(name: string): void {
   if (name === '') {
@@ -41,7 +48,7 @@ export function assertBaselineName(name: string): void {
   }
 }
 
-function cannotRead(file: string, error: unknown): LayerscopeError {
+export function cannotRead(file: string, error: unknown): LayerscopeError {
   const { code } = error as NodeJS.ErrnoException;
   return new LayerscopeError(
     `Cannot read ${file} (${code ?? (error as Error).message}). Check the permissions of the file and of its folders.`,

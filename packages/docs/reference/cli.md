@@ -153,9 +153,12 @@ layerscope drift [root] [--base origin/main] [--format text|markdown|json]
 
 Compares the violations the code has now with the [baseline](../guide/baseline) committed on the
 base ref, and prints `adds 3, fixes 5`, the entries behind both, and the baseline size on the base
-and now. A base without a baseline file counts as empty. A baseline file that is not valid stops
-`drift` with an error, on the base ref and in the working tree. Also takes `--baseline`, `--config`,
-`--prepare` and `--source`. Exits `0`, and `2` for an unknown ref or an invalid baseline.
+and now. A base without a baseline file counts as empty. The baseline file must be in the git
+repository. A baseline that is a symbolic link on the base ref stops `drift` with an error. A
+baseline file that is not valid stops `drift` with an error, on the base ref and in the working
+tree. Also takes `--baseline`, `--config`, `--prepare` and `--source`. Exits `0`. Exits `2` for a
+root that is not in a git work tree, an unknown ref, an invalid baseline, a baseline outside the git
+repository, or a baseline that is a symbolic link on the base ref.
 
 ## `layerscope fix`
 
@@ -342,11 +345,11 @@ Also takes `--config`, `--prepare`, `--source` and `--verbose`. Exits `0`.
 Every command works with flags only and never prompts, so it is safe in scripts, CI and for
 [coding assistants](../guide/coding-tools).
 
-| Code | Meaning                                                                                                                                                                                                                                                                                                                              |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran                                                                                                                                                                                                       |
-| `1`  | `check` found at least one error that is not in the baseline                                                                                                                                                                                                                                                                         |
-| `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, a component or auto-import dir that layerscope cannot open, a file that the generated types refer to that layerscope cannot reach, `why` found no use, invalid baseline file, empty `--baseline` value, a refused or stopped `fix --apply` |
+| Code | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran                                                                                                                                                                                                                                                                                                    |
+| `1`  | `check` found at least one error that is not in the baseline                                                                                                                                                                                                                                                                                                                                                                      |
+| `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, a component or auto-import dir that layerscope cannot open, a file that the generated types refer to that layerscope cannot reach, `why` found no use, invalid baseline file, a `drift` baseline that is outside the git repository or is a symbolic link on the base ref, empty `--baseline` value, a refused or stopped `fix --apply` |
 
 ## Output streams
 
