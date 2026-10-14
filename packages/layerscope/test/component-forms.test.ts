@@ -131,7 +131,7 @@ describe('component uses that Nuxt resolves in a script', () => {
   });
 });
 
-describe('uses that stay as they are', () => {
+describe('h() where Nuxt does not change the name', () => {
   it('reports h() with a free name in a .ts file, where Nuxt does not change it', async () => {
     const { edges, findings } = await outcome(
       'layers/auth/app/composables/useCartNode.ts',
@@ -146,6 +146,29 @@ describe('uses that stay as they are', () => {
     ]);
   });
 
+  it('reports h() with a free name in a server .tsx file, where Nuxt does not change it', async () => {
+    const { edges, findings } = await outcome(
+      'layers/auth/server/utils/og.tsx',
+      "import { h } from 'preact';\nexport const card = () => h(CartSummary);\n",
+    );
+    expect(edges.filter(edge => edge[0] === 'component')).toEqual([]);
+    expect(findings.map(([rule]) => rule)).toEqual(['unresolved-reference']);
+  });
+
+  it('reports another bare use of the name in a file with h(CartSummary)', async () => {
+    const { edges, findings } = await outcome(
+      VUE,
+      setup('const render = () => h(CartSummary);\nconsole.log(CartSummary);'),
+    );
+    expect(edges).toContainEqual(['component', 'CartSummary', CART, 'shop']);
+    expect(findings.map(([rule]) => rule).toSorted()).toEqual([
+      'layer-boundary',
+      'unresolved-reference',
+    ]);
+  });
+});
+
+describe('other names and arguments that stay as they are', () => {
   it('keeps an auto-import in h() an auto-import', async () => {
     const { edges } = await outcome(VUE, setup('const render = () => h(useCart);'));
     expect(edges).toContainEqual(['auto-import', 'useCart', USE_CART, 'shared']);

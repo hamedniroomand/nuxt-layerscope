@@ -112,9 +112,11 @@ export class FileAnalysis {
 
   private addIdentifiers(scan: FileScan): void {
     // Nuxt changes `h(CartSummary)` by its text, so a local or imported `CartSummary` is the
-    // component too. Such a free name is then not an auto-import or a warning.
+    // component too. Such a free name is then not an auto-import or a warning. The loader of Nuxt
+    // is not in the Nitro build, so a server file keeps its names.
     const components = new Set<number>();
-    for (const ref of RENDER_FILE.test(this.file) ? scan.renderArgs : []) {
+    const isRendered = RENDER_FILE.test(this.file) && this.context !== 'server';
+    for (const ref of isRendered ? scan.renderArgs : []) {
       if (this.addComponentEdges(ref)) {
         components.add(ref.offset);
       }
