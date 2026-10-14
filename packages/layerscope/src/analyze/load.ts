@@ -6,7 +6,7 @@ import { realPath } from '#src/utils/fs.ts';
 
 import type { EnvironmentCache } from './cache.ts';
 import type { Environment, EnvironmentOptions } from './environment.ts';
-import { loadEnvironment } from './environment.ts';
+import { assertSymbolsFresh, loadEnvironment } from './environment.ts';
 import { prepareNuxt } from './prepare.ts';
 
 // `analyze/index.ts` is at the dependency limit and imports it from here.
@@ -22,6 +22,12 @@ export interface LoadOptions {
   envKey?: string;
   /** Reuses the loaded layers and symbols while `envKey` holds. */
   environment?: EnvironmentCache;
+  /**
+   * Run the stale check again when `environment` gives back the loaded symbols. A new or deleted
+   * component or auto-import file can leave `envKey` the same. Without this option, the old symbol
+   * table then stays in use with no error. Default `false`.
+   */
+  recheckStale?: boolean;
 }
 
 async function environmentOf(
@@ -35,10 +41,15 @@ async function environmentOf(
   }
   // The config object is part of the key: a caller can pass one that the env key does not see.
   const key = JSON.stringify([envKey, input.buildDir, input.source, input.config]);
+  let fresh: Environment | undefined;
   const cached = await environment.get(key, async () => {
-    const loaded = await loadEnvironment(input);
-    return loaded;
+    fresh = await loadEnvironment(input);
+    return fresh;
   });
+  // A new load ran the stale check already.
+  if (cached !== fresh && options.recheckStale === true) {
+    await assertSymbolsFresh(cached.env.table, cached.layers, cached.registry);
+  }
   return cached;
 }
 

@@ -31,7 +31,7 @@ export interface AnalyzerOptions {
    */
   extraFiles?: boolean;
   /** More options for every run, such as the config file the CLI was given. */
-  analyze?: Pick<AnalyzeOptions, 'configFile' | 'source'>;
+  analyze?: Pick<AnalyzeOptions, 'configFile' | 'source' | 'recheckStale'>;
   /** Defaults to `analyze`, imported on first use so it stays out of Nuxt's startup. */
   run?: (options: AnalyzeOptions) => Promise<AnalyzeResult>;
 }

@@ -46,6 +46,8 @@ export interface AnalyzeOptions {
   envKey?: string;
   /** Reuses the loaded layers and symbols while `envKey` holds. Used by the DevTools tab. */
   environment?: EnvironmentCache;
+  /** Run the stale check again on reused symbols. Watch mode and the MCP server set it. */
+  recheckStale?: boolean;
 }
 
 export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResult> {

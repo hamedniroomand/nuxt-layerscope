@@ -47,8 +47,9 @@ These are the numbers of one machine. Yours will differ; run the benchmark to se
 - The one-shot time is the wall time of the whole process, Node start included.
 - Peak memory is the maximum resident size of the layerscope process. In the run with
   `--prepare`, the `nuxi prepare` child process is not included.
-- The in-process rows use the analyzer that watch mode, the MCP server and the DevTools tab share.
-  Time is the analysis call; memory is the size of the process after the step.
+- The in-process rows use the analyzer that watch mode and the MCP server use. It runs the stale
+  check on each run. The DevTools tab does not run this check. Time is the analysis call; memory
+  is the size of the process after the step.
 - With the generated project, each run checks that layerscope reports the number of findings that
   the project holds, so a broken run cannot pass as a fast one. In the in-process rows, every step
   is checked, and the step after the file was added must count one file more. With `--project`, no
