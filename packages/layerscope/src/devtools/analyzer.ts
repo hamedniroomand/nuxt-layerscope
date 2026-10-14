@@ -89,6 +89,8 @@ export class Analyzer {
   private readonly environment = createEnvironmentCache();
   private snapshot: Snapshot | undefined;
   private lastFingerprint = '';
+  /** The env key of the last run. */
+  private lastEnvKey: string | undefined;
   private dirty = true;
   private readonly listeners = new Set<(snapshot: Snapshot) => void>();
   private inflight: Promise<Snapshot> | undefined;
@@ -113,6 +115,17 @@ export class Analyzer {
   /** Marks the snapshot stale; the next `get` re-analyzes. Does no work itself. */
   public invalidate(): void {
     this.dirty = true;
+  }
+
+  /**
+   * Marks the snapshot stale when the env key changed after the last run. An edit of
+   * `layerscope.config.*` fires no Nuxt hook, so without this check the tab can keep a config
+   * that names an old baseline file.
+   */
+  public async invalidateIfChanged(): Promise<void> {
+    if (this.snapshot !== undefined && (await this.options.envKey()) !== this.lastEnvKey) {
+      this.invalidate();
+    }
   }
 
   public async get(): Promise<Snapshot> {
@@ -198,13 +211,15 @@ export class Analyzer {
     const started = Date.now();
     try {
       const run = this.options.run ?? (await import('#src/analyze/index.ts')).analyze;
+      const envKey = await this.options.envKey();
+      this.lastEnvKey = envKey;
       const result = await run({
         ...this.options.analyze,
         rootDir: this.options.rootDir,
         baseline: this.options.baseline ?? true,
         cache: this.cache,
         environment: this.environment,
-        envKey: await this.options.envKey(),
+        envKey,
         extraFiles: this.options.extraFiles,
       });
       return this.commit(result, started, 'analysis');

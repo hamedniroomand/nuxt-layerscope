@@ -87,8 +87,8 @@ A file outside the root has a path that starts with `../`.
 | `--update-baseline` | Write every current finding (errors and warnings) and exit `0`.                                                  |
 
 Set the [`baseline`](../reference/config#baseline) key in the config to use another file in
-`check`, `fix`, `drift`, `mcp` and the GitHub Action. `init --baseline` always writes
-`layerscope-baseline.json`.
+`check`, `fix`, `drift`, `mcp`, the DevTools tab and the GitHub Action. `init --baseline` always
+writes `layerscope-baseline.json`.
 
 Without a baseline file, `check` behaves as if there were none.
 

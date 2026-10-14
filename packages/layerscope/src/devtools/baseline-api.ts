@@ -62,6 +62,9 @@ function knownKeys(result: AnalyzeResult, path: string): Set<string> {
 
 async function edit(path: string, body: EditBody, session: Session): Promise<Reply> {
   const { analyzer, writes } = session;
+  // A config edit can name another baseline file. The rev check below then refuses a request
+  // whose findings changed.
+  await analyzer.invalidateIfChanged();
   const snapshot = await analyzer.get();
   if (body.id !== snapshot.id || body.rev !== snapshot.rev) {
     return {
@@ -76,12 +79,13 @@ async function edit(path: string, body: EditBody, session: Session): Promise<Rep
   }
   const { ignoreFindings, removeEntries } = await import('#src/baseline/edit.ts');
   const { result } = snapshot;
+  const file = analyzer.baselineFileOf(result);
   const all = [...result.findings, ...(result.baseline?.suppressed ?? [])];
   const change =
     path === '/api/baseline/ignore'
-      ? ignoreFindings(analyzer.baselineFileOf(result), body.keys, all, result.rootDir)
+      ? ignoreFindings(file, body.keys, all, result.rootDir)
       : removeEntries(
-          analyzer.baselineFileOf(result),
+          file,
           body.keys,
           new Map(
             (result.baseline?.removable ?? []).map(entry => [
@@ -90,7 +94,7 @@ async function edit(path: string, body: EditBody, session: Session): Promise<Rep
             ]),
           ),
         );
-  const writeId = writes.record(change.before);
+  const writeId = writes.record(file, change.before);
   const next = await analyzer.rebaseline();
   return { status: 200, body: { ...(await withReport(next, session)), writeId } };
 }
@@ -111,7 +115,7 @@ async function undo(body: UndoBody, session: Session): Promise<Reply> {
     };
   }
   const { restoreBaseline } = await import('#src/baseline/edit.ts');
-  restoreBaseline(analyzer.baselineFileOf(snapshot.result), last.before);
+  restoreBaseline(last.file, last.before);
   writes.forget();
   const next = await analyzer.rebaseline();
   return { status: 200, body: { ...(await withReport(next, session)), writeId: writes.latest } };

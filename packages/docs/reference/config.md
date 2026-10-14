@@ -349,8 +349,8 @@ Nuxt's build directory, relative to the project root. Set it when `nuxt.config` 
 - Default: `'layerscope-baseline.json'`
 
 The [baseline](../guide/baseline) file, relative to the project root. `check`, `drift`, `fix`,
-`mcp`, `check --watch` and the GitHub Action read it, and `check --update-baseline` writes it. The
-`--baseline` option and the `baseline` input of the action override it. An absolute path is used as
-it is. A path can be outside the root, but `drift` and the action need it in the git repository. A
-value that is not a non-empty string is a config error (exit code `2`). `init --baseline` always
-writes `layerscope-baseline.json`.
+`mcp`, `check --watch`, the DevTools tab and the GitHub Action read it, and
+`check --update-baseline` and the DevTools tab write it. The `--baseline` option and the `baseline`
+input of the action override it. An absolute path is used as it is. A path can be outside the root,
+but `drift` and the action need it in the git repository. A value that is not a non-empty string is
+a config error (exit code `2`). `init --baseline` always writes `layerscope-baseline.json`.
