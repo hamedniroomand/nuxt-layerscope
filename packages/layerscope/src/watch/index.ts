@@ -86,7 +86,9 @@ class WatchRun {
     this.analyzer = createWatchAnalyzer({
       rootDir: this.rootDir,
       baseline: options.baseline,
-      analyze: { configFile: options.configFile, source: options.source },
+      // `nuxi dev` does not write the registry again after every new file (for example a server
+      // util), so each run checks again.
+      analyze: { configFile: options.configFile, source: options.source, recheckStale: true },
       envKey: async (): Promise<string> => {
         const buildDir = await buildDirOf(this.rootDir, options.configFile);
         return `${computeEnvKey(this.rootDir, buildDir)}|${this.epoch}`;
@@ -135,6 +137,8 @@ class WatchRun {
       this.last = result;
     } catch (error) {
       this.statusOpen = false;
+      // The error is now the last output, so the next clean run prints its whole report.
+      this.lastKey = '';
       this.options.warn(`layerscope: ${messageOf(error)}\n`);
     }
   }

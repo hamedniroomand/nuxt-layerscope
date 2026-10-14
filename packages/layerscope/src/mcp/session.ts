@@ -41,7 +41,9 @@ export class ProjectSession {
     this.analyzer = new Analyzer({
       rootDir: this.rootDir,
       baseline: options.baseline,
-      analyze: { configFile: options.configFile, source: options.source },
+      // `nuxi dev` does not write the registry again after every new file (for example a server
+      // util), so each run checks again.
+      analyze: { configFile: options.configFile, source: options.source, recheckStale: true },
       envKey: async (): Promise<string> =>
         computeEnvKey(this.rootDir, await buildDirOrDefault(this.rootDir, options.configFile)),
     });

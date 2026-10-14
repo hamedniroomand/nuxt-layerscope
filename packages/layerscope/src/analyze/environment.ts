@@ -72,6 +72,19 @@ function presetApplied(
   }
 }
 
+/**
+ * Stops the run when the symbols are stale. With the registry, it checks every dir that Nuxt
+ * scanned. Without it, it checks the default `components/` dirs. It also finds a target file that
+ * is gone.
+ */
+export async function assertSymbolsFresh(
+  table: AnalysisEnv['table'],
+  layers: Layer[],
+  registry: Registry | null,
+): Promise<void> {
+  await (registry === null ? assertFresh(table, layers) : assertRegistryFresh(table, registry));
+}
+
 /** Everything the analysis reads from Nuxt: layers, the symbol registry and aliases. */
 export async function loadEnvironment(options: EnvironmentOptions): Promise<Environment> {
   const { rootDir, buildDir } = options;
@@ -90,7 +103,7 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
   const config = presetApplied(effective, layers, recorded);
   const presetLayers = layersFilledByPreset(effective, config);
   const stale = recordedFile === undefined ? null : staleConfigNote(rootDir, recordedFile);
-  await (registry === null ? assertFresh(table, layers) : assertRegistryFresh(table, registry));
+  await assertSymbolsFresh(table, layers, registry);
   return {
     ...symbols,
     config,

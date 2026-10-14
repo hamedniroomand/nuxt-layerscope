@@ -1,10 +1,11 @@
 /**
- * Scenario C, in one process: the analyzer that watch mode, the MCP server and the DevTools tab
- * use, asked again after nothing changed, after one file changed and after one file was added.
+ * Scenario C, in one process: the analyzer that watch mode and the MCP server use, asked again
+ * after nothing changed, after one file changed and after one file was added. It runs the stale
+ * check on each run. The DevTools tab does not run this check.
  * Prints one JSON object. Run by `run.ts`, one process for each sample.
  */
-import { appendFileSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { performance } from 'node:perf_hooks';
 
 import { Analyzer } from '#src/devtools/analyzer.ts';
@@ -16,12 +17,16 @@ if (root === undefined) {
 }
 
 const CHANGED = join(root, 'layers/shared/app/components/SharedCard0.vue');
-const ADDED = join(root, 'layers/shared/app/composables/useSharedBenchAdded.ts');
+// In a dir that no component or auto-import scan covers (lib/). The stale check does not find this
+// file, so the run goes on and the step shows the cost of a new file.
+const ADDED = join(root, 'layers/shared/app/lib/benchAdded.ts');
 const original = readFileSync(CHANGED, 'utf8');
 
 const analyzer = new Analyzer({
   rootDir: root,
   baseline: 'layerscope-baseline.json',
+  // As watch mode and the MCP server do. The DevTools tab does not run the check again.
+  analyze: { recheckStale: true },
   envKey: () => computeEnvKey(root, join(root, '.nuxt')),
 });
 
@@ -48,16 +53,20 @@ async function measure(name: string): Promise<void> {
   });
 }
 
+let addedDir: string | undefined;
+
 try {
   await measure('first');
   await measure('unchanged');
   appendFileSync(CHANGED, '<!-- changed by the benchmark -->\n');
   await measure('one-changed');
-  writeFileSync(ADDED, 'export function useSharedBenchAdded(): number {\n  return 1;\n}\n');
+  // The first dir that this makes, or undefined when the dir is there.
+  addedDir = mkdirSync(dirname(ADDED), { recursive: true });
+  writeFileSync(ADDED, 'export function benchAdded(): number {\n  return 1;\n}\n');
   await measure('one-added');
 } finally {
   writeFileSync(CHANGED, original);
-  rmSync(ADDED, { force: true });
+  rmSync(addedDir ?? ADDED, { recursive: true, force: true });
 }
 
 process.stdout.write(`${JSON.stringify({ steps, maxRssKb: process.resourceUsage().maxRSS })}\n`);

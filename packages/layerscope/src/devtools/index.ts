@@ -16,7 +16,13 @@ export const DEVTOOLS_ROUTE = '/__layerscope';
 
 type WatchHook = (name: 'builder:watch', handler: () => void) => unknown;
 
-/** The options of the analyzer behind the tab. The Unused view counts the extra files too. */
+/**
+ * The options of the analyzer behind the tab. The Unused view counts the extra files too. The tab
+ * does not set `recheckStale`. It runs only under `nuxi dev`, which writes the registry and the
+ * `.d.ts` files again after a new component or composable, so the env key changes. After a new
+ * server util, Nuxt does not write them, so the tab can keep the old symbol table until the next
+ * template change. A check on each run would show a stale error in the tab instead.
+ */
 export function sessionOptions(rootDir: string, buildDir: string): AnalyzerOptions {
   return {
     extraFiles: true,

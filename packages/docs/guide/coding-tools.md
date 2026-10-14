@@ -118,6 +118,11 @@ name, so `can_use` may show as `layerscope.can_use`.
 
 Every tool only reads. The tools never write a file or edit `allow` or the baseline.
 
+The server checks the generated files on each call. After you add or delete a component or an
+auto-import file, a tool call can fail with an error that names the file. Run `nuxi prepare` to fix
+it. Under `nuxi dev`, the error can show for a short time after you add a component or a
+composable.
+
 The server refuses a path outside the project root. There is one exception: `can_use` and
 `suggest` also accept the path of a file that belongs to a layer, for example a file in a layer
 outside the root or in a `serverDir` outside it. The `files` filter of `check` always refuses a
