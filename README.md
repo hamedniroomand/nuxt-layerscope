@@ -40,6 +40,10 @@ statement, so import-based boundary tools never see it. layerscope resolves auto
 components, Nitro server utils and regular imports the same way Nuxt does, and fails CI when a
 layer uses something it isn't allowed to.
 
+<p align="center">
+  <img src="./packages/docs/public/promo/layerscope-demo.webp" width="960" height="540" alt="A loop of the example shop project. useCartBadge in the shared layer calls useCart from the shop layer with no import. layerscope check reports a layer-boundary error.">
+</p>
+
 - Works with Nuxt 3 and 4, local, npm and remote layers
 - Checks the app, `server/` and `shared/`
 - `init` writes a starter config, and each finding comes with a suggested fix
