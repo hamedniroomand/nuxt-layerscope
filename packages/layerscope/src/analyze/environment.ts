@@ -6,7 +6,7 @@ import {
   pickProjectConfig,
 } from '#src/config/effective.ts';
 import type { ProjectConfig } from '#src/config/effective.ts';
-import { readRegistry } from '#src/registry/read.ts';
+import { globalComponentFiles, readRegistry } from '#src/registry/read.ts';
 import type { Registry } from '#src/registry/schema.ts';
 import type { Layer, LayerscopeConfig, ResolutionSource, SourceOption } from '#src/types.ts';
 
@@ -37,6 +37,8 @@ export interface Environment {
   sourceFile: string;
   /** `null` with the `.d.ts` fallback, which only lists the winning components. */
   registry: Registry | null;
+  /** The files of the global components; empty with the `.d.ts` fallback, which does not tell. */
+  globalComponentFiles: string[];
   layers: Layer[];
   env: AnalysisEnv;
   notes: string[];
@@ -112,6 +114,7 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
     recordedFile,
     notes: [...symbols.notes, ...notes, ...(stale === null ? [] : [stale])],
     registry,
+    globalComponentFiles: registry === null ? [] : globalComponentFiles(registry, buildDir),
     layers,
     env: createAnalysisEnv(table, ownerOf, buildDir, config, layers),
   };

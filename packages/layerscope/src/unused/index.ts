@@ -16,9 +16,11 @@ export interface UnusedSymbol {
   layer: string;
   /** The layer lists the symbol in `expose`: removing it changes what other layers can use. */
   exposed: boolean;
+  /** A global component: Vue can render it by a name chosen at runtime. */
+  global: boolean;
   /**
-   * The project renders components chosen at runtime, so a component may still be used
-   * without any static reference.
+   * The component may still be used without any static reference: it is global, the project
+   * renders components chosen at runtime, or the project uses Nuxt Content.
    */
   possiblyUsed: boolean;
 }
@@ -105,6 +107,37 @@ function listedLayer(layer: Layer | null, rootDir: string): string | null {
     : layer.name;
 }
 
+/** The unused components, each marked when it may still be used by a name chosen at runtime. */
+function unusedComponents(
+  result: AnalyzeResult,
+  uses: Uses,
+  checked: (target: SymbolTarget) => string | null,
+): UnusedSymbol[] {
+  const anyPossiblyUsed = result.dynamicComponentFiles.length > 0 || result.nuxtContent;
+  const globalFiles = new Set(result.globalComponentFiles);
+  const unused: UnusedSymbol[] = [];
+  for (const [file, names] of componentsByFile(result.symbols.components)) {
+    const layer = checked({ file, module: null });
+    if (layer !== null && !isUsed(uses, file, names)) {
+      const name = shortestName(names);
+      const exposed = isExposedSymbol(result, layer, file, name, 'component');
+      const global = globalFiles.has(file);
+      const possiblyUsed = global || anyPossiblyUsed;
+      unused.push({
+        name,
+        kind: 'component',
+        context: null,
+        file,
+        layer,
+        exposed,
+        global,
+        possiblyUsed,
+      });
+    }
+  }
+  return unused;
+}
+
 /**
  * Components and auto-imports registered by the project's own layers that nothing references.
  * Layers installed as packages are not checked, and the symbols of a layer outside the project
@@ -116,16 +149,7 @@ export function findUnused(result: AnalyzeResult): UnusedSymbol[] {
   const checked = (target: SymbolTarget): string | null =>
     listedLayer(target.file === null ? null : ownerOf(target.file), result.rootDir);
   const uses = collectUses([...result.edges, ...result.extraEdges, ...result.typeEdges]);
-  const possiblyUsed = result.dynamicComponentFiles.length > 0;
-  const unused: UnusedSymbol[] = [];
-  for (const [file, names] of componentsByFile(result.symbols.components)) {
-    const layer = checked({ file, module: null });
-    if (layer !== null && !isUsed(uses, file, names)) {
-      const name = shortestName(names);
-      const exposed = isExposedSymbol(result, layer, file, name, 'component');
-      unused.push({ name, kind: 'component', context: null, file, layer, exposed, possiblyUsed });
-    }
-  }
+  const unused = unusedComponents(result, uses, checked);
   const seen = new Set<string>();
   for (const context of CONTEXTS) {
     for (const [name, target] of result.symbols.imports[context]) {
@@ -145,6 +169,7 @@ export function findUnused(result: AnalyzeResult): UnusedSymbol[] {
           file,
           layer,
           exposed,
+          global: false,
           possiblyUsed: false,
         });
       }

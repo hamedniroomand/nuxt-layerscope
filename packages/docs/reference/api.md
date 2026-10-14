@@ -131,12 +131,13 @@ Each edge has `from`, `to`, `count` and `status`, the worst status of the refere
 
 The components and auto-imports `layerscope unused` lists. It counts the uses in the extra files
 only when `result` comes from `analyze` with `extraFiles: true`. Each entry has `name`, `kind`
-(`component` or `auto-import`), `context`, `file`, `layer` and `possiblyUsed`.
+(`component` or `auto-import`), `context`, `file`, `layer`, `global` and `possiblyUsed`.
 
 ## `findBlindSpots(result)`
 
 What `layerscope unused` does not see in this run. Each entry has a `kind`: `test-files`, `ignored`
 (the config has `ignore` patterns), `package-layers` (a layer is installed as a package),
+`nuxt-content` (the project uses Nuxt Content, so every component has `possiblyUsed: true`),
 `unreadable` or `outside-root`. An `unreadable` entry also has `files`: the files that layerscope
 could not read, each with a `file` (an absolute path) and a `reason`. An `outside-root` entry has
 `layers`: the names of the layers outside the project root that are not installed as packages.

@@ -225,6 +225,7 @@ reports:
       "file": "layers/web/app/components/CartBadge.vue",
       "layer": "web",
       "exposed": false,
+      "global": false,
       "possiblyUsed": false
     }
   ],
@@ -241,8 +242,11 @@ reports:
 }
 ```
 
+`global` is `true` for a global component; such a component always has `possiblyUsed: true`.
+
 Each `blindSpots` entry names something that `unused` does not see: `test-files`, `ignored` (the
 config has `ignore` patterns), `package-layers` (a layer is installed as a package), `unreadable`,
-or `outside-root` (layers outside the project root that are not installed as packages, with
+`nuxt-content` (the project uses Nuxt Content, so every component has `possiblyUsed: true`), or
+`outside-root` (layers outside the project root that are not installed as packages, with
 `layers`: their names). Only `unreadable` has `files`. Each file is relative to the current
 directory. `reason` is a short text, not a fixed code.

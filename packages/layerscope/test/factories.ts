@@ -63,6 +63,8 @@ export function makeResult(overrides: Partial<AnalyzeResult> = {}): AnalyzeResul
       components: new Map(),
     },
     dynamicComponentFiles: [],
+    globalComponentFiles: [],
+    nuxtContent: false,
     extraEdges: [],
     typeEdges: [],
     unreadFiles: [],
@@ -90,11 +92,13 @@ export function makeRegistry(
       shadowedBy,
       mode: 'all',
       island: false,
+      global: false,
       priority: 0,
     })),
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),
+    nuxtContent: false,
     imports: { app: [], server: [], shared: [] },
   };
 }

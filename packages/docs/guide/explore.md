@@ -111,9 +111,15 @@ layers and referenced nowhere. A few rules keep it honest:
   `<NuxtIsland :name>`, and `resolveComponent(x)` or `resolveDynamicComponent(x)` with a value that
   is not a fixed string), unused components are marked **possibly used at runtime**, because
   layerscope cannot see which one is picked.
-- `<NuxtIsland name="X">` counts as a use of the island component `X`. With `--source types`,
-  `unused` does not list island components (in `components/islands/` or with an `.island.vue`
-  suffix), because the .d.ts files do not have them.
+- `<NuxtIsland name="X">` counts as a use of the island component `X`.
+- A global component (in `components/global/`, with a `.global` suffix, or in a dir registered as
+  global) is always marked "possibly used at runtime": Vue can render it by a name that is chosen at
+  runtime. When the project uses Nuxt Content, every component is marked, because a content file can
+  use any component by its name.
+- With `--source types`, `unused` does not list island components (in `components/islands/` or with
+  an `.island.vue` suffix), because the .d.ts files do not have them. With `--source types`, a
+  component in a dir that a module or config registers as global is not marked, because the .d.ts
+  files do not have the global setting.
 
 `unused` cannot see all uses. It can miss uses in these places:
 

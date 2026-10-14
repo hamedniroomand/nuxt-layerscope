@@ -18,7 +18,7 @@ import { recordComponentDirs, shadowedBy } from './components.ts';
 import { ImportDirRecorder, mergeImportDirs } from './import-dirs.ts';
 import { NitroImports, activeImports, registryImports, resolveAlias } from './imports.ts';
 import type { Component, ComponentsDir, Nitro, Nuxt, Unimport, UnimportImport } from './nuxt.ts';
-import { onNitroInit, readNuxtIgnore } from './nuxt.ts';
+import { onNitroInit, readNuxtIgnore, usesNuxtContent } from './nuxt.ts';
 
 const SERVER_PLACEHOLDER = '/components/server-placeholder';
 
@@ -162,6 +162,7 @@ export class RegistryCollector {
       componentDirs: app.componentDirs,
       importDirs,
       nuxtIgnore: readNuxtIgnore(this.nuxt),
+      nuxtContent: usesNuxtContent(this.nuxt),
       imports: this.imports(app.imports, server),
       ...(Object.keys(this.config).length > 0 ? { config: this.config } : {}),
     };
@@ -205,6 +206,8 @@ export class RegistryCollector {
       file: this.toFile(component.filePath),
       mode: toMode(component.mode),
       island: component.island === true,
+      // Nuxt sets `global` to `'sync'` for a component that it registers without a lazy import.
+      global: component.global === true || component.global === 'sync',
       priority: component.priority ?? 0,
     };
   }

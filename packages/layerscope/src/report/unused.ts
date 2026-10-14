@@ -17,12 +17,16 @@ export function isUnusedFormat(value: string): value is UnusedFormat {
 function describe(symbol: UnusedSymbol): string {
   const exposed = symbol.exposed ? ', exposed' : '';
   if (symbol.kind === 'component') {
+    const kind = symbol.global ? 'global component' : 'component';
     return symbol.possiblyUsed
-      ? `component (possibly used at runtime${exposed})`
-      : `component${symbol.exposed ? ' (exposed)' : ''}`;
+      ? `${kind} (possibly used at runtime${exposed})`
+      : `${kind}${symbol.exposed ? ' (exposed)' : ''}`;
   }
   return `auto-import (${symbol.context ?? 'app'}${exposed})`;
 }
+
+const NUXT_CONTENT =
+  'Nuxt Content can render any component by its name from a content file, so every component is marked "possibly used at runtime".';
 
 const NOT_COUNTED: Record<'test-files' | 'ignored' | 'package-layers', string> = {
   'test-files': 'test files',
@@ -32,18 +36,23 @@ const NOT_COUNTED: Record<'test-files' | 'ignored' | 'package-layers', string> =
 
 /**
  * The lines that name what `unused` does not see. The first names the uses that it does not
- * count, the second the layers outside the project root that it does not list. A line is left
- * out when nothing applies to it.
+ * count, the second the layers outside the project root that it does not list, the third says
+ * why Nuxt Content marks every component. A line is left out when nothing applies to it.
  */
 export function blindSpotLines(spots: BlindSpot[]): string[] {
   const parts = spots.flatMap(spot =>
-    spot.kind === 'unreadable' || spot.kind === 'outside-root' ? [] : [NOT_COUNTED[spot.kind]],
+    spot.kind === 'unreadable' || spot.kind === 'outside-root' || spot.kind === 'nuxt-content'
+      ? []
+      : [NOT_COUNTED[spot.kind]],
   );
   const lines = parts.length === 0 ? [] : [`Not counted as uses: ${parts.join(', ')}.`];
   for (const spot of spots) {
     if (spot.kind === 'outside-root') {
       lines.push(`Not listed (layers outside the project root): ${spot.layers.join(', ')}.`);
     }
+  }
+  if (spots.some(spot => spot.kind === 'nuxt-content')) {
+    lines.push(NUXT_CONTENT);
   }
   return lines;
 }

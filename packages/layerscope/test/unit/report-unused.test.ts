@@ -13,6 +13,7 @@ const unused: UnusedSymbol[] = [
     file: '/app/layers/ui/app/components/BaseCard.vue',
     layer: 'ui',
     exposed: false,
+    global: false,
     possiblyUsed: true,
   },
   {
@@ -22,6 +23,7 @@ const unused: UnusedSymbol[] = [
     file: '/app/layers/ui/server/utils/useThing.ts',
     layer: 'ui',
     exposed: false,
+    global: false,
     possiblyUsed: false,
   },
 ];

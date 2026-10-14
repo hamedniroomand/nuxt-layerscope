@@ -54,6 +54,15 @@ function isNuxtIgnore(value: unknown): boolean {
   );
 }
 
+/** The check of the fields of a stored component that only the `unused` marks read. */
+function isComponent(entry: unknown): boolean {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    typeof (entry as Record<string, unknown>).global === 'boolean'
+  );
+}
+
 /** The check of a stored component dir: the type of each field, as for an auto-import dir. */
 function isComponentDir(entry: unknown): boolean {
   if (typeof entry !== 'object' || entry === null) {
@@ -80,14 +89,17 @@ export function readRegistry(buildDir: string): RegistryRead {
   }
   const { layers } = registry as { layers?: unknown };
   // The file is stale when it lacks a field that this release needs: `modulesDir` or `publicDir`
-  // of a layer (layerscope would scan the Nuxt modules and public dirs), or `importDirs` and
-  // `nuxtIgnore` (the stale check of new files). The file can also be damaged, for example a bad
+  // of a layer (layerscope would scan the Nuxt modules and public dirs), `importDirs` and
+  // `nuxtIgnore` (the stale check of new files), or `global` of a component and `nuxtContent`
+  // (the "possibly used" marks of `unused`). The file can also be damaged, for example a bad
   // entry in `componentDirs`. Its layers are not used, but its `config` is kept: the `layerscope`
   // options of `nuxt.config` are only stored there.
-  const { componentDirs, importDirs, nuxtIgnore } = registry as {
+  const { components, componentDirs, importDirs, nuxtIgnore, nuxtContent } = registry as {
+    components?: unknown;
     componentDirs?: unknown;
     importDirs?: unknown;
     nuxtIgnore?: unknown;
+    nuxtContent?: unknown;
   };
   const complete =
     Array.isArray(layers) &&
@@ -97,6 +109,9 @@ export function readRegistry(buildDir: string): RegistryRead {
     ) &&
     Array.isArray(componentDirs) &&
     componentDirs.every(entry => isComponentDir(entry)) &&
+    Array.isArray(components) &&
+    components.every(entry => isComponent(entry)) &&
+    typeof nuxtContent === 'boolean' &&
     isNuxtIgnore(nuxtIgnore) &&
     (importDirs === null ||
       (Array.isArray(importDirs) && importDirs.every(entry => isImportDir(entry))));
@@ -109,6 +124,13 @@ export function readRegistry(buildDir: string): RegistryRead {
 
 function importMap(imports: RegistryImport[], buildDir: string): SymbolMap {
   return new Map(imports.map(entry => [entry.name, targetOf(entry.from, buildDir)]));
+}
+
+/** The files of the global components, as the symbol table has them. */
+export function globalComponentFiles(registry: Registry, buildDir: string): string[] {
+  return registry.components
+    .filter(component => component.global)
+    .flatMap(component => targetOf(component.file, buildDir).file ?? []);
 }
 
 /** The same table the `.d.ts` parser builds, from Nuxt's own registry. */

@@ -79,7 +79,9 @@ export async function unusedView(result: AnalyzeResult): Promise<UnusedView> {
     blindSpotLines: report.blindSpotLines(spots),
     emptyLine: report.emptySentence(spots),
     unreadableLine: report.unreadableSentence(report.countUnreadable(spots)),
-    possiblyUsed: rows.some(row => row.possiblyUsed),
+    // Only a file that chooses a component at runtime: a global component or Nuxt Content has its
+    // own text, so the banner does not show for them.
+    possiblyUsed: result.dynamicComponentFiles.length > 0,
     layers: result.layers.map(layer => layer.name),
   };
 }

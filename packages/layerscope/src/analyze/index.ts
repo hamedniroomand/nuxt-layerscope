@@ -11,6 +11,7 @@ import type { AnalyzeResult, LayerscopeConfig, SourceOption } from '#src/types.t
 
 import { analyzeProject, fileLists } from './cache.ts';
 import type { AnalysisCache, EnvironmentCache } from './cache.ts';
+import type { Environment } from './environment.ts';
 import { collectFiles } from './files.ts';
 import { loadProject, projectRoot } from './load.ts';
 import { applyScope, planScan } from './scope.ts';
@@ -66,6 +67,24 @@ function withBaseline(
     : applyBaselineFile(result, baselinePath(result.rootDir, name), inScope);
 }
 
+type EnvironmentFields = 'source' | 'sourceFile' | 'recordedFile';
+
+/**
+ * What the result takes from the environment: where the symbols come from, and what can render a
+ * component by a name chosen at runtime.
+ */
+function fromEnvironment(
+  environment: Environment,
+): Pick<AnalyzeResult, EnvironmentFields | 'globalComponentFiles' | 'nuxtContent'> {
+  return {
+    source: environment.source,
+    sourceFile: environment.sourceFile,
+    recordedFile: environment.recordedFile,
+    globalComponentFiles: environment.globalComponentFiles,
+    nuxtContent: environment.registry?.nuxtContent ?? false,
+  };
+}
+
 export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResult> {
   if (typeof options.baseline === 'string') {
     assertBaselineName(options.baseline);
@@ -95,8 +114,7 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
   const result: AnalyzeResult = {
     rootDir,
     config,
-    source: environment.source,
-    sourceFile: environment.sourceFile,
+    ...fromEnvironment(environment),
     layers,
     files: [...files.keys()],
     edges,
@@ -105,7 +123,6 @@ export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResu
     symbols: env.table,
     presetLayers,
     declaredConfig,
-    recordedFile: environment.recordedFile,
     extraEdges: extra.flatMap(analysis => analysis.edges),
     typeEdges: [...checked, ...extra].flatMap(analysis => analysis.typeEdges),
     ...fileLists([...checked, ...extra]),

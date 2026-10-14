@@ -33,6 +33,7 @@ function registryWith(
     componentDirs: [],
     importDirs,
     nuxtIgnore,
+    nuxtContent: false,
     imports: { app: [], server: [], shared: [] },
   } as Registry;
 }

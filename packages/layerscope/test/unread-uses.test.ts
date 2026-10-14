@@ -47,12 +47,20 @@ function project(config = ''): string {
       makeLayer('shop', join(root, 'layers/shop')),
     ],
     components: [
-      { name: 'CartSummary', file: cartSummary, mode: 'all', island: false, priority: 0 },
+      {
+        name: 'CartSummary',
+        file: cartSummary,
+        mode: 'all',
+        island: false,
+        global: false,
+        priority: 0,
+      },
     ],
     shadowedComponents: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),
+    nuxtContent: false,
     imports: { app: [{ name: 'useCart', from: useCart }], server: [], shared: [] },
   };
   write(root, '.nuxt/layerscope/registry.json', JSON.stringify(registry));
