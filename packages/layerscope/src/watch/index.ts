@@ -1,6 +1,5 @@
 import { computeEnvKey } from '#src/devtools/env-key.ts';
 import { countKeys, diffKeys } from '#src/devtools/finding-keys.ts';
-import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult, SourceOption } from '#src/types.ts';
 import { isOutsideDir, projectRoot } from '#src/utils/fs.ts';
 
@@ -15,8 +14,15 @@ import {
   prepareProject,
 } from './project.ts';
 import { Trigger } from './trigger.ts';
-import type { StartWatcher, Watcher } from './watcher.ts';
-import { layerDirs, startWatcher } from './watcher.ts';
+import type { StartWatcher } from './watcher.ts';
+import {
+  createWatcherWarnings,
+  layerDirs,
+  messageOf,
+  startWatcher,
+  watchRoot,
+  WatcherSet,
+} from './watcher.ts';
 
 const CLEAR_SCREEN = '\u001B[2J\u001B[3J\u001B[H';
 const CLEAR_LINE = '\r\u001B[2K';
@@ -52,10 +58,6 @@ function sum(entries: { count: number }[]): number {
   return entries.reduce((total, entry) => total + entry.count, 0);
 }
 
-function messageOf(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 /** What the report shows. When it is the same, the screen is left as it is. */
 function outputKey(result: AnalyzeResult): string {
   const { baseline } = result;
@@ -79,6 +81,9 @@ class WatchRun {
   private last: AnalyzeResult | undefined;
   private lastKey = '';
   private statusOpen = false;
+  // On a terminal, a report clears the screen, so it writes the watcher warnings again.
+  private readonly watcherWarnings = createWatcherWarnings();
+  private readonly startFailures: string[] = [];
 
   public constructor(options: WatchOptions) {
     this.options = options;
@@ -143,11 +148,34 @@ class WatchRun {
     }
   }
 
+  /** An error of the file watcher. Only the first few texts are shown. */
+  public watcherWarning(text: string): void {
+    const line = this.watcherWarnings.add(text);
+    if (line !== undefined) {
+      this.warnLine(line);
+    }
+  }
+
+  /** A batch of dirs whose watcher could not start. It is always shown, apart from the errors. */
+  public startFailure(text: string): void {
+    this.startFailures.push(text);
+    this.warnLine(text);
+  }
+
   /** Ends the status line, so the shell prompt starts on its own line. */
   public finish(): void {
     if (this.options.tty && this.options.human && this.statusOpen) {
       this.options.write('\n');
     }
+  }
+
+  /** A warning on its own line, also after an open status line. */
+  private warnLine(line: string): void {
+    if (this.options.tty && this.options.human && this.statusOpen) {
+      this.options.write('\n');
+      this.statusOpen = false;
+    }
+    this.options.warn(line);
   }
 
   private clock(): string {
@@ -182,6 +210,13 @@ class WatchRun {
     if (human) {
       this.options.write(tty ? CLEAR_SCREEN : `--- ${this.clock()} ---\n`);
     }
+    if (human && tty) {
+      // To the terminal that was cleared. Stderr can be a file, which keeps the first copy.
+      const replay = `${this.startFailures.join('')}${this.watcherWarnings.replay()}`;
+      if (replay !== '') {
+        this.options.write(replay);
+      }
+    }
     this.statusOpen = false;
     this.options.write(this.options.render(result));
     if (result.notes.length > 0) {
@@ -215,16 +250,11 @@ export async function watchCheck(options: WatchOptions): Promise<number> {
   watch.prepare();
   const rootDir = projectRoot(options.rootDir);
   const configPath = configPathOf(rootDir, options.configFile);
-  const added = new Set<string>();
-  const handle: { watcher?: Watcher } = {};
+  const handle: { watchers?: WatcherSet } = {};
   // Layers and source dirs outside the project root are known after a run, and a run can add more.
   const watchNewRoots = (): void => {
-    const roots = watch.layerDirs().filter(root => isOutsideDir(root, rootDir) && !added.has(root));
-    for (const root of roots) {
-      added.add(root);
-    }
-    if (roots.length > 0) {
-      handle.watcher?.add(roots);
+    if (!options.signal.aborted) {
+      handle.watchers?.add(watch.layerDirs().filter(root => isOutsideDir(root, rootDir)));
     }
   };
   const trigger = new Trigger(
@@ -235,23 +265,31 @@ export async function watchCheck(options: WatchOptions): Promise<number> {
     options.delayMs ?? 150,
     options.maxWaitMs ?? 1000,
   );
-  const start = options.startWatcher ?? startWatcher;
+  const watchers = new WatcherSet({
+    start: options.startWatcher ?? startWatcher,
+    buildDir: await watch.buildDir(),
+    onChange: (change): void => {
+      if (change.config || isConfigChange(change.path, configPath)) {
+        watch.configChanged();
+      }
+      trigger.touch();
+    },
+    // One more run reads the files in the new dirs that changed before they were watched.
+    onReady: trigger.touch.bind(trigger),
+    warn: watch.watcherWarning.bind(watch),
+    warnStart: watch.startFailure.bind(watch),
+  });
+  handle.watchers = watchers;
+  const aborted = untilAborted(options.signal);
   // A config file given with `--config` can be outside the root.
   const paths = configPath === undefined ? [rootDir] : [rootDir, configPath];
-  const watcher = await start(paths, await watch.buildDir(), change => {
-    if (change.config || isConfigChange(change.path, configPath)) {
-      watch.configChanged();
-    }
-    trigger.touch();
-  }).catch((error: unknown) => {
-    throw new LayerscopeError(`Cannot watch ${rootDir}: ${messageOf(error)}`);
-  });
-  handle.watcher = watcher;
-  await watch.run();
-  watchNewRoots();
-  await untilAborted(options.signal);
+  if (await watchRoot(watchers, paths, aborted, trigger.stop.bind(trigger))) {
+    await watch.run();
+    watchNewRoots();
+  }
+  await aborted;
   trigger.stop();
-  await watcher.close();
+  await watchers.close();
   await trigger.idle();
   watch.finish();
   return 0;

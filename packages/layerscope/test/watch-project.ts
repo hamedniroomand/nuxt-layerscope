@@ -1,7 +1,7 @@
 import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
-import { dirname, join } from 'pathe';
+import { basename, dirname, join } from 'pathe';
 
 export function write(root: string, path: string, content: string): void {
   mkdirSync(dirname(join(root, path)), { recursive: true });
@@ -28,4 +28,17 @@ export function project(count = 1): string {
     write(root, `layers/a/app/pages/p${index}.vue`, page('../helper'));
   }
   return root;
+}
+
+/** A project with a second layer in a dir outside its root, and that dir. */
+export function outsideProject(): { root: string; outside: string } {
+  const root = project();
+  const outside = join(dirname(root), `${basename(root)}-ext`);
+  write(outside, 'app/ext.ts', 'export default 1;\n');
+  write(
+    root,
+    'layerscope.config.mjs',
+    `export default { layers: { a: { path: 'layers/a' }, ext: { path: '../${basename(outside)}' } } };\n`,
+  );
+  return { root, outside };
 }

@@ -159,7 +159,9 @@ layerscope check --watch
   that the config imports is not read again: change the config file as well (for example, add a
   comment), or start the watch again.
 - Layers in `node_modules` are not watched. A `srcDir`, `serverDir` or shared dir outside the
-  layer root is watched.
+  layer root is watched. When a run finds such a dir, the watch starts to watch it and runs the
+  check again. If the file watcher reports an error, for example for a dir that it cannot read,
+  layerscope prints a warning and the watch goes on.
 - It never exits with `1`: findings are shown, not counted. Ctrl+C exits with `0`. A run that
   fails, such as a config error, is printed and the watch goes on.
 - On a terminal each run clears the screen, and a save that changes nothing only updates the
