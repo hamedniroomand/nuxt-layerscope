@@ -45,7 +45,7 @@
       ],
       "files": 3,
       "refsIn": 1,
-      "refsOut": 13
+      "refsOut": 14
     },
     {
       "id": "theme",
@@ -55,7 +55,7 @@
         "base"
       ],
       "files": 5,
-      "refsIn": 4,
+      "refsIn": 5,
       "refsOut": 0
     }
   ],
@@ -95,9 +95,9 @@
     {
       "from": "shop",
       "to": "theme",
-      "count": 4,
+      "count": 5,
       "status": "not-allowed",
-      "violations": 4,
+      "violations": 5,
       "severity": "error"
     }
   ],
@@ -133,9 +133,9 @@
     {
       "from": "shop",
       "to": "theme",
-      "count": 4,
+      "count": 5,
       "status": "not-allowed",
-      "violations": 4
+      "violations": 5
     }
   ],
   "layout": {

@@ -161,8 +161,12 @@ npx layerscope graph --by file --format dot | dot -Tsvg > files.svg
 
 Lists components and auto-imports (composables, utils, server utils) that nothing references, per
 layer. Explicit imports of a file count as using everything it exports. When the project renders
-components chosen at runtime (`<component :is>` bound to a value, `resolveComponent(x)`), unused
-components are marked "possibly used at runtime". `unused` does not count uses in test files
+components chosen at runtime (`<component :is>` bound to a value, `<NuxtIsland :name>`, and
+`resolveComponent(x)` or `resolveDynamicComponent(x)` with a value that is not a fixed string),
+unused components are marked "possibly used at runtime". `<NuxtIsland name="X">` counts as a use of
+the island component `X`. With `--source types`, `unused` does not list island components (in `components/islands/` or
+with an `.island.vue` suffix), because the .d.ts files do not have them.
+`unused` does not count uses in test files
 (`*.test.*`, `*.spec.*`, `__tests__/`), in files that match `ignore`, in layers installed as
 packages, or in files outside the layer source dirs that are not in an extra auto-import or
 component dir and that no counted file imports. `unused` also counts the uses in `nuxt.config.*`, in

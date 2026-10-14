@@ -39,7 +39,9 @@
       v-if="unused.data.value?.possiblyUsed"
       class="banner"
     >
-      The project renders components chosen at runtime (<code>&lt;component :is&gt;</code>), so a
+      The project renders components chosen at runtime (<code>&lt;component :is&gt;</code>,
+      <code>&lt;NuxtIsland :name&gt;</code>, and <code>resolveComponent(x)</code> or
+      <code>resolveDynamicComponent(x)</code> with a value that is not a fixed string), so a
       component listed here may still be used.
     </p>
     <p

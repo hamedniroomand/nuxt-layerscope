@@ -165,6 +165,9 @@ export class FileAnalysis {
         );
       }
     }
+    for (const ref of scan.islands) {
+      this.addComponentEdges(ref);
+    }
     this.hasDynamicComponent =
       scan.dynamicComponents.length > 0 || scan.quietDynamicComponents.length > 0;
     for (const offset of scan.dynamicComponents) {

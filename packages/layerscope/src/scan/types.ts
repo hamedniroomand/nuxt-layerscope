@@ -12,11 +12,17 @@ export interface FileScan {
    * `.jsx` or `.tsx` file, Nuxt changes such a name to its component by its text, whatever binds it.
    */
   renderArgs: Named[];
+  /**
+   * The names in `<NuxtIsland name="X">`. A name that is not in the symbol table gives no finding:
+   * the generated .d.ts files do not list island components.
+   */
+  islands: Named[];
   /** Offsets of `<component :is>` bound to a runtime value. */
   dynamicComponents: number[];
   /**
-   * Offsets of `<component :is>` bound to a `string` prop with an element default. These give no
-   * finding, but a parent can still pass a global component name, so the file counts as a user.
+   * Offsets of runtime component choices that give no finding: `<component :is>` bound to a
+   * `string` prop with an element default (a parent can still pass a global component name),
+   * `<NuxtIsland :name>` and `resolveDynamicComponent(x)`. The file still counts as a user.
    */
   quietDynamicComponents: number[];
   imports: ImportRef[];
@@ -73,6 +79,7 @@ export function emptyScan(): FileScan {
     templateIdents: [],
     components: [],
     renderArgs: [],
+    islands: [],
     dynamicComponents: [],
     quietDynamicComponents: [],
     imports: [],
