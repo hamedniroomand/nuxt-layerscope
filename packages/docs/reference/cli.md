@@ -20,6 +20,9 @@ layerscope <command> [options]
 `root` is the Nuxt project root and defaults to the current directory. `layerscope --help` and
 `layerscope <command> --help` print the options.
 
+For a root that starts with `-`, write `./-odd` or put `--` before it: `layerscope unused -- -odd`.
+Each argument after `--` is a positional argument, also when it starts with `-`.
+
 ## `layerscope init`
 
 ```bash
