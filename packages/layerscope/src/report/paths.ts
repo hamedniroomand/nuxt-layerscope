@@ -1,20 +1,14 @@
-import { execFileSync } from 'node:child_process';
-
 import { relative } from 'pathe';
 
 import { realPath } from '#src/utils/fs.ts';
-import { cleanGitEnv } from '#src/utils/git.ts';
+import { topLevel } from '#src/utils/git.ts';
 
 /** The git root of the project, or the project root when there is no git (StackBlitz, tarballs). */
 export function repoRoot(rootDir: string): string {
   try {
-    // A git hook sets `GIT_DIR`. Git then uses that repository, not the one of `rootDir`.
-    const out = execFileSync('git', ['-C', realPath(rootDir), 'rev-parse', '--show-toplevel'], {
-      encoding: 'utf8',
-      env: cleanGitEnv(),
-      stdio: 'pipe',
-    });
-    return realPath(out.trim());
+    // `topLevel` removes the variables of a git hook, such as `GIT_DIR`, so git reads the
+    // repository of `rootDir`.
+    return realPath(topLevel(realPath(rootDir)));
   } catch {
     return realPath(rootDir);
   }

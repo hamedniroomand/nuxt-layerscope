@@ -7,7 +7,7 @@ import { baselinePath, cannotRead, parseBaselineText } from '#src/baseline/index
 import { LayerscopeError } from '#src/errors.ts';
 import { isSymlink } from '#src/fix/paths.ts';
 import { realPath } from '#src/utils/fs.ts';
-import { git, splitNul } from '#src/utils/git.ts';
+import { git, splitNul, topLevel } from '#src/utils/git.ts';
 
 function assertRef(rootDir: string, ref: string): void {
   try {
@@ -33,8 +33,7 @@ function unreadable(file: string, ref: string, error: unknown): LayerscopeError 
 /** The top of the git work tree of `rootDir`, with its real path. */
 function workTree(rootDir: string): string {
   try {
-    // Remove only the newline: a dir name can end with a space.
-    return realPath(git(rootDir, 'rev-parse', '--show-toplevel').replace(/\r?\n$/u, ''));
+    return realPath(topLevel(rootDir));
   } catch {
     throw new LayerscopeError(`drift needs a git work tree. ${rootDir} is not in one.`);
   }
