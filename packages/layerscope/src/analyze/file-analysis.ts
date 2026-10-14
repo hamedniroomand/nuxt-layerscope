@@ -16,9 +16,7 @@ import { lineColumn } from '#src/utils/position.ts';
 import { CONTEXTS, contextOf } from './files.ts';
 import type { ImportEnv, ImportOutcome, ImportTarget } from './import-refs.ts';
 import { isIgnored, lookupAutoImports, outcomesOf } from './import-refs.ts';
-
-/** Runtime registrations (plugins, `app.component`, `vueApp.use`) are invisible statically. */
-const GLOBALS_HINT = 'if it is registered at runtime, add it to "globals" in layerscope.config.ts';
+import { GLOBALS_HINT, unresolvedName } from './unresolved-messages.ts';
 
 /** The files whose `h(CartSummary)` Nuxt changes to the component: its loader reads no others. */
 const RENDER_FILE = /\.(?:vue|jsx|tsx)$/u;
@@ -132,7 +130,7 @@ export class FileAnalysis {
         this.addUnresolved(
           ref.name,
           ref.offset,
-          `"${ref.name}" is not a local binding, a known global or an auto-import in the ${this.context} context; ${GLOBALS_HINT}`,
+          unresolvedName(ref.name, this.context, this.env.table),
         );
       }
     }
@@ -161,7 +159,7 @@ export class FileAnalysis {
         this.addUnresolved(
           ref.name,
           ref.offset,
-          `Component <${ref.name}> is not in components.d.ts; ${GLOBALS_HINT}`,
+          `Nuxt has no component <${ref.name}>; ${GLOBALS_HINT}`,
         );
       }
     }

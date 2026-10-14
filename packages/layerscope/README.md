@@ -264,7 +264,7 @@ module records them on `nuxi prepare`, `dev` and `build`; use one place or the o
   whole chain. Turn it on once a baseline holds the cycles you have today.
 - `unresolved-reference`: something could not be resolved, so layerscope will not call it safe.
   Examples are an identifier that is neither a local binding, a known global nor an auto-import;
-  a component missing from `components.d.ts`; an import path that does not exist; or
+  a component that Nuxt does not have; an import path that does not exist; or
   `<component :is>` bound to a runtime value.
 - `shadowed-component` (warning): two layers register a component with the same name and Nuxt
   uses the higher-priority one. The overridden component is reported with both paths, so
