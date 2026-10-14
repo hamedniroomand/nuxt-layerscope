@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vite-plus/test';
 
 import { analyze } from '#src/analyze/index.ts';
 import type { AnalyzeResult, Finding } from '#src/types.ts';
+import { compareStrings } from '#src/utils/strings.ts';
 import { MATRIX_ROOT, NUXT3_ROOT, NUXT4_ROOT } from '#test/fixtures.ts';
 
 /** Paths as `layer:path`, so the snapshot does not depend on where pnpm puts packages. */
@@ -70,13 +71,16 @@ describe('matrix fixture', () => {
 
   it('resolves components from custom dirs, with and without path prefix', async () => {
     const { edges } = await result;
+    // `Pair` has its own test: the order of its two files changes with the Nuxt release.
     const components = edges.filter(
-      e => e.kind === 'component' && e.file.endsWith('ShopPanel.vue'),
+      e => e.kind === 'component' && e.file.endsWith('ShopPanel.vue') && e.symbol !== 'Pair',
     );
     expect(components.map(e => [e.symbol, e.toLayer])).toEqual([
       ['BaseCard', 'theme'],
       ['FlatThing', 'base'],
       ['WChart', 'base'],
+      // `Clock.client.vue` and `Clock.server.vue`.
+      ['Clock', 'theme'],
       ['Clock', 'theme'],
       ['NpmBadge', 'npm'],
       ['NuxtIsland', null],
@@ -91,4 +95,25 @@ describe('matrix fixture', () => {
       ['layers/shop/shared/utils/label.ts', 'base'],
     ]);
   });
+});
+
+describe('a component name with files in two layers of the matrix fixture', () => {
+  // `theme` has `Pair.client.vue` and `base` has `Pair.server.vue`. Nuxt keeps both: the browser
+  // uses the `theme` file and the server uses the `base` file. `shop` may use only `base`.
+  it.each(['registry', 'types'] as const)(
+    'checks a use of a component against each of its files (%s)',
+    async source => {
+      const { edges, findings } = await analyze({ rootDir: MATRIX_ROOT, source });
+      const pair = edges.filter(e => e.symbol === 'Pair');
+      const files = pair.map(e => [relative(MATRIX_ROOT, e.to ?? ''), e.toLayer ?? '']);
+      expect(files.toSorted((a, b) => compareStrings(a[0], b[0]))).toEqual([
+        ['layers/base/app/components/Pair.server.vue', 'base'],
+        ['layers/theme/app/components/Pair.client.vue', 'theme'],
+      ]);
+      const found = findings.filter(f => f.symbol === 'Pair');
+      expect(found.map(f => [f.rule, f.fromLayer, f.toLayer])).toEqual([
+        ['layer-boundary', 'shop', 'theme'],
+      ]);
+    },
+  );
 });

@@ -44,7 +44,7 @@ function tempDir(): string {
 function tableWith(dir: string): { table: SymbolTable; file: string } {
   const file = join(dir, 'Chart.vue');
   const table = emptyTable();
-  table.components.set('Chart', { file, module: null });
+  table.components.set('Chart', [{ file, module: null }]);
   return { table, file };
 }
 
@@ -88,7 +88,7 @@ describe('a file that the generated types refer to', () => {
 
   it('accepts a target that is a dir', async () => {
     const table = emptyTable();
-    table.components.set('Chart', { file: tempDir(), module: null });
+    table.components.set('Chart', [{ file: tempDir(), module: null }]);
     await expect(assertRegistryFresh(table, emptyRegistry())).resolves.toBeUndefined();
   });
 

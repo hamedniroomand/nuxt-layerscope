@@ -42,8 +42,13 @@ function usesOf(edges: AnalyzeResult['edges']): (string | null)[][] {
 
 /** The registered names with their files, per context and for components. */
 function symbolsOf(symbols: AnalyzeResult['symbols']): [string, string | null][][] {
-  const maps = [symbols.components, ...Object.values(symbols.imports)];
-  return maps.map(map => [...map].map(([name, target]) => [name, target.file]));
+  const components = [...symbols.components].flatMap(([name, targets]) =>
+    targets.map((target): [string, string | null] => [name, target.file]),
+  );
+  const imports = Object.values(symbols.imports).map(map =>
+    [...map].map(([name, target]): [string, string | null] => [name, target.file]),
+  );
+  return [components, ...imports];
 }
 
 /**

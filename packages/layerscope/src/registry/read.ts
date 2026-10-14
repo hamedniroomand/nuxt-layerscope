@@ -2,8 +2,8 @@ import { existsSync } from 'node:fs';
 
 import { join } from 'pathe';
 
-import type { SymbolMap, SymbolTable } from '#src/nuxt/symbols.ts';
-import { targetOf } from '#src/nuxt/symbols.ts';
+import type { ComponentMap, SymbolMap, SymbolTable } from '#src/nuxt/symbols.ts';
+import { addComponent, targetOf } from '#src/nuxt/symbols.ts';
 import { readJson } from '#src/utils/fs.ts';
 
 import type { Registry, RegistryImport } from './schema.ts';
@@ -113,12 +113,12 @@ function importMap(imports: RegistryImport[], buildDir: string): SymbolMap {
 
 /** The same table the `.d.ts` parser builds, from Nuxt's own registry. */
 export function tableFromRegistry(registry: Registry, buildDir: string): SymbolTable {
-  const components: SymbolMap = new Map();
-  const lazy: SymbolMap = new Map();
+  const components: ComponentMap = new Map();
+  const lazy: ComponentMap = new Map();
   for (const component of registry.components) {
     const target = targetOf(component.file, buildDir);
-    components.set(component.name, target);
-    lazy.set(`Lazy${component.name}`, target);
+    addComponent(components, component.name, target);
+    addComponent(lazy, `Lazy${component.name}`, target);
   }
   return {
     imports: {

@@ -40,6 +40,14 @@ or the `module.createRequire(...)` of a CommonJS file. A function that you wrote
 `createRequire` is not it. `.cjs` and `.cts` files are scanned. So is `import x = require('...')`,
 the import form of a `.cts` file. With `const { a, b } = require('...')` the names are `a` and `b`,
 as for a named import; a rest element, a computed key or a plain `require()` takes the whole module.
+
+A component name can have more than one file: a `.client` file, a `.server` file and a file with
+no suffix, in one layer or in different layers. Nuxt uses one file in the browser and one file on
+the server, and the file can be different for a tag and for an import from `#components`.
+layerscope checks a use of the name against each file that Nuxt keeps. So in some layouts a use
+also gets a finding for a file that Nuxt does not use for it. For example, a higher layer has
+`Pair.client.vue` and `Pair.server.vue`, and a lower layer has `Pair.vue`: Nuxt does not use
+`Pair.vue` for `<Pair />`.
 These are not counted: `require.resolve('...')`, a `require()` with a path that is not a fixed
 string (the `unresolved-reference` rule reports it), and a `createRequire` binding that goes through
 a function, and `createRequire` taken with `const { createRequire } = require('module')`. A binding

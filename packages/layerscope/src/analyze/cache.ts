@@ -156,11 +156,13 @@ export function analyzeOrFail(file: string, layer: Layer, env: AnalysisEnv): Fil
 
 function symbolFilesOf(symbols: SymbolTable): string[] {
   const files = new Set<string>();
-  for (const map of [symbols.components, ...Object.values(symbols.imports)]) {
-    for (const { file } of map.values()) {
-      if (file !== null) {
-        files.add(file);
-      }
+  const targets = [
+    ...[...symbols.components.values()].flat(),
+    ...Object.values(symbols.imports).flatMap(map => Array.from(map.values())),
+  ];
+  for (const { file } of targets) {
+    if (file !== null) {
+      files.add(file);
     }
   }
   return [...files];

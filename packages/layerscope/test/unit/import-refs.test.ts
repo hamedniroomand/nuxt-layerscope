@@ -13,7 +13,7 @@ const table: SymbolTable = {
     server: new Map(),
     shared: new Map(),
   },
-  components: new Map([['BaseButton', { file: '/app/components/BaseButton.vue', module: null }]]),
+  components: new Map([['BaseButton', [{ file: '/app/components/BaseButton.vue', module: null }]]]),
 };
 
 const env = {

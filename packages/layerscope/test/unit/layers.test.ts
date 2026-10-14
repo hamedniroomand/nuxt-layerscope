@@ -75,7 +75,7 @@ describe('assertFresh', () => {
 
   it('fails on generated types pointing at deleted files', async () => {
     const table = emptyTable();
-    table.components.set('Gone', { file: '/nonexistent/Gone.vue', module: null });
+    table.components.set('Gone', [{ file: '/nonexistent/Gone.vue', module: null }]);
     await expect(assertFresh(table, [])).rejects.toThrow(/no longer exists/u);
   });
 });

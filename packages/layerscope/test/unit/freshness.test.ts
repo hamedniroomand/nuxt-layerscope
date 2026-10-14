@@ -149,7 +149,7 @@ describe('assertFresh without the registry', () => {
   it('takes a file named like a registered component as overridden', async () => {
     // The winner lives in another layer; the name is all the `.d.ts` files tell.
     const table = emptyTable();
-    table.components.set('BaseCard', { file: null, module: 'theme' });
+    table.components.set('BaseCard', [{ file: null, module: 'theme' }]);
     const layers = await layersWith(['BaseCard.vue']);
     await expect(assertFresh(table, layers)).resolves.toBeUndefined();
   });

@@ -17,9 +17,16 @@ export interface SymbolTarget {
 
 export type SymbolMap = Map<string, SymbolTarget>;
 
+/**
+ * Each file of a component name, in Nuxt's order. A name can have more than one file: Nuxt keeps a
+ * `.client`, a `.server` and a plain file with the same name, and uses one in the browser and one
+ * on the server.
+ */
+export type ComponentMap = Map<string, SymbolTarget[]>;
+
 export interface SymbolTable {
   imports: Record<Context, SymbolMap>;
-  components: SymbolMap;
+  components: ComponentMap;
 }
 
 // `  const useCart: typeof import('../../layers/web/app/composables/useCart').useCart`
@@ -46,6 +53,20 @@ export function targetOf(source: string, buildDir: string): SymbolTarget {
     return { file: file === null ? null : realPath(file), module: packageName(source) };
   }
   return { file: realPath(resolveFile(source) ?? source), module: null };
+}
+
+function sameTarget(a: SymbolTarget, b: SymbolTarget): boolean {
+  return a.file === b.file && a.module === b.module;
+}
+
+/** Adds a file of a component name; the same file is kept once. */
+export function addComponent(map: ComponentMap, name: string, target: SymbolTarget): void {
+  const targets = map.get(name);
+  if (targets === undefined) {
+    map.set(name, [target]);
+  } else if (!targets.some(known => sameTarget(known, target))) {
+    targets.push(target);
+  }
 }
 
 function toTarget(declaration: string, fromDir: string, buildDir: string): SymbolTarget {
@@ -78,21 +99,21 @@ function parseGlobalDeclarations(file: string, buildDir: string): SymbolMap {
 }
 
 /** `.nuxt/components.d.ts`: one `export const` per component. */
-export function parseComponentExports(file: string, buildDir: string): SymbolMap {
-  const table: SymbolMap = new Map();
+export function parseComponentExports(file: string, buildDir: string): ComponentMap {
+  const table: ComponentMap = new Map();
   for (const line of readFileSync(file, 'utf8').split('\n')) {
     const match = EXPORT_CONST.exec(line);
     // Skips `componentNames: string[]`, which is not a component.
     if (match && TYPEOF_IMPORT.test(match[2])) {
-      table.set(match[1], toTarget(match[2], dirname(file), buildDir));
+      addComponent(table, match[1], toTarget(match[2], dirname(file), buildDir));
     }
   }
   return table;
 }
 
 /** `.nuxt/types/components.d.ts` (Nuxt 4.1+): members of `interface _GlobalComponents`. */
-export function parseComponentInterface(file: string, buildDir: string): SymbolMap {
-  const table: SymbolMap = new Map();
+export function parseComponentInterface(file: string, buildDir: string): ComponentMap {
+  const table: ComponentMap = new Map();
   let inInterface = false;
   for (const line of readFileSync(file, 'utf8').split('\n')) {
     if (line.startsWith('interface _GlobalComponents') || line.startsWith('}')) {
@@ -101,23 +122,19 @@ export function parseComponentInterface(file: string, buildDir: string): SymbolM
     }
     const match = inInterface ? INTERFACE_MEMBER.exec(line) : null;
     if (match && TYPEOF_IMPORT.test(match[2])) {
-      table.set(match[1], toTarget(match[2], dirname(file), buildDir));
+      addComponent(table, match[1], toTarget(match[2], dirname(file), buildDir));
     }
   }
   return table;
 }
 
-function loadComponents(buildDir: string): SymbolMap | null {
+function loadComponents(buildDir: string): ComponentMap | null {
   const root = join(buildDir, 'components.d.ts');
   if (existsSync(root)) {
     return parseComponentExports(root, buildDir);
   }
   const types = join(buildDir, 'types/components.d.ts');
   return existsSync(types) ? parseComponentInterface(types, buildDir) : null;
-}
-
-function sameTarget(a: SymbolTarget, b: SymbolTarget): boolean {
-  return a.file === b.file && a.module === b.module;
 }
 
 /**

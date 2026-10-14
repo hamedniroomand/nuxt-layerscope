@@ -1,5 +1,5 @@
 import type { AliasMap } from '#src/nuxt/aliases.ts';
-import type { SymbolMap, SymbolTable, SymbolTarget } from '#src/nuxt/symbols.ts';
+import type { SymbolTable, SymbolTarget } from '#src/nuxt/symbols.ts';
 import type { LayerPackages } from '#src/resolve/layer-package.ts';
 import { resolveSpecifier } from '#src/resolve/specifier.ts';
 import type { ImportRef } from '#src/scan/types.ts';
@@ -23,11 +23,21 @@ export interface ImportEnv {
   layerPackages: LayerPackages;
 }
 
-function virtualModule(specifier: string, context: Context, table: SymbolTable): SymbolMap | null {
+/** The files that a name of a virtual module stands for: one for an auto-import, one or more for a component. */
+type VirtualLookup = (name: string) => SymbolTarget[] | undefined;
+
+function virtualModule(
+  specifier: string,
+  context: Context,
+  table: SymbolTable,
+): VirtualLookup | null {
   if (specifier === '#imports') {
-    return table.imports[context];
+    return name => {
+      const target = table.imports[context].get(name);
+      return target === undefined ? undefined : [target];
+    };
   }
-  return specifier === '#components' ? table.components : null;
+  return specifier === '#components' ? name => table.components.get(name) : null;
 }
 
 /** `#imports` and `#components` are resolved by name through the symbol table. */
@@ -39,15 +49,15 @@ export function resolveImportRef(
 ): ImportOutcome[] {
   const virtual = virtualModule(ref.specifier, context, env.table);
   if (virtual !== null) {
-    return ref.names.map(name => {
-      const target = virtual.get(name);
-      return target === undefined
-        ? { resolved: false, message: `"${name}" is not exported by ${ref.specifier}` }
-        : {
+    return ref.names.flatMap((name): ImportOutcome[] => {
+      const targets = virtual(name);
+      return targets === undefined
+        ? [{ resolved: false, message: `"${name}" is not exported by ${ref.specifier}` }]
+        : targets.map(target => ({
             resolved: true,
             symbol: `${ref.specifier}:${name}`,
             target: { to: target.file, external: target.module },
-          };
+          }));
     });
   }
   const resolution = resolveSpecifier(

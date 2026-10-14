@@ -31,7 +31,9 @@ Layer names and ownership are described in [Layers](./layers).
 
 The symbol table maps every name Nuxt auto-imports to where it comes from, per context:
 
-- **components**: `BaseButton` and `LazyBaseButton` → `layers/shared/app/components/BaseButton.vue`
+- **components**: `BaseButton` and `LazyBaseButton` → `layers/shared/app/components/BaseButton.vue`.
+  A name can map to more than one file, for example `Pair.client.vue` in one layer and
+  `Pair.server.vue` in another layer.
 - **app imports**: `useCart` → `layers/web/app/composables/useCart.ts`, `ref` → `vue`
 - **server imports**: `useDb` → `layers/shared/server/utils/db.ts`, `defineEventHandler` → `h3`
 - **shared imports**: what both app and server code can use
