@@ -36,6 +36,7 @@ function buildDirWith(extra: Record<string, unknown>): string {
       components: [],
       componentDirs: [],
       nuxtIgnore: noNuxtIgnore(),
+      nuxtContent: false,
       imports: { app: [], server: [], shared: [] },
       ...extra,
     }),

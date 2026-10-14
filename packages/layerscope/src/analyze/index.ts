@@ -11,9 +11,9 @@ import type { AnalyzeResult, LayerscopeConfig, SourceOption } from '#src/types.t
 
 import { analyzeProject, fileLists } from './cache.ts';
 import type { AnalysisCache, EnvironmentCache } from './cache.ts';
-import type { Environment } from './environment.ts';
 import { collectFiles } from './files.ts';
 import { loadProject, projectRoot } from './load.ts';
+import { runtimeComponents } from './runtime-components.ts';
 import { applyScope, planScan } from './scope.ts';
 
 export interface AnalyzeOptions {
@@ -74,14 +74,18 @@ type EnvironmentFields = 'source' | 'sourceFile' | 'recordedFile';
  * component by a name chosen at runtime.
  */
 function fromEnvironment(
-  environment: Environment,
+  environment: Awaited<ReturnType<typeof loadProject>>,
 ): Pick<AnalyzeResult, EnvironmentFields | 'globalComponentFiles' | 'nuxtContent'> {
   return {
     source: environment.source,
     sourceFile: environment.sourceFile,
     recordedFile: environment.recordedFile,
-    globalComponentFiles: environment.globalComponentFiles,
-    nuxtContent: environment.registry?.nuxtContent ?? false,
+    ...runtimeComponents(
+      environment.registry,
+      environment.env.table.components,
+      environment.layers,
+      environment.buildDir,
+    ),
   };
 }
 
