@@ -110,6 +110,36 @@ describe('view endpoints', () => {
   });
 });
 
+describe('unused endpoint', () => {
+  it('serves each unused symbol with the text of the CLI', async () => {
+    const { fetch, run } = await server();
+    const shared = { file: '/app/shared/utils/sharedLabel.ts', module: null };
+    const imports = new Map([['sharedLabel', shared]]);
+    run.mockResolvedValue(
+      makeResult({
+        symbols: {
+          imports: { app: imports, server: imports, shared: imports },
+          components: new Map(),
+        },
+      }),
+    );
+    expect(await (await fetch('/api/unused')).json()).toMatchObject({
+      unused: [
+        {
+          name: 'sharedLabel',
+          context: 'shared',
+          file: 'shared/utils/sharedLabel.ts',
+          absFile: '/app/shared/utils/sharedLabel.ts',
+          layer: 'web',
+          label: 'auto-import (shared)',
+        },
+      ],
+      possiblyUsed: false,
+      layers: ['web', 'shop'],
+    });
+  });
+});
+
 describe('graph endpoints', () => {
   it('serves the graph, an edge and a node, and 404 for unknown layers', async () => {
     const { fetch } = await server();

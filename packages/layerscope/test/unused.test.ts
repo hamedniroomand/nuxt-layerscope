@@ -38,7 +38,7 @@ describe('findUnused', () => {
     ]);
   });
 
-  it('counts explicit imports, #imports and #components as uses', async () => {
+  it('lists no symbol on the Nuxt 3 fixture', async () => {
     const result = await analyze({ rootDir: NUXT3_ROOT });
     expect(findUnused(result)).toEqual([]);
   });

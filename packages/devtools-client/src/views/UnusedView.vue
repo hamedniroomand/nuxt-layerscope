@@ -4,6 +4,7 @@
   import CopyButton from '#client/components/CopyButton.vue';
   import FileLocation from '#client/components/FileLocation.vue';
   import { useTab } from '#client/lib/context.ts';
+  import { plural } from '#client/lib/format.ts';
   import { useViewData } from '#client/lib/view-data.ts';
   import { unusedGroups } from '#client/lib/view-groups.ts';
 
@@ -28,7 +29,8 @@
         v-if="unused.data.value"
         class="muted num"
       >
-        {{ unused.data.value.unused.length }} unused in {{ groups.length }} layers
+        {{ plural(unused.data.value.unused.length, 'unused symbol') }} in
+        {{ plural(groups.length, 'layer') }}
       </span>
       <CopyButton
         text="npx layerscope unused"
@@ -95,19 +97,7 @@
           :key="`${row.kind}:${row.name}:${row.file}`"
         >
           <span>{{ row.name }}</span>
-          <span class="chip">{{ row.kind }}</span>
-          <span
-            v-if="row.context"
-            class="chip"
-          >
-            {{ row.context }}
-          </span>
-          <span
-            v-if="row.global"
-            class="chip"
-          >
-            global component (possibly used at runtime)
-          </span>
+          <span class="chip">{{ row.label }}</span>
           <FileLocation
             class="muted"
             :file="row.absFile ?? row.file"

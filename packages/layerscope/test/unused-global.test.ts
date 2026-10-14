@@ -10,8 +10,8 @@ import { findUnused } from '#src/unused/index.ts';
 import { prepareFixture, privateFixture } from './private-fixture.ts';
 
 /**
- * A private copy of the fixture with two global components, and a module that has the name of
- * Nuxt Content, so that kit's `hasNuxtModule('@nuxt/content')` is true.
+ * A private copy of the fixture with two global components, a util in `shared/`, and a module that
+ * has the name of Nuxt Content, so that kit's `hasNuxtModule('@nuxt/content')` is true.
  */
 let copy = '';
 
@@ -25,6 +25,7 @@ beforeAll(() => {
   copy = privateFixture(false);
   write('app/components/global/GlobalOnly.vue', '<template><div /></template>\n');
   write('app/components/SuffixOnly.global.vue', '<template><div /></template>\n');
+  write('shared/utils/sharedLabel.ts', 'export const sharedLabel = () => 1;\n');
   write(
     'modules/content-name.ts',
     // A module that only has the name, as `defineNuxtModule()` gives it, with no import of kit.
@@ -63,5 +64,15 @@ describe('unused and global components on a real Nuxt project (#119)', () => {
     expect(registry.nuxtContent).toBe(true);
     expect(globalNames(registry)).toEqual(['GlobalOnly', 'SuffixOnly']);
     expect(globalNames(types)).toEqual(['GlobalOnly', 'SuffixOnly']);
+  }, 120_000);
+
+  it('lists the same symbols from the registry and from the .d.ts files', async () => {
+    const [registry, types] = await Promise.all([
+      analyze({ rootDir: copy, source: 'registry' }),
+      analyze({ rootDir: copy, source: 'types' }),
+    ]);
+    const unused = findUnused(registry);
+    expect(unused.find(symbol => symbol.name === 'sharedLabel')?.context).toBe('shared');
+    expect(findUnused(types)).toEqual(unused);
   }, 120_000);
 });

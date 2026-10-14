@@ -74,7 +74,7 @@ export async function unusedView(result: AnalyzeResult): Promise<UnusedView> {
   const rows = report.toUnusedRows(findUnused(result), result.rootDir, true);
   const spots = findBlindSpots(result);
   return {
-    unused: rows,
+    unused: rows.map(row => Object.assign(row, { label: report.unusedLabel(row) })),
     blindSpots: report.toBlindSpotRows(spots, result.rootDir, true),
     blindSpotLines: report.blindSpotLines(spots),
     emptyLine: report.emptySentence(spots),

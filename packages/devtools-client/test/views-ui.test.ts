@@ -106,9 +106,10 @@ describe('unused view', () => {
           file: 'ui/BaseCard.vue',
           absFile: '/app/ui/BaseCard.vue',
           layer: 'ui',
-          exposed: false,
+          exposed: true,
           global: false,
           possiblyUsed: true,
+          label: 'component (possibly used at runtime, exposed)',
         },
       ],
       blindSpots: [],
@@ -124,7 +125,9 @@ describe('unused view', () => {
     press('4');
     await flushPromises();
     expect(wrapper.text()).toContain('a component listed here may still be used');
+    expect(wrapper.get('.bar .num').text()).toBe('1 unused symbol in 1 layer');
     expect(wrapper.get('h3.group').text()).toContain('ui');
+    expect(wrapper.get('.rows .chip').text()).toBe('component (possibly used at runtime, exposed)');
     await wrapper.get('.rows button').trigger('click');
     expect(window.location.hash).toBe('#/trace/BaseCard');
   });

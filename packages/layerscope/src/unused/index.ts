@@ -1,3 +1,4 @@
+import { CONTEXTS, contextOf } from '#src/analyze/files.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import { isOutsideRoot, isPackageLayer } from '#src/nuxt/package-layer.ts';
 import type { ComponentMap, SymbolTarget } from '#src/nuxt/symbols.ts';
@@ -25,7 +26,6 @@ export interface UnusedSymbol {
   possiblyUsed: boolean;
 }
 
-const CONTEXTS: Context[] = ['app', 'server', 'shared'];
 const VIRTUAL_IMPORT = /^#(?:imports|components):(.+)$/u;
 
 interface Uses {
@@ -98,26 +98,40 @@ function isExposedSymbol(
 }
 
 /**
- * The name of the layer when its symbols are listed. A layer installed as a package is not
- * checked, and a layer outside the project root can be used by another app.
+ * The layer when its symbols are listed. A layer installed as a package is not checked, and a
+ * layer outside the project root can be used by another app.
  */
-function listedLayer(layer: Layer | null, rootDir: string): string | null {
-  return layer === null || isPackageLayer(layer) || isOutsideRoot(layer, rootDir)
-    ? null
-    : layer.name;
+function listedLayer(layer: Layer | null, rootDir: string): Layer | null {
+  return layer === null || isPackageLayer(layer) || isOutsideRoot(layer, rootDir) ? null : layer;
+}
+
+/**
+ * The context of an auto-import: the context of the dir that its file is in, when the symbol is
+ * registered in that context. Nuxt registers a `shared/utils` symbol in all contexts. Else the
+ * first context that registers the symbol, for example for a file in a dir of `imports.dirs`.
+ */
+function symbolContext(
+  result: AnalyzeResult,
+  name: string,
+  file: string,
+  layer: Layer,
+  first: Context,
+): Context {
+  const own = contextOf(file, layer);
+  return result.symbols.imports[own].get(name)?.file === file ? own : first;
 }
 
 /** The unused components, each marked when it may still be used by a name chosen at runtime. */
 function unusedComponents(
   result: AnalyzeResult,
   uses: Uses,
-  checked: (target: SymbolTarget) => string | null,
+  checked: (target: SymbolTarget) => Layer | null,
 ): UnusedSymbol[] {
   const anyPossiblyUsed = result.dynamicComponentFiles.length > 0 || result.nuxtContent;
   const globalFiles = new Set(result.globalComponentFiles);
   const unused: UnusedSymbol[] = [];
   for (const [file, names] of componentsByFile(result.symbols.components)) {
-    const layer = checked({ file, module: null });
+    const layer = checked({ file, module: null })?.name ?? null;
     if (layer !== null && !isUsed(uses, file, names)) {
       const name = shortestName(names);
       const exposed = isExposedSymbol(result, layer, file, name, 'component');
@@ -146,7 +160,7 @@ function unusedComponents(
  */
 export function findUnused(result: AnalyzeResult): UnusedSymbol[] {
   const ownerOf = createOwnerLookup(result.layers);
-  const checked = (target: SymbolTarget): string | null =>
+  const checked = (target: SymbolTarget): Layer | null =>
     listedLayer(target.file === null ? null : ownerOf(target.file), result.rootDir);
   const uses = collectUses([...result.edges, ...result.extraEdges, ...result.typeEdges]);
   const unused = unusedComponents(result, uses, checked);
@@ -161,13 +175,13 @@ export function findUnused(result: AnalyzeResult): UnusedSymbol[] {
       seen.add(key);
       if (!isUsed(uses, target.file, [name])) {
         const { file } = target;
-        const exposed = isExposedSymbol(result, layer, file, name, 'auto-import');
+        const exposed = isExposedSymbol(result, layer.name, file, name, 'auto-import');
         unused.push({
           name,
           kind: 'auto-import',
-          context,
+          context: symbolContext(result, name, file, layer, context),
           file,
-          layer,
+          layer: layer.name,
           exposed,
           global: false,
           possiblyUsed: false,
