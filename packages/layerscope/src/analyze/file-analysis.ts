@@ -1,8 +1,5 @@
-import { readFileSync } from 'node:fs';
-
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
 import type { SymbolTarget } from '#src/nuxt/symbols.ts';
-import { scanFile } from '#src/scan/index.ts';
 import type { FileScan, ImportRef } from '#src/scan/types.ts';
 import type {
   Context,
@@ -280,15 +277,4 @@ export class FileAnalysis {
       message,
     });
   }
-}
-
-/** Reads, scans and analyzes one source file. */
-export function analyzeFile(
-  file: string,
-  layer: Layer,
-  env: AnalysisEnv,
-  anyContext = false,
-): FileAnalysis {
-  const source = readFileSync(file, 'utf8');
-  return new FileAnalysis(file, source, layer, env, anyContext).run(scanFile(source, file));
 }
