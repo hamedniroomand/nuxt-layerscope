@@ -40,6 +40,10 @@ describe('component tags in JSX (#119)', () => {
     expect(tags('export default () => <Fragment><span /></Fragment>;')).toEqual([]);
   });
 
+  it('skips a JavaScript global, which the JSX plugin takes as a binding', () => {
+    expect(tags('export default () => <div><Map /><Error /><Date /></div>;')).toEqual([]);
+  });
+
   it('skips a member tag and a namespaced tag', () => {
     expect(tags('const Ui = { Card: 1 };\nexport default () => <Ui.Card />;')).toEqual([]);
     expect(tags('export default () => <svg:a />;')).toEqual([]);

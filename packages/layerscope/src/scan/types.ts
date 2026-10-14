@@ -14,8 +14,9 @@ export interface FileScan {
   renderArgs: Named[];
   /**
    * Component tags in JSX, such as `<CartSummary />` or `<cart-summary />`, with the name in
-   * PascalCase: not an HTML or SVG element, not `Fragment` and not a local binding. Vue's JSX plugin
-   * compiles each to `resolveComponent()`, and outside the `server/` dir Nuxt changes it to an import.
+   * PascalCase: not an HTML or SVG element, not `Fragment`, not a local binding and not a JavaScript
+   * global such as `Map`. Vue's JSX plugin compiles each to `resolveComponent()`, and outside the
+   * `server/` dir Nuxt changes it to an import.
    */
   jsxTags: Named[];
   /**

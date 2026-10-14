@@ -18,7 +18,7 @@ import type { ImportEnv, ImportOutcome, ImportTarget } from './import-refs.ts';
 import { isIgnored, lookupAutoImports, outcomesOf } from './import-refs.ts';
 import { GLOBALS_HINT, unresolvedName } from './unresolved-messages.ts';
 
-/** The files whose `h(CartSummary)` Nuxt changes to the component: its loader reads no others. */
+/** The files whose `h(CartSummary)` and JSX tags Nuxt changes to the component: its loader reads no others. */
 const RENDER_FILE = /\.(?:vue|jsx|tsx)$/u;
 
 export interface AnalysisEnv extends ImportEnv {

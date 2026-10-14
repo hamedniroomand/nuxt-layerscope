@@ -90,9 +90,10 @@ Every source file of every checked layer is parsed:
   that is not declared, imported or a known global is a _free_ identifier: it is auto-imported or
   unresolved. In a `.vue`, `.jsx` or `.tsx` file outside the `server/` dir, the first argument of
   `h()` is a component use when Nuxt registers a component with that name, also when a binding has
-  that name. In the same files, a JSX tag that is not an HTML or SVG element, not `Fragment` and not
-  a local binding is a component use, as Vue's JSX plugin compiles it to `resolveComponent()`. A
-  local `const useCart = ...` shadows the auto-import of the same name, just as it does at runtime.
+  that name. In the same files, a JSX tag that is not an HTML or SVG element, not `Fragment`, not a
+  local binding and not a JavaScript global such as `Map` is a component use, as Vue's JSX plugin
+  compiles it to `resolveComponent()`. A local `const useCart = ...` shadows the auto-import of the
+  same name, just as it does at runtime.
 - **Templates** are compiled with `@vue/compiler-sfc`, the compiler Vue uses. The render function
   shows which components Nuxt resolves (`resolveComponent("CartSummary")`) and which identifiers
   the template reads from the component instance (`_ctx.formatPrice`). `<component :is>` bound to

@@ -61,9 +61,9 @@ binding.
 
 In a `.jsx` or `.tsx` file, or a `<script lang="jsx">` or `<script lang="tsx">` block, outside the
 `server/` dir, a JSX tag such as `<CartSummary />` or `<cart-summary />` is a use of that component
-when it is not an HTML or SVG element, not `Fragment` and not a local binding. Vue's JSX plugin
-compiles such a tag to `resolveComponent()`, and Nuxt changes it to an import. A tag that is a local
-binding is a use of that binding, as in a script.
+when it is not an HTML or SVG element, not `Fragment`, not a local binding and not a JavaScript
+global such as `Map`. Vue's JSX plugin compiles such a tag to `resolveComponent()`, and Nuxt changes
+it to an import. A tag that is a local binding is a use of that binding, as in a script.
 
 A component name can have more than one file: a `.client` file, a `.server` file and a file with no
 suffix, in one layer or in different layers. Nuxt uses one file in the browser and one file on the
