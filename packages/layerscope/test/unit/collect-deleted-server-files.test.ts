@@ -59,6 +59,14 @@ describe('the collector and the server imports that a new scan does not give', (
     expect(await serverNames(project)).toEqual(['a']);
   });
 
+  it('drops an export that is removed from a util that still has other exports', async () => {
+    const project = await collectProject();
+    project.write('server/utils/xy.ts', 'export const x = 1;\nexport const y = 2;\n');
+    expect(await serverNames(project)).toEqual(['x', 'y']);
+    project.write('server/utils/xy.ts', 'export const x = 1;\n');
+    expect(await serverNames(project)).toEqual(['x']);
+  });
+
   it('keeps an import that a module adds from a file outside the dirs', async () => {
     const project = await twoUtils();
     project.write('modules/runtime/extra.ts', 'export const extra = 1;\n');
