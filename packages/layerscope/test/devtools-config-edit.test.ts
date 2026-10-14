@@ -35,13 +35,14 @@ describe('the DevTools tab after an edit of the config that fires no Nuxt hook',
     copyFileSync(join(root, KEY), join(root, 'ci/other.json'));
     const options = sessionOptions(root, join(root, '.nuxt'));
     const app = await server(root, { ...options, baseline: undefined, run: undefined });
-    const shown = async (): Promise<unknown> => {
-      const body = (await (await app.fetch('/api/baseline')).json()) as { file: unknown };
-      return body.file;
-    };
-    expect(await shown()).toBe(KEY);
+    const first = await app.fetch('/api/baseline');
+    expect(((await first.json()) as { file: unknown }).file).toBe(KEY);
     const config = join(root, 'layerscope.config.mjs');
     writeFileSync(config, readFileSync(config, 'utf8').replace(`'${KEY}'`, "'ci/other.json'"));
-    expect(await shown()).toBe('ci/other.json');
+    // The tab sends the old ETag. Both files accept the same findings, so only the file changed.
+    const etag = first.headers.get('etag') ?? '';
+    const next = await app.fetch('/api/baseline', { headers: { 'if-none-match': etag } });
+    expect(next.status).toBe(200);
+    expect(((await next.json()) as { file: unknown }).file).toBe('ci/other.json');
   }, 60_000);
 });

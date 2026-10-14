@@ -71,6 +71,7 @@ function fingerprint(result: AnalyzeResult): string {
     .digest('hex');
   return JSON.stringify([
     result.findings,
+    result.baseline?.file,
     result.baseline?.suppressed,
     result.config.layers,
     result.config.typeImports,
