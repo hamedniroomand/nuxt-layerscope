@@ -141,7 +141,7 @@ describe('h() where Nuxt does not change the name', () => {
     expect(findings).toEqual([
       [
         'unresolved-reference',
-        '"CartSummary" is not a local binding, a known global or an auto-import in the app context; if it is registered at runtime, add it to "globals" in layerscope.config.ts',
+        '"CartSummary" is a component, not an auto-import: use it in a template, or import it from "#components"',
       ],
     ]);
   });
