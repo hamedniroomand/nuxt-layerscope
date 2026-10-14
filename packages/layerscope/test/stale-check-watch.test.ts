@@ -117,7 +117,9 @@ describe('check --watch on a cached environment (#153)', () => {
       expect(await stop()).toBe(0);
     }
   }, 120_000);
+});
 
+describe('check --watch after a stale error', () => {
   it('prints the whole report again when the run after the stale error has the same result', async () => {
     const { out, err, stop } = startWatch();
     try {
@@ -128,10 +130,18 @@ describe('check --watch on a cached environment (#153)', () => {
       const shown = out.length;
       unlinkSync(file);
       // The result is the same as before the error. A status line with "no change" only would
-      // leave the error on the screen as the last output.
-      await vi.waitFor(() => {
-        expect(out.slice(shown).join(''), 'the report after the file is gone').toContain('--- ');
-      }, WAIT);
+      // leave the error on the screen as the last output. When the event of the delete is
+      // dropped, the same bytes in another file give a run, and that run has the same result too.
+      const other = join(copy, 'layers/web/app/composables/useCart.ts');
+      const bytes = readFileSync(other);
+      await waitPoking(
+        () => {
+          writeFileSync(other, bytes);
+        },
+        () => {
+          expect(out.slice(shown).join(''), 'the report after the file is gone').toContain('--- ');
+        },
+      );
       expect(out.slice(shown).join('')).not.toContain('no change');
     } finally {
       expect(await stop()).toBe(0);

@@ -8,119 +8,9 @@ import { createBaseline, writeBaseline } from '#src/baseline/index.ts';
 import { formatResult } from '#src/report/index.ts';
 import { plain } from '#src/utils/style.ts';
 import { watchCheck } from '#src/watch/index.ts';
-import type { WatchOptions } from '#src/watch/index.ts';
-import type { Change, StartWatcher } from '#src/watch/watcher.ts';
 
 import { page, project, tempDir, write } from './watch-project.ts';
-
-function noop(): void {
-  // Nothing to do.
-}
-
-interface Session {
-  /** The paths given to the watcher at the start, and the ones added later. */
-  watched: string[];
-  added: string[];
-  out: string[];
-  err: string[];
-  stop: () => Promise<number>;
-  change: (change?: Partial<Change>) => void;
-}
-
-/** A watcher the test drives: it records the paths and sends the changes it is told to. */
-function fakeWatcher(): {
-  startWatcher: StartWatcher;
-  watched: string[];
-  added: string[];
-  send: (change: Change) => void;
-} {
-  const watched: string[] = [];
-  const added: string[] = [];
-  const handlers: ((change: Change) => void)[] = [];
-  const startWatcher: StartWatcher = async (paths, _buildDir, onChange) => {
-    handlers.push(onChange);
-    watched.push(...paths);
-    await Promise.resolve();
-    return {
-      add: more => {
-        added.push(...more);
-      },
-      close: async () => {
-        await Promise.resolve();
-      },
-    };
-  };
-  return {
-    startWatcher,
-    watched,
-    added,
-    send: change => {
-      for (const handler of handlers) {
-        handler(change);
-      }
-    },
-  };
-}
-
-/** Runs the watch with a watcher that the test drives, and with short delays. */
-function start(
-  root: string,
-  format: 'text' | 'json' = 'text',
-  tty = false,
-  extra: Partial<WatchOptions> = {},
-): Session {
-  const { startWatcher, watched, added, send } = fakeWatcher();
-  const out: string[] = [];
-  const err: string[] = [];
-  const abort = new AbortController();
-  const options: WatchOptions = {
-    rootDir: root,
-    source: 'auto',
-    baseline: 'layerscope-baseline.json',
-    prepare: false,
-    render: result => formatResult(result, format, root, plain),
-    human: format === 'text',
-    tty,
-    write: text => {
-      out.push(text);
-    },
-    warn: text => {
-      err.push(text);
-    },
-    signal: abort.signal,
-    delayMs: 5,
-    maxWaitMs: 50,
-    startWatcher,
-    ...extra,
-  };
-  const done = watchCheck(options);
-  return {
-    watched,
-    added,
-    out,
-    err,
-    stop: async () => {
-      abort.abort();
-      const code = await done;
-      return code;
-    },
-    change: change => {
-      send({ path: join(root, 'x'), config: false, ...change });
-    },
-  };
-}
-
-const joined = (lines: string[]): string => lines.join('');
-
-/** Waits until the text is on the screen (or stderr, for `err`). */
-async function seen(lines: string[], text: string, timeout = 5000): Promise<void> {
-  await vi.waitFor(
-    () => {
-      expect(joined(lines)).toContain(text);
-    },
-    { timeout },
-  );
-}
+import { joined, noop, seen, start } from './watch-session.ts';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -246,7 +136,7 @@ describe('watchCheck inputs', () => {
     );
     const session = start(root);
     await seen(session.out, '0 findings');
-    expect(session.added).toEqual([]);
+    expect(session.starts).toHaveLength(1);
     write(
       root,
       'layerscope.config.ts',
@@ -255,7 +145,7 @@ describe('watchCheck inputs', () => {
     session.change({ config: true });
     await vi.waitFor(
       () => {
-        expect(session.added, joined(session.err)).toEqual([outside]);
+        expect(session.starts.slice(1), joined(session.err)).toEqual([[outside]]);
       },
       { timeout: 5000 },
     );
@@ -292,7 +182,7 @@ describe('watchCheck inputs of the report', () => {
     writeFileSync(configFile, "export default { layers: { a: { path: 'layers/a' } } };\n");
     const session = start(root, 'text', false, { configFile });
     await seen(session.out, '0 findings');
-    expect(session.watched).toEqual([root, configFile]);
+    expect(session.starts[0]).toEqual([root, configFile]);
     await session.stop();
   });
 });
