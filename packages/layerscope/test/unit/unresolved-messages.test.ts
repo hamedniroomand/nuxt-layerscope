@@ -8,13 +8,13 @@ describe('unresolvedName', () => {
     const table = {
       imports: {
         app: new Map([['x', target]]),
-        server: new Map(),
-        shared: new Map([['x', target]]),
+        server: new Map([['x', target]]),
+        shared: new Map(),
       },
       components: new Map(),
     };
-    expect(unresolvedName('x', 'server', table)).toBe(
-      '"x" is an auto-import only in the app and shared contexts, not in the server context',
+    expect(unresolvedName('x', 'shared', table)).toBe(
+      '"x" is an auto-import only in the app and server contexts, not in the shared context',
     );
   });
 
