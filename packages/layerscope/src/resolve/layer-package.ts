@@ -14,7 +14,10 @@ import { LOOKUP_EXTENSIONS, resolveFile } from './file.ts';
 export type LayerPackages = ReadonlyMap<string, string>;
 
 /** How a file loads a module: through `require()`, and with the `type` keyword on the statement. */
-export type ImportForm = Pick<ImportRef, 'require' | 'typeStatement'>;
+export type ImportForm = Pick<ImportRef, 'require' | 'typeStatement'> & {
+  /** The importing file is server code, which runs only under Node. */
+  server?: boolean;
+};
 
 /**
  * The `exports` conditions for an import of a layer. A target of `exports` cannot leave its
@@ -24,14 +27,17 @@ export type ImportForm = Pick<ImportRef, 'require' | 'typeStatement'>;
  * is not in the list: packages put it first, and it gives a `.d.ts` file, not the source. A
  * statement with the `type` keyword tries `types` when no other condition gives a file.
  * `development` is in the list and `production` is not: layerscope reads the source, as
- * `nuxi dev` does.
+ * `nuxi dev` does. Server code gets `node` only. App and shared code get both `browser` and `node`,
+ * because Nuxt loads it in the client and in the SSR bundle: the key order picks between the two,
+ * and the app really loads both files.
  */
-const SHARED_CONDITIONS = ['module', 'node', 'browser', 'development', 'default'];
+const COMMON_CONDITIONS = ['module', 'node', 'development', 'default'];
 
 function conditionsOf(form: ImportForm, types: boolean): string[] {
   return [
     form.require === true ? 'require' : 'import',
-    ...SHARED_CONDITIONS,
+    ...COMMON_CONDITIONS,
+    ...(form.server === true ? [] : ['browser']),
     ...(types ? ['types'] : []),
   ];
 }

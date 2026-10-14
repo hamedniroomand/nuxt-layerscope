@@ -6,17 +6,18 @@ import { describe, expect, it } from 'vite-plus/test';
 import { KIT, analyzeProject, importsOf, project } from '#test/layer-package-project.ts';
 
 /** The target of the one import in each file, or its unresolved message. */
-async function targets(files: Record<string, string>): Promise<Record<string, string>> {
+async function targets(
+  files: Record<string, string>,
+  dir = 'layers/admin/app/utils',
+): Promise<Record<string, string>> {
   const root = project(
-    Object.fromEntries(
-      Object.entries(files).map(([name, code]) => [`layers/admin/app/utils/${name}`, code]),
-    ),
+    Object.fromEntries(Object.entries(files).map(([name, code]) => [`${dir}/${name}`, code])),
   );
   const result = await analyzeProject(root);
   const kit = realpathSync(join(root, KIT));
   return Object.fromEntries(
     Object.keys(files).map(name => {
-      const file = join(root, 'layers/admin/app/utils', name);
+      const file = join(root, dir, name);
       const edge = importsOf(result, file).at(0);
       const finding = result.findings.find(candidate => candidate.file === file);
       const target =
@@ -55,5 +56,16 @@ describe('the exports condition of an import by the package name of a layer', ()
       'import.ts': 'Cannot resolve import "@acme/kit/cjs"',
       'require.cts': 'app/cjs.ts',
     });
+  });
+
+  it('is node and not browser for server code, and both for app and shared code', async () => {
+    const code = "import { env } from '@acme/kit/env';\nexport const e = env;\n";
+    const where = await Promise.all(
+      ['layers/admin/server/utils', 'layers/admin/app/utils', 'layers/admin/shared/utils'].map(
+        async dir => Object.values(await targets({ 'env.ts': code }, dir))[0],
+      ),
+    );
+    // App and shared code also run in the client bundle, so the first key, `browser`, wins.
+    expect(where).toEqual(['n.ts', 'b.ts', 'b.ts']);
   });
 });
