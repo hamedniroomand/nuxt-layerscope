@@ -254,7 +254,8 @@ module records them on `nuxi prepare`, `dev` and `build`; use one place or the o
 
 - `layer-boundary`: a file depends on a layer its own layer does not `allow`. This covers
   auto-imported composables and utils, components (including `Lazy*`), Nitro server utils and
-  explicit imports (`#layers/...`, `~/...` and relative paths).
+  explicit imports (`#layers/...`, `~/...`, relative paths and the package name of a layer, for
+  example `@acme/ui-layer/app/composables/useAcme`).
 - `layer-cycle` (off by default): layers depend on each other in a loop. The finding names the
   whole chain. Turn it on once a baseline holds the cycles you have today.
 - `unresolved-reference`: something could not be resolved, so layerscope will not call it safe.

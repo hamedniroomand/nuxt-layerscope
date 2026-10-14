@@ -67,7 +67,7 @@ must be a layer of the project, otherwise layerscope exits with `2` and lists th
 The layers this layer may depend on.
 
 - Dependencies inside a layer are always allowed.
-- Dependencies on packages (anything outside every layer) are always allowed.
+- Dependencies on packages that are not layers (anything outside every layer) are always allowed.
 - A layer without `allow`, or missing from `layers`, is **unrestricted**.
 - `allow: []` means the layer may only use itself and packages.
 

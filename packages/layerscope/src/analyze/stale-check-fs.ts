@@ -2,6 +2,7 @@ import { statSync } from 'node:fs';
 import { opendir } from 'node:fs/promises';
 
 import { LayerscopeError } from '#src/errors.ts';
+import { isGone } from '#src/utils/fs.ts';
 
 export const RERUN_HINT = 'Run "nuxi prepare" again, or pass --prepare.';
 
@@ -21,11 +22,6 @@ function fsCode(error: unknown): string {
     throw error;
   }
   return code;
-}
-
-/** A path that is gone (ENOENT), or that has a file in its path (ENOTDIR). */
-function isGone(code: string): boolean {
-  return code === 'ENOENT' || code === 'ENOTDIR';
 }
 
 /**

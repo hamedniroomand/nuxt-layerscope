@@ -106,6 +106,7 @@ describe('an import with another case than the dir on disk', () => {
         join(base, 'admin/app/page.ts'),
         [],
         join(base, '.nuxt'),
+        new Map(),
       );
       const ownerOf = createOwnerLookup([
         makeLayer('root', base),

@@ -23,14 +23,14 @@ layers/admin/app/components/AdminPanel.vue
 
 Every kind of dependency is checked:
 
-| Kind                     | Example                                                                                |
-| ------------------------ | -------------------------------------------------------------------------------------- |
-| Auto-imported composable | `useCart()` in a script or <code v-pre>{{ formatPrice(total) }}</code> in a template   |
-| Component                | `<CartSummary>`, `<cart-summary>`, `<LazyCartSummary>`                                 |
-| Nitro server util        | `getCartStore()` in `server/api/*.ts`                                                  |
-| Shared util              | `formatMoney()` from another layer's `shared/utils`                                    |
-| Explicit import          | `import { useCart } from '#layers/web/app/composables/useCart'`, `~/…`, relative paths |
-| Virtual module import    | `import { useCart } from '#imports'`, `import { CartSummary } from '#components'`      |
+| Kind                     | Example                                                                                                                          |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Auto-imported composable | `useCart()` in a script or <code v-pre>{{ formatPrice(total) }}</code> in a template                                             |
+| Component                | `<CartSummary>`, `<cart-summary>`, `<LazyCartSummary>`                                                                           |
+| Nitro server util        | `getCartStore()` in `server/api/*.ts`                                                                                            |
+| Shared util              | `formatMoney()` from another layer's `shared/utils`                                                                              |
+| Explicit import          | `import { useCart } from '#layers/web/app/composables/useCart'`, `~/…`, relative paths, `@acme/ui-layer/app/composables/useAcme` |
+| Virtual module import    | `import { useCart } from '#imports'`, `import { CartSummary } from '#components'`                                                |
 
 A `require('...')` with a fixed path (a string literal, or a template literal with no `${}`) is an
 explicit import, also when it is called through a name that `createRequire(...)` gave.
@@ -163,7 +163,10 @@ Something could not be resolved, so layerscope will not call it safe:
 - an identifier that is neither a local binding, a known global nor an auto-import in the file's
   context,
 - a component tag Nuxt has not registered,
-- an import path that does not exist, or a name `#imports` / `#components` does not export,
+- an import path that does not exist, or a name `#imports` / `#components` does not export. This
+  includes an import of a layer by its package name when the importing file cannot find the layer
+  in `node_modules`, when the layer does not have the file, or when its `exports` do not give a
+  file for the path,
 - `<component :is>` bound to a runtime value. A value that can only be a native HTML or SVG element
   name is not reported: a string literal, a ternary of them, or a prop typed as a union of element
   names, or a `string` prop whose default is an element name. Vue renders such a name as that

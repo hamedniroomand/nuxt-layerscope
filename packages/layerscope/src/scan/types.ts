@@ -45,6 +45,13 @@ export interface ImportRef {
    * `verbatimModuleSyntax`.
    */
   typeOnly: boolean;
+  /**
+   * The statement itself has the `type` keyword: `import type`, `export type`, `export type *` or
+   * `import type x = require()`. Only such a statement never loads the module at runtime.
+   */
+  typeStatement?: boolean;
+  /** The module loads through `require()`: a `require()` call or `import x = require()`. */
+  require?: boolean;
   /** The names in `names` that only a `type` keyword brings in; a name that a value also brings is not in it. */
   typeNames: string[];
   offset: number;

@@ -24,7 +24,7 @@ useCart → layers/web/app/composables/useCart.ts (web)
 - **auto-imports**, such as `useCart`, `formatPrice` or `defineEventHandler`,
 - **components**, where `BaseButton`, `base-button` and `LazyBaseButton` name the same one,
 - **import specifiers**, exactly as written: `#layers/web/app/composables/useCart`,
-  `~/utils/format` or a relative path.
+  `~/utils/format`, a relative path or `@acme/ui-layer/app/composables/useAcme`.
 
 Each use gets a status:
 

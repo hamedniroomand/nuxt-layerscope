@@ -1,5 +1,6 @@
 import type { AliasMap } from '#src/nuxt/aliases.ts';
 import type { SymbolMap, SymbolTable, SymbolTarget } from '#src/nuxt/symbols.ts';
+import type { LayerPackages } from '#src/resolve/layer-package.ts';
 import { resolveSpecifier } from '#src/resolve/specifier.ts';
 import type { ImportRef } from '#src/scan/types.ts';
 import type { Context } from '#src/types.ts';
@@ -18,6 +19,8 @@ export interface ImportEnv {
   table: SymbolTable;
   aliases: AliasMap;
   buildDir: string;
+  /** The package names of the layers, so an import by one of them resolves to a file. */
+  layerPackages: LayerPackages;
 }
 
 function virtualModule(specifier: string, context: Context, table: SymbolTable): SymbolMap | null {
@@ -47,7 +50,14 @@ export function resolveImportRef(
           };
     });
   }
-  const resolution = resolveSpecifier(ref.specifier, file, env.aliases, env.buildDir);
+  const resolution = resolveSpecifier(
+    ref.specifier,
+    file,
+    env.aliases,
+    env.buildDir,
+    env.layerPackages,
+    ref,
+  );
   if (resolution.kind === 'missing') {
     return [{ resolved: false, message: `Cannot resolve import "${ref.specifier}"` }];
   }
@@ -79,7 +89,7 @@ const VIRTUAL_MODULES = new Set(['#imports', '#components']);
 /**
  * What an import stands for. A virtual module (`#imports`, `#components`) is looked up in each
  * context of the file, so an extra file that imports a server name gets it; the same target is
- * kept once. A path resolves the same in every context, so it is resolved once.
+ * kept once. A path is resolved once, in the first context: the file's own context.
  */
 export function outcomesOf(
   ref: ImportRef,

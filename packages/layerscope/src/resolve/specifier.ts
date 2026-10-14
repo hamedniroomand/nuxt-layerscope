@@ -1,9 +1,13 @@
+import { isBuiltin } from 'node:module';
+
 import { dirname, isAbsolute, join, resolve } from 'pathe';
 
 import type { AliasMap } from '#src/nuxt/aliases.ts';
 import { isFile, readJson, realPath } from '#src/utils/fs.ts';
 
 import { resolveFile } from './file.ts';
+import type { ImportForm, LayerPackages } from './layer-package.ts';
+import { resolveLayerPackage } from './layer-package.ts';
 import { packageName } from './package-name.ts';
 
 export type Resolution =
@@ -55,6 +59,9 @@ export function resolveSpecifier(
   fromFile: string,
   aliases: AliasMap,
   buildDir: string,
+  layerPackages: LayerPackages,
+  /** How the file loads the module, which picks the `exports` conditions of a layer. */
+  form: ImportForm = {},
 ): Resolution {
   if (isRelative(specifier)) {
     return resolvePath(resolve(dirname(fromFile), specifier), buildDir);
@@ -70,5 +77,13 @@ export function resolveSpecifier(
   if (specifier.startsWith('#') || specifier.includes(':')) {
     return { kind: 'external', module: specifier.split('/')[0] };
   }
-  return { kind: 'external', module: packageName(specifier) };
+  const name = packageName(specifier);
+  // The name tells that the import goes to a layer, so it is checked like a path. A Node builtin
+  // such as `events` wins over a layer with the same name, as in Node.
+  const layer = isBuiltin(specifier) ? undefined : layerPackages.get(name.toLowerCase());
+  if (layer !== undefined) {
+    const file = resolveLayerPackage(specifier, name, layer, fromFile, form);
+    return file === null ? { kind: 'missing' } : resolvePath(file, buildDir);
+  }
+  return { kind: 'external', module: name };
 }

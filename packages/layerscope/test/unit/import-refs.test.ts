@@ -16,7 +16,12 @@ const table: SymbolTable = {
   components: new Map([['BaseButton', { file: '/app/components/BaseButton.vue', module: null }]]),
 };
 
-const env = { table, aliases: [] as [string, string][], buildDir: '/app/.nuxt' };
+const env = {
+  table,
+  aliases: [] as [string, string][],
+  buildDir: '/app/.nuxt',
+  layerPackages: new Map<string, string>(),
+};
 
 function ref(specifier: string, names: string[]): ImportRef {
   return { specifier, names, typeOnly: false, typeNames: [], offset: 0 };

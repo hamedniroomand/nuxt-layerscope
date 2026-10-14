@@ -89,10 +89,13 @@ Every source file of every checked layer is parsed:
   a runtime value cannot be resolved and is reported.
 - **Imports** are resolved like the bundler does: relative paths, Nuxt's aliases (`~`, `@`,
   `#layers/...`, and your own, read from the generated `tsconfig`), `.js` → `.ts`, and
-  `index` files. `#imports` and `#components` are resolved by name through the symbol table.
+  `index` files. An import of a layer by its package name, or of a path in the layer,
+  resolves to the file in that layer. When the `package.json` of the layer has `exports`, only the
+  paths that `exports` gives a file for resolve. Other packages are not resolved: they are
+  external. `#imports` and `#components` are resolved by name through the symbol table.
 
 Each reference becomes an **edge**: from a file and its layer to a target file and its layer, or
-to a package. Only the first use of a symbol in a file is kept.
+to a package. Only the first use of a symbol in a file is kept for each target.
 
 ## 5. Rules
 

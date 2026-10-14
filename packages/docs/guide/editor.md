@@ -158,6 +158,10 @@ layerscope check --watch
 - A change to `layerscope.config.*` applies on the next run, in every config format. A local file
   that the config imports is not read again: change the config file as well (for example, add a
   comment), or start the watch again.
+- layerscope reads the `exports` and `main` of the `package.json` of each layer only once. A change
+  to them applies only after you stop the watch and start it again. A change to the `name` also
+  applies when a config file or a generated file in `.nuxt` changes. The MCP server, the ESLint
+  plugin and `nuxi dev` (for the DevTools tab) have the same limit.
 - Layers in `node_modules` are not watched. A `srcDir`, `serverDir` or shared dir outside the
   layer root is watched. When a run finds such a dir, the watch starts to watch it and runs the
   check again. If the file watcher reports an error, for example for a dir that it cannot read,

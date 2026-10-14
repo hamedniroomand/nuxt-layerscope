@@ -92,9 +92,9 @@ function typeInfo(
   declaredType: boolean,
   names: string[],
   specifiers: Specifier[],
-): Pick<ImportRef, 'typeOnly' | 'typeNames'> {
+): Pick<ImportRef, 'typeOnly' | 'typeStatement' | 'typeNames'> {
   if (declaredType) {
-    return { typeOnly: true, typeNames: names };
+    return { typeOnly: true, typeStatement: true, typeNames: names };
   }
   const values = new Set(specifiers.filter(spec => !spec.type).map(spec => spec.name));
   return {
@@ -223,6 +223,7 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
         specifier,
         names: ['*'],
         ...typeInfo(node.importKind === 'type', ['*'], []),
+        require: true,
         offset: mapOffset(node.moduleReference.expression.start),
       });
     }
@@ -255,6 +256,7 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
           names: requiredNames(parent, node),
           typeOnly: false,
           typeNames: [],
+          require: true,
           offset: mapOffset(arg.start),
         });
       } else if (arg !== undefined) {
