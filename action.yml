@@ -19,7 +19,7 @@ inputs:
     description: Baseline file, relative to the root. It must be in the git repository. Defaults to the baseline key of the config, else layerscope-baseline.json.
     default: ''
   strict-baseline:
-    description: Fail the check when the baseline has fixed entries (entries that no finding matches). Then run "layerscope check --update-baseline" and commit the file. Needs nuxt-layerscope 0.10.0 or later when the project installs it.
+    description: Fail the check when the baseline has fixed entries (entries that no finding matches). Then run "layerscope check --update-baseline" and commit the file. The version of `nuxt-layerscope` that the action runs must be 0.10.0 or later.
     default: 'false'
   comment:
     description: Post the drift report as a pull request comment, one for each root. Needs `pull-requests` write permission. Skipped on a `pull_request` event from a fork.

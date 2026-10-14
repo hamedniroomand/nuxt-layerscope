@@ -1,7 +1,9 @@
 # Continuous integration
 
-`layerscope check` exits with `1` when there are errors, so any CI fails on new violations. Run
-it after installing dependencies, and let it run `nuxi prepare` or run that yourself.
+`layerscope check` exits with `1` when there are errors, so any CI fails on new violations. Run it
+after installing dependencies, and let it run `nuxi prepare` or run that yourself. With
+`--strict-baseline`, it also exits with `1` when the baseline has fixed entries (see
+[Baseline](./baseline)).
 
 ## GitHub Actions
 

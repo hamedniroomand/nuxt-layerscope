@@ -34,7 +34,7 @@ how many findings it accepted, and fixed entries are listed before it.
 
 [Workflow commands](https://docs.github.com/actions/reference/workflow-commands-for-github-actions)
 that GitHub shows inline on the pull request diff: `::error` for errors, `::warning` for
-warnings, and `::notice` for fixed baseline entries.
+warnings, and `::notice` for fixed baseline entries (`::error` with `--strict-baseline`).
 
 ```text
 ::error file=layers/admin/app/components/AdminPanel.vue,line=2,col=14,title=layerscope layer-boundary::Auto-import "useCart" crosses from layer "admin" into "web"%0AuseCart → layers/web/app/composables/useCart.ts%0Aallowed for "admin": shared, auth%0Asuggestion: allow "admin" to use "web" (adds 1 edge%2C clears 4 findings)
