@@ -52,8 +52,11 @@ posted. It also fails when the report could not be made, except for an event wit
 
 To accept a growth that you want, add the label `layerscope: accept growth` to the pull request. The
 step then passes with a notice. Only `pull_request` and `pull_request_target` events read the label.
-A push and a merge queue run do not, so they still fail. The label is added after CI ran, and a
-re-run uses the labels of the first run, so let the workflow run again when a label changes:
+A push and a merge queue run do not, so they still fail. If the check is required in a merge queue,
+use <code v-pre>fail-on-growth: ${{ github.event_name == 'pull_request' }}</code> (see
+[Stop the baseline from growing](../guide/baseline#stop-the-baseline-from-growing)). If you add the
+label after the run, a re-run does not see it, because a re-run uses the event of the first run. So
+let the workflow run again when a label changes:
 
 ```yaml
 on:
@@ -61,8 +64,12 @@ on:
     types: [opened, synchronize, reopened, labeled, unlabeled]
 ```
 
-Only people with triage or write access to the repository can add a label, so the author of a pull
-request from a fork cannot accept growth alone.
+A `pull_request_target` workflow needs the same types. With these types, each label change runs the
+workflow again.
+
+Only people with triage or write access to the repository, or an app or workflow with write access,
+can add a label. So the author of a pull request from a fork cannot accept growth alone, but an
+automatic labeler can.
 
 With `comment: true`, the step `Post the drift comment` also posts the report as a pull request comment, one comment for
 each root. Later runs update the comment that the same account wrote. Two steps or workflows with

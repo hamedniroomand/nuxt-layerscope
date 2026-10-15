@@ -77,7 +77,7 @@ describe('growth.sh', () => {
   it('fails, and names the base, when the report shows growth', () => {
     expect(gate({ state: 'report', grew: 'origin/main' })).toEqual({
       status: 1,
-      out: '::error title=layerscope drift::The drift report shows errors that the baseline at origin/main does not have. See the drift report in the job summary.\n',
+      out: '::error title=layerscope drift::The drift report shows errors that the baseline at origin/main does not have. See the drift report in the job summary. On a pull request, the label "layerscope: accept growth" accepts the growth.\n',
     });
   });
 
@@ -103,7 +103,7 @@ describe('growth.sh', () => {
 });
 
 const GREW =
-  '::error title=layerscope drift::The drift report shows errors that the baseline at origin/main does not have. See the drift report in the job summary.\n';
+  '::error title=layerscope drift::The drift report shows errors that the baseline at origin/main does not have. See the drift report in the job summary. On a pull request, the label "layerscope: accept growth" accepts the growth.\n';
 
 describe('growth.sh, the label that accepts growth', () => {
   it('passes with a notice when the pull request has the label', () => {
@@ -124,6 +124,15 @@ describe('growth.sh, the label that accepts growth', () => {
     expect(gate({ state: 'failed' }, { ACCEPT_GROWTH: 'true' })).toEqual({
       status: 1,
       out: FAILED,
+    });
+  });
+
+  // drift.sh writes `grew` before the report and the state, so a step that stops between them
+  // leaves `grew` with another state.
+  it.each(['failed', 'skipped'])('still fails with growth and the state %s', state => {
+    expect(gate({ state, grew: 'origin/main' }, { ACCEPT_GROWTH: 'true' })).toEqual({
+      status: 1,
+      out: GREW,
     });
   });
 });

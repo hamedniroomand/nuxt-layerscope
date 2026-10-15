@@ -16,11 +16,11 @@ if [ -n "$dir" ] && [ -f "$dir/grew" ]; then
   base="${base//%/%25}"
   base="${base//$'\r'/%0D}"
   base="${base//$'\n'/%0A}"
-  if [ "${ACCEPT_GROWTH:-}" = true ]; then
+  if [ "${ACCEPT_GROWTH:-}" = true ] && [ "$state" = report ]; then
     echo "::notice title=layerscope drift::The drift report shows errors that the baseline at $base does not have. The pull request has the label \"layerscope: accept growth\", so this step passes."
     exit 0
   fi
-  echo "::error title=layerscope drift::The drift report shows errors that the baseline at $base does not have. See the drift report in the job summary."
+  echo "::error title=layerscope drift::The drift report shows errors that the baseline at $base does not have. See the drift report in the job summary. On a pull request, the label \"layerscope: accept growth\" accepts the growth."
   exit 1
 fi
 if [ -n "$dir" ] && [ -f "$dir/nobase" ]; then
