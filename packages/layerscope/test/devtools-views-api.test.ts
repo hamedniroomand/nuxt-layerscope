@@ -140,6 +140,35 @@ describe('unused endpoint', () => {
   });
 });
 
+describe('unused banner', () => {
+  const dynamic = (components: string[]): ReturnType<typeof makeResult> =>
+    makeResult({
+      dynamicComponentFiles: ['/app/pages/index.vue'],
+      symbols: {
+        imports: {
+          app: new Map([['formatDate', { file: '/app/utils/formatDate.ts', module: null }]]),
+          server: new Map(),
+          shared: new Map(),
+        },
+        components: new Map(
+          components.map(name => [name, [{ file: `/app/components/${name}.vue`, module: null }]]),
+        ),
+      },
+    });
+
+  it('does not show when the view lists no component', async () => {
+    const view = await unusedView(dynamic([]));
+    expect(view.unused.map(row => row.name)).toEqual(['formatDate']);
+    expect(view.possiblyUsed).toBe(false);
+  });
+
+  it('shows when the view lists a component', async () => {
+    const view = await unusedView(dynamic(['AppBadge']));
+    expect(view.unused.map(row => row.name)).toEqual(['AppBadge', 'formatDate']);
+    expect(view.possiblyUsed).toBe(true);
+  });
+});
+
 describe('graph endpoints', () => {
   it('serves the graph, an edge and a node, and 404 for unknown layers', async () => {
     const { fetch } = await server();

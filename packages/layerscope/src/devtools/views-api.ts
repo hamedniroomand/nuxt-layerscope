@@ -80,8 +80,10 @@ export async function unusedView(result: AnalyzeResult): Promise<UnusedView> {
     emptyLine: report.emptySentence(spots),
     unreadableLine: report.unreadableSentence(report.countUnreadable(spots)),
     // Only a file that chooses a component at runtime: a global component or Nuxt Content has its
-    // own text, so the banner does not show for them.
-    possiblyUsed: result.dynamicComponentFiles.length > 0,
+    // own text, so the banner does not show for them. It is about components, so it shows only
+    // when a component is listed.
+    possiblyUsed:
+      result.dynamicComponentFiles.length > 0 && rows.some(row => row.kind === 'component'),
     layers: result.layers.map(layer => layer.name),
   };
 }
