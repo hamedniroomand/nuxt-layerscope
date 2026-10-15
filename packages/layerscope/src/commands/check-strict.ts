@@ -11,6 +11,7 @@ import { currentDir } from './shared.ts';
 interface StrictFlags {
   baseline?: string;
   config?: string;
+  prepare?: boolean;
   /** `auto` is the default, so the command leaves it out. */
   source?: string;
   strictBaseline?: boolean;
@@ -37,11 +38,11 @@ function shellWord(value: string): string {
 }
 
 /**
- * The command that removes the fixed entries: the same root, `--config`, `--source` and `--baseline`
- * as this run.
+ * The command that removes the fixed entries: the same root, `--config`, `--source`, `--baseline`
+ * and `--prepare` as this run.
  * A `baseline` key in the config needs nothing, because the config names the file.
  */
-function updateCommand(root: string | undefined, flags: StrictFlags): string {
+export function updateCommand(root: string | undefined, flags: StrictFlags): string {
   const words = ['layerscope', 'check'];
   if (root !== undefined) {
     words.push(shellWord(root));
@@ -54,6 +55,9 @@ function updateCommand(root: string | undefined, flags: StrictFlags): string {
   }
   if (flags.baseline !== undefined) {
     words.push('--baseline', shellWord(flags.baseline));
+  }
+  if (flags.prepare === true) {
+    words.push('--prepare');
   }
   return [...words, '--update-baseline'].join(' ');
 }
@@ -94,6 +98,11 @@ export function reportStrict(
   }
   return {
     failed: true,
-    summary: formatStaleSummary(entries, `${head} Run \`${command}\` and commit ${file}.`),
+    summary: formatStaleSummary(
+      entries,
+      `${head} Run \`${command}\` and commit ${file}.`,
+      result.rootDir,
+      currentDir(),
+    ),
   };
 }

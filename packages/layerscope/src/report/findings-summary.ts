@@ -1,4 +1,4 @@
-import { relative } from 'pathe';
+import { join, relative } from 'pathe';
 
 import type { BaselineEntry, Finding } from '#src/types.ts';
 import { plural } from '#src/utils/strings.ts';
@@ -55,15 +55,22 @@ export function formatFindingsSummary(findings: Finding[], cwd: string): string 
 
 /**
  * Markdown for the fixed entries that fail `--strict-baseline`: `sentence` and a list of the
- * entries, in the same form and with the same limit as the findings. Empty when there is none.
+ * entries, in the same form and with the same limit as the findings. The paths of the entries are
+ * relative to `rootDir`; the list gives them relative to `cwd`, as the findings. Empty when there
+ * is none.
  */
-export function formatStaleSummary(entries: BaselineEntry[], sentence: string): string {
+export function formatStaleSummary(
+  entries: BaselineEntry[],
+  sentence: string,
+  rootDir: string,
+  cwd: string,
+): string {
   if (entries.length === 0) {
     return '';
   }
   const lines = entries
     .slice(0, SUMMARY_LINE_LIMIT)
-    .map(entry => `${entry.file}  ${describeEntry(entry)}`);
+    .map(entry => `${relative(cwd, join(rootDir, entry.file))}  ${describeEntry(entry)}`);
   const fence = fenceFor(lines);
   const parts = [sentence, `${fence}\n${lines.join('\n')}\n${fence}`];
   if (entries.length > SUMMARY_LINE_LIMIT) {

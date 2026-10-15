@@ -1,9 +1,10 @@
 import { readFileSync } from 'node:fs';
 
-import { join } from 'pathe';
+import { basename, dirname, join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { EXIT_CLEAN, EXIT_ERROR, EXIT_VIOLATIONS } from '#src/cli.ts';
+import { updateCommand } from '#src/commands/check-strict.ts';
 import { check, gitProject } from '#test/git-project.ts';
 
 const FILE = 'layerscope-baseline.json';
@@ -105,6 +106,15 @@ describe('check --strict-baseline, the source in the command', () => {
   });
 });
 
+describe('check --strict-baseline, the prepare flag in the command', () => {
+  it('names --prepare when the run prepares the project', () => {
+    expect(updateCommand(undefined, { prepare: true })).toBe(
+      'layerscope check --prepare --update-baseline',
+    );
+    expect(updateCommand(undefined, { prepare: false })).toBe('layerscope check --update-baseline');
+  });
+});
+
 describe('check --strict-baseline, which entries count', () => {
   it('counts an entry with a count', async () => {
     const root = projectWith([{ ...STALE, file: 'layers/a/app/pages/p0.vue', count: 2 }]);
@@ -144,6 +154,18 @@ describe('check --strict-baseline, the summary and the refusals', () => {
     await check(['--strict-baseline', '--format', 'github', '--summary', summary], root);
     expect(readFileSync(summary, 'utf8')).toBe(
       `1 baseline entry no longer occurs and fails the check (--strict-baseline). Run \`layerscope check --update-baseline\` and commit ${FILE}.\n\n\`\`\`\n${GONE}  unresolved-reference ./x\n\`\`\`\n`,
+    );
+  });
+
+  it('gives the paths of the fixed entries from the cwd when the root is another dir', async () => {
+    const root = projectWith([STALE]);
+    const summary = join(root, 'summary.md');
+    await check(
+      [root, '--strict-baseline', '--format', 'github', '--summary', summary],
+      dirname(root),
+    );
+    expect(readFileSync(summary, 'utf8')).toContain(
+      `\n${basename(root)}/${GONE}  unresolved-reference ./x\n`,
     );
   });
 
