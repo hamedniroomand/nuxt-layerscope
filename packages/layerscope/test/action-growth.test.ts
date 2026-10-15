@@ -51,7 +51,10 @@ describe('drift.sh with fail-on-growth', () => {
 });
 
 /** Runs growth.sh on a report folder with these files. */
-function gate(files: Record<string, string> | null): { status: number | null; out: string } {
+function gate(
+  files: Record<string, string> | null,
+  env: Record<string, string> = {},
+): { status: number | null; out: string } {
   let dir = '';
   if (files !== null) {
     dir = join(tempDir(), 'report');
@@ -62,7 +65,7 @@ function gate(files: Record<string, string> | null): { status: number | null; ou
   }
   const result = spawnSync(GROWTH, {
     encoding: 'utf8',
-    env: { PATH: process.env.PATH, REPORT_DIR: dir },
+    env: { PATH: process.env.PATH, REPORT_DIR: dir, ...env },
   });
   return { status: result.status, out: result.stdout };
 }
@@ -96,6 +99,42 @@ describe('growth.sh', () => {
       status: 0,
       out: '::notice title=layerscope drift::fail-on-growth: this event has no base commit, so there is nothing to compare.\n',
     });
+  });
+});
+
+const GREW =
+  '::error title=layerscope drift::The drift report shows errors that the baseline at origin/main does not have. See the drift report in the job summary.\n';
+
+describe('growth.sh, the label that accepts growth', () => {
+  it('passes with a notice when the pull request has the label', () => {
+    expect(gate({ state: 'report', grew: 'origin/main' }, { ACCEPT_GROWTH: 'true' })).toEqual({
+      status: 0,
+      out: '::notice title=layerscope drift::The drift report shows errors that the baseline at origin/main does not have. The pull request has the label "layerscope: accept growth", so this step passes.\n',
+    });
+  });
+
+  it('fails as before without the label', () => {
+    expect(gate({ state: 'report', grew: 'origin/main' }, { ACCEPT_GROWTH: 'false' })).toEqual({
+      status: 1,
+      out: GREW,
+    });
+  });
+
+  it('still fails for a report that could not be made', () => {
+    expect(gate({ state: 'failed' }, { ACCEPT_GROWTH: 'true' })).toEqual({
+      status: 1,
+      out: FAILED,
+    });
+  });
+});
+
+describe('action.yml, the label of the growth step', () => {
+  it('reads the label only for the events of a pull request', () => {
+    expect(ACTION.match(/ACCEPT_GROWTH:.*/gu)).toEqual([
+      "ACCEPT_GROWTH: \"${{ (github.event_name == 'pull_request' || github.event_name == 'pull_request_target') && contains(github.event.pull_request.labels.*.name, 'layerscope: accept growth') }}\"",
+    ]);
+    const start = ACTION.indexOf('    - name: Fail on drift growth or a missing report');
+    expect(ACTION.indexOf('ACCEPT_GROWTH:')).toBeGreaterThan(start);
   });
 });
 
