@@ -154,7 +154,8 @@ The suggestions and their counts are made for the findings that `check` shows on
 - **leave** it. layerscope has no fix, and the message tells what to do. For a cycle, allowing the
   dependency would create the cycle, and no layer can hold the file or the plan dropped its move:
   report it. For a use of a feature layer by `root`, when `root` is the base of a preset and no
-  layer can hold the file, the code must change: move the code to `root`, or remove the use.
+  layer can hold the file or the plan dropped its move, the code must change: move the code to
+  `root`, or remove the use.
 
 Each suggestion shows what it changes: findings cleared (for a move: the findings that point at
 the file and the findings in it), and files and imports affected for a move
