@@ -203,9 +203,10 @@ Findings that have no move are counted in one line. Run `layerscope check` to se
 
 After `--apply`, run `layerscope check --prepare`. After `--dry-run`, make the moves and update the
 imports yourself, then run `layerscope check --prepare`. The generated types still point at the old
-files. `check` and `fix` do not read test files, `nuxt.config.*`, the Nuxt `modules/` dir, files
-outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in
-them by hand. With `typeImports: 'ignore'`, type-only imports are not listed either.
+files. `check` and `fix` do not check the imports in test files, `nuxt.config.*`, the Nuxt
+`modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the
+imports of moved files in them by hand. With `typeImports: 'ignore'`, type-only imports are not
+listed either.
 
 Baseline entries that name a moved file are counted in one line. A baseline key holds file paths. A
 finding in a moved file, or a finding that points at a moved file, gets a new key after the move, so

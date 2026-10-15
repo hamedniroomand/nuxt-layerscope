@@ -76,10 +76,11 @@ config. Delete the edges you consider mistakes, then run `check`.
 Prints the file moves that the suggestions on boundary findings ask for, and the imports that each
 move breaks. A relative import is listed with its new specifier. An alias that points at a moved
 file is listed to update by hand. Only moves are printed. The other suggestions are in `layerscope
-check`. `check` and `fix` do not read test files, `nuxt.config.*`, the Nuxt `modules/` dir, files
-outside the layer source dirs, or files that match `ignore`. Update the imports of moved files in
-them by hand. `--dry-run` prints the moves and changes nothing. `--apply` makes them: it rewrites
-the relative imports, then moves each file (with `git mv` when git tracks it). It stops
+check`. `check` and `fix` do not check the imports in test files, `nuxt.config.*`, the Nuxt
+`modules/` dir, files outside the layer source dirs, or files that match `ignore`. Update the
+imports of moved files in them by hand. `--dry-run` prints the moves and changes nothing. `--apply`
+makes them: it rewrites the relative imports, then moves each file (with `git mv` when git tracks
+it). It stops
 before the first change when the git working tree of the repository has changes or untracked files,
 when git does not track a file to move or edit, when a file is in a submodule or has a symbolic
 link in its path, or when a target path exists. `--allow-dirty` skips the git checks (repository, clean tree, tracked files, submodules). See the

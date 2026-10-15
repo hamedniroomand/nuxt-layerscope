@@ -150,9 +150,9 @@ the file and the findings in it), and files and imports affected for a move
 [`layerscope fix --dry-run`](./cli#layerscope-fix) prints the moves only, and `--apply` makes them.
 The other suggestions are in the output of `layerscope check`.
 
-`check` and `fix` do not read test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside
-the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by
-hand.
+`check` and `fix` do not check the imports in test files, `nuxt.config.*`, the Nuxt `modules/` dir,
+files outside the layer source dirs, or files that match `ignore`. Update the imports of moved files
+in them by hand.
 
 ## `layer-cycle`
 
