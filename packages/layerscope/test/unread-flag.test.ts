@@ -79,7 +79,7 @@ describe('the readiness report of init', () => {
     });
     expect(text).toContain('"unresolved":1,"unread":1,');
     expect(text).toContain(
-      '  1 of 1 reference could not be resolved (100%).\n  Could not read the code in 1 place. Uses there are not checked.',
+      '  1 of 1 reference could not be resolved (100%).\n  Could not read the code in 1 place. layerscope does not check what that code uses or loads. Run "layerscope check" to see them.',
     );
   });
 });

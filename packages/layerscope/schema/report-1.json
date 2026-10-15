@@ -125,7 +125,7 @@
         },
         "unread": {
           "const": true,
-          "description": "unresolved-reference only: true when layerscope could not read the code."
+          "description": "unresolved-reference only: true when layerscope parsed the file but could not read a part of it."
         },
         "suggestion": { "$ref": "#/$defs/suggestion" },
         "message": { "type": "string" }

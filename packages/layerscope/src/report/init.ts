@@ -27,7 +27,9 @@ function clusters(title: string, items: Cluster[], paint: Paint): string[] {
 function unreadLines({ unread }: Proposal['readiness']): string[] {
   return unread === 0
     ? []
-    : [`  Could not read the code in ${plural(unread, 'place')}. Uses there are not checked.`];
+    : [
+        `  Could not read the code in ${plural(unread, 'place')}. layerscope does not check what that code uses or loads. Run "layerscope check" to see them.`,
+      ];
 }
 
 function readinessLines({ readiness }: Proposal, paint: Paint): string[] {
