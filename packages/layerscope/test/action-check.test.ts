@@ -106,6 +106,11 @@ describe('check.sh', () => {
     );
   });
 
+  it('gives --strict-baseline when the input is true, and not by default', () => {
+    expect(runCheck({ INPUT_STRICT_BASELINE: 'true' }).args).toMatch(/ --strict-baseline\n$/u);
+    expect(runCheck({}).args).not.toContain('--strict-baseline');
+  });
+
   it('gives no --baseline when the input is empty, so the config names the file', () => {
     const run = runCheck({ INPUT_BASELINE: '' });
     expect(run.args).toMatch(/^check \. --format github --summary \S+\n$/u);

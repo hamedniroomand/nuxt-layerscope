@@ -18,7 +18,7 @@ const formatters: Record<
   (result: AnalyzeResult, cwd: string, paint: Paint, repoRoot: string) => string
 > = {
   text: formatText,
-  github: formatGithub,
+  github: (result, cwd) => formatGithub(result, cwd),
   json: formatJson,
   sarif: formatSarif,
   gitlab: formatGitlab,
@@ -30,7 +30,8 @@ export function isOutputFormat(value: string): value is OutputFormat {
 
 /**
  * Paths in the output are relative to `cwd`, except in `sarif` and `gitlab`, where they are
- * relative to `repoRoot` (default: the project root). Only the text format uses `paint`.
+ * relative to `repoRoot` (default: the project root). Only the text format uses `paint`. Only the
+ * `github` format uses `strictBaseline`: a fixed entry that fails the check is an error there.
  */
 export function formatResult(
   result: AnalyzeResult,
@@ -38,6 +39,10 @@ export function formatResult(
   cwd: string = currentDir(),
   paint: Paint = plain,
   repoRoot: string = result.rootDir,
+  strictBaseline = false,
 ): string {
+  if (format === 'github') {
+    return formatGithub(result, cwd, strictBaseline);
+  }
   return formatters[format](result, cwd, paint, repoRoot);
 }

@@ -52,11 +52,13 @@ Set `layerscope: { enabled: false }` in `nuxt.config` to turn the module off.
 | `--prepare`         | Run `nuxi prepare` first                                                                                             |
 | `--baseline <file>` | Accepted findings, relative to the root (default: the `baseline` key of the config, else `layerscope-baseline.json`) |
 | `--update-baseline` | Write every current finding to the baseline file and exit `0`                                                        |
+| `--strict-baseline` | Fail when the baseline has fixed entries, so that they are removed                                                   |
 | `--source <source>` | `auto` (default: registry when present), `registry` or `types` (`.d.ts`)                                             |
 | `--verbose`         | Print where symbols were read from (to stderr)                                                                       |
 
-Exit codes: `0` clean, `1` rule errors, `2` config or input error. Notes, such as a rule that
-could not run, go to stderr so stdout stays machine-readable.
+Exit codes: `0` clean, `1` rule errors (or fixed baseline entries with `--strict-baseline`), `2`
+config or input error. Notes, such as a rule that could not run, go to stderr so stdout stays
+machine-readable.
 
 `--format github` prints workflow commands, so findings show up inline on the pull request diff.
 JSON findings carry `target` (the file the symbol resolves to) and, for `layer-boundary`,
@@ -100,8 +102,9 @@ npx layerscope check                     # fails only on findings missing from t
 
 Entries are keyed by rule, file, symbol and target layer, not by line, so unrelated edits and moving
 a violation within its file keep the entry. A `layer-cycle` entry is keyed by rule and chain of
-layers, not by file. Entries that no longer occur are listed as fixed (and as `::notice` annotations
-with `--format github`); run `--update-baseline` again to drop them, so the file only shrinks.
+layers, not by file. Entries that no longer occur are listed as fixed (as `::notice` annotations
+with `--format github`, or `::error` with `--strict-baseline`). By default they do not fail the
+check. With `--strict-baseline` they do, so the file is updated when a violation is fixed.
 
 ### GitHub Action
 
