@@ -182,16 +182,17 @@ describe('layerscope fix with nothing to move', () => {
 });
 
 describe('layerscope fix options', () => {
-  it('reads the config from --config and the symbols from --source', async () => {
+  it('reads the config from --config', async () => {
     const root = project();
+    // admin and shop may use web here, so there is no finding and no move.
     write(
       root,
       'config/layers.mjs',
       `export default { layers: {
         web: { path: 'layers/web', allow: [] },
         shared: { path: 'layers/shared', allow: [] },
-        admin: { path: 'layers/admin', allow: ['shared'] },
-        shop: { path: 'layers/shop', allow: ['shared'] },
+        admin: { path: 'layers/admin', allow: ['shared', 'web'] },
+        shop: { path: 'layers/shop', allow: ['shared', 'web'] },
       } };\n`,
     );
     const output = silence();
@@ -199,12 +200,21 @@ describe('layerscope fix options', () => {
     expect(await run(['node', 'layerscope', 'fix', root, '--dry-run', '--config', config])).toBe(
       EXIT_CLEAN,
     );
-    expect(output.stdout()).toContain('useCart.ts →');
-    const dts = silence();
-    expect(await run(['node', 'layerscope', 'fix', root, '--dry-run', '--source', 'types'])).toBe(
-      EXIT_CLEAN,
-    );
-    expect(dts.stdout()).toContain('useCart.ts →');
+    expect(output.stdout()).toBe('No file moves suggested.\n');
+    const fallback = silence();
+    expect(await run(['node', 'layerscope', 'fix', root, '--dry-run'])).toBe(EXIT_CLEAN);
+    expect(fallback.stdout()).toContain('useCart.ts →');
+  });
+
+  it('reads the symbols from --source', async () => {
+    const root = project();
+    // The project has no registry, so only `--source registry` stops.
+    const output = silence();
+    expect(
+      await run(['node', 'layerscope', 'fix', root, '--dry-run', '--source', 'registry']),
+    ).toBe(EXIT_ERROR);
+    expect(output.stderr()).toContain('registry.json not found');
+    expect(output.stdout()).toBe('');
   });
 });
 
