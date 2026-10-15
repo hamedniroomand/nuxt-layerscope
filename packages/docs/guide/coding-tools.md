@@ -53,9 +53,9 @@ The full shape is in [Output formats](../reference/output#json).
    the file to the layer it names (often `shared`). Auto-imports and components need no other
    change. `layerscope fix --apply` makes the move and updates the relative imports. Use `--dry-run`
    to see the moves and imports first. Update alias imports by hand. Then run `layerscope check --prepare`.
-   `check` and `fix` do not read test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside
-   the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by
-   hand.
+   `check` and `fix` do not check the imports in test files, `nuxt.config.*`, the Nuxt `modules/`
+   dir, files outside the layer source dirs, or files that match `ignore`. Update the imports of
+   moved files in them by hand.
 2. **Ask before changing `allow`.** Adding a layer to `allow` accepts a new dependency between
    layers. A scoped entry (`{ layer: 'web', only: ['useCart'] }`) accepts only the names that it
    lists. Both are design decisions, so make them only when the user has said the dependency is
