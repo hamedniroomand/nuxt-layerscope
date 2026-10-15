@@ -96,3 +96,27 @@ describe('the preset line of init', () => {
     expect(formatInit(result, { ...proposal, preset: null }, options)).not.toContain('A preset');
   });
 });
+
+describe('the readiness line of init', () => {
+  const options = { source: '', written: false, configFile: 'c', baselineFile: null };
+  const proposal = (references: number): Parameters<typeof formatInit>[1] => ({
+    edges: [],
+    preset: null,
+    readiness: { references, unresolved: 0, unread: 0, byLayer: [], byDirectory: [] },
+    remaining: [],
+  });
+
+  it('says that no references were found when there are none', async () => {
+    const result = await analyze({ rootDir: NUXT4_ROOT, config: {} });
+    const text = formatInit(result, proposal(0), options);
+    expect(text).toContain('Readiness\n  No references found.\n');
+    expect(text).not.toContain('All 0');
+  });
+
+  it('says that all references were resolved when there are some', async () => {
+    const result = await analyze({ rootDir: NUXT4_ROOT, config: {} });
+    expect(formatInit(result, proposal(5), options)).toContain(
+      'Readiness\n  All 5 references resolved.\n',
+    );
+  });
+});
