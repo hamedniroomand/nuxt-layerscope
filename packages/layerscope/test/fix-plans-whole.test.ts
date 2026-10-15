@@ -9,43 +9,22 @@ import { planMoves } from '#src/fix/plan.ts';
 
 import {
   ADMIN,
+  LAYERS,
   SHARED,
-  SHOP,
-  WEB,
   applyPlan,
+  autoImportProject,
   cartProject,
   checkArgs,
+  declareCart,
   empty,
   page,
   plan,
   write,
 } from './fix-project.ts';
 
-const LAYERS = [WEB, SHARED, ADMIN, SHOP];
-
 function silence(): void {
   vi.spyOn(process.stdout, 'write').mockReturnValue(true);
   vi.spyOn(process.stderr, 'write').mockReturnValue(true);
-}
-
-/** Declares `useCart` as an auto-import from the file, as Nuxt does in `.nuxt`. */
-function declareCart(root: string, path: string): void {
-  write(
-    root,
-    '.nuxt/types/imports.d.ts',
-    `export {}\ndeclare global {\n  const useCart: typeof import('../../${path.replace('.ts', '')}').useCart\n}\n`,
-  );
-}
-
-/** A project where admin and shop use `useCart` as an auto-import from web. */
-function autoImportProject(path: string, layers = LAYERS): string {
-  const root = cartProject(layers);
-  write(root, 'layers/web/app/composables/useCart.ts', '');
-  write(root, path, 'export const useCart = () => 1;\n');
-  declareCart(root, path);
-  write(root, 'layers/admin/app/pages/admin.vue', page('useCart();'));
-  write(root, 'layers/shop/app/pages/shop.vue', page('useCart();'));
-  return root;
 }
 
 afterEach(() => {
@@ -171,32 +150,6 @@ describe('a move of an auto-import or a component, applied', () => {
     expect(move.to).toBe(join(root, 'layers/shared/app/components/BaseButton.vue'));
     await applyPlan(root);
     expect(await run(checkArgs(root))).toBe(EXIT_CLEAN);
-  });
-});
-
-describe('a name that the target has already', () => {
-  it('does not move a component into a layer with a component of the same name', async () => {
-    const root = cartProject(LAYERS);
-    write(root, 'layers/web/app/components/BaseButton.vue', '<template><button /></template>\n');
-    // `base/Button.vue` is the component BaseButton too.
-    write(
-      root,
-      '.nuxt/components.d.ts',
-      `export {}\nexport const BaseButton: typeof import("../layers/web/app/components/BaseButton.vue")['default']\n`,
-    );
-    const template = '<template><BaseButton /></template>\n';
-    write(root, 'layers/admin/app/pages/admin.vue', template);
-    write(root, 'layers/shop/app/pages/shop.vue', template);
-    expect(await plan(root)).toHaveLength(1);
-    write(root, 'layers/shared/app/components/base/Button.vue', '<template><b /></template>\n');
-    expect(await plan(root)).toEqual([]);
-  });
-
-  it('does not move an auto-import into a layer that exports the name in another file', async () => {
-    const root = autoImportProject('layers/web/app/composables/useCart.ts');
-    expect(await plan(root)).toHaveLength(1);
-    write(root, 'layers/shared/app/composables/cart.ts', 'export const useCart = () => 2;\n');
-    expect(await plan(root)).toEqual([]);
   });
 });
 

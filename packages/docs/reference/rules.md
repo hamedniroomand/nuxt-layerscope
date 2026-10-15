@@ -122,7 +122,11 @@ The suggestions and their counts are made for the findings that `check` shows on
   - Each dependency of the file may be used from the target. It must pass `allow`, and `expose` of
     the layer that holds it.
   - No file is at the new path, and no other planned move uses that path.
-  - The target has no other component and no other auto-import with the same name.
+  - The target has no other component and no other auto-import with the same name. A type export is
+    a name too. A relative `export * from` is read, and the names of that file count. layerscope
+    does not read an `export * from` a package or an alias, or one whose path does not resolve. Such
+    a file can export any name. This applies to the moved file and to the files in the target. Then
+    the move conflicts with each auto-import on the other side.
   - Nuxt finds the file in the target (see below).
 
   If several layers qualify, the one with the shortest `allow` list wins. After all moves are
@@ -136,16 +140,18 @@ The suggestions and their counts are made for the findings that `check` shows on
   is shown after the moves and the baseline, and it was not shown before, layerscope drops moves
   until no such cycle is shown.
 
-  The file lands in the same source dir of the target: `srcDir`, `serverDir` or `sharedDir`. A
-  file that is in none of these dirs gets no move. For a file that is used as an auto-import,
-  layerscope assumes the default dirs of Nuxt: `composables/` and `utils/` in `srcDir`, `utils/`
-  in `serverDir`, and `utils/` and `types/` in `sharedDir`. Nuxt reads the script files in these
-  dirs and the `index` file of each sub dir. It does not read deeper, so a file at
-  `composables/cart/useCart.ts` gets no move. A file that is used as a component must be in
-  `components/`. A target that sets `imports.dirs` to a list that is not empty, or turns
-  `imports.scan` off, is not a target for an auto-import file. A target that sets `components` is
-  not a target for a component file. layerscope does not know what these layers scan. A file that
-  is used as a component also gets no move when the layer that owns it sets `components`.
+  The file lands in the same source dir of the target: `srcDir`, `serverDir` or `sharedDir`. A file
+  that is in none of these dirs gets no move. For a file that is used as an auto-import, layerscope
+  assumes the default dirs of Nuxt: `composables/` and `utils/` in `srcDir`, `utils/` in
+  `serverDir`, and `utils/` and `types/` in `sharedDir`. Nuxt reads the script files in these dirs
+  and the `index` file of each sub dir. It does not read deeper, so a file at
+  `composables/cart/useCart.ts` gets no move. Nitro reads `server/utils` at any depth. layerscope
+  moves a file there only to the top level or to the `index` file of a sub dir. A file that is used
+  as a component must be in `components/`. A target that sets `imports.dirs` to a list that is not
+  empty, or turns `imports.scan` off, is not a target for an auto-import file. A target that sets
+  `components` is not a target for a component file. layerscope does not know what these layers
+  scan. A file that is used as a component also gets no move when the layer that owns it sets
+  `components`.
 
 - **allow** the dependency, when that creates no cycle. When the use needs only some names, the
   entry is scoped: `{ layer: 'web', only: ['useCart'] }`. See [`allow`](./config#allow).
