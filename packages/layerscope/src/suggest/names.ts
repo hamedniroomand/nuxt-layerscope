@@ -1,13 +1,16 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
 import { findExports, findTypeExports } from 'mlly';
-import { join, relative } from 'pathe';
+import { join, parse, relative } from 'pathe';
 
 import type { Layer } from '#src/types.ts';
 
 const SCRIPT = /\.(?:ts|js|mjs|mts)$/u;
 const COMPONENT = /\.(?:vue|jsx|tsx)$/u;
 const INDEX = /^index\.(?:ts|js|mjs|mts)$/u;
+/** The file kinds that unimport reads in a dir that Nuxt scans for auto-imports. */
+const SCANNED = /\.(?:mts|cts|ts|tsx|mjs|cjs|js|jsx)$/u;
+const SCANNED_INDEX = /^index\.(?:mts|cts|ts|tsx|mjs|cjs|js|jsx)$/u;
 
 /** The dirs that Nuxt scans for auto-imports by default, in each source dir of a layer. */
 export const AUTO_IMPORT_DIRS = {
@@ -69,7 +72,8 @@ export interface FileNames {
 
 /**
  * The names that a file makes public, read with mlly as unimport reads them for Nuxt: also type
- * exports, which Nuxt auto-imports too. A default export is named after the file.
+ * exports, which Nuxt auto-imports too. A default export is named after the file, or after its dir
+ * for an `index` file. As in unimport, only a name with `-`, `_` or `.` is changed to camelCase.
  */
 export function exportedNames(file: string): FileNames {
   if (!existsSync(file)) {
@@ -88,9 +92,9 @@ export function exportedNames(file: string): FileNames {
     }
   }
   if (hasDefault) {
-    const parts = file.replace(SCRIPT, '').split('/');
-    const last = parts.at(-1) === 'index' ? parts.at(-2) : parts.at(-1);
-    names.push(camel(last ?? ''));
+    const { name: base, dir } = parse(file);
+    const name = base === 'index' ? parse(dir).name : base;
+    names.push(/[-_.]/u.test(name) ? camel(name) : name);
   }
   return { names: names.filter(name => name !== '' && name !== 'default'), unknown };
 }
@@ -107,10 +111,10 @@ function listDir(dir: string): { name: string; directory: boolean }[] {
 function scriptFiles(dir: string): string[] {
   return listDir(dir).flatMap(entry => {
     if (!entry.directory) {
-      return SCRIPT.test(entry.name) ? [join(dir, entry.name)] : [];
+      return SCANNED.test(entry.name) ? [join(dir, entry.name)] : [];
     }
     return listDir(join(dir, entry.name))
-      .filter(inner => !inner.directory && INDEX.test(inner.name))
+      .filter(inner => !inner.directory && SCANNED_INDEX.test(inner.name))
       .map(inner => join(dir, entry.name, inner.name));
   });
 }

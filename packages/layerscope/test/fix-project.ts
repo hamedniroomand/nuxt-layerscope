@@ -76,3 +76,25 @@ export async function applyPlan(root: string, baseline?: string): Promise<void> 
 export function checkArgs(root: string): string[] {
   return ['node', 'layerscope', 'check', root];
 }
+
+export const LAYERS = [WEB, SHARED, ADMIN, SHOP];
+
+/** Declares `useCart` as an auto-import from the file, as Nuxt does in `.nuxt`. */
+export function declareCart(root: string, path: string): void {
+  write(
+    root,
+    '.nuxt/types/imports.d.ts',
+    `export {}\ndeclare global {\n  const useCart: typeof import('../../${path.replace('.ts', '')}').useCart\n}\n`,
+  );
+}
+
+/** A project where admin and shop use `useCart` as an auto-import from web. */
+export function autoImportProject(path: string, layers = LAYERS): string {
+  const root = cartProject(layers);
+  write(root, 'layers/web/app/composables/useCart.ts', '');
+  write(root, path, 'export const useCart = () => 1;\n');
+  declareCart(root, path);
+  write(root, 'layers/admin/app/pages/admin.vue', page('useCart();'));
+  write(root, 'layers/shop/app/pages/shop.vue', page('useCart();'));
+  return root;
+}

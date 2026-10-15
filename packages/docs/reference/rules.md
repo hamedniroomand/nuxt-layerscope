@@ -122,9 +122,9 @@ The suggestions and their counts are made for the findings that `check` shows on
   - Each dependency of the file may be used from the target. It must pass `allow`, and `expose` of
     the layer that holds it.
   - No file is at the new path, and no other planned move uses that path.
-  - The target has no other component and no other auto-import with the same name. A type export
-    is a name too. A file with `export * from` can have any name, so it conflicts with any
-    auto-import on the other side.
+  - The target has no other component and no other auto-import with the same name. A type export is
+    a name too. A file with `export * from`, in the moved file or in the target, can export any
+    name. Then the move conflicts with each auto-import on the other side.
   - Nuxt finds the file in the target (see below).
 
   If several layers qualify, the one with the shortest `allow` list wins. After all moves are
