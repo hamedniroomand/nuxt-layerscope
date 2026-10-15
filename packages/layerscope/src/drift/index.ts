@@ -1,3 +1,5 @@
+import { relative } from 'pathe';
+
 import { analyze } from '#src/analyze/index.ts';
 import type { AnalyzeOptions } from '#src/analyze/index.ts';
 import {
@@ -12,8 +14,10 @@ import type { Baseline } from '#src/baseline/index.ts';
 import { loadConfig } from '#src/config/load.ts';
 import { ruleSeverity } from '#src/config/rules.ts';
 import type { BaselineEntry, LayerscopeConfig } from '#src/types.ts';
+import { realPath } from '#src/utils/fs.ts';
 
-import { baselineAt } from './git.ts';
+import { baselineAt, renamesSince } from './git.ts';
+import { mapToBase } from './renames.ts';
 
 export interface Drift {
   base: string;
@@ -51,13 +55,23 @@ export async function measureDrift(
       ? (options.config ?? (await loadConfig(options.rootDir, options.configFile)))
       : {};
   const baselineFile = baselineName(baselineOption, config);
-  const before = baselineAt(options.rootDir, base, baselineFile);
+  const renames = renamesSince(options.rootDir, base);
+  // A renamed baseline file is read at its old path on the base.
+  const file = baselinePath(options.rootDir, baselineFile);
+  const oldName = renames.get(relative(realPath(options.rootDir), realPath(file)));
+  const before = baselineAt(options.rootDir, base, oldName ?? baselineFile);
   const result = await analyze({ ...options, baseline: undefined });
-  const now = createBaseline(result.findings, options.rootDir);
-  const committed = readBaseline(baselinePath(options.rootDir, baselineFile))?.entries ?? [];
+  const mapped = mapToBase(result.findings, renames, options.rootDir);
+  const now = createBaseline(mapped.findings, options.rootDir);
+  const committed = readBaseline(file)?.entries ?? [];
+  const { added, fixed } = diffBaselines(
+    errorsOnly(before, result.config),
+    errorsOnly(now, result.config),
+  );
   return {
     base,
-    ...diffBaselines(errorsOnly(before, result.config), errorsOnly(now, result.config)),
+    added: added.map(entry => mapped.today(entry)),
+    fixed,
     baselineSize: { base: baselineSize(before.entries), current: baselineSize(committed) },
   };
 }
