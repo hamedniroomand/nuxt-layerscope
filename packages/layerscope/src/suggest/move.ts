@@ -35,7 +35,12 @@ function usesComponent(edge: Edge): boolean {
  * or a `components/` dir for a file that is used as a component. A target that sets its own
  * `imports` dirs or component dirs is not used, as layerscope does not know them.
  */
-function destinationOf(file: string, owner: Layer, target: Layer, uses: Edge[]): string | null {
+export function destinationOf(
+  file: string,
+  owner: Layer,
+  target: Layer,
+  uses: Edge[],
+): string | null {
   const found = DIR_KINDS.map(kind => ({ kind, dir: owner[kind] }))
     .filter(({ dir }) => file.startsWith(`${dir}/`))
     .toSorted((a, b) => b.dir.length - a.dir.length)

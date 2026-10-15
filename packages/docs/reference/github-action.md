@@ -32,19 +32,20 @@ first, then either run `npx nuxi prepare` or set `prepare: true`. See
 ## Drift summary
 
 The check step writes its own section, `layerscope findings`, to the job summary when there are
-findings, or fixed baseline entries with `strict-baseline`. After the check, the step `Build the
-drift report` runs [`layerscope drift`](./cli#layerscope-drift) against the base commit and writes
-the result to the job summary: how many errors the change adds and fixes, and how the baseline size
-changed. Only
-errors count in `adds` and `fixes`. The baseline size counts all entries, warnings too. On a pull
-request, it compares with the latest commit of the base branch. On a push, it compares with the
-commit before the push. In a merge queue, it compares with the base commit of the merge group. If
-the clone does not have that commit, the step fetches it. If the step cannot fetch it, if git cannot
-run in the root, or if the event has no base commit (for example a push of a new branch, or a manual
-run), the step skips the report and prints a notice. The step never fails the job. If `drift` fails,
-for example because the baseline on the base branch is not valid, is a symbolic link, or the
-baseline file is outside the git repository, the step prints the error in its log and
-writes no summary.
+findings, or fixed baseline entries with `strict-baseline`. After the check, the step
+`Build the drift report` runs [`layerscope drift`](./cli#layerscope-drift) against the base commit
+and writes the result to the job summary: how many errors the change adds and fixes, and how the
+baseline size changed. Only errors count in `adds` and `fixes`. A renamed file with accepted
+violations does not count as added and fixed when `drift` follows the rename. See the
+[baseline guide](../guide/baseline#what-counts-as-the-same-finding) for the limits. The baseline
+size counts all entries, warnings too. On a pull request, it compares with the latest commit of the
+base branch. On a push, it compares with the commit before the push. In a merge queue, it compares
+with the base commit of the merge group. If the clone does not have that commit, the step fetches
+it. If the step cannot fetch it, if git cannot run in the root, or if the event has no base commit
+(for example a push of a new branch, or a manual run), the step skips the report and prints a
+notice. The step never fails the job. If `drift` fails, for example because the baseline on the base
+branch is not valid, is a symbolic link, the baseline file is outside the git repository, or git
+cannot list the renamed files, the step prints the error in its log and writes no summary.
 
 With `comment: true`, the step `Post the drift comment` also posts the report as a pull request comment, one comment for
 each root. Later runs update the comment that the same account wrote. Two steps or workflows with
