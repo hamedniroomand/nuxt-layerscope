@@ -177,9 +177,9 @@ count. Warnings do not fail `check`, so they can get to the base branch without 
 The baseline size counts all entries, warnings too. So it can change when `adds` and `fixes` do not.
 A base without a baseline file counts as empty. Without `--baseline`, the `baseline` key of the
 config in the working tree names the file. `drift` reads the same path on the base ref. If you
-rename a baseline file in the root and git finds the rename, `drift` reads the file at its old path
-on the base ref. If git does not find the rename, or the file is outside the root, the base ref has
-no file at the new path, and `drift` counts its baseline as empty.
+rename a baseline file in the root and git finds at least 50% of the file the same, `drift` reads
+the file at its old path on the base ref. Otherwise, or when the file is outside the root, the base
+ref has no file at the new path, and `drift` counts its baseline as empty.
 The baseline file must be in the git repository. A baseline that is a symbolic link on the base ref
 stops `drift` with an error. A baseline file that is not valid stops `drift` with an error, on the
 base ref and in the working tree.

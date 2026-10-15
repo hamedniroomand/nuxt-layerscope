@@ -1,9 +1,11 @@
-import { mkdirSync, readFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
+import { BASELINE_VERSION } from '#src/baseline/index.ts';
 import { measureDrift } from '#src/drift/index.ts';
+import type { BaselineEntry } from '#src/types.ts';
 
 import {
   FILE,
@@ -177,5 +179,41 @@ describe('drift with a rename that git finds or not', () => {
     commit(root, 'rename the baseline');
     const result = await measureDrift({ rootDir: root }, 'main', 'ci-baseline.json');
     expect(counts(result)).toEqual([0, 0]);
+  });
+});
+
+const pretty = (entries: BaselineEntry[]): string =>
+  `${JSON.stringify({ version: BASELINE_VERSION, entries }, null, 2)}\n`;
+
+describe('drift with a new baseline file that is less than half the same', () => {
+  it('does not read the deleted baseline file, so the base counts as empty', async () => {
+    const root = repository();
+    write(root, CART, errorPage(false));
+    const { entries } = await findingsBaseline(root);
+    write(root, FILE, pretty(entries));
+    commit(root, 'accept');
+    git(root, 'switch', '-q', '-c', 'change');
+    git(root, 'rm', '-q', FILE);
+    const others = Array.from({ length: 3 }, (_, index) => ({
+      rule: 'unresolved-reference' as const,
+      file: `layers/shop/app/pages/other-${index}.vue`,
+      symbol: `./missing-${index}`,
+      toLayer: null,
+    }));
+    write(root, 'ci-baseline.json', pretty([...entries, ...others]));
+    const config = join(root, 'layerscope.config.mjs');
+    writeFileSync(
+      config,
+      readFileSync(config, 'utf8').replace(
+        'export default {',
+        "export default { baseline: 'ci-baseline.json',",
+      ),
+    );
+    commit(root, 'replace the baseline');
+    const pair = git(root, 'diff', '-M30%', '--name-status', 'main')
+      .split('\n')
+      .find(line => line.startsWith('R'));
+    expect(pair).toMatch(/^R0[34]\d\tlayerscope-baseline\.json\tci-baseline\.json$/u);
+    expect(counts(await measureDrift({ rootDir: root }, 'main'))).toEqual([1, 0]);
   });
 });

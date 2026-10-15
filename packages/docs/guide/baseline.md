@@ -53,9 +53,11 @@ with accepted violations does not count as added and fixed. Git must track the n
 `git mv`, or `git add` after a move. A new violation in a renamed file still counts as added.
 `drift` maps the path of each finding in the file, and the path in a relative import of a renamed
 file. `drift` follows a rename only when git finds at least 50% of the file the same, or 30% when
-`fix` moves the file to the same place in another layer. A rename that git does not find, a copy, a
-rename into or out of the root, and an alias import of a renamed file (`#layers/...`) still count as
-added and fixed. A move to another layer counts as added and fixed for a finding that names a target
+the file moves to the same place in another layer, as `fix` moves it. So an unrelated file at the
+same place in another layer can take the accepted entries of a deleted file that name no target
+layer, such as `unresolved-reference` entries. A rename that git does not find, a copy, a rename
+into or out of the root, and an alias import of a renamed file (`#layers/...`) still count as added
+and fixed. A move to another layer counts as added and fixed for a finding that names a target
 layer.
 
 A `layer-cycle` entry is identified by its **rule**, **symbol** and **target layer**, but not by its
