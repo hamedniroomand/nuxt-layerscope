@@ -205,13 +205,13 @@ describe('import.meta.glob()', () => {
   });
 });
 
-describe('import() in a template', () => {
-  /** The offset of `text` in `source`; it must be in the source once. */
-  function at(source: string, text: string): number {
-    expect(source.indexOf(text)).toBe(source.lastIndexOf(text));
-    return source.indexOf(text);
-  }
+/** The offset of `text` in `source`; it must be in the source once. */
+function at(source: string, text: string): number {
+  expect(source.indexOf(text)).toBe(source.lastIndexOf(text));
+  return source.indexOf(text);
+}
 
+describe('import() in a template', () => {
   it('reads a fixed path as an import, at the path in the template', () => {
     const source = `<template><div @click="() => import('./x')" /></template>`;
     const scan = scanFile(source, 'a.vue');
@@ -253,5 +253,17 @@ describe('import() in a template', () => {
     const source = '<template><div v-show="import(`./k/${y}`)">{{ import(a) }}</div></template>';
     const scan = scanFile(source, 'a.vue');
     expect(scan.unread.map(part => part.offset)).toEqual([at(source, 'a)'), at(source, '`./k/')]);
+  });
+});
+
+describe('a comment between import and the path in a template', () => {
+  it('gives each import() with a comment before the path its own offset', () => {
+    const source =
+      '<template><div @click="() => import /* a */ (`./a/${x}`)" /><p @click="() => import /* b */ (`./b/${y}`)" /></template>';
+    const scan = scanFile(source, 'a.vue');
+    expect(scan.unread.map(part => part.offset)).toEqual([
+      at(source, '`./a/'),
+      at(source, '`./b/'),
+    ]);
   });
 });

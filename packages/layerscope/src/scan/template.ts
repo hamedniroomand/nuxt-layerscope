@@ -51,7 +51,9 @@ function unreadReason(template: SFCTemplateBlock): Pick<Unread, 'reason' | 'mess
 function importPaths(source: string, index: TemplateIndex): number[] {
   const offsets: number[] = [];
   for (const [start, end] of index.expressions) {
-    for (const match of source.slice(start, end).matchAll(/(?<![\w$.])import\s*\(\s*/gu)) {
+    for (const match of source
+      .slice(start, end)
+      .matchAll(/(?<![\w$.])import(?:\s|\/\*[\s\S]*?\*\/)*\(\s*/gu)) {
       offsets.push(start + match.index + match[0].length);
     }
   }
