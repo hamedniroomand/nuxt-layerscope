@@ -128,8 +128,9 @@ The suggestions and their counts are made for the findings that `check` shows on
   If several layers qualify, the one with the shortest `allow` list wins. After all moves are
   planned, layerscope checks them together. A move that would break `check` together with another
   move is dropped. The findings of a dropped move get the suggestion that they get when no layer
-  can hold the file. That is **allow**. It is **leave** when the allow would create a cycle. It is
-  also **leave** when `root` uses the file and `root` is the base layer of a preset.
+  can hold the file. That is **allow**. It is **leave** when the allow would create a cycle, and the
+  message then says that the plan dropped the move. It is also **leave** when `root` uses the file
+  and `root` is the base layer of a preset.
 
   When `layer-cycle` is not `off`, layerscope checks all planned moves together. If a layer cycle
   is shown after the moves and the baseline, and it was not shown before, layerscope drops moves
@@ -151,9 +152,10 @@ The suggestions and their counts are made for the findings that `check` shows on
 - **expose** a symbol, for a `layer-internal` finding. Add the entry to `expose` of the layer that
   owns the symbol.
 - **leave** it. layerscope has no fix, and the message tells what to do. For a cycle, allowing the
-  dependency would create the cycle and no layer can hold the file: report it. For a use of a
-  feature layer by `root`, when `root` is the base of a preset and no layer can hold the file, the
-  code must change: move the code to `root`, or remove the use.
+  dependency would create the cycle, and no layer can hold the file or the plan dropped its move:
+  report it. For a use of a feature layer by `root`, when `root` is the base of a preset and no
+  layer can hold the file or the plan dropped its move, the code must change: move the code to
+  `root`, or remove the use.
 
 Each suggestion shows what it changes: findings cleared (for a move: the findings that point at
 the file and the findings in it), and files and imports affected for a move
