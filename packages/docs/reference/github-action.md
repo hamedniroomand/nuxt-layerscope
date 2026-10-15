@@ -2,8 +2,8 @@
 
 `hamedniroomand/nuxt-layerscope` runs `layerscope check --format github`, so findings are shown
 inline on the pull request diff and the job fails on errors (and on fixed baseline entries with
-`strict-baseline`). GitHub shows at most 10 error and 10 warning annotations for each step. The job
-summary lists the findings, up to 200.
+`strict-baseline`, and on baseline growth with `fail-on-growth`). GitHub shows at most 10 error and
+10 warning annotations for each step. The job summary lists the findings, up to 200.
 
 ```yaml
 - uses: hamedniroomand/nuxt-layerscope@v0
@@ -19,15 +19,16 @@ first, then either run `npx nuxi prepare` or set `prepare: true`. See
 
 ## Inputs
 
-| Input             | Default                                                                                                             | Description                                                                                                                                                                                                                             |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `root`            | `.`                                                                                                                 | Nuxt project root, relative to the repository                                                                                                                                                                                           |
-| `config`          |                                                                                                                     | Config file, relative to the root; defaults to `layerscope.config.*` in the root                                                                                                                                                        |
-| `prepare`         | `false`                                                                                                             | `true` runs `nuxi prepare` first; needs the project's dependencies installed                                                                                                                                                            |
-| `baseline`        |                                                                                                                     | [Baseline](../guide/baseline) file, relative to the root. It must be in the git repository. Defaults to the [`baseline`](./config#baseline) key of the config, else `layerscope-baseline.json`                                          |
-| `strict-baseline` | `false`                                                                                                             | Fail the check when the baseline has fixed entries (entries that no finding matches). Then run "layerscope check --update-baseline" and commit the file. The version of `nuxt-layerscope` that the action runs must be 0.10.0 or later. |
-| `comment`         | `false`                                                                                                             | `true` posts the drift report as a pull request comment, one for each root; needs `pull-requests: write`. Skipped on a `pull_request` event from a fork                                                                                 |
-| `version`         | the version of the action release (for `@main` or a commit, the version in `action.yml`, normally the last release) | `nuxt-layerscope` version to run through `npx` when the project does not install it                                                                                                                                                     |
+| Input             | Default                                                                                                             | Description                                                                                                                                                                                                                                                                                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `root`            | `.`                                                                                                                 | Nuxt project root, relative to the repository                                                                                                                                                                                                                                                                                                                            |
+| `config`          |                                                                                                                     | Config file, relative to the root; defaults to `layerscope.config.*` in the root                                                                                                                                                                                                                                                                                         |
+| `prepare`         | `false`                                                                                                             | `true` runs `nuxi prepare` first; needs the project's dependencies installed                                                                                                                                                                                                                                                                                             |
+| `baseline`        |                                                                                                                     | [Baseline](../guide/baseline) file, relative to the root. It must be in the git repository. Defaults to the [`baseline`](./config#baseline) key of the config, else `layerscope-baseline.json`                                                                                                                                                                           |
+| `strict-baseline` | `false`                                                                                                             | Fail the check when the baseline has fixed entries (entries that no finding matches). Then run "layerscope check --update-baseline" and commit the file. The version of `nuxt-layerscope` that the action runs must be 0.10.0 or later.                                                                                                                                  |
+| `fail-on-growth`  | `false`                                                                                                             | Fail the job when the drift report shows errors that the baseline at the base does not have, also when the change adds them to the baseline. Turn it on after the baseline file is on the base branch. Also fail when the report cannot be made, except for an event with no base commit. The version of `nuxt-layerscope` that the action runs must be 0.10.0 or later. |
+| `comment`         | `false`                                                                                                             | `true` posts the drift report as a pull request comment, one for each root; needs `pull-requests: write`. Skipped on a `pull_request` event from a fork                                                                                                                                                                                                                  |
+| `version`         | the version of the action release (for `@main` or a commit, the version in `action.yml`, normally the last release) | `nuxt-layerscope` version to run through `npx` when the project does not install it                                                                                                                                                                                                                                                                                      |
 
 ## Drift summary
 
@@ -45,7 +46,9 @@ it. If the step cannot fetch it, if git cannot run in the root, or if the event 
 (for example a push of a new branch, or a manual run), the step skips the report and prints a
 notice. The step never fails the job. If `drift` fails, for example because the baseline on the base
 branch is not valid, is a symbolic link, the baseline file is outside the git repository, or git
-cannot list the renamed files, the step prints the error in its log and writes no summary.
+cannot list the renamed files, the step prints the error in its log and writes no summary. With
+`fail-on-growth`, a last step fails the job when the report shows growth, after the comment is
+posted. It also fails when the report could not be made, except for an event with no base commit.
 
 With `comment: true`, the step `Post the drift comment` also posts the report as a pull request comment, one comment for
 each root. Later runs update the comment that the same account wrote. Two steps or workflows with
@@ -77,7 +80,8 @@ has write permissions or secrets.
 
 The action runs `check --summary`, which needs `nuxt-layerscope` 0.8.0 or later. The version that
 the project installs and the `version` input must be 0.8.0 or later. An older version stops the
-check step with exit code 2. With `strict-baseline: true`, both versions must be 0.10.0 or later.
+check step with exit code 2. With `strict-baseline: true` or `fail-on-growth: true`, both versions
+must be 0.10.0 or later.
 
 Installing `nuxt-layerscope` in the project keeps CI and local runs on the same version, and
 the [Nuxt module](../guide/nuxt-module) and the CLI in step.

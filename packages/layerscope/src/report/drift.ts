@@ -38,6 +38,18 @@ function formatJson(drift: Drift): string {
   return `${JSON.stringify(report, null, 2)}\n`;
 }
 
+/** The sentence for `--fail-on-growth` when the code has `count` errors more than the base. */
+export function growthSentence(count: number, base: string, markdown: boolean): string {
+  const errors = count === 1 ? '1 error' : `${count} errors`;
+  const ref = markdown ? `\`${base}\`` : base;
+  return `✖ The code has ${errors} that the baseline at ${ref} does not have (--fail-on-growth).`;
+}
+
+/** The end of a markdown report that fails `--fail-on-growth`. */
+export function formatGrowthMarkdown(count: number, base: string): string {
+  return `\n**${growthSentence(count, base, true)}**\n\nIf this growth is intended, for example after a stricter config or a newer layerscope, merge the change without this check.\n`;
+}
+
 export function formatDrift(drift: Drift, format: DriftFormat): string {
   if (format === 'json') {
     return formatJson(drift);

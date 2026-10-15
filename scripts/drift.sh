@@ -3,7 +3,9 @@
 # comment to a folder for comment.sh. This script never calls gh, and the action does not give its
 # token to this step. A token that the workflow sets in its env still reaches the CLI. The folder
 # has `text.md` (the comment without its marker), `label` (the root) and `state` (`report`, `failed`
-# or `skipped`). The output `dir` is its path.
+# or `skipped`). For growth.sh, it also has `grew` (the base) when INPUT_FAIL_ON_GROWTH is on and
+# the report shows growth, and `nobase` when the event has no base commit. The output `dir` is its
+# path.
 # A pull request compares with the tip of its base branch (GITHUB_BASE_REF). A push or a merge group
 # compares with BASE_SHA, the commit before the push or the base of the merge group. BASE_SHA is
 # empty for an event without a base.
@@ -67,7 +69,10 @@ if [ -n "${GITHUB_BASE_REF:-}" ]; then
 else
   base="${BASE_SHA:-}"
   case "$base" in
-    '' | 0000000000000000000000000000000000000000) skip 'Drift report skipped. This event has no base commit.' ;;
+    '' | 0000000000000000000000000000000000000000)
+      : > "$dir/nobase"
+      skip 'Drift report skipped. This event has no base commit.'
+      ;;
   esac
   need_commit "$base"
 fi
@@ -76,6 +81,7 @@ args=(drift "$INPUT_ROOT" --format markdown --base "$base")
 if [ -n "$INPUT_BASELINE" ]; then args+=(--baseline "$INPUT_BASELINE"); fi
 if [ -n "$INPUT_CONFIG" ]; then args+=(--config "$INPUT_CONFIG"); fi
 if [ "$INPUT_PREPARE" = "true" ]; then args+=(--prepare); fi
+if [ "${INPUT_FAIL_ON_GROWTH:-}" = "true" ]; then args+=(--fail-on-growth); fi
 
 # The root as the reader sees it, and the heading of the comment.
 label="$(root_label)"
@@ -85,6 +91,12 @@ heading="$(root_heading layerscope)"
 report="$(mktemp)"
 status=0
 "$(dirname "$0")/layerscope.sh" "${args[@]}" > "$report" || status=$?
+
+# Exit 1 is growth only with the growth line: the wrapper (npx) can also exit 1.
+if [ "$status" -eq 1 ] && grep -qF '(--fail-on-growth).' "$report"; then
+  printf '%s' "$base" > "$dir/grew"
+  status=0
+fi
 
 if [ "$status" -ne 0 ]; then
   # The comment must not keep the numbers of an older run.

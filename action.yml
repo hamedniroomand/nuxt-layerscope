@@ -21,6 +21,9 @@ inputs:
   strict-baseline:
     description: Fail the check when the baseline has fixed entries (entries that no finding matches). Then run "layerscope check --update-baseline" and commit the file. The version of `nuxt-layerscope` that the action runs must be 0.10.0 or later.
     default: 'false'
+  fail-on-growth:
+    description: Fail the job when the drift report shows errors that the baseline at the base does not have, also when the change adds them to the baseline. Turn it on after the baseline file is on the base branch. Also fail when the report cannot be made, except for an event with no base commit. The version of `nuxt-layerscope` that the action runs must be 0.10.0 or later.
+    default: 'false'
   comment:
     description: Post the drift report as a pull request comment, one for each root. Needs `pull-requests` write permission. Skipped on a `pull_request` event from a fork.
     default: 'false'
@@ -58,6 +61,7 @@ runs:
         INPUT_CONFIG: ${{ inputs.config }}
         INPUT_PREPARE: ${{ inputs.prepare }}
         INPUT_BASELINE: ${{ inputs.baseline }}
+        INPUT_FAIL_ON_GROWTH: ${{ inputs.fail-on-growth == 'true' }}
         INPUT_VERSION: ${{ inputs.version }}
         BASE_SHA: ${{ github.event.before || github.event.merge_group.base_sha }}
       run: '"$GITHUB_ACTION_PATH/scripts/drift.sh"'
@@ -77,3 +81,11 @@ runs:
         PR_NUMBER: ${{ github.event.pull_request.number }}
         IS_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
       run: '"$GITHUB_ACTION_PATH/scripts/comment.sh"'
+
+    # The last step, so the comment is posted first. It runs neither gh nor the CLI.
+    - name: Fail on drift growth or a missing report
+      if: ${{ always() && inputs.fail-on-growth == 'true' }}
+      shell: bash
+      env:
+        REPORT_DIR: ${{ steps.report.outputs.dir }}
+      run: '"$GITHUB_ACTION_PATH/scripts/growth.sh"'

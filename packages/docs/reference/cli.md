@@ -153,7 +153,7 @@ hook.
 ## `layerscope drift`
 
 ```bash
-layerscope drift [root] [--base origin/main] [--format text|markdown|json]
+layerscope drift [root] [--base origin/main] [--format text|markdown|json] [--fail-on-growth]
 ```
 
 Compares the errors that the code has now with the [baseline](../guide/baseline) committed on the
@@ -184,10 +184,14 @@ The baseline file must be in the git repository. A baseline that is a symbolic l
 stops `drift` with an error. A baseline file that is not valid stops `drift` with an error, on the
 base ref and in the working tree.
 
-Also takes `--baseline`, `--config`, `--prepare` and `--source`. Exits `0`. Exits `2` for a root
-that is not in a git work tree, an unknown ref, git failing to list the renamed files, an invalid
-baseline, a baseline outside the git repository, or a baseline that is a symbolic link on the base
-ref.
+`--fail-on-growth` exits with 1 when the code has errors that the baseline at the base ref does not
+have. The text report then ends with a line (red when colors are on) that says so, the markdown
+report with two more paragraphs, and with `--format json` the line goes to stderr.
+
+Also takes `--baseline`, `--config`, `--prepare` and `--source`. Exits `0`, or `1` with
+`--fail-on-growth` when the code has growth. Exits `2` for a root that is not in a git work tree, an
+unknown ref, git failing to list the renamed files, an invalid baseline, a baseline outside the git
+repository, or a baseline that is a symbolic link on the base ref.
 
 ## `layerscope fix`
 
@@ -389,8 +393,8 @@ Every command works with flags only and never prompts, so it is safe in scripts,
 
 | Code | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `1`  | `check`: an error finding is not in the baseline, or `--strict-baseline` and the baseline has fixed entries                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran (`drift` without growth)                                                                                                                                                                                                                                                                                                                                                                                            |
+| `1`  | `check`: an error finding is not in the baseline, or `--strict-baseline` and the baseline has fixed entries; `drift --fail-on-growth`: the code has errors that the baseline at the base ref does not have                                                                                                                                                                                                                                                                                                                                         |
 | `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, a component or auto-import dir that layerscope cannot open, a file that the generated types refer to that layerscope cannot reach, `why` found no use, invalid baseline file, a `drift` baseline that is outside the git repository or is a symbolic link on the base ref, a `drift` git error while it lists the renamed files, empty `--baseline` value, `--strict-baseline` with `--update-baseline` or `--watch`, a refused or stopped `fix --apply` |
 
 ## Output streams
