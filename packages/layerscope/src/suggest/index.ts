@@ -19,10 +19,14 @@ import { rootBaseSuggestion, rootIsBase } from './root-hint.ts';
 
 const BATCH_FINDINGS = 200;
 
-function leaveSuggestion(from: string, to: string): Suggestion {
+/** `dropped`: a layer can hold the file, but the plan drops its move. */
+function leaveSuggestion(from: string, to: string, dropped: boolean): Suggestion {
+  const reason = dropped
+    ? 'the plan drops the move of this file because check would show new findings after the moves'
+    : 'no layer every user may depend on can hold it';
   return {
     action: 'leave',
-    message: `leave it: allowing "${from}" to use "${to}" would create a cycle, and no layer every user may depend on can hold it`,
+    message: `leave it: allowing "${from}" to use "${to}" would create a cycle, and ${reason}`,
     impact: { fixes: 0 },
   };
 }
@@ -57,7 +61,9 @@ function suggest(context: Context, finding: Finding): Suggestion {
   if (rootBase) {
     return rootBaseSuggestion(finding);
   }
-  return cycle ? leaveSuggestion(from, to) : allowSuggestion(context, from, to);
+  return cycle
+    ? leaveSuggestion(from, to, file !== null && context.blocked.has(file))
+    : allowSuggestion(context, from, to);
 }
 
 /**
