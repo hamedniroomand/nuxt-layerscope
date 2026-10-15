@@ -204,3 +204,48 @@ describe('import.meta.glob()', () => {
     );
   });
 });
+
+describe('import() in a template', () => {
+  /** The offset of `text` in `source`; it must be in the source once. */
+  function at(source: string, text: string): number {
+    expect(source.indexOf(text)).toBe(source.lastIndexOf(text));
+    return source.indexOf(text);
+  }
+
+  it('reads a fixed path as an import, at the path in the template', () => {
+    const source = `<template><div @click="() => import('./x')" /></template>`;
+    const scan = scanFile(source, 'a.vue');
+    expect(scan.unread).toEqual([]);
+    expect(scan.imports.map(ref => [ref.specifier, ref.offset])).toEqual([
+      ['./x', at(source, "'./x'")],
+    ]);
+  });
+
+  it('reports a path that is not a fixed string, at the path in the template', () => {
+    const source = '<template><div @click="() => import(`./x/${a}`)" /></template>';
+    const scan = scanFile(source, 'a.vue');
+    expect(scan.imports).toEqual([]);
+    expect(scan.unread.map(part => [part.symbol, part.message, part.offset])).toEqual([
+      [
+        'import()',
+        'Could not read import(): the path is not a fixed string. The module that it loads is not checked.',
+        at(source, '`./x/'),
+      ],
+    ]);
+  });
+
+  it('gives each import() its own offset, also when Vue moves one before the other', () => {
+    const source =
+      '<template><div @click="() => import(`./a/${a}`)" /><p @click="() => import(b)" /><i @click="() => import(\'./c\')" />{{ import(`./a/${d}`) }}</template>';
+    const scan = scanFile(source, 'a.vue');
+    expect(scan.imports.map(ref => [ref.specifier, ref.offset])).toEqual([
+      ['./c', at(source, "'./c'")],
+    ]);
+    const first = source.indexOf('`./a/');
+    expect(scan.unread.map(part => part.offset).toSorted((x, y) => x - y)).toEqual([
+      first,
+      at(source, 'b)'),
+      source.indexOf('`./a/', first + 1),
+    ]);
+  });
+});

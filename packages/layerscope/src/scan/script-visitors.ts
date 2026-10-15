@@ -1,4 +1,4 @@
-import type { Node } from 'oxc-parser';
+import type { ImportExpression, Node } from 'oxc-parser';
 import type { ScopeTracker, ScopeTrackerNode, WalkerThisContextEnter } from 'oxc-walker';
 import { isReferenceIdentifier, walk } from 'oxc-walker';
 
@@ -127,6 +127,16 @@ function dynamicPath(call: 'import()' | 'require()', offset: number): Unread {
   };
 }
 
+/** An `import()` with a fixed path is an import. Any other path is code that layerscope cannot read. */
+export function recordImportCall(node: ImportExpression, scan: FileScan, offset: number): void {
+  const specifier = fixedPath(node.source);
+  if (specifier === null) {
+    scan.unread.push(dynamicPath('import()', offset));
+  } else {
+    scan.imports.push({ specifier, names: ['*'], typeOnly: false, typeNames: [], offset });
+  }
+}
+
 export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
   ImportDeclaration(node, _parent, { scan, mapOffset }) {
     if (node.type !== 'ImportDeclaration') {
@@ -182,20 +192,8 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
     this.skip();
   },
   ImportExpression(node, _parent, { scan, mapOffset }) {
-    if (node.type !== 'ImportExpression') {
-      return;
-    }
-    const specifier = fixedPath(node.source);
-    if (specifier === null) {
-      scan.unread.push(dynamicPath('import()', mapOffset(node.source.start)));
-    } else {
-      scan.imports.push({
-        specifier,
-        names: ['*'],
-        typeOnly: false,
-        typeNames: [],
-        offset: mapOffset(node.source.start),
-      });
+    if (node.type === 'ImportExpression') {
+      recordImportCall(node, scan, mapOffset(node.source.start));
     }
   },
   // Type-only syntax has no runtime references: `[id: string]`, `(...next: T[]) => void`. It is

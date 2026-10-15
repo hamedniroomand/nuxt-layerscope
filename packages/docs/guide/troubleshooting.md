@@ -69,6 +69,9 @@ Check the following:
   not scanned by default. Configure [`imports.dirs`](https://nuxt.com/docs/guide/directory-structure/composables#how-files-are-scanned)
   in Nuxt, run `nuxi prepare`, and layerscope follows.
 
+After an upgrade, `check` can report new findings for code that it did not read before. Fix the
+code, or accept the findings with `layerscope check --update-baseline`, or set the rule to `warn`.
+
 To silence the rule entirely, set `'unresolved-reference': 'off'`.
 
 ## A component is reported as unresolved
