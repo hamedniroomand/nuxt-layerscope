@@ -158,7 +158,8 @@ layerscope drift [root] [--base origin/main] [--format text|markdown|json]
 
 Compares the errors that the code has now with the [baseline](../guide/baseline) committed on the
 base ref, and prints `adds 3, fixes 5`, the entries behind both, and the baseline size on the base
-and now.
+and now. A file that the change renames does not count as added and fixed when git finds the rename;
+see [Baseline](../guide/baseline#what-counts-as-the-same-finding).
 
 Only the rules that the current config sets to `error` count, on both sides. Warnings do not
 count. Warnings do not fail `check`, so they can get to the base branch without a baseline entry.
@@ -172,10 +173,12 @@ count. Warnings do not fail `check`, so they can get to the base branch without 
 - If the current config sets a rule to `warn` or `off`, the entries of that rule do not count as
   added or fixed.
 
-The baseline size counts all entries, warnings too. So it can change when `adds` and `fixes` do
-not. A base without a baseline file counts as empty. Without `--baseline`, the `baseline` key of the
+The baseline size counts all entries, warnings too. So it can change when `adds` and `fixes` do not.
+A base without a baseline file counts as empty. Without `--baseline`, the `baseline` key of the
 config in the working tree names the file. `drift` reads the same path on the base ref. If you
-rename the file, the base ref has no file at the new path, and `drift` counts its baseline as empty.
+rename the file and git finds the rename, `drift` reads the file at its old path on the base ref. If
+git does not find it, the base ref has no file at the new path, and `drift` counts its baseline as
+empty.
 The baseline file must be in the git repository. A baseline that is a symbolic link on the base ref
 stops `drift` with an error. A baseline file that is not valid stops `drift` with an error, on the
 base ref and in the working tree.

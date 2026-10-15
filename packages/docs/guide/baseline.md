@@ -48,6 +48,12 @@ An entry is identified by its **rule**, **file**, **symbol** and **target layer*
 - A file that is renamed or moved produces new findings. Regenerate the baseline in the same
   change.
 
+`drift` follows a rename that git finds between the base and the working tree, so a renamed file
+with accepted violations does not count as added and fixed. It maps the path of each finding in the
+file, and the path in a relative import of a renamed file. A rename that git does not find (a file
+that changed too much, or a copy), a rename into or out of the root, and an alias import of a
+renamed file (`#layers/...`) still count as added and fixed.
+
 A `layer-cycle` entry is identified by its **rule**, **symbol** and **target layer**, but not by its
 **file**. The symbol is the chain of layers, for example `auth → shop → auth`, and the target layer
 is the second layer in it. The file is not part of it, because the finding is shown at the first
