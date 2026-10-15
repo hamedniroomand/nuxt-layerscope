@@ -24,7 +24,9 @@ export type DirKind = keyof typeof AUTO_IMPORT_DIRS;
 
 /**
  * Whether Nuxt scans a path by default. `inside` is the path in the source dir. Nuxt reads the
- * script files in the dir, and the `index` file of each sub dir. It does not read deeper.
+ * script files in the dir, and the `index` file of each sub dir. It does not read deeper. Nitro
+ * reads `server/utils` at any depth. layerscope moves a file there only to the top level or to the
+ * `index` file of a sub dir.
  */
 export function isAutoImported(kind: DirKind, inside: string): boolean {
   const parts = inside.split('/');
@@ -157,7 +159,8 @@ export function namesOfLayer(layer: Layer): LayerNames {
   let unknownImports = false;
   for (const kind of Object.keys(AUTO_IMPORT_DIRS) as DirKind[]) {
     for (const dir of AUTO_IMPORT_DIRS[kind]) {
-      // Nitro reads `server/utils` at any depth. Nuxt reads the other dirs one level down.
+      // Nitro reads `server/utils` at any depth. Nuxt reads the files in the other dirs and the
+      // `index` file of each sub dir.
       const root = join(layer[kind], dir);
       const files = kind === 'serverDir' ? filesUnder(root, SCANNED) : scriptFiles(root);
       for (const file of files) {
