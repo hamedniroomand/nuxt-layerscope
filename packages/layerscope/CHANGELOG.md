@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.10.0
+
+### Minor Changes
+
+- [#200](https://github.com/hamedniroomand/nuxt-layerscope/pull/200) [`6b193f4`](https://github.com/hamedniroomand/nuxt-layerscope/commit/6b193f4eed52d6245c7f57b1755a15bafc9c7143) - The action accepts growth on a pull request with the label `layerscope: accept growth`: the `fail-on-growth` step then passes with a notice. A push and a merge queue run do not read the label.
+
+- [#199](https://github.com/hamedniroomand/nuxt-layerscope/pull/199) [`32b00e1`](https://github.com/hamedniroomand/nuxt-layerscope/commit/32b00e1a2f995e2d36b4b3e2d39afed28878d9d6) - Add `drift --fail-on-growth` and the action input `fail-on-growth`. They fail when the code has errors that the baseline on the base branch does not have, also when the pull request adds them to the baseline. Before, the drift report showed the growth but could not fail the job.
+
+- [#185](https://github.com/hamedniroomand/nuxt-layerscope/pull/185) [`94a14f1`](https://github.com/hamedniroomand/nuxt-layerscope/commit/94a14f1bd452722cb28920318b0e89a716885695) - Add `check --strict-baseline` and the action input `strict-baseline`. They fail the check when the baseline has fixed entries, so a fixed violation cannot come back while its entry is still in the file. The message tells you to run `layerscope check --update-baseline`. Without the option, fixed entries are listed as before and do not fail the check.
+
+### Patch Changes
+
+- [#184](https://github.com/hamedniroomand/nuxt-layerscope/pull/184) [`dc0f0f9`](https://github.com/hamedniroomand/nuxt-layerscope/commit/dc0f0f931c1c3bd8ea9b541c4d916a7a7f762205) - Arguments after `--` are used as positional arguments, for example a root that starts with `-`. Before, layerscope ignored them. A command line that has words after `--` can now stop with an error, or `check` can read them as the root and the files. Remove the words that are not a root or a file.
+
+- [#195](https://github.com/hamedniroomand/nuxt-layerscope/pull/195) [`14fb71c`](https://github.com/hamedniroomand/nuxt-layerscope/commit/14fb71cfeefb7eb6bd3ec260b628da402c516442) - `drift` follows the tracked files that git renames between the base ref and the working tree. A renamed file with accepted violations no longer counts as added and fixed. A new violation in it still counts as added. `drift` follows a rename only when git finds at least 50% of the file the same, or 30% when the file moves to the same place in another layer, as `fix` moves it. So an unrelated file at the same place in another layer can take the accepted entries of a deleted file that name no target layer, such as `unresolved-reference` entries. `drift` also finds a renamed baseline file in the root at its old path on the base ref. A copy, a move to another layer for a finding that names a target layer, a rename that git does not find, an alias import of a renamed file, and a relative import that is not in the form that `fix` writes still count as added and fixed. If git fails while it lists the renames, `drift` stops with exit code `2`.
+
+- [#189](https://github.com/hamedniroomand/nuxt-layerscope/pull/189) [`7b48459`](https://github.com/hamedniroomand/nuxt-layerscope/commit/7b48459a3ba117cfe718523c8794ae60edb283a8) - The `fix` line about other findings no longer says that they have suggestions. Some findings have none, for example `unresolved-reference`, `shadowed-component` and `layer-cycle`. The line now ends with "Run `layerscope check` to see them."
+
+- [#194](https://github.com/hamedniroomand/nuxt-layerscope/pull/194) [`2e3737c`](https://github.com/hamedniroomand/nuxt-layerscope/commit/2e3737c36e3181dd302e7888b3f64312b142835a) - `init` counts code that it cannot read apart from unresolved references. JSON findings for such code have `unread: true`.
+
+- [#198](https://github.com/hamedniroomand/nuxt-layerscope/pull/198) [`749a76d`](https://github.com/hamedniroomand/nuxt-layerscope/commit/749a76d4f9a7e6253fcff18f8e39760093b35be9) - `layerscope init` says "No references found." when the project has no references. Before, it said "All 0 references resolved."
+
+- [#197](https://github.com/hamedniroomand/nuxt-layerscope/pull/197) [`41e4448`](https://github.com/hamedniroomand/nuxt-layerscope/commit/41e4448fb49af73cf1149d23e76d63ad80a962a5) - When layerscope drops a planned move, the "leave" suggestion of its findings no longer says that no layer can hold the file. It says that the plan drops the move.
+
+- [#201](https://github.com/hamedniroomand/nuxt-layerscope/pull/201) [`059b3a0`](https://github.com/hamedniroomand/nuxt-layerscope/commit/059b3a03ca82453db6e2f1a171bc263538791939) - `fix` and the move suggestions of `check` read the names of a file with mlly, the parser that Nuxt uses. Type exports (`export type`, `export interface`) and `export * as name` are names, and so are the other forms that Nuxt reads, for example `export const a = 1, b = 2`. A relative `export * from` is read. An `export * from` a package or an alias, or one whose path does not resolve, can export any name, so it conflicts with any auto-import on the other side of a move. A default export keeps the case of its file name, unless the name has `-`, `_` or `.`. The `.tsx`, `.jsx`, `.cts` and `.cjs` files in the target are read too, and so are the server utils in sub dirs of the target, as Nitro reads them.
+
+- [#193](https://github.com/hamedniroomand/nuxt-layerscope/pull/193) [`16e427e`](https://github.com/hamedniroomand/nuxt-layerscope/commit/16e427eac56fcf26eed42a1292f7066d268ce70b) - The `fix` note about the files that `check` and `fix` skip now says that they do not check the imports in these files. Before, it said that they do not read them, but layerscope loads `nuxt.config.*` to find the layers.
+
+- [#196](https://github.com/hamedniroomand/nuxt-layerscope/pull/196) [`06e47cc`](https://github.com/hamedniroomand/nuxt-layerscope/commit/06e47cc36cdb0ff9777b23868b2ffc4d073fe7a9) - `fix` keeps a name with a dot when it rewrites an import to a file that it found through a symbolic link, or with a name in another letter case. Before, the end of the name was added again: `./x.module` for `x.module.ts` got `x.module.module`, and `./lib.v2` for `lib.v2/index.ts` got `lib.v2/index.v2`.
+
+- [#190](https://github.com/hamedniroomand/nuxt-layerscope/pull/190) [`9d5536b`](https://github.com/hamedniroomand/nuxt-layerscope/commit/9d5536b0bfd3defcfbb9c54e4949df8c248e8ed7) - `check` reads `import()` in a template. An `import()` with a fixed path is now an import, so it can give `layer-boundary` findings and it counts as a use in `unused` and `why`. An `import()` with a path that is not a fixed string is reported by `unresolved-reference`, and `unused` lists the file as unread.
+
+- [#188](https://github.com/hamedniroomand/nuxt-layerscope/pull/188) [`dc0de58`](https://github.com/hamedniroomand/nuxt-layerscope/commit/dc0de581c760dd204753f1351ce4d9fae53f1837) - The DevTools Unused view shows the "possibly used" banner only when it lists a component.
+
+- [#180](https://github.com/hamedniroomand/nuxt-layerscope/pull/180) [`eb4b360`](https://github.com/hamedniroomand/nuxt-layerscope/commit/eb4b360f5d51d7af4b552c3cca7ae67c1da357ca) - `unused` marks global components "possibly used at runtime". When the project uses Nuxt Content, which can render any component by its name from a content file, `unused` marks every component. Each unused entry has a new `global` field, and `blindSpots` has a new `nuxt-content` kind. With `--source types`, `unused` finds only the `components/global/` dir and the `.global` suffix, and finds Nuxt Content only when `modules` names it as a string. The registry has new fields, so run `nuxi prepare` once after the update.
+
+- [#186](https://github.com/hamedniroomand/nuxt-layerscope/pull/186) [`f49b9b3`](https://github.com/hamedniroomand/nuxt-layerscope/commit/f49b9b3899287446cb26b5c969f3ddd02ed10766) - `unused` shows the `shared` context for an auto-import in `shared/`. Before, it showed `app`. The DevTools Unused view shows each row as `layerscope unused` shows it, with `exposed` and "possibly used at runtime".
+
 ## 0.9.0
 
 ### Minor Changes
