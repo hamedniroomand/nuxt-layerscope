@@ -158,8 +158,9 @@ layerscope drift [root] [--base origin/main] [--format text|markdown|json]
 
 Compares the errors that the code has now with the [baseline](../guide/baseline) committed on the
 base ref, and prints `adds 3, fixes 5`, the entries behind both, and the baseline size on the base
-and now. A file that the change renames does not count as added and fixed when git finds the rename;
-see [Baseline](../guide/baseline#what-counts-as-the-same-finding).
+and now. A renamed file with accepted violations does not count as added and fixed when `drift`
+follows the rename; see [Baseline](../guide/baseline#what-counts-as-the-same-finding) for the
+limits.
 
 Only the rules that the current config sets to `error` count, on both sides. Warnings do not
 count. Warnings do not fail `check`, so they can get to the base branch without a baseline entry.

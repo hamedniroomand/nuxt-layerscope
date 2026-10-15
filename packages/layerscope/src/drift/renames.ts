@@ -4,8 +4,42 @@ import { keyOf, toKeyed } from '#src/baseline/index.ts';
 import { newSpecifier } from '#src/fix/specifier.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
+import { destinationOf } from '#src/suggest/move.ts';
 import type { BaselineEntry, Edge, Finding, Layer } from '#src/types.ts';
 import { realPath } from '#src/utils/fs.ts';
+
+import type { Rename } from './git.ts';
+
+/** Git's default score for a rename. */
+const SCORE = 50;
+
+/**
+ * The renames that `drift` follows, from the new path to the old path. A pair with a lower score
+ * is followed only when it is a move of `fix`: the same place in another layer. Many files have
+ * the same name (`index.vue`), so a low score with the same name is not enough.
+ */
+function followed(
+  renames: Map<string, Rename>,
+  rootDir: string,
+  ownerOf: OwnerLookup,
+): Map<string, string> {
+  const result = new Map<string, string>();
+  for (const [to, { from, score }] of renames) {
+    const oldFile = join(rootDir, from);
+    const newFile = join(rootDir, to);
+    const oldOwner = ownerOf(oldFile);
+    const newOwner = ownerOf(newFile);
+    const fixMove =
+      oldOwner !== null &&
+      newOwner !== null &&
+      oldOwner.name !== newOwner.name &&
+      destinationOf(oldFile, oldOwner, newOwner, []) === newFile;
+    if (score >= SCORE || fixMove) {
+      result.set(to, from);
+    }
+  }
+  return result;
+}
 
 /**
  * The path of `file` at the base: its old path when git renamed it, else the same path. `renames`
@@ -59,14 +93,15 @@ export interface MappedFindings {
 /** Maps the findings of the working tree back to the base, so a renamed file keeps its entries. */
 export function mapToBase(
   findings: Finding[],
-  renames: Map<string, string>,
+  renames: Map<string, Rename>,
   rootDir: string,
   layers: Layer[],
 ): MappedFindings {
   const ownerOf = createOwnerLookup(layers);
+  const paths = followed(renames, rootDir, ownerOf);
   const now = new Map<string, Pick<BaselineEntry, 'file' | 'symbol'>>();
   const mapped = findings.map(finding => {
-    const atBase = findingAtBase(finding, renames, rootDir, ownerOf);
+    const atBase = findingAtBase(finding, paths, rootDir, ownerOf);
     const key = keyOf(toKeyed(atBase, rootDir));
     if (!now.has(key)) {
       now.set(key, { file: relative(rootDir, finding.file), symbol: finding.symbol });

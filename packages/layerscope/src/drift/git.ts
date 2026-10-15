@@ -178,27 +178,25 @@ export function baselineAt(rootDir: string, ref: string, name: string): Baseline
   return parseBaselineText(text, name, ref);
 }
 
-/** A rename that `drift` follows, from a `--name-status` status such as `R087`. */
-function isRename(status: string, from: string, to: string): boolean {
-  // `fix` moves a small file and rewrites its imports, which can change more than half of it, but
-  // it keeps the name. Two files with other names must be at least 50% the same, as git's default.
-  const score = Number(status.slice(1));
-  return status.startsWith('R') && (score >= 50 || basename(from) === basename(to));
+/** A file that git renamed: its old path, and how much of it, in percent, stays the same. */
+export interface Rename {
+  from: string;
+  score: number;
 }
 
 /**
  * The files that git renamed between `ref` and the working tree, as the analysis sees them: the
  * new path to the old path, both relative to the real path of `rootDir`, as baseline entries are.
- * `-M` is given, so a `diff.renames=false` config does not turn it off. A copy, a rename that git
- * does not find (a file with many edits), and a rename that `isRename` refuses are not in it. A
- * rename with a side outside `rootDir` crosses the root of the project, so it is not used.
+ * `-M30%` is given, so a `diff.renames=false` config does not turn it off. A copy, and a rename that
+ * git does not find (a file with many edits), are not in it. A rename with a side outside `rootDir`
+ * crosses the root of the project, so it is not used. The caller decides which scores to follow.
  */
-export function renamesSince(rootDir: string, ref: string): Map<string, string> {
+export function renamesSince(rootDir: string, ref: string): Map<string, Rename> {
   const top = workTree(rootDir);
   assertRef(rootDir, ref);
   let output: string;
   try {
-    // 30%, so git also pairs the small files that `fix` moves; `isRename` filters the pairs.
+    // 30%, so git also pairs the small files that `fix` moves. `mapToBase` filters the pairs.
     output = git(top, 'diff', '-M30%', '--no-relative', '-z', '--name-status', ref);
   } catch (error) {
     throw new LayerscopeError(
@@ -206,7 +204,7 @@ export function renamesSince(rootDir: string, ref: string): Map<string, string> 
     );
   }
   const root = realPath(rootDir);
-  const renames = new Map<string, string>();
+  const renames = new Map<string, Rename>();
   const fields = splitNul(output);
   for (let index = 0; index < fields.length; index += 1) {
     const status = fields[index];
@@ -214,8 +212,8 @@ export function renamesSince(rootDir: string, ref: string): Map<string, string> 
     if (status.startsWith('R') || status.startsWith('C')) {
       const from = relative(root, join(top, fields[index + 1]));
       const to = relative(root, join(top, fields[index + 2]));
-      if (isRename(status, from, to) && !isOutside(from) && !isOutside(to)) {
-        renames.set(to, from);
+      if (status.startsWith('R') && !isOutside(from) && !isOutside(to)) {
+        renames.set(to, { from, score: Number(status.slice(1)) });
       }
       index += 2;
     } else {

@@ -56,9 +56,11 @@ export async function measureDrift(
       : {};
   const baselineFile = baselineName(baselineOption, config);
   const renames = renamesSince(options.rootDir, base);
-  // A renamed baseline file is read at its old path on the base.
+  // A renamed baseline file is read at its old path on the base. `fix` does not move it, so the
+  // file must be at least 50% the same.
   const file = baselinePath(options.rootDir, baselineFile);
-  const oldName = renames.get(relative(realPath(options.rootDir), realPath(file)));
+  const rename = renames.get(relative(realPath(options.rootDir), realPath(file)));
+  const oldName = rename !== undefined && rename.score >= 50 ? rename.from : undefined;
   const before = baselineAt(options.rootDir, base, oldName ?? baselineFile);
   const result = await analyze({ ...options, baseline: undefined });
   const mapped = mapToBase(result.findings, renames, options.rootDir, result.layers);

@@ -9,8 +9,8 @@ import { FILE, commit, counts, drift, findingsBaseline, writeBaseline } from './
 import { ADMIN, CART, SHARED, SHOP, WEB, applyPlan, cartProject, write } from './fix-project.ts';
 import { git, gitProject } from './git-project.ts';
 
-/** Commits the project with its accepted errors on `main`, applies the plan of `fix` on `change`. */
-async function acceptAndFix(root: string, layers: string[]): Promise<void> {
+/** Commits the project with its accepted errors on `main`, and goes to a branch `change`. */
+async function accept(root: string, layers: string[]): Promise<void> {
   writeFileSync(
     join(root, 'layerscope.config.mjs'),
     `export default { layers: { ${layers.join(', ')} }, rules: { 'unresolved-reference': 'error' } };\n`,
@@ -20,9 +20,18 @@ async function acceptAndFix(root: string, layers: string[]): Promise<void> {
   writeBaseline(root, FILE, (await findingsBaseline(root)).entries);
   commit(root, 'accept');
   git(root, 'switch', '-q', '-c', 'change');
+}
+
+/** Commits the project with its accepted errors on `main`, applies the plan of `fix` on `change`. */
+async function acceptAndFix(root: string, layers: string[]): Promise<void> {
+  await accept(root, layers);
   await applyPlan(root);
   commit(root, 'fix');
 }
+
+const WEB_SHARED = "web: { path: 'layers/web', allow: ['shared'] }";
+const SMALL =
+  "import { noop } from '../../../shared/app/utils/noop';\nexport const useCart = () => noop() + missingThing();\n";
 
 describe('drift after fix --apply', () => {
   // `fix` moves useCart.ts from web to shared, which admin and shop may use. The file keeps an
@@ -43,16 +52,28 @@ describe('drift after fix --apply', () => {
 
   // The move rewrites the import of a small file, so less than half of the file stays the same.
   it('follows a small file whose import the move rewrites', async () => {
-    const web = "web: { path: 'layers/web', allow: ['shared'] }";
-    const root = cartProject([SHARED, web, ADMIN, SHOP]);
-    write(
-      root,
-      CART,
-      "import { noop } from '../../../shared/app/utils/noop';\nexport const useCart = () => noop() + missingThing();\n",
-    );
-    await acceptAndFix(root, [SHARED, web, ADMIN, SHOP]);
+    const root = cartProject([SHARED, WEB_SHARED, ADMIN, SHOP]);
+    write(root, CART, SMALL);
+    await acceptAndFix(root, [SHARED, WEB_SHARED, ADMIN, SHOP]);
     expect(git(root, 'diff', '-M', '--name-status', 'main')).not.toContain('R');
     expect(counts(await drift(root))).toEqual([0, 2]);
+  });
+
+  // The same small change as above, but to a place in shared that `fix` does not choose.
+  it('does not follow a small file that moves to another place in another layer', async () => {
+    const root = cartProject([SHARED, WEB_SHARED, ADMIN, SHOP]);
+    write(root, CART, SMALL);
+    await accept(root, [SHARED, WEB_SHARED, ADMIN, SHOP]);
+    const moved = 'layers/shared/app/utils/useCart.ts';
+    git(root, 'rm', '-q', CART);
+    write(root, moved, SMALL.replace('../../../shared/app/utils/noop', './noop'));
+    commit(root, 'move to utils');
+    expect(git(root, 'diff', '-M30%', '--name-status', 'main')).toMatch(/^R0[34]\d\t/mu);
+    const result = await drift(root);
+    expect(result.added.map(entry => [entry.file, entry.symbol])).toContainEqual([
+      moved,
+      'missingThing',
+    ]);
   });
 });
 
@@ -65,6 +86,8 @@ describe('renamesSince', () => {
     const repo = join(project.root, '../..');
     git(repo, 'mv', 'apps/web/a.ts', 'apps/web/b.ts');
     git(repo, 'mv', 'apps/web/out.ts', 'apps/other/out.ts');
-    expect([...renamesSince(project.root, 'HEAD')]).toEqual([['b.ts', 'a.ts']]);
+    expect([...renamesSince(project.root, 'HEAD')]).toEqual([
+      ['b.ts', { from: 'a.ts', score: 100 }],
+    ]);
   });
 });

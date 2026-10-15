@@ -108,6 +108,47 @@ describe('drift with a file that moved to another layer', () => {
   });
 });
 
+/** Whether git pairs the change as a rename with a score from 30 up to, but not including, 50. */
+function lowScore(root: string): boolean {
+  const score = Number(git(root, 'diff', '-M30%', '--name-status', 'main').split('\t')[0].slice(1));
+  return score >= 30 && score < 50;
+}
+
+describe('drift with a pair that is less than half the same', () => {
+  it('counts a pair with another name that is less than half the same as added and fixed', async () => {
+    const root = await accepted();
+    git(root, 'rm', '-q', CART);
+    const basket = 'layers/shop/app/pages/basket.vue';
+    write(
+      root,
+      basket,
+      `${errorPage(false)}<template>\n${'  <p>other</p>\n'.repeat(10)}</template>\n`,
+    );
+    commit(root, 'replace');
+    expect(lowScore(root)).toBe(true);
+    expect(counts(await drift(root))).toEqual([1, 1]);
+  });
+
+  it('counts a pair with the same name in one layer that is less than half the same as added and fixed', async () => {
+    // One dir deeper than the cart page, so the import has one more `../`.
+    const deeper = errorPage(false).replace("'../../../web/", "'../../../../web/");
+    const root = repository();
+    write(root, 'layers/shop/app/pages/a/index.vue', deeper);
+    writeBaseline(root, FILE, (await findingsBaseline(root)).entries);
+    commit(root, 'accept');
+    git(root, 'switch', '-q', '-c', 'change');
+    git(root, 'rm', '-q', 'layers/shop/app/pages/a/index.vue');
+    write(
+      root,
+      'layers/shop/app/pages/b/index.vue',
+      `${deeper}<template>\n${'  <p>other</p>\n'.repeat(10)}</template>\n`,
+    );
+    commit(root, 'replace');
+    expect(lowScore(root)).toBe(true);
+    expect(counts(await drift(root))).toEqual([1, 1]);
+  });
+});
+
 describe('drift with a rename that git finds or not', () => {
   it('counts a rename that git does not find as added and fixed', async () => {
     const root = await accepted();
@@ -119,22 +160,6 @@ describe('drift with a rename that git finds or not', () => {
       page(...lines, ...errorPage(false).split('\n').slice(1, -2)),
     );
     commit(root, 'rewrite');
-    expect(counts(await drift(root))).toEqual([1, 1]);
-  });
-
-  it('counts a pair with another name that is less than half the same as added and fixed', async () => {
-    const root = await accepted();
-    git(root, 'rm', '-q', CART);
-    const basket = 'layers/shop/app/pages/basket.vue';
-    write(
-      root,
-      basket,
-      `${errorPage(false)}<template>\n${'  <p>other</p>\n'.repeat(10)}</template>\n`,
-    );
-    commit(root, 'replace');
-    const status = git(root, 'diff', '-M30%', '--name-status', 'main').split('\t')[0];
-    expect(Number(status.slice(1))).toBeGreaterThanOrEqual(30);
-    expect(Number(status.slice(1))).toBeLessThan(50);
     expect(counts(await drift(root))).toEqual([1, 1]);
   });
 
