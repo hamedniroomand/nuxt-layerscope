@@ -135,6 +135,11 @@ describe('newSpecifier with a dot in the written name', () => {
     expect(newSpecifier(edge, '/r/y/a.ts', '/real/pkg/index.ts')).toBe('../../real/pkg');
   });
 
+  it('keeps a written .d of a declaration file found through a link', () => {
+    const edge = makeEdge({ symbol: './foo.d', file: '/r/x/a.ts', to: '/real/foo.d.ts' });
+    expect(newSpecifier(edge, '/r/y/a.ts', '/real/foo.d.ts')).toBe('../../real/foo.d');
+  });
+
   it('keeps the written extension when the file name has another case', () => {
     const edge = makeEdge({ symbol: './Foo.js', file: '/r/x/a.ts', to: '/r/x/foo.ts' });
     expect(newSpecifier(edge, '/r/y/a.ts', '/r/x/foo.ts')).toBe('../x/foo.js');

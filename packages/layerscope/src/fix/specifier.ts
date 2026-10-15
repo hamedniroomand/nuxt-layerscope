@@ -30,15 +30,16 @@ function dropTail(path: string, dropped: string): string {
 
 /**
  * Whether the user wrote an extension when the written path does not start the path of the file
- * (a link, or another case). A name with a dot that starts the file name (`x.module` for
- * `x.module.ts`) or that is the name of its dir (`lib.v2` for `lib.v2/index.ts`) has no extension.
- * The names are compared without case, as the path of the file has its real case.
+ * (a link, or another case). A name with a dot that starts the file name without its extension
+ * (`x.module` for `x.module.ts`) or that is the name of its dir (`lib.v2` for `lib.v2/index.ts`)
+ * has no extension, but `foo.d` for `foo.d.ts` keeps `.d`. The names are compared without case,
+ * as the path of the file has its real case.
  */
 function hasWrittenExtension(written: string, file: string): boolean {
   const name = basename(written).toLowerCase();
   return (
     extname(written) !== '' &&
-    !basename(file).toLowerCase().startsWith(`${name}.`) &&
+    !`${stripExtension(basename(file)).toLowerCase()}.`.startsWith(`${name}.`) &&
     basename(dirname(file)).toLowerCase() !== name
   );
 }
