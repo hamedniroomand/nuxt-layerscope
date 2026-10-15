@@ -138,7 +138,8 @@ Each edge has `from`, `to`, `count` and `status`, the worst status of the refere
 
 The components and auto-imports `layerscope unused` lists. It counts the uses in the extra files
 only when `result` comes from `analyze` with `extraFiles: true`. Each entry has `name`, `kind`
-(`component` or `auto-import`), `context`, `file`, `layer`, `global` and `possiblyUsed`.
+(`component` or `auto-import`), `context`, `file`, `layer`, `exposed`, `global` and
+`possiblyUsed`.
 
 ## `findBlindSpots(result)`
 

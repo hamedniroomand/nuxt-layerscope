@@ -111,8 +111,14 @@ export interface SymbolEntry {
 
 export type TraceView = WhyReport;
 
+/** A row of the Unused view. */
+export interface UnusedViewRow extends UnusedRow {
+  /** The kind, the context and the marks of the symbol, as `layerscope unused` shows them. */
+  label: string;
+}
+
 export interface UnusedView {
-  unused: UnusedRow[];
+  unused: UnusedViewRow[];
   /** Uses that `unused` does not count; `unreadable` lists files that could not be read. */
   blindSpots: BlindSpotRow[];
   /** The text of the CLI blind-spot lines. */

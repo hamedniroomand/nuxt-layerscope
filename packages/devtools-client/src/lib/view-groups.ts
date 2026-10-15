@@ -1,4 +1,4 @@
-import type { TraceView, UnusedView, UnusedRow, WhyTargetRow, WhyUseRow } from '#contract';
+import type { TraceView, UnusedView, UnusedViewRow, WhyTargetRow, WhyUseRow } from '#contract';
 
 export interface TraceUse extends WhyUseRow {
   /** What the symbol resolved to for this use. */
@@ -48,7 +48,7 @@ export function traceGroups(view: TraceView): TraceGroup[] {
 
 export interface UnusedGroup {
   layer: string;
-  rows: UnusedRow[];
+  rows: UnusedViewRow[];
 }
 
 /** Unused symbols grouped by layer, in the project's layer order. */
