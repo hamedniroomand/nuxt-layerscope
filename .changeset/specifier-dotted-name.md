@@ -2,4 +2,4 @@
 'nuxt-layerscope': patch
 ---
 
-`fix` keeps a dotted name in an import that it rewrites when the file was found through a symbolic link. Before, `./x.module` for `x.module.ts` became `./x.module.module`, and `./lib.v2` for `lib.v2/index.ts` became `./lib.v2/index.v2`.
+`fix` keeps a name with a dot when it rewrites an import to a file that it found through a symbolic link. Before, the end of the name was added again: `./x.module` for `x.module.ts` got `x.module.module`, and `./lib.v2` for `lib.v2/index.ts` got `lib.v2/index.v2`.
