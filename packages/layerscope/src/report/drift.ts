@@ -47,7 +47,7 @@ export function growthSentence(count: number, base: string, markdown: boolean): 
 
 /** The end of a markdown report that fails `--fail-on-growth`. */
 export function formatGrowthMarkdown(count: number, base: string): string {
-  return `\n**${growthSentence(count, base, true)}**\n\nIf this growth is intended, for example after a stricter config or a newer layerscope, a maintainer can merge the pull request without this check.\n`;
+  return `\n**${growthSentence(count, base, true)}**\n\nIf this growth is intended, for example after a stricter config or a newer layerscope, merge the change without this check.\n`;
 }
 
 export function formatDrift(drift: Drift, format: DriftFormat): string {

@@ -44,8 +44,12 @@ errors that the baseline on the base branch does not have, so such a pull reques
 the added errors, not the size of the file, so a change that fixes one violation and accepts another
 also fails. A base without the baseline file counts as an empty baseline, so turn the option on
 after the file is on the base branch. A growth that you want, for example after a stricter config or
-a newer layerscope, also fails: merge that pull request without this check. Use it with
-`--strict-baseline`, which fails an entry that no finding matches.
+a newer layerscope, also fails: merge that pull request without this check. After such a merge, the
+push run on the base branch fails once, because it compares with the commit before the merge. To
+check only pull requests, use
+<code v-pre>fail-on-growth: ${{ github.event_name == 'pull_request' }}</code>. `drift` reads the
+rules of the current config on both sides, so a change that sets a rule to `warn` or `off` shows no
+growth. Use it with `--strict-baseline`, which fails an entry that no finding matches.
 
 ## What counts as the same finding
 
@@ -141,8 +145,9 @@ In JSON output the accepted findings are listed under `baseline.suppressed` and 
 
 1. Add layerscope with the rules you want, and run `--update-baseline` once.
 2. Turn the check on in CI with `--strict-baseline` (the action input `strict-baseline: true`). New
-   violations are blocked, and `fail-on-growth: true` fails a pull request that accepts them. A
-   fixed violation must leave the file in the same pull request.
+   violations are blocked, and `fail-on-growth: true` fails a pull request that accepts them. Turn
+   it on after the baseline file is on the base branch. A fixed violation must leave the file in the
+   same pull request.
 3. Fix accepted violations when you work in those files, and run `--update-baseline` in the same
    pull request.
 4. Delete the file when it is empty.

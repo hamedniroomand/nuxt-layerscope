@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Fails the job when the drift report shows growth, or when the report could not be made, so that
-# layerscope cannot show that the baseline did not grow. An event with no base commit passes.
+# Fails the job when the drift report shows growth. It also fails when the report could not be
+# made, because then nothing shows that the baseline did not grow. An event with no base commit
+# passes.
 # REPORT_DIR is the folder of drift.sh. This step runs after the comment step, so the comment is
 # posted first.
 set -euo pipefail
@@ -22,6 +23,6 @@ if [ -n "$dir" ] && [ -f "$dir/nobase" ]; then
   exit 0
 fi
 if [ "$state" != report ]; then
-  echo '::error title=layerscope drift::fail-on-growth is on, but the drift report could not be made, so layerscope cannot show that the baseline did not grow. See the drift step above.'
+  echo '::error title=layerscope drift::fail-on-growth is on, but the drift report could not be made, so nothing shows that the baseline did not grow. See the drift step above.'
   exit 1
 fi

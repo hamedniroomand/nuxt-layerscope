@@ -128,8 +128,10 @@ jobs:
 
 It runs `layerscope check --format github`, so findings show up inline on the pull request. It
 writes the list of the findings (up to 200) and then the drift report to the job summary. Inputs:
-`root` (default `.`), `config`, `prepare` (`true` runs `nuxi prepare` instead of the separate
-step), `baseline` (default: the `baseline` key of the config, else `layerscope-baseline.json`),
+`root` (default `.`), `config`, `prepare` (`true` runs `nuxi prepare` instead of the separate step),
+`baseline` (default: the `baseline` key of the config, else `layerscope-baseline.json`),
+`strict-baseline` (`true` fails the check when the baseline has fixed entries), `fail-on-growth`
+(`true` fails the job when the code has errors that the baseline on the base branch does not have),
 `comment` (`true` posts the drift report on the pull request, one comment for each root) and
 `version` (used through `npx` when the project does not install `nuxt-layerscope`).
 

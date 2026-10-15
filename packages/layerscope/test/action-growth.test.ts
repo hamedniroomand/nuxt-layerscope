@@ -68,7 +68,7 @@ function gate(files: Record<string, string> | null): { status: number | null; ou
 }
 
 const FAILED =
-  '::error title=layerscope drift::fail-on-growth is on, but the drift report could not be made, so layerscope cannot show that the baseline did not grow. See the drift step above.\n';
+  '::error title=layerscope drift::fail-on-growth is on, but the drift report could not be made, so nothing shows that the baseline did not grow. See the drift step above.\n';
 
 describe('growth.sh', () => {
   it('fails, and names the base, when the report shows growth', () => {
@@ -101,7 +101,7 @@ describe('growth.sh', () => {
 
 describe('action.yml, the growth step', () => {
   it('is the last step, runs growth.sh with the report folder, and only with the input', () => {
-    const start = ACTION.indexOf('    - name: Fail when the drift report shows growth');
+    const start = ACTION.indexOf('    - name: Fail on drift growth or a missing report');
     expect(start).toBeGreaterThan(ACTION.indexOf('    - name: Post the drift comment'));
     const lines = ACTION.slice(start)
       .split('\n')
@@ -110,6 +110,13 @@ describe('action.yml, the growth step', () => {
     expect(lines).toContain('REPORT_DIR: ${{ steps.report.outputs.dir }}');
     expect(lines).toContain('run: \'"$GITHUB_ACTION_PATH/scripts/growth.sh"\'');
     expect(lines.join('\n')).not.toContain('github.token');
-    expect(ACTION).toContain('INPUT_FAIL_ON_GROWTH: ${{ inputs.fail-on-growth }}');
+    // GitHub compares strings without case, so the gate and drift.sh read the input with the same
+    // expression: a `TRUE` that runs the gate also gives drift.sh `true`.
+    const condition = "inputs.fail-on-growth == 'true'";
+    expect(lines).toContain(`if: \${{ always() && ${condition} }}`);
+    expect(ACTION.match(/INPUT_FAIL_ON_GROWTH:.*/gu)).toEqual([
+      `INPUT_FAIL_ON_GROWTH: \${{ ${condition} }}`,
+    ]);
+    expect(ACTION.match(/inputs\.fail-on-growth\b.*/gu)).toHaveLength(2);
   });
 });

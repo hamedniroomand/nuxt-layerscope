@@ -3,8 +3,9 @@
 # comment to a folder for comment.sh. This script never calls gh, and the action does not give its
 # token to this step. A token that the workflow sets in its env still reaches the CLI. The folder
 # has `text.md` (the comment without its marker), `label` (the root) and `state` (`report`, `failed`
-# or `skipped`). With INPUT_FAIL_ON_GROWTH, it also has `grew` (the base) when the report shows
-# growth, and `nobase` when the event has no base commit, for growth.sh. The output `dir` is its path.
+# or `skipped`). For growth.sh, it also has `grew` (the base) when INPUT_FAIL_ON_GROWTH is on and
+# the report shows growth, and `nobase` when the event has no base commit. The output `dir` is its
+# path.
 # A pull request compares with the tip of its base branch (GITHUB_BASE_REF). A push or a merge group
 # compares with BASE_SHA, the commit before the push or the base of the merge group. BASE_SHA is
 # empty for an event without a base.

@@ -72,7 +72,7 @@ describe('drift --fail-on-growth', () => {
     const result = await drift(await grown(), '--fail-on-growth', '--format', 'markdown');
     expect(result.code).toBe(EXIT_VIOLATIONS);
     expect(result.out).toContain(
-      '\n\n**✖ The code has 1 error that the baseline at `main` does not have (--fail-on-growth).**\n\nIf this growth is intended, for example after a stricter config or a newer layerscope, a maintainer can merge the pull request without this check.\n',
+      '\n\n**✖ The code has 1 error that the baseline at `main` does not have (--fail-on-growth).**\n\nIf this growth is intended, for example after a stricter config or a newer layerscope, merge the change without this check.\n',
     );
   });
 
