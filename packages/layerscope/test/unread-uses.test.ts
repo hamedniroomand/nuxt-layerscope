@@ -134,6 +134,26 @@ describe('uses that cannot be read', () => {
   });
 });
 
+describe('import() in a template', () => {
+  it('gives a fixed path an edge and reports any other path', async () => {
+    const root = project();
+    write(
+      root,
+      'layers/admin/app/pages/Load.vue',
+      '<template>\n  <button @click="() => import(\'../../../shop/app/composables/useCart\')" />\n  <button @click="() => import(`../../../shop/app/composables/${name}`)" />\n</template>\n',
+    );
+    const result = await analyze({ rootDir: root, source: 'types' });
+    expect(boundary(result, 'Load.vue')).toEqual(['../../../shop/app/composables/useCart']);
+    const found = result.findings
+      .filter(finding => finding.file.endsWith('Load.vue'))
+      .map(finding => [finding.rule, finding.symbol, finding.line]);
+    expect(found).toEqual([
+      ['layer-boundary', '../../../shop/app/composables/useCart', 2],
+      ['unresolved-reference', 'import()', 3],
+    ]);
+  });
+});
+
 describe('a baseline of uses that cannot be read', () => {
   it('keeps two dynamic imports in one file as one baseline entry with a count', async () => {
     const root = project();
