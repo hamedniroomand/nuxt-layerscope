@@ -4,7 +4,7 @@ import type { PlannedMove } from '#src/fix/types.ts';
 import { plural } from '#src/utils/strings.ts';
 
 export interface MoveNotes {
-  /** Findings that have a suggestion other than a move. */
+  /** Findings that no planned move clears. */
   others: number;
   /** `typeImports` is `ignore`, so type-only imports are not in the plan. */
   typeImportsIgnored: boolean;
@@ -28,7 +28,7 @@ export function formatOthers(others: number): string[] {
   return others === 0
     ? []
     : [
-        `${plural(others, 'other finding')} ${others === 1 ? 'has' : 'have'} no file move. Run \`layerscope check\` to see their suggestions.`,
+        `${plural(others, 'other finding')} ${others === 1 ? 'has' : 'have'} no file move. Run \`layerscope check\` to see them.`,
       ];
 }
 

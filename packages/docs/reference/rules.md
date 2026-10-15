@@ -116,7 +116,9 @@ The suggestions and their counts are made for the findings that `check` shows on
 
   If several layers qualify, the one with the shortest `allow` list wins. After all moves are
   planned, layerscope checks them together. A move that would break `check` together with another
-  move is dropped. The findings of a dropped move get another suggestion.
+  move is dropped. The findings of a dropped move get the suggestion of a file that no layer can
+  hold: **allow**, or **leave** when the allow would create a cycle or when `root` is the base
+  layer.
 
   When `layer-cycle` is not `off`, layerscope checks all planned moves together. If a layer cycle
   is shown after the moves and the baseline, and it was not shown before, layerscope drops moves
@@ -129,7 +131,8 @@ The suggestions and their counts are made for the findings that `check` shows on
   dirs and the `index` file of each sub dir. It does not read deeper, so a file at
   `composables/cart/useCart.ts` gets no move. A file that is used as a component must be in
   `components/`. A target that sets `imports.dirs`, turns `imports.scan` off or sets `components`
-  is not a target for these files, because layerscope does not know what it scans.
+  is not a target for these files, because layerscope does not know what it scans. A file that is
+  used as a component also gets no move when the layer that owns it sets `components`.
 
 - **allow** the dependency, when that creates no cycle. When the use needs only some names, the
   entry is scoped: `{ layer: 'web', only: ['useCart'] }`. See [`allow`](./config#allow).
@@ -144,6 +147,9 @@ Each suggestion shows what it changes: findings cleared (for a move: the finding
 the file and the findings in it), and files and imports affected for a move
 (`impact.imports` is the count of imports that `fix` lists), edges added for an allow.
 [`layerscope fix --dry-run`](./cli#layerscope-fix) prints the moves only, and `--apply` makes them.
+`check` and `fix` do not read test files, `nuxt.config.*`, the Nuxt `modules/` dir, files outside
+the layer source dirs, or files that match `ignore`. Update the imports of moved files in them by
+hand.
 The other suggestions are in the output of `layerscope check`.
 
 ## `layer-cycle`

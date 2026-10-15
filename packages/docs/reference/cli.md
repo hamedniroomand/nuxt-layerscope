@@ -197,8 +197,7 @@ specifier. An alias (such as `#layers/...` or `~~/...`) is listed as "update by 
 for an alias that points at a file that moves. An alias that points at the same file after the
 move is not listed.
 
-Findings that have no move are counted in one line. Run `layerscope check` to see their
-suggestions.
+Findings that have no move are counted in one line. Run `layerscope check` to see them.
 
 After `--apply`, run `layerscope check --prepare`. After `--dry-run`, make the moves and update the
 imports yourself, then run `layerscope check --prepare`. The generated types still point at the old

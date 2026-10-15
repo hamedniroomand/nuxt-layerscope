@@ -45,10 +45,10 @@ describe('formatMoves', () => {
 
   it('counts the findings that have no move', () => {
     expect(formatMoves([move], '/app', { ...plain, others: 3 })).toContain(
-      '3 other findings have no file move. Run `layerscope check` to see their suggestions.',
+      '3 other findings have no file move. Run `layerscope check` to see them.',
     );
     expect(formatMoves([], '/app', { ...plain, others: 1 })).toBe(
-      'No file moves suggested.\n1 other finding has no file move. Run `layerscope check` to see their suggestions.\n',
+      'No file moves suggested.\n1 other finding has no file move. Run `layerscope check` to see them.\n',
     );
   });
 
