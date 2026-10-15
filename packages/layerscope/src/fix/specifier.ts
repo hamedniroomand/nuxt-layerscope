@@ -29,6 +29,22 @@ function dropTail(path: string, dropped: string): string {
 }
 
 /**
+ * Whether the user wrote an extension when the written path does not start the path of the file
+ * (a link, or another case). A name with a dot that starts the file name without its extension
+ * (`x.module` for `x.module.ts`) or that is the name of its dir (`lib.v2` for `lib.v2/index.ts`)
+ * has no extension, but `foo.d` for `foo.d.ts` keeps `.d`. The names are compared without case,
+ * as the path of the file has its real case.
+ */
+function hasWrittenExtension(written: string, file: string): boolean {
+  const name = basename(written).toLowerCase();
+  return (
+    extname(written) !== '' &&
+    !`${stripExtension(basename(file)).toLowerCase()}.`.startsWith(`${name}.`) &&
+    basename(dirname(file)).toLowerCase() !== name
+  );
+}
+
+/**
  * The relative specifier of an import after the importer or the imported file moves. It keeps
  * the style that the user wrote: a dropped extension or `/index` stays dropped, a written
  * extension stays, and a query or hash stays at the end. `null` when the specifier is not relative.
@@ -45,14 +61,16 @@ export function newSpecifier(edge: Edge, importer: string, imported: string): st
     if (edge.to.startsWith(resolved)) {
       // The user wrote less than the file path: no extension, or a dir with an index file.
       path = dropTail(path, edge.to.slice(resolved.length));
-    } else if (extname(written) === '') {
-      // A path that went through a link, so it does not start with the written one.
+    } else if (hasWrittenExtension(written, edge.to)) {
+      // The user wrote `./foo.js` for `foo.ts`: the written extension stays.
+      path = path.slice(0, path.length - realExtension(edge.to).length) + extname(written);
+    } else {
+      // The file path does not start with the written one (a link, or another case), and the
+      // written name has no extension: `./foo`, or a name with a dot such as `./x.module` for
+      // `x.module.ts` or `./lib.v2` for `lib.v2/index.ts`.
       const base = basename(path, realExtension(path));
       path =
         base === 'index' && basename(written) !== 'index' ? dirname(path) : stripExtension(path);
-    } else {
-      // The user wrote `./foo.js` for `foo.ts`: the written extension stays.
-      path = path.slice(0, path.length - realExtension(edge.to).length) + extname(written);
     }
   }
   const style = written.endsWith('/') && !path.endsWith('/') ? `${path}/` : path;
