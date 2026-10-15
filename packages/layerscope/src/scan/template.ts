@@ -53,7 +53,7 @@ function importPaths(source: string, index: TemplateIndex): number[] {
   for (const [start, end] of index.expressions) {
     for (const match of source
       .slice(start, end)
-      .matchAll(/(?<![\w$.])import(?:\s|\/\*[\s\S]*?\*\/)*\(\s*/gu)) {
+      .matchAll(/(?<![\w$.])import(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*\(\s*/gu)) {
       offsets.push(start + match.index + match[0].length);
     }
   }

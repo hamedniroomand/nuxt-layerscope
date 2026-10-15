@@ -266,4 +266,15 @@ describe('a comment between import and the path in a template', () => {
       at(source, '`./b/'),
     ]);
   });
+
+  it('reads many comment pieces after import in linear time', () => {
+    // The text is in a string, so the render code parses, and the import() makes the regex run.
+    const source = `<template><p>{{ import(a) }}</p><p>{{ 'import /*${'*//*'.repeat(5000)}' }}</p></template>`;
+    const started = performance.now();
+    const scan = scanFile(source, 'a.vue');
+    expect(performance.now() - started).toBeLessThan(1000);
+    expect(scan.unread.map(part => [part.symbol, part.offset])).toEqual([
+      ['import()', at(source, 'a)')],
+    ]);
+  });
 });
