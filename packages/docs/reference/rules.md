@@ -35,19 +35,30 @@ These kinds of dependency are checked:
 `<NuxtIsland name="X">` is a use of the island component `X`. layerscope sees it only with the
 registry, because the `.d.ts` files do not list island components.
 
-A `require('...')` with a fixed path (a string literal, or a template literal with no `${}`) is an
-explicit import, also when it is called through a name that `createRequire(...)` gave.
-`createRequire` is the one that `module` or `node:module` exports, imported by name (also
-`import { createRequire as cr }`), through a namespace or default import (`mod.createRequire(...)`),
-or the `module.createRequire(...)` of a CommonJS file. A function that you wrote and called
-`createRequire` is not it. `.cjs` and `.cts` files are scanned. So is `import x = require('...')`,
-the import form of a `.cts` file. With `const { a, b } = require('...')` the names are `a` and `b`,
-as for a named import; a rest element, a computed key or a plain `require()` takes the whole module.
-These are not counted: `require.resolve('...')`, a `require()` with a path that is not a fixed
-string (the `unresolved-reference` rule reports it), and a `createRequire` binding that goes through
-a function, and `createRequire` taken with `const { createRequire } = require('module')`. A binding
-is the name that `createRequire` was assigned to, so a later reassignment of that name does not
-change what counts.
+A `require('...')` with a fixed path is an explicit import. A fixed path is a string literal, or a
+template literal with no `${}`. This is also true when you call `require` through a name that
+`createRequire(...)` gave. `createRequire` must be the function that `module` or `node:module`
+exports. You can import it by name (also `import { createRequire as cr }`). You can use a namespace
+or default import (`mod.createRequire(...)`). In a CommonJS file you can use
+`module.createRequire(...)`. A function that you wrote and called `createRequire` is not it. `.cjs`
+and `.cts` files are scanned. So is `import x = require('...')`, the import form of a `.cts` file.
+With `const { a, b } = require('...')` the names are `a` and `b`, as for a named import. A rest
+element or a computed key takes the whole module. So does a `require('...')` that is not in a
+destructuring, for example `const x = require('...')`.
+
+These are not counted:
+
+- `require.resolve('...')`.
+- a `require()` with no argument. It loads no module, so `check` does not report it.
+- a `require()` with a path that is not a fixed string. The `unresolved-reference` rule reports it.
+- a name that a function returns from `createRequire(...)`, for example
+  `const r = wrap(createRequire(url))`.
+- `createRequire` taken with `const { createRequire } = require('module')`.
+- a `require` that you renamed or shadowed, `module.require('...')`, and a call such as
+  `createRequire(url)('...')` that has no name.
+
+A binding is the name that `createRequire` was assigned to, so a later reassignment of that name
+does not change what counts.
 
 In a script, `resolveComponent()` with a fixed name (a string literal, or a template literal with no
 `${}`) is a use of that component. The name can be in PascalCase or in kebab-case.
