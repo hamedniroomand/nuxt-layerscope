@@ -108,3 +108,25 @@ describe('newSpecifier: dir and index imports', () => {
     expect(newSpecifier(edge, '/r/y/a.ts', '/real/lib/index.ts')).toBe('../../real/lib');
   });
 });
+
+describe('newSpecifier with a dot in the written name', () => {
+  it('keeps a dotted file name with no written extension', () => {
+    const edge = makeEdge({ symbol: './x.module', file: '/r/x/a.ts', to: '/r/x/x.module.ts' });
+    expect(newSpecifier(edge, '/r/y/a.ts', '/r/x/x.module.ts')).toBe('../x/x.module');
+  });
+
+  it('keeps a dotted file name when the file was found through a link', () => {
+    const edge = makeEdge({ symbol: './x.module', file: '/r/x/a.ts', to: '/real/x.module.ts' });
+    expect(newSpecifier(edge, '/r/y/a.ts', '/real/x.module.ts')).toBe('../../real/x.module');
+  });
+
+  it('keeps a dotted dir name when the file was found through a link', () => {
+    const edge = makeEdge({ symbol: './lib.v2', file: '/r/x/a.ts', to: '/real/lib.v2/index.ts' });
+    expect(newSpecifier(edge, '/r/y/a.ts', '/real/lib.v2/index.ts')).toBe('../../real/lib.v2');
+  });
+
+  it('keeps the written extension of a dotted name found through a link', () => {
+    const edge = makeEdge({ symbol: './x.module.js', file: '/r/x/a.ts', to: '/real/x.module.ts' });
+    expect(newSpecifier(edge, '/r/y/a.ts', '/real/x.module.ts')).toBe('../../real/x.module.js');
+  });
+});

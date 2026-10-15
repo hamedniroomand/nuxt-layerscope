@@ -45,14 +45,19 @@ export function newSpecifier(edge: Edge, importer: string, imported: string): st
     if (edge.to.startsWith(resolved)) {
       // The user wrote less than the file path: no extension, or a dir with an index file.
       path = dropTail(path, edge.to.slice(resolved.length));
-    } else if (extname(written) === '') {
-      // A path that went through a link, so it does not start with the written one.
+    } else if (
+      extname(written) !== '' &&
+      basename(written, extname(written)) === basename(edge.to, extname(edge.to))
+    ) {
+      // The user wrote `./foo.js` for `foo.ts`: the written extension stays.
+      path = path.slice(0, path.length - realExtension(edge.to).length) + extname(written);
+    } else {
+      // A path that went through a link, so it does not start with the written one. The written
+      // name has no extension when it is not the file name with another extension: `x.module`
+      // for `x.module.ts`, or a dir such as `lib.v2` for `lib.v2/index.ts`.
       const base = basename(path, realExtension(path));
       path =
         base === 'index' && basename(written) !== 'index' ? dirname(path) : stripExtension(path);
-    } else {
-      // The user wrote `./foo.js` for `foo.ts`: the written extension stays.
-      path = path.slice(0, path.length - realExtension(edge.to).length) + extname(written);
     }
   }
   const style = written.endsWith('/') && !path.endsWith('/') ? `${path}/` : path;
