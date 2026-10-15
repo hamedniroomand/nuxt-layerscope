@@ -42,8 +42,9 @@ describe('a name that the target has already', () => {
 });
 
 describe('a moved file with `export * from`', () => {
-  // The moved file re-exports from the target, which it may use, so only the names stop the move.
-  const REEXPORT = "export * from '../../../shared/app/utils/noop';\n";
+  // layerscope does not read a package, so the names are unknown. The package is no layer, so only
+  // the names stop the move.
+  const REEXPORT = "export * from 'cart-lib';\n";
 
   it('does not move a file with `export * from` into a layer with any auto-import', async () => {
     const root = autoImportProject('layers/web/app/composables/useCart.ts');
@@ -55,6 +56,33 @@ describe('a moved file with `export * from`', () => {
     const root = autoImportProject('layers/web/app/composables/useCart.ts');
     write(root, 'layers/web/app/composables/useCart.ts', REEXPORT);
     write(root, 'layers/shared/app/utils/noop.ts', "export * from './other';\n");
+    expect(await plan(root)).toEqual([]);
+  });
+});
+
+describe('a relative `export * from`', () => {
+  const BARREL = "export * from '../lib/cart';\n";
+
+  it('adds the names of the file, so only a name in it stops the move', async () => {
+    const root = autoImportProject('layers/web/app/composables/useCart.ts');
+    write(root, 'layers/shared/app/utils/barrel.ts', BARREL);
+    write(root, 'layers/shared/app/lib/cart.ts', 'export const useBasket = () => 2;\n');
+    expect(await plan(root)).toHaveLength(1);
+    write(root, 'layers/shared/app/lib/cart.ts', 'export const useCart = () => 2;\n');
+    expect(await plan(root)).toEqual([]);
+  });
+
+  it('stops at a cycle', async () => {
+    const root = autoImportProject('layers/web/app/composables/useCart.ts');
+    write(root, 'layers/shared/app/utils/a.ts', "export * from './b';\n");
+    write(root, 'layers/shared/app/utils/b.ts', "export * from './a';\n");
+    expect(await plan(root)).toHaveLength(1);
+  });
+
+  it('counts any name when the chain reaches a package', async () => {
+    const root = autoImportProject('layers/web/app/composables/useCart.ts');
+    write(root, 'layers/shared/app/utils/barrel.ts', BARREL);
+    write(root, 'layers/shared/app/lib/cart.ts', "export * from 'cart-lib';\n");
     expect(await plan(root)).toEqual([]);
   });
 });

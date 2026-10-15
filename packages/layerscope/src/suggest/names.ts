@@ -1,8 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
 import { findExports, findTypeExports } from 'mlly';
-import { join, parse, relative } from 'pathe';
+import { dirname, join, parse, relative } from 'pathe';
 
+import { resolveFile } from '#src/resolve/file.ts';
 import type { Layer } from '#src/types.ts';
 
 const SCRIPT = /\.(?:ts|js|mjs|mts)$/u;
@@ -66,7 +67,10 @@ export function componentName(inside: string): string {
 
 export interface FileNames {
   names: string[];
-  /** True when the file has an `export * from` without a name. Its names are not read. */
+  /**
+   * True when the file has an `export * from` without a name whose module is not read: a package,
+   * an alias or a path that does not resolve.
+   */
   unknown: boolean;
 }
 
@@ -74,18 +78,24 @@ export interface FileNames {
  * The names that a file makes public, read with mlly as unimport reads them for Nuxt: also type
  * exports, which Nuxt auto-imports too. A default export is named after the file, or after its dir
  * for an `index` file. As in unimport, only a name with `-`, `_` or `.` is changed to camelCase.
+ * A relative `export * from` adds the names of that file, as in unimport. `seen` stops a cycle.
  */
-export function exportedNames(file: string): FileNames {
-  if (!existsSync(file)) {
+export function exportedNames(file: string, seen = new Set<string>()): FileNames {
+  if (seen.has(file) || !existsSync(file)) {
     return { names: [], unknown: false };
   }
+  seen.add(file);
   const source = readFileSync(file, 'utf8');
   const names: string[] = [];
   let unknown = false;
   let hasDefault = false;
   for (const entry of [...findExports(source), ...findTypeExports(source)]) {
     if (entry.type === 'star' && entry.name === undefined) {
-      unknown = true;
+      const spec = entry.specifier ?? '';
+      const inner = spec.startsWith('.') ? resolveFile(join(dirname(file), spec)) : null;
+      const nested = inner === null ? { names: [], unknown: true } : exportedNames(inner, seen);
+      names.push(...nested.names);
+      unknown ||= nested.unknown;
     } else {
       names.push(...entry.names);
       hasDefault ||= entry.type === 'default';
