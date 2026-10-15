@@ -90,7 +90,8 @@ link in its path, or when a target path exists. `--allow-dirty` skips the git ch
 
 Prints how many errors the code adds and fixes against the baseline committed on `--base` (default
 `origin/main`), and the baseline size before and after. Only the rules that the current config sets
-to `error` count. `--format text|markdown|json`.
+to `error` count. `--format text|markdown|json`. `--fail-on-growth` exits with 1 when the code has
+errors that the baseline at the base ref does not have.
 
 ### Baseline
 

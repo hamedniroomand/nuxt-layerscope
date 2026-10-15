@@ -97,12 +97,14 @@ function makeStubs(dir: string): Stubs {
   copyFileSync(join(SCRIPTS, 'drift.sh'), script);
   copyFileSync(join(SCRIPTS, 'comment.sh'), join(scripts, 'comment.sh'));
   copyFileSync(join(SCRIPTS, 'root-heading.sh'), join(scripts, 'root-heading.sh'));
-  // The stub prints the report that the real CLI prints, or fails when STUB_LS_STATUS is set.
+  // The stub prints the report that the real CLI prints, or fails when STUB_LS_STATUS is set. With
+  // STUB_LS_GROWTH, it adds the growth line and exits 1, as `--fail-on-growth` does.
   writeFileSync(
     join(scripts, 'layerscope.sh'),
     '#!/usr/bin/env bash\n' +
       'if [ -n "${STUB_LS_STATUS:-}" ]; then echo "boom" >&2; exit "$STUB_LS_STATUS"; fi\n' +
-      'printf "### layerscope\\n\\n**adds 1** against \\`%s\\`\\n" "$*"\n',
+      'printf "### layerscope\\n\\n**adds 1** against \\`%s\\`\\n" "$*"\n' +
+      'if [ -n "${STUB_LS_GROWTH:-}" ]; then printf "\\n**✖ The code has 1 error that the baseline at \\`x\\` does not have (--fail-on-growth).**\\n"; exit 1; fi\n',
   );
   const calls = join(dir, 'gh-calls.txt');
   // A git that fails every fetch when STUB_FETCH_FAILS is set, and ls-remote with STUB_LS_REMOTE_FAILS.
