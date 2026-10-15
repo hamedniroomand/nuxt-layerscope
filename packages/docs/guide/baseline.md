@@ -44,9 +44,10 @@ errors that the baseline on the base branch does not have, so such a pull reques
 the added errors, not the size of the file, so a change that fixes one violation and accepts another
 also fails. A base without the baseline file counts as an empty baseline, so turn the option on
 after the file is on the base branch. A growth that you want, for example after a stricter config or
-a newer layerscope, also fails: merge that pull request without this check. After such a merge, the
-push run on the base branch fails once, because it compares with the commit before the merge. To
-check only pull requests, use
+a newer layerscope, also fails: add the label `layerscope: accept growth` to the pull request (see
+[GitHub Action](../reference/github-action#drift-summary)), or merge it without this check. After
+such a merge, the push run on the base branch fails once, because it compares with the commit before
+the merge. To check only pull requests, use
 <code v-pre>fail-on-growth: ${{ github.event_name == 'pull_request' }}</code>. `drift` reads the
 rules of the current config on both sides, so a change that sets a rule to `warn` or `off` shows no
 growth. Use it with `--strict-baseline`, which fails an entry that no finding matches.
