@@ -87,6 +87,27 @@ describe('drift with a renamed import or a moved file', () => {
   });
 });
 
+describe('drift with a file that moved to another layer', () => {
+  it('counts the error of the moved file as added and fixed', async () => {
+    const root = repository();
+    write(
+      root,
+      'layerscope.config.mjs',
+      "export default { layers: { web: { path: 'layers/web', allow: [] }, shop: { path: 'layers/shop', allow: [] }, admin: { path: 'layers/admin', allow: [] } } };\n",
+    );
+    write(root, CART, errorPage(false));
+    writeBaseline(root, FILE, (await findingsBaseline(root)).entries);
+    commit(root, 'accept');
+    git(root, 'switch', '-q', '-c', 'change');
+    mkdirSync(join(root, 'layers/admin/app/pages'), { recursive: true });
+    rename(root, CART, 'layers/admin/app/pages/cart.vue');
+    commit(root, 'move to admin');
+    const result = await drift(root);
+    expect(counts(result)).toEqual([1, 1]);
+    expect(result.added.map(entry => entry.file)).toEqual(['layers/admin/app/pages/cart.vue']);
+  });
+});
+
 describe('drift with a rename that git finds or not', () => {
   it('counts a rename that git does not find as added and fixed', async () => {
     const root = await accepted();
@@ -98,6 +119,22 @@ describe('drift with a rename that git finds or not', () => {
       page(...lines, ...errorPage(false).split('\n').slice(1, -2)),
     );
     commit(root, 'rewrite');
+    expect(counts(await drift(root))).toEqual([1, 1]);
+  });
+
+  it('counts a pair with another name that is less than half the same as added and fixed', async () => {
+    const root = await accepted();
+    git(root, 'rm', '-q', CART);
+    const basket = 'layers/shop/app/pages/basket.vue';
+    write(
+      root,
+      basket,
+      `${errorPage(false)}<template>\n${'  <p>other</p>\n'.repeat(10)}</template>\n`,
+    );
+    commit(root, 'replace');
+    const status = git(root, 'diff', '-M30%', '--name-status', 'main').split('\t')[0];
+    expect(Number(status.slice(1))).toBeGreaterThanOrEqual(30);
+    expect(Number(status.slice(1))).toBeLessThan(50);
     expect(counts(await drift(root))).toEqual([1, 1]);
   });
 

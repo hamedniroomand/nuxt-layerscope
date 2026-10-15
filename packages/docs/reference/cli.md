@@ -176,16 +176,17 @@ count. Warnings do not fail `check`, so they can get to the base branch without 
 The baseline size counts all entries, warnings too. So it can change when `adds` and `fixes` do not.
 A base without a baseline file counts as empty. Without `--baseline`, the `baseline` key of the
 config in the working tree names the file. `drift` reads the same path on the base ref. If you
-rename the file and git finds the rename, `drift` reads the file at its old path on the base ref. If
-git does not find it, the base ref has no file at the new path, and `drift` counts its baseline as
-empty.
+rename a baseline file in the root and git finds the rename, `drift` reads the file at its old path
+on the base ref. If git does not find the rename, or the file is outside the root, the base ref has
+no file at the new path, and `drift` counts its baseline as empty.
 The baseline file must be in the git repository. A baseline that is a symbolic link on the base ref
 stops `drift` with an error. A baseline file that is not valid stops `drift` with an error, on the
 base ref and in the working tree.
 
 Also takes `--baseline`, `--config`, `--prepare` and `--source`. Exits `0`. Exits `2` for a root
-that is not in a git work tree, an unknown ref, an invalid baseline, a baseline outside the git
-repository, or a baseline that is a symbolic link on the base ref.
+that is not in a git work tree, an unknown ref, git failing to list the renamed files, an invalid
+baseline, a baseline outside the git repository, or a baseline that is a symbolic link on the base
+ref.
 
 ## `layerscope fix`
 
@@ -385,11 +386,11 @@ Also takes `--config`, `--prepare`, `--source` and `--verbose`. Exits `0`.
 Every command works with flags only and never prompts, so it is safe in scripts, CI and for
 [coding assistants](../guide/coding-tools).
 
-| Code | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran                                                                                                                                                                                                                                                                                                                                                               |
-| `1`  | `check`: an error finding is not in the baseline, or `--strict-baseline` and the baseline has fixed entries                                                                                                                                                                                                                                                                                                                                                                                  |
-| `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, a component or auto-import dir that layerscope cannot open, a file that the generated types refer to that layerscope cannot reach, `why` found no use, invalid baseline file, a `drift` baseline that is outside the git repository or is a symbolic link on the base ref, empty `--baseline` value, `--strict-baseline` with `--update-baseline` or `--watch`, a refused or stopped `fix --apply` |
+| Code | Meaning                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `0`  | No errors (warnings do not fail), a baseline was written, `why` found the symbol, or `init`/`drift`/`fix`/`graph`/`unused` ran                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `1`  | `check`: an error finding is not in the baseline, or `--strict-baseline` and the baseline has fixed entries                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `2`  | Config or input problem: invalid config, unknown layer, missing or stale generated files, a component or auto-import dir that layerscope cannot open, a file that the generated types refer to that layerscope cannot reach, `why` found no use, invalid baseline file, a `drift` baseline that is outside the git repository or is a symbolic link on the base ref, a `drift` git error while it lists the renamed files, empty `--baseline` value, `--strict-baseline` with `--update-baseline` or `--watch`, a refused or stopped `fix --apply` |
 
 ## Output streams
 

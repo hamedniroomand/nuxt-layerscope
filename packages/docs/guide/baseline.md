@@ -45,14 +45,17 @@ An entry is identified by its **rule**, **file**, **symbol** and **target layer*
 - The same symbol used from a new file is a new finding.
 - A symbol that moves to another layer (say `useCart` moves from `shop` to `checkout`) is a new
   finding, because the dependency changed.
-- A file that is renamed or moved produces new findings. Regenerate the baseline in the same
-  change.
+- A file that is renamed or moved produces new findings in `check`. Regenerate the baseline in the
+  same change. `drift` can follow the rename (see below).
 
-`drift` follows a rename that git finds between the base and the working tree, so a renamed file
-with accepted violations does not count as added and fixed. It maps the path of each finding in the
-file, and the path in a relative import of a renamed file. A rename that git does not find (a file
-that changed too much, or a copy), a rename into or out of the root, and an alias import of a
-renamed file (`#layers/...`) still count as added and fixed.
+`drift` follows a rename of a tracked file that git finds between the base and the working tree, so
+a renamed file with accepted violations does not count as added and fixed. A new violation in a
+renamed file still counts as added. `drift` maps the path of each finding in the file, and the path
+in a relative import of a renamed file. Git finds a rename only when at least 50% of the file stays
+the same, or 30% when the file keeps its name. A rename that git does not find, a copy, a rename
+into or out of the root, and an alias import of a renamed file (`#layers/...`) still count as added
+and fixed. A move to another layer counts as added and fixed for a finding that names a target
+layer.
 
 A `layer-cycle` entry is identified by its **rule**, **symbol** and **target layer**, but not by its
 **file**. The symbol is the chain of layers, for example `auth → shop → auth`, and the target layer
@@ -107,8 +110,8 @@ and `github` the file is not read. These files are not valid: an empty file, a f
 JSON, a directory, a file with an entry whose `count` is not a whole number above 0, a file with
 another version, and a file that layerscope cannot read. An empty `--baseline` value is also
 refused. A `baseline` key that is not a non-empty string is also refused. `drift` also stops for a
-baseline outside the git repository, and for a baseline that is a symbolic link on the base ref. Put
-the file in the repository. Commit the file itself, not a link.
+baseline outside the git repository, for a baseline that is a symbolic link on the base ref, and
+when git cannot list the renamed files. Put the file in the repository. Commit the file itself, not a link.
 For a file from a newer layerscope, update layerscope. Do not create the file again,
 because that removes the newer data. For a directory, use another file name. For a file that cannot
 be read, check its permissions. In other cases, fix the file, or run `--update-baseline` to write a

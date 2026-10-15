@@ -6,8 +6,23 @@ import { describe, expect, it } from 'vite-plus/test';
 import { renamesSince } from '#src/drift/git.ts';
 
 import { FILE, commit, counts, drift, findingsBaseline, writeBaseline } from './drift-project.ts';
-import { ADMIN, CART, SHARED, SHOP, WEB, applyPlan, cartProject } from './fix-project.ts';
+import { ADMIN, CART, SHARED, SHOP, WEB, applyPlan, cartProject, write } from './fix-project.ts';
 import { git, gitProject } from './git-project.ts';
+
+/** Commits the project with its accepted errors on `main`, applies the plan of `fix` on `change`. */
+async function acceptAndFix(root: string, layers: string[]): Promise<void> {
+  writeFileSync(
+    join(root, 'layerscope.config.mjs'),
+    `export default { layers: { ${layers.join(', ')} }, rules: { 'unresolved-reference': 'error' } };\n`,
+  );
+  writeFileSync(join(root, '.gitignore'), '.nuxt\n');
+  git(root, 'init', '-q', '-b', 'main');
+  writeBaseline(root, FILE, (await findingsBaseline(root)).entries);
+  commit(root, 'accept');
+  git(root, 'switch', '-q', '-c', 'change');
+  await applyPlan(root);
+  commit(root, 'fix');
+}
 
 describe('drift after fix --apply', () => {
   // `fix` moves useCart.ts from web to shared, which admin and shop may use. The file keeps an
@@ -15,25 +30,29 @@ describe('drift after fix --apply', () => {
   it('counts the fixed imports, and no error for the moved file', async () => {
     const root = cartProject([SHARED, WEB, ADMIN, SHOP]);
     writeFileSync(
-      join(root, 'layerscope.config.mjs'),
-      `export default { layers: { ${[SHARED, WEB, ADMIN, SHOP].join(', ')} }, rules: { 'unresolved-reference': 'error' } };\n`,
-    );
-    writeFileSync(
       join(root, CART),
       `export const useCart = () => missingThing();\n${'// note\n'.repeat(10)}`,
     );
-    writeFileSync(join(root, '.gitignore'), '.nuxt\n');
-    git(root, 'init', '-q', '-b', 'main');
-    writeBaseline(root, FILE, (await findingsBaseline(root)).entries);
-    commit(root, 'accept');
-    git(root, 'switch', '-q', '-c', 'change');
-    await applyPlan(root);
-    commit(root, 'fix');
+    await acceptAndFix(root, [SHARED, WEB, ADMIN, SHOP]);
     const result = await drift(root);
     expect(git(root, 'diff', '-M', '--name-status', 'main')).toContain(
       'layers/shared/app/composables/useCart.ts',
     );
     expect(counts(result)).toEqual([0, 2]);
+  });
+
+  // The move rewrites the import of a small file, so less than half of the file stays the same.
+  it('follows a small file whose import the move rewrites', async () => {
+    const web = "web: { path: 'layers/web', allow: ['shared'] }";
+    const root = cartProject([SHARED, web, ADMIN, SHOP]);
+    write(
+      root,
+      CART,
+      "import { noop } from '../../../shared/app/utils/noop';\nexport const useCart = () => noop() + missingThing();\n",
+    );
+    await acceptAndFix(root, [SHARED, web, ADMIN, SHOP]);
+    expect(git(root, 'diff', '-M', '--name-status', 'main')).not.toContain('R');
+    expect(counts(await drift(root))).toEqual([0, 2]);
   });
 });
 

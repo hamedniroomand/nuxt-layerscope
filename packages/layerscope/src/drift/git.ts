@@ -178,18 +178,28 @@ export function baselineAt(rootDir: string, ref: string, name: string): Baseline
   return parseBaselineText(text, name, ref);
 }
 
+/** A rename that `drift` follows, from a `--name-status` status such as `R087`. */
+function isRename(status: string, from: string, to: string): boolean {
+  // `fix` moves a small file and rewrites its imports, which can change more than half of it, but
+  // it keeps the name. Two files with other names must be at least 50% the same, as git's default.
+  const score = Number(status.slice(1));
+  return status.startsWith('R') && (score >= 50 || basename(from) === basename(to));
+}
+
 /**
- * The files that git renamed between `ref` and the working tree, as the analysis sees them: the new
- * path to the old path, both relative to the real path of `rootDir`, as baseline entries are. `-M` is given, so a `diff.renames=false` config does not turn it
- * off. A copy, or a rename that git does not find (a file with many edits), is not in it. A rename
- * with a side outside `rootDir` crosses the root of the project, so it is not used.
+ * The files that git renamed between `ref` and the working tree, as the analysis sees them: the
+ * new path to the old path, both relative to the real path of `rootDir`, as baseline entries are.
+ * `-M` is given, so a `diff.renames=false` config does not turn it off. A copy, a rename that git
+ * does not find (a file with many edits), and a rename that `isRename` refuses are not in it. A
+ * rename with a side outside `rootDir` crosses the root of the project, so it is not used.
  */
 export function renamesSince(rootDir: string, ref: string): Map<string, string> {
   const top = workTree(rootDir);
   assertRef(rootDir, ref);
   let output: string;
   try {
-    output = git(top, 'diff', '-M', '--no-relative', '-z', '--name-status', ref);
+    // 30%, so git also pairs the small files that `fix` moves; `isRename` filters the pairs.
+    output = git(top, 'diff', '-M30%', '--no-relative', '-z', '--name-status', ref);
   } catch (error) {
     throw new LayerscopeError(
       `Could not list the renamed files since ${ref} (${firstLine(error)}). Fix the git error, or use another ref with --base.`,
@@ -204,7 +214,7 @@ export function renamesSince(rootDir: string, ref: string): Map<string, string> 
     if (status.startsWith('R') || status.startsWith('C')) {
       const from = relative(root, join(top, fields[index + 1]));
       const to = relative(root, join(top, fields[index + 2]));
-      if (status.startsWith('R') && !isOutside(from) && !isOutside(to)) {
+      if (isRename(status, from, to) && !isOutside(from) && !isOutside(to)) {
         renames.set(to, from);
       }
       index += 2;

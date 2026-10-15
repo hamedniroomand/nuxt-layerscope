@@ -61,7 +61,7 @@ export async function measureDrift(
   const oldName = renames.get(relative(realPath(options.rootDir), realPath(file)));
   const before = baselineAt(options.rootDir, base, oldName ?? baselineFile);
   const result = await analyze({ ...options, baseline: undefined });
-  const mapped = mapToBase(result.findings, renames, options.rootDir);
+  const mapped = mapToBase(result.findings, renames, options.rootDir, result.layers);
   const now = createBaseline(mapped.findings, options.rootDir);
   const committed = readBaseline(file)?.entries ?? [];
   const { added, fixed } = diffBaselines(

@@ -42,8 +42,9 @@ the push. In a merge queue, it compares with the base commit of the merge group.
 not have that commit, the step fetches it. If the step cannot fetch it, if git cannot run in the
 root, or if the event has no base commit (for example a push of a new branch, or a manual run), the
 step skips the report and prints a notice. The step never fails the job. If `drift` fails, for
-example because the baseline on the base branch is not valid, is a symbolic link, or the baseline
-file is outside the git repository, the step prints the error in its log and writes no summary.
+example because the baseline on the base branch is not valid, is a symbolic link, the baseline file
+is outside the git repository, or git cannot list the renamed files, the step prints the error in
+its log and writes no summary.
 
 With `comment: true`, the step `Post the drift comment` also posts the report as a pull request comment, one comment for
 each root. Later runs update the comment that the same account wrote. Two steps or workflows with

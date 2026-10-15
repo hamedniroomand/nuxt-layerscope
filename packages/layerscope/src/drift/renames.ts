@@ -2,7 +2,9 @@ import { join, relative } from 'pathe';
 
 import { keyOf, toKeyed } from '#src/baseline/index.ts';
 import { newSpecifier } from '#src/fix/specifier.ts';
-import type { BaselineEntry, Edge, Finding } from '#src/types.ts';
+import { createOwnerLookup } from '#src/nuxt/owner.ts';
+import type { OwnerLookup } from '#src/nuxt/owner.ts';
+import type { BaselineEntry, Edge, Finding, Layer } from '#src/types.ts';
 import { realPath } from '#src/utils/fs.ts';
 
 /**
@@ -18,10 +20,23 @@ function pathAtBase(file: string, renames: Map<string, string>, rootDir: string)
  * The finding as it was at the base. The file gets its old path. A relative import gets the
  * specifier that pointed from the old importer to the old target, made by the function that `fix`
  * uses to rewrite imports after a move. The rule and the target layer do not change, so a changed
- * dependency still counts as new.
+ * dependency still counts as new. A finding with a target layer in a file that moved from another
+ * layer keeps its path: the key has no source layer, so it is a new layer crossing.
  */
-function findingAtBase(finding: Finding, renames: Map<string, string>, rootDir: string): Finding {
+function findingAtBase(
+  finding: Finding,
+  renames: Map<string, string>,
+  rootDir: string,
+  ownerOf: OwnerLookup,
+): Finding {
   const file = pathAtBase(finding.file, renames, rootDir);
+  if (
+    file !== finding.file &&
+    finding.toLayer !== null &&
+    ownerOf(file)?.name !== finding.fromLayer
+  ) {
+    return finding;
+  }
   const { target } = finding;
   if (!finding.symbol.startsWith('.') || target === null) {
     return { ...finding, file };
@@ -46,10 +61,12 @@ export function mapToBase(
   findings: Finding[],
   renames: Map<string, string>,
   rootDir: string,
+  layers: Layer[],
 ): MappedFindings {
+  const ownerOf = createOwnerLookup(layers);
   const now = new Map<string, Pick<BaselineEntry, 'file' | 'symbol'>>();
   const mapped = findings.map(finding => {
-    const atBase = findingAtBase(finding, renames, rootDir);
+    const atBase = findingAtBase(finding, renames, rootDir, ownerOf);
     const key = keyOf(toKeyed(atBase, rootDir));
     if (!now.has(key)) {
       now.set(key, { file: relative(rootDir, finding.file), symbol: finding.symbol });
