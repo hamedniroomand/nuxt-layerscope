@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
+import { findExports, findTypeExports } from 'mlly';
 import { join, relative } from 'pathe';
 
 import type { Layer } from '#src/types.ts';
@@ -60,35 +61,38 @@ export function componentName(inside: string): string {
   return name.startsWith(dirs) ? name : `${dirs}${name}`;
 }
 
-const NAMED =
-  /\bexport\s+(?:declare\s+)?(?:async\s+)?(?:const|let|var|function\*?|class|enum)\s+([\w$]+)/gu;
-const LISTED = /\bexport\s*(?:type\s*)?\{([^}]*)\}/gu;
+export interface FileNames {
+  names: string[];
+  /** True when the file has an `export * from` without a name. Its names are not read. */
+  unknown: boolean;
+}
 
-/** The names that a file makes public. A default export is named after the file. */
-export function exportedNames(file: string): string[] {
+/**
+ * The names that a file makes public, read with mlly as unimport reads them for Nuxt: also type
+ * exports, which Nuxt auto-imports too. A default export is named after the file.
+ */
+export function exportedNames(file: string): FileNames {
   if (!existsSync(file)) {
-    return [];
+    return { names: [], unknown: false };
   }
   const source = readFileSync(file, 'utf8');
-  const names = [...source.matchAll(NAMED)].map(match => match[1]);
-  for (const match of source.matchAll(LISTED)) {
-    for (const entry of match[1].split(',')) {
-      const name =
-        entry
-          .trim()
-          .split(/\s+as\s+/u)
-          .at(-1) ?? '';
-      if (name !== '' && name !== 'default') {
-        names.push(name);
-      }
+  const names: string[] = [];
+  let unknown = false;
+  let hasDefault = false;
+  for (const entry of [...findExports(source), ...findTypeExports(source)]) {
+    if (entry.type === 'star' && entry.name === undefined) {
+      unknown = true;
+    } else {
+      names.push(...entry.names);
+      hasDefault ||= entry.type === 'default';
     }
   }
-  if (/\bexport\s+default\b|\bas\s+default\b/u.test(source)) {
+  if (hasDefault) {
     const parts = file.replace(SCRIPT, '').split('/');
     const last = parts.at(-1) === 'index' ? parts.at(-2) : parts.at(-1);
     names.push(camel(last ?? ''));
   }
-  return names.filter(name => name !== '');
+  return { names: names.filter(name => name !== '' && name !== 'default'), unknown };
 }
 
 function listDir(dir: string): { name: string; directory: boolean }[] {
@@ -123,16 +127,21 @@ function componentFiles(dir: string): string[] {
 
 export interface LayerNames {
   imports: Map<string, string>;
+  /** True when a file in the dirs has names that are not read (`export * from`). */
+  unknownImports: boolean;
   components: Map<string, string>;
 }
 
 /** The auto-imports and components that a layer has in the dirs that Nuxt scans by default. */
 export function namesOfLayer(layer: Layer): LayerNames {
   const imports = new Map<string, string>();
+  let unknownImports = false;
   for (const kind of Object.keys(AUTO_IMPORT_DIRS) as DirKind[]) {
     for (const dir of AUTO_IMPORT_DIRS[kind]) {
       for (const file of scriptFiles(join(layer[kind], dir))) {
-        for (const name of exportedNames(file)) {
+        const exported = exportedNames(file);
+        unknownImports ||= exported.unknown;
+        for (const name of exported.names) {
           imports.set(name, file);
         }
       }
@@ -143,5 +152,5 @@ export function namesOfLayer(layer: Layer): LayerNames {
   for (const file of componentFiles(root)) {
     components.set(componentName(relative(root, file)), file);
   }
-  return { imports, components };
+  return { imports, unknownImports, components };
 }

@@ -198,6 +198,36 @@ describe('a name that the target has already', () => {
     write(root, 'layers/shared/app/composables/cart.ts', 'export const useCart = () => 2;\n');
     expect(await plan(root)).toEqual([]);
   });
+
+  it.each([
+    'export type useCart = () => number;',
+    'export interface useCart { (): number }',
+    "export * as useCart from './inner';",
+    "export * from './inner';",
+  ])('does not move an auto-import into a layer with "%s"', async exported => {
+    const root = autoImportProject('layers/web/app/composables/useCart.ts');
+    expect(await plan(root)).toHaveLength(1);
+    write(root, 'layers/shared/app/composables/cart.ts', `${exported}\n`);
+    expect(await plan(root)).toEqual([]);
+  });
+});
+
+describe('a moved file with `export * from`', () => {
+  // The moved file re-exports from the target, which it may use, so only the names stop the move.
+  const REEXPORT = "export * from '../../../shared/app/utils/noop';\n";
+
+  it('does not move a file with `export * from` into a layer with any auto-import', async () => {
+    const root = autoImportProject('layers/web/app/composables/useCart.ts');
+    write(root, 'layers/web/app/composables/useCart.ts', REEXPORT);
+    expect(await plan(root)).toEqual([]);
+  });
+
+  it('does not move a file with `export * from` into a layer whose names are not read', async () => {
+    const root = autoImportProject('layers/web/app/composables/useCart.ts');
+    write(root, 'layers/web/app/composables/useCart.ts', REEXPORT);
+    write(root, 'layers/shared/app/utils/noop.ts', "export * from './other';\n");
+    expect(await plan(root)).toEqual([]);
+  });
 });
 
 describe('the baseline', () => {

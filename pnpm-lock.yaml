@@ -312,6 +312,9 @@ importers:
       jiti:
         specifier: ^2.7.0
         version: 2.7.0
+      mlly:
+        specifier: ^1.8.2
+        version: 1.8.2
       nuxt:
         specifier: ^3.12.0 || ^4.0.0
         version: 4.5.2(e5a939b29a58374451219515efdeb327)
