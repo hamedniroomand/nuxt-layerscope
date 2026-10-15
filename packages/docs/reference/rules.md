@@ -130,10 +130,10 @@ The suggestions and their counts are made for the findings that `check` shows on
   in `serverDir`, and `utils/` and `types/` in `sharedDir`. Nuxt reads the script files in these
   dirs and the `index` file of each sub dir. It does not read deeper, so a file at
   `composables/cart/useCart.ts` gets no move. A file that is used as a component must be in
-  `components/`. A target that sets `imports.dirs` or turns `imports.scan` off is not a target for
-  an auto-import file. A target that sets `components` is not a target for a component file.
-  layerscope does not know what these layers scan. A file that is used as a component also gets no
-  move when the layer that owns it sets `components`.
+  `components/`. A target that sets `imports.dirs` to a list that is not empty, or turns
+  `imports.scan` off, is not a target for an auto-import file. A target that sets `components` is
+  not a target for a component file. layerscope does not know what these layers scan. A file that
+  is used as a component also gets no move when the layer that owns it sets `components`.
 
 - **allow** the dependency, when that creates no cycle. When the use needs only some names, the
   entry is scoped: `{ layer: 'web', only: ['useCart'] }`. See [`allow`](./config#allow).
