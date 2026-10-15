@@ -96,8 +96,9 @@ Every source file of every checked layer is parsed:
   same name, just as it does at runtime.
 - **Templates** are compiled with `@vue/compiler-sfc`, the compiler Vue uses. The render function
   shows which components Nuxt resolves (`resolveComponent("CartSummary")`) and which identifiers
-  the template reads from the component instance (`_ctx.formatPrice`). `<component :is>` bound to
-  a runtime value cannot be resolved and is reported.
+  the template reads from the component instance (`_ctx.formatPrice`). It also shows an `import()`
+  in the template, which layerscope reads as in a script. `<component :is>` bound to a runtime value
+  cannot be resolved and is reported.
 - **Imports** are resolved like the bundler does: relative paths, Nuxt's aliases (`~`, `@`,
   `#layers/...`, and your own, read from the generated `tsconfig`), `.js` → `.ts`, and
   `index` files. An import of a layer by its package name, or of a path in the layer,

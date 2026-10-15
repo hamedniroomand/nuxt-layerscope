@@ -234,7 +234,7 @@ describe('import() in a template', () => {
     ]);
   });
 
-  it('gives each import() its own offset, also when Vue moves one before the other', () => {
+  it('gives each import() the offset of its own path in the template', () => {
     const source =
       '<template><div @click="() => import(`./a/${a}`)" /><p @click="() => import(b)" /><i @click="() => import(\'./c\')" />{{ import(`./a/${d}`) }}</template>';
     const scan = scanFile(source, 'a.vue');
@@ -247,5 +247,11 @@ describe('import() in a template', () => {
       at(source, 'b)'),
       source.indexOf('`./a/', first + 1),
     ]);
+  });
+
+  it('keeps each offset when Vue puts the child before the directive', () => {
+    const source = '<template><div v-show="import(`./k/${y}`)">{{ import(a) }}</div></template>';
+    const scan = scanFile(source, 'a.vue');
+    expect(scan.unread.map(part => part.offset)).toEqual([at(source, 'a)'), at(source, '`./k/')]);
   });
 });

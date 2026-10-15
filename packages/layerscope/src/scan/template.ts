@@ -44,7 +44,10 @@ function unreadReason(template: SFCTemplateBlock): Pick<Unread, 'reason' | 'mess
   return null;
 }
 
-/** The offset of the path of each `import()` in the template expressions, in source order. */
+/**
+ * The offset of the path of each `import()` in the template expressions, in source order. A match
+ * inside a string or a comment is also found. The offset is only a hint for the line.
+ */
 function importPaths(source: string, index: TemplateIndex): number[] {
   const offsets: number[] = [];
   for (const [start, end] of index.expressions) {
@@ -56,8 +59,9 @@ function importPaths(source: string, index: TemplateIndex): number[] {
 }
 
 /**
- * The start of an `import()` path that is the same text in the template and in the render code.
- * Vue changes only names (`a` to `_ctx.a`), so the text stops before the first `${` or name.
+ * The start of an `import()` path that Vue does not change. Vue changes only names (`a` to
+ * `_ctx.a`). For a string, it is the whole string. For a template literal, it is the text before the
+ * first `${`. For any other path, it is empty.
  */
 function pathHead(code: string, path: Node): string {
   if (path.type === 'Literal') {
@@ -70,9 +74,10 @@ function pathHead(code: string, path: Node): string {
 }
 
 /**
- * Gives each `import()` of the render code the offset of its own path in the template, so two of
- * them are never one finding. A longer head takes its offset first: a path with no head (a name)
- * then cannot take the offset of a path with a head. The template start is the fallback.
+ * Gives each `import()` of the render code the offset of its own path in the template. Two paths get
+ * different offsets when the template has a match for each of them. If no match is left, the offset
+ * is the start of the template. A longer head takes its offset first: a path with no head (a name)
+ * then cannot take the offset of a path with a head.
  */
 function importOffsets(
   heads: string[],

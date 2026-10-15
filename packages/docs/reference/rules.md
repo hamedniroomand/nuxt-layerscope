@@ -215,7 +215,9 @@ Something could not be resolved, so layerscope will not call it safe:
   TypeScript syntax in a component without a TypeScript script), a `lang` other than HTML, or a
   `src` attribute. Uses in that template are not checked.
 - an `import()` or a `require()` with a path that is not a fixed string, such as a template literal
-  with `${}` or a variable. The module that it loads is not checked.
+  with `${}` or a variable. The module that it loads is not checked. This also covers an `import()`
+  in a template. An `import()` with a fixed path in a template is an explicit import, as in a
+  script.
 - an `import.meta.glob()`. The modules that it loads are not checked.
 - a file that could not be parsed.
 
