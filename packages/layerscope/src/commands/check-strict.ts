@@ -11,6 +11,8 @@ import { currentDir } from './shared.ts';
 interface StrictFlags {
   baseline?: string;
   config?: string;
+  /** `auto` is the default, so the command leaves it out. */
+  source?: string;
   strictBaseline?: boolean;
   updateBaseline?: boolean;
   watch?: boolean;
@@ -35,7 +37,8 @@ function shellWord(value: string): string {
 }
 
 /**
- * The command that removes the fixed entries: the same root, `--config` and `--baseline` as this run.
+ * The command that removes the fixed entries: the same root, `--config`, `--source` and `--baseline`
+ * as this run.
  * A `baseline` key in the config needs nothing, because the config names the file.
  */
 function updateCommand(root: string | undefined, flags: StrictFlags): string {
@@ -45,6 +48,9 @@ function updateCommand(root: string | undefined, flags: StrictFlags): string {
   }
   if (flags.config !== undefined) {
     words.push('--config', shellWord(flags.config));
+  }
+  if (flags.source !== undefined && flags.source !== 'auto') {
+    words.push('--source', shellWord(flags.source));
   }
   if (flags.baseline !== undefined) {
     words.push('--baseline', shellWord(flags.baseline));

@@ -93,6 +93,18 @@ describe('check --strict-baseline, the config in the command', () => {
   });
 });
 
+describe('check --strict-baseline, the source in the command', () => {
+  it('names a --source that is not the default', async () => {
+    const root = projectWith([STALE]);
+    const result = await check(
+      ['--source', 'types', '--strict-baseline', '--format', 'github'],
+      root,
+    );
+    expect(result.code).toBe(EXIT_VIOLATIONS);
+    expect(result.err).toContain('Run "layerscope check --source types --update-baseline"');
+  });
+});
+
 describe('check --strict-baseline, which entries count', () => {
   it('counts an entry with a count', async () => {
     const root = projectWith([{ ...STALE, file: 'layers/a/app/pages/p0.vue', count: 2 }]);
