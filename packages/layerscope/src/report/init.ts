@@ -35,7 +35,9 @@ function unreadLines({ unread }: Proposal['readiness']): string[] {
 function readinessLines({ readiness }: Proposal, paint: Paint): string[] {
   if (readiness.unresolved === 0) {
     return [
-      `  All ${plural(readiness.references, 'reference')} resolved.`,
+      readiness.references === 0
+        ? '  No references found.'
+        : `  All ${plural(readiness.references, 'reference')} resolved.`,
       ...unreadLines(readiness),
     ];
   }

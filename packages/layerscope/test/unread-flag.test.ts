@@ -69,7 +69,7 @@ describe('the readiness report of init', () => {
       'plugins/c.ts': "export const c = import.meta.glob('./c/*.ts');\n",
     });
     expect(text).toContain('"unresolved":0,"unread":3,"byLayer":[],"byDirectory":[]');
-    expect(text).toContain('  All 0 references resolved.\n  Could not read the code in 3 places.');
+    expect(text).toContain('  No references found.\n  Could not read the code in 3 places.');
     expect(text).not.toContain('By directory');
   });
 
