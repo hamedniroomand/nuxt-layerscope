@@ -123,6 +123,10 @@
           "description": "layer-internal only: what toLayer makes public.",
           "items": { "type": "string" }
         },
+        "unread": {
+          "const": true,
+          "description": "unresolved-reference only: true when layerscope parsed the file but could not read a part of it."
+        },
         "suggestion": { "$ref": "#/$defs/suggestion" },
         "message": { "type": "string" }
       }

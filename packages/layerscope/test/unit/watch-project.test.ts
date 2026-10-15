@@ -46,26 +46,19 @@ describe('the build directory', () => {
 });
 
 describe('needsPrepareHint', () => {
-  const unresolved = (message: string): Finding =>
-    makeFinding({ rule: 'unresolved-reference', message });
+  const unresolved = (unread?: true): Finding =>
+    makeFinding({ rule: 'unresolved-reference', ...(unread ? { unread } : {}) });
 
   it('is true for an identifier that is not resolved', () => {
-    expect(needsPrepareHint([unresolved('"useX" is not a local binding')])).toBe(true);
+    expect(needsPrepareHint([unresolved()])).toBe(true);
   });
 
   it('is false for code that layerscope cannot read', () => {
-    expect(
-      needsPrepareHint([unresolved('Could not read import(): the path is not a fixed string.')]),
-    ).toBe(false);
+    expect(needsPrepareHint([unresolved(true)])).toBe(false);
   });
 
   it('is true when one finding needs it and another cannot be read', () => {
-    expect(
-      needsPrepareHint([
-        unresolved('Could not read import()'),
-        unresolved('"useX" is not a local binding'),
-      ]),
-    ).toBe(true);
+    expect(needsPrepareHint([unresolved(true), unresolved()])).toBe(true);
   });
 
   it('is false for other rules', () => {

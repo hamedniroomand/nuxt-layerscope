@@ -68,7 +68,7 @@ describe('the preset line of init', () => {
   const proposal = {
     edges: [{ from: 'shop', to: 'core', count: 1, example: 'x:1' }],
     preset: { name: 'features' as const, base: ['core', 'ui'] },
-    readiness: { references: 1, unresolved: 0, byLayer: [], byDirectory: [] },
+    readiness: { references: 1, unresolved: 0, unread: 0, byLayer: [], byDirectory: [] },
     remaining: [],
   };
   const options = { source: '', written: false, configFile: 'c', baselineFile: null };

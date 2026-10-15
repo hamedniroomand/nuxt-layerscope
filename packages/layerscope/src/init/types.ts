@@ -16,6 +16,8 @@ export interface Cluster {
 export interface Readiness {
   references: number;
   unresolved: number;
+  /** Places where layerscope could not read the code. They are not in the other counts. */
+  unread: number;
   byLayer: Cluster[];
   byDirectory: Cluster[];
 }

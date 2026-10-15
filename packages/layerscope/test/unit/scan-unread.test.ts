@@ -58,6 +58,15 @@ describe('TypeScript in a template', () => {
   });
 });
 
+describe('the message for a template expression that does not parse', () => {
+  it('puts one period after a parse error that ends with a period', () => {
+    const [message] = unread(
+      '<script setup>\nconst bar = 1\n</script>\n<template>{{ bar as string }}</template>',
+    );
+    expect(message).toContain('only be used in TypeScript files. Uses in this template');
+  });
+});
+
 describe('a template that cannot be read', () => {
   it('reports a template with another language', () => {
     expect(unread('<template lang="pug">\ndiv\n  CartSummary\n</template>')).toEqual([

@@ -114,7 +114,7 @@ function readRender(
     ctx.scan.unread.push({
       symbol: '<template>',
       reason: 'template expression that does not parse',
-      message: `Could not read the template render code: ${parseError.message}. Uses in this template are not checked.`,
+      message: `Could not read the template render code: ${parseError.message.replace(/\.$/u, '')}. Uses in this template are not checked.`,
       offset: templateStart,
     });
     return;

@@ -31,8 +31,8 @@ layerscope init [root] [options]
 
 Writes `layerscope.config.ts` with every layer and the smallest `allow` map under which the project
 passes. It prints the layers, every allowed edge and a readiness report: how many references could
-not be resolved and where they cluster. Project code is never changed. See
-[Getting started](../guide/getting-started#generate-a-starting-config).
+not be resolved, where they cluster, and how many parts of files layerscope could not read. Project
+code is never changed. See [Getting started](../guide/getting-started#generate-a-starting-config).
 
 When a [preset](./config#preset) allows every dependency that exists, `init` also names it. It can
 suggest a preset with `root` as its base, for example `preset: { name: 'features', base: ['root'] }`,
