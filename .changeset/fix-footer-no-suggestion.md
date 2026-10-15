@@ -2,4 +2,4 @@
 'nuxt-layerscope': patch
 ---
 
-`fix` no longer says that each finding without a move has a suggestion. Some findings, for example of `unresolved-reference`, have none. The line now says "Run `layerscope check` to see them."
+The `fix` line about other findings no longer says that they have suggestions. Some findings have none, for example `unresolved-reference`, `shadowed-component` and `layer-cycle`. The line now ends with "Run `layerscope check` to see them."
