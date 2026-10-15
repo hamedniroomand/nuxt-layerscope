@@ -80,10 +80,10 @@ export function checkArgs(root: string): string[] {
 export const LAYERS = [WEB, SHARED, ADMIN, SHOP];
 
 /** Declares `useCart` as an auto-import from the file, as Nuxt does in `.nuxt`. */
-export function declareCart(root: string, path: string): void {
+export function declareCart(root: string, path: string, dts = '.nuxt/types/imports.d.ts'): void {
   write(
     root,
-    '.nuxt/types/imports.d.ts',
+    dts,
     `export {}\ndeclare global {\n  const useCart: typeof import('../../${path.replace('.ts', '')}').useCart\n}\n`,
   );
 }

@@ -1,7 +1,21 @@
 import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
-import { LAYERS, autoImportProject, cartProject, page, plan, write } from './fix-project.ts';
+import {
+  LAYERS,
+  autoImportProject,
+  cartProject,
+  declareCart,
+  page,
+  plan,
+  write,
+} from './fix-project.ts';
+
+/** Where the plan moves the file, or `undefined` when it does not move it. */
+async function movedTo(root: string, path: string): Promise<string | undefined> {
+  const moves = await plan(root);
+  return moves.find(move => move.from === join(root, path))?.to;
+}
 
 describe('a name that the target has already', () => {
   it('does not move a component into a layer with a component of the same name', async () => {
@@ -88,12 +102,6 @@ describe('a relative `export * from`', () => {
 });
 
 describe('names as unimport reads them', () => {
-  /** Where the plan moves the file, or `undefined` when it does not move it. */
-  async function movedTo(root: string, path: string): Promise<string | undefined> {
-    const moves = await plan(root);
-    return moves.find(move => move.from === join(root, path))?.to;
-  }
-
   it('keeps the case of a default export named after a file without `-`, `_` or `.`', async () => {
     const root = cartProject(LAYERS);
     const path = 'layers/web/app/composables/Basket.ts';
@@ -118,5 +126,23 @@ describe('names as unimport reads them', () => {
     expect(await plan(root)).toHaveLength(1);
     write(root, `layers/shared/app/utils/${file}`, `${content}\n`);
     expect(await plan(root)).toEqual([]);
+  });
+});
+
+describe('the server utils of the target', () => {
+  it('reads a sub dir at any depth, as Nitro does', async () => {
+    const root = cartProject(LAYERS);
+    const path = 'layers/web/server/utils/useCart.ts';
+    write(root, path, 'export const useCart = () => 1;\n');
+    declareCart(root, path, '.nuxt/types/nitro-imports.d.ts');
+    write(root, 'layers/admin/server/api/admin.ts', 'export default () => useCart();\n');
+    write(root, 'layers/shop/server/api/shop.ts', 'export default () => useCart();\n');
+    expect(await movedTo(root, path)).toBeDefined();
+    write(
+      root,
+      'layers/shared/server/utils/db/cart/useCart.ts',
+      'export const useCart = () => 2;\n',
+    );
+    expect(await movedTo(root, path)).toBeUndefined();
   });
 });

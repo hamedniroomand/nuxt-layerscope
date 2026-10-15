@@ -123,10 +123,10 @@ The suggestions and their counts are made for the findings that `check` shows on
     the layer that holds it.
   - No file is at the new path, and no other planned move uses that path.
   - The target has no other component and no other auto-import with the same name. A type export is
-    a name too. A relative `export * from` is read, and the names of that file count. An
-    `export * from` a package or an alias, or one whose path does not resolve, can export any name,
-    in the moved file or in the target. Then the move conflicts with each auto-import on the other
-    side.
+    a name too. A relative `export * from` is read, and the names of that file count. layerscope
+    does not read an `export * from` a package or an alias, or one whose path does not resolve. Such
+    a file can export any name. This applies to the moved file and to the files in the target. Then
+    the move conflicts with each auto-import on the other side.
   - Nuxt finds the file in the target (see below).
 
   If several layers qualify, the one with the shortest `allow` list wins. After all moves are

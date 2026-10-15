@@ -69,7 +69,8 @@ export interface FileNames {
   names: string[];
   /**
    * True when the file has an `export * from` without a name whose module is not read: a package,
-   * an alias or a path that does not resolve.
+   * an alias or a path that does not resolve. It also comes up from a file that the file
+   * re-exports with a relative `export * from`.
    */
   unknown: boolean;
 }
@@ -129,11 +130,12 @@ function scriptFiles(dir: string): string[] {
   });
 }
 
-function componentFiles(dir: string): string[] {
+/** The files in the dir and in its sub dirs at any depth whose names match `pattern`. */
+function filesUnder(dir: string, pattern: RegExp): string[] {
   return listDir(dir).flatMap(entry =>
     entry.directory
-      ? componentFiles(join(dir, entry.name))
-      : COMPONENT.test(entry.name)
+      ? filesUnder(join(dir, entry.name), pattern)
+      : pattern.test(entry.name)
         ? [join(dir, entry.name)]
         : [],
   );
@@ -141,7 +143,10 @@ function componentFiles(dir: string): string[] {
 
 export interface LayerNames {
   imports: Map<string, string>;
-  /** True when a file in the dirs has names that are not read (`export * from`). */
+  /**
+   * True when a file in the dirs has an `export * from` a package, an alias or a path that does not
+   * resolve. Its names are not read.
+   */
   unknownImports: boolean;
   components: Map<string, string>;
 }
@@ -152,7 +157,10 @@ export function namesOfLayer(layer: Layer): LayerNames {
   let unknownImports = false;
   for (const kind of Object.keys(AUTO_IMPORT_DIRS) as DirKind[]) {
     for (const dir of AUTO_IMPORT_DIRS[kind]) {
-      for (const file of scriptFiles(join(layer[kind], dir))) {
+      // Nitro reads `server/utils` at any depth. Nuxt reads the other dirs one level down.
+      const root = join(layer[kind], dir);
+      const files = kind === 'serverDir' ? filesUnder(root, SCANNED) : scriptFiles(root);
+      for (const file of files) {
         const exported = exportedNames(file);
         unknownImports ||= exported.unknown;
         for (const name of exported.names) {
@@ -163,7 +171,7 @@ export function namesOfLayer(layer: Layer): LayerNames {
   }
   const components = new Map<string, string>();
   const root = join(layer.srcDir, 'components');
-  for (const file of componentFiles(root)) {
+  for (const file of filesUnder(root, COMPONENT)) {
     components.set(componentName(relative(root, file)), file);
   }
   return { imports, unknownImports, components };
