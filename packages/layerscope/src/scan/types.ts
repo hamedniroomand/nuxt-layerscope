@@ -40,7 +40,7 @@ export interface FileScan {
 }
 
 export interface Unread {
-  /** Short name of the part, for the finding: `<template>`, `<script>`, `import()` or `require()`. */
+  /** Short name of the part, for the finding: `<template>`, `import()`, `require()` or `import.meta.glob()`. */
   symbol: string;
   message: string;
   /** Short cause, for the `unused` report: `import() with a dynamic path`. */

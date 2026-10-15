@@ -20,10 +20,12 @@ function topClusters(keys: string[]): Cluster[] {
 }
 
 export function measureReadiness(result: AnalyzeResult): Readiness {
-  const unresolved = result.findings.filter(finding => finding.rule === 'unresolved-reference');
+  const findings = result.findings.filter(finding => finding.rule === 'unresolved-reference');
+  const unresolved = findings.filter(finding => finding.unread !== true);
   return {
     references: result.edges.length + unresolved.length,
     unresolved: unresolved.length,
+    unread: findings.length - unresolved.length,
     byLayer: topClusters(unresolved.map(finding => finding.fromLayer)),
     byDirectory: topClusters(
       unresolved.map(finding => dirname(relative(result.rootDir, finding.file))),

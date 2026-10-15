@@ -24,13 +24,23 @@ function clusters(title: string, items: Cluster[], paint: Paint): string[] {
   ];
 }
 
+function unreadLines({ unread }: Proposal['readiness']): string[] {
+  return unread === 0
+    ? []
+    : [`  Could not read the code in ${plural(unread, 'place')}. Uses there are not checked.`];
+}
+
 function readinessLines({ readiness }: Proposal, paint: Paint): string[] {
   if (readiness.unresolved === 0) {
-    return [`  All ${plural(readiness.references, 'reference')} resolved.`];
+    return [
+      `  All ${plural(readiness.references, 'reference')} resolved.`,
+      ...unreadLines(readiness),
+    ];
   }
   const share = Math.round((readiness.unresolved / readiness.references) * 100);
   return [
     `  ${readiness.unresolved} of ${plural(readiness.references, 'reference')} could not be resolved (${share}%).`,
+    ...unreadLines(readiness),
     ...clusters('By layer', readiness.byLayer, paint),
     ...clusters('By directory', readiness.byDirectory, paint),
   ];

@@ -55,8 +55,8 @@ npx layerscope init --baseline
 
 `init` lists your layers and writes a `layerscope.config.ts` that allows exactly the dependencies
 that exist today. Each allowed edge is printed, with its reference count and an example. It also
-reports how many references could not be resolved and where they cluster, which tells you how much
-layerscope can see. With `--baseline`, the remaining findings are accepted so the first CI run is
+reports how many references could not be resolved, where they cluster, and in how many places
+layerscope could not read the code, which tells you how much layerscope can see. With `--baseline`, the remaining findings are accepted so the first CI run is
 green. It never overwrites a config without `--force`.
 
 The generated map records what is, not what is intended. Delete the lines for dependencies you

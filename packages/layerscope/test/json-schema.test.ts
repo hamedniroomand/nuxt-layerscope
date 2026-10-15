@@ -64,6 +64,13 @@ describe('JSON report schema', () => {
     expect(json).toHaveProperty('baseline.suppressed');
   });
 
+  it('accepts a finding of code that layerscope could not read', async () => {
+    const json = (await report()) as { findings: Record<string, unknown>[] };
+    const [finding] = json.findings;
+    json.findings.push({ ...finding, rule: 'unresolved-reference', unread: true });
+    expect(validate(json), JSON.stringify(validate.errors)).toBe(true);
+  });
+
   it('rejects a report that lacks a required field', () => {
     expect(validate({ version: 1 })).toBe(false);
   });

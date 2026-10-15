@@ -279,21 +279,21 @@ export class FileAnalysis {
   }
 
   private addUnresolved(symbol: string, offset: number, message: string, each = false): void {
-    const severity = this.env.unresolvedSeverity;
-    // Each unread part is its own finding, so the key has the offset.
+    // Each unread part is its own finding, so the key has the offset. Only unread parts set `each`.
     const key = each ? `unresolved\0${symbol}\0${offset}` : `unresolved\0${symbol}`;
-    if (severity === 'off' || !this.firstSeen(key)) {
+    if (this.env.unresolvedSeverity === 'off' || !this.firstSeen(key)) {
       return;
     }
     this.unresolved.push({
       rule: 'unresolved-reference',
-      severity,
+      severity: this.env.unresolvedSeverity,
       file: this.file,
       ...lineColumn(this.source, offset),
       symbol,
       fromLayer: this.layer.name,
       toLayer: null,
       target: null,
+      ...(each ? { unread: true as const } : {}),
       message,
     });
   }

@@ -30,12 +30,11 @@ export function prepareProject(rootDir: string): void {
 }
 
 /**
- * Whether a finding may come from stale auto-imports. Code that layerscope cannot read (its message
- * starts with `Could not read`) does not, so `nuxi prepare` would not change it.
+ * Whether a finding may come from stale auto-imports. Code that layerscope cannot read (`unread`)
+ * does not, so `nuxi prepare` would not change it.
  */
 export function needsPrepareHint(findings: Finding[]): boolean {
   return findings.some(
-    finding =>
-      finding.rule === 'unresolved-reference' && !finding.message.startsWith('Could not read '),
+    finding => finding.rule === 'unresolved-reference' && finding.unread !== true,
   );
 }

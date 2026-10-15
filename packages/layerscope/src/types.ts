@@ -111,6 +111,8 @@ export interface Finding {
   scoped?: ScopedAllow[];
   /** What `toLayer` makes public, for `layer-internal` findings. */
   exposed?: string[];
+  /** For `unresolved-reference`: `true` when layerscope could not read the code. */
+  unread?: true;
   message: string;
   /** Set on `layer-boundary` findings. */
   suggestion?: Suggestion;
