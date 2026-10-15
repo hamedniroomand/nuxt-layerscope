@@ -2,8 +2,8 @@
 
 While `nuxi dev` runs, the [Nuxt module](./nuxt-module) adds a **Layerscope** tab to
 [Nuxt DevTools](https://devtools.nuxt.com). The tab shows the layer architecture of the app and
-updates while you edit code. A [live demo](https://layerscope.netlify.app/__layerscope/) shows the tab for the
-playground app.
+updates while you edit code.
+A [live demo](https://layerscope.netlify.app/__layerscope/) shows the tab for the playground app.
 
 ## Open the tab
 
@@ -30,7 +30,8 @@ The bar at the top shows the file and layer counts, the errors and warnings, the
 
 Every count is a link. For example, click **2 errors** to see only the errors in **Findings**.
 Click a file name to open the file in your editor at that line. The pictures below show the
-[playground](https://github.com/hamedniroomand/nuxt-layerscope/tree/main/packages/playground) app of this repository.
+[playground](https://github.com/hamedniroomand/nuxt-layerscope/tree/main/packages/playground)
+app of this repository.
 
 ### Overview
 
@@ -54,9 +55,9 @@ text; the filters stay in the URL. Press <kbd>2</kbd>, then <kbd>/</kbd> to filt
 Select a finding with <kbd>j</kbd> and <kbd>k</kbd>. The selected finding shows a suggestion from
 the analysis: move the file, allow the layer (the whole layer, or only some names), expose the
 symbol, or leave the reference. See [Suggestions](../reference/rules#suggestions). For an "allow"
-suggestion, the tab shows the config change to copy and how many findings it removes. The tab does not change your
-config. <kbd>o</kbd> opens the file, <kbd>t</kbd> traces the symbol, and <kbd>i</kbd> accepts the
-finding into the baseline.
+suggestion, the tab shows the config change to copy and how many findings it removes.
+The tab does not change your config. <kbd>o</kbd> opens the file, <kbd>t</kbd> traces the symbol,
+and <kbd>i</kbd> accepts the finding into the baseline.
 
 <Screenshot
   name="findings-selected"
@@ -272,7 +273,8 @@ header switches between the light and dark theme.
 - Paths: the snapshot is public, so every path in it is relative to the project root. No path of
   the build machine is written.
 - Size: the client is about 50 KB (gzip), plus one small trace file for each component and
-  auto-import. The [playground](https://github.com/hamedniroomand/nuxt-layerscope/tree/main/packages/playground)
+  auto-import.
+  The [playground](https://github.com/hamedniroomand/nuxt-layerscope/tree/main/packages/playground)
   writes 373 JSON files, 76 KB in total.
 - Prerender: `nuxi generate` does not crawl into `/__layerscope/`, so a link to it from your pages
   is safe.

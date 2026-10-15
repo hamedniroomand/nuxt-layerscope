@@ -246,7 +246,7 @@ describe('the line about other findings', () => {
     const root = cartProject(LAYERS);
     write(root, 'layers/admin/app/pages/other.vue', page('useMissing();'));
     expect(await fix(root)).toContain(
-      '1 other finding has no file move. Run `layerscope check` to see their suggestions.',
+      '1 other finding has no file move. Run `layerscope check` to see them.',
     );
   });
 });

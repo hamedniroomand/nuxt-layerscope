@@ -153,7 +153,7 @@ describe('layerscope fix with nothing to move', () => {
     const output = silence();
     expect(await run(['node', 'layerscope', 'fix', root, '--dry-run'])).toBe(EXIT_CLEAN);
     expect(output.stdout()).toBe(
-      'No file moves suggested.\n1 other finding has no file move. Run `layerscope check` to see their suggestions.\n',
+      'No file moves suggested.\n1 other finding has no file move. Run `layerscope check` to see them.\n',
     );
   });
 
