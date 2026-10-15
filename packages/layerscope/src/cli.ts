@@ -32,6 +32,9 @@ export async function run(argv: string[] = process.argv): Promise<number> {
   const cli = createCli();
   try {
     cli.parse(argv, { run: false });
+    // cac keeps the arguments after `--` apart. They are positional arguments, also when they
+    // start with `-`, so cac gives them to the command and stops on an argument it does not take.
+    cli.args = [...cli.args, ...(cli.options['--'] as string[])];
     if (cli.matchedCommand === undefined) {
       if (cli.options.help === true) {
         return EXIT_CLEAN;
