@@ -8,6 +8,12 @@ export const DEFAULT_SEVERITY: Record<RuleName, Severity> = {
   'shadowed-component': 'warn',
 };
 
+/**
+ * The rules that read data that only the registry of the Nuxt module has. With the `.d.ts`
+ * source, they report nothing.
+ */
+export const REGISTRY_ONLY_RULES: readonly RuleName[] = ['shadowed-component'];
+
 /** Accepted in config for forward compatibility; not implemented yet. */
 export const RESERVED_RULES = new Set(['unused-symbol']);
 
