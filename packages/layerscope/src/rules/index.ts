@@ -1,4 +1,4 @@
-import { ruleSeverity } from '#src/config/rules.ts';
+import { REGISTRY_ONLY_RULES, ruleSeverity } from '#src/config/rules.ts';
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
 import type { Registry } from '#src/registry/schema.ts';
 import { addSuggestions } from '#src/suggest/index.ts';
@@ -31,7 +31,7 @@ export async function runRules(
 ): Promise<{ findings: Finding[]; notes: string[] }> {
   const { registry, config } = input;
   const notes: string[] = [];
-  if (registry === null && ruleSeverity(config, 'shadowed-component') !== 'off') {
+  if (registry === null && REGISTRY_ONLY_RULES.some(rule => ruleSeverity(config, rule) !== 'off')) {
     notes.push(SHADOWED_NEEDS_REGISTRY);
   }
   const found = [
