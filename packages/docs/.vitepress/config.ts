@@ -13,7 +13,7 @@ const SITE = 'https://layerscope.kitdev.space/';
 const BASE = '/';
 const TITLE = 'layerscope';
 const DESCRIPTION =
-  'Layer boundary checks for Nuxt 3 and 4. layerscope resolves auto-imports, components and server utils the way Nuxt does, and fails CI when a layer uses one it is not allowed to.';
+  'A linter for Nuxt layer boundaries, for Nuxt 3 and 4. layerscope resolves auto-imports, components and server utils the way Nuxt does, and fails CI when a layer uses one it is not allowed to.';
 
 function link(name: string, text: string, path: string): { text: string; link: string } {
   return { text: icon(name) + text, link: path };
@@ -74,14 +74,17 @@ export default defineConfig({
     ['meta', { name: 'theme-color', content: '#00dc82' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: TITLE }],
-    ['meta', { property: 'og:title', content: 'layerscope · Layer boundaries for Nuxt' }],
+    ['meta', { property: 'og:title', content: 'layerscope · Linter for Nuxt layer boundaries' }],
     ['meta', { property: 'og:description', content: DESCRIPTION }],
     ['meta', { property: 'og:image', content: `${SITE}og-image.png` }],
     ['meta', { property: 'og:image:width', content: '1200' }],
     ['meta', { property: 'og:image:height', content: '630' }],
-    ['meta', { property: 'og:image:alt', content: 'layerscope: layer boundaries for Nuxt' }],
+    [
+      'meta',
+      { property: 'og:image:alt', content: 'layerscope: a linter for Nuxt layer boundaries' },
+    ],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:title', content: 'layerscope · Layer boundaries for Nuxt' }],
+    ['meta', { name: 'twitter:title', content: 'layerscope · Linter for Nuxt layer boundaries' }],
     ['meta', { name: 'twitter:description', content: DESCRIPTION }],
     ['meta', { name: 'twitter:image', content: `${SITE}og-image.png` }],
     [
@@ -163,10 +166,10 @@ export default defineConfig({
         {
           text: 'Essentials',
           items: [
-            link('layers', 'Layers', '/guide/layers'),
+            link('layers', 'Nuxt layers', '/guide/layers'),
             link('package', 'Nuxt module', '/guide/nuxt-module'),
             link('archive', 'Baseline', '/guide/baseline'),
-            link('git-pull-request', 'Continuous integration', '/guide/ci'),
+            link('git-pull-request', 'Check layer boundaries in CI', '/guide/ci'),
           ],
         },
         {
@@ -183,7 +186,7 @@ export default defineConfig({
             link('workflow', 'How it works', '/guide/how-it-works'),
             link('gauge', 'Performance', '/guide/performance'),
             link('life-buoy', 'Troubleshooting', '/guide/troubleshooting'),
-            link('scale', 'Compared with other tools', '/guide/comparison'),
+            link('scale', 'Nuxt layer lint tools compared', '/guide/comparison'),
             link(
               'arrow-right',
               'Migrate from eslint-plugin-nuxt-layers',

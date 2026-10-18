@@ -1,4 +1,8 @@
-# Compared with other tools
+---
+description: How layerscope compares with eslint-plugin-nuxt-layers, nuxt-fsd, Archora and Nuxt DevTools for linting Nuxt layer boundaries.
+---
+
+# Nuxt layer lint tools compared
 
 Other tools cover parts of this. layerscope is narrower: it resolves symbols exactly the way Nuxt
 does, understands Nuxt layer semantics, and is built to fail a CI job.

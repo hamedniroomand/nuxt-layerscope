@@ -1,3 +1,7 @@
+---
+description: How layerscope finds Nuxt layers, loads the symbol table, resolves auto-imports and components, and applies the boundary rules.
+---
+
 # How it works
 
 A run has five steps: find the layers, load the symbol table, check it is fresh, scan the source

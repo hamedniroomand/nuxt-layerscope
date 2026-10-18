@@ -15,7 +15,7 @@ inline on the pull request diff and the job fails on errors (and on fixed baseli
 
 The action does not install dependencies or run `nuxi prepare` for you unless asked: install
 first, then either run `npx nuxi prepare` or set `prepare: true`. See
-[Continuous integration](../guide/ci) for complete workflows.
+[Check layer boundaries in CI](../guide/ci) for complete workflows.
 
 ## Inputs
 

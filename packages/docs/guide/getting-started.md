@@ -1,3 +1,7 @@
+---
+description: Add layerscope to a Nuxt 3 or Nuxt 4 project, declare which layers may use which, and lint layer boundaries in about five minutes.
+---
+
 # Getting started
 
 Add layerscope to a Nuxt project, declare which layers may use which, and run the check. This

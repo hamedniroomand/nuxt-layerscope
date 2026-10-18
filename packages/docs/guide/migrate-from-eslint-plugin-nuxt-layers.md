@@ -1,3 +1,7 @@
+---
+description: Move the layer map from eslint-plugin-nuxt-layers to layerscope, run both for a while, and know when to remove the old plugin.
+---
+
 # Migrate from eslint-plugin-nuxt-layers
 
 [eslint-plugin-nuxt-layers] checks `import` statements against a map of layers. layerscope checks

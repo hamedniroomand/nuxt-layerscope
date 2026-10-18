@@ -1,3 +1,7 @@
+---
+description: The nuxt-layerscope Nuxt module records what Nuxt resolves into a registry file that the CLI, the ESLint rule and DevTools read.
+---
+
 # Nuxt module
 
 The package's default export is a Nuxt module. It records what Nuxt resolves into
