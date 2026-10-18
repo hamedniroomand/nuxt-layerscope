@@ -1,3 +1,7 @@
+---
+description: Trace one symbol with why, draw the Nuxt layer graph, and find unused code with the layerscope CLI.
+---
+
 # Explore dependencies
 
 `layerscope check` tells you what is wrong. Three more commands help you understand the codebase

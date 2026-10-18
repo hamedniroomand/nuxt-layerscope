@@ -1,6 +1,6 @@
 # nuxt-layerscope
 
-Layer boundary checks for Nuxt 3 and 4 apps that also see auto-imports.
+A linter for Nuxt layer boundaries in Nuxt 3 and 4 apps that also sees auto-imports.
 
 <a href="https://layerscope.kitdev.space/guide/devtools"><img src="https://layerscope.kitdev.space/devtools/hero-dark.webp" width="1600" height="611" alt="The Layerscope tab in Nuxt DevTools: the layer graph of five layers with three violations, the ui to shop edge selected, with useCart in the side panel"></a>
 

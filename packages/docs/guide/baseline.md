@@ -1,3 +1,7 @@
+---
+description: Record the Nuxt layer violations you have today in a baseline, so layerscope fails CI only on new cross-layer imports.
+---
+
 # Baseline
 
 Few codebases can fix every violation before turning a check on. A baseline records the

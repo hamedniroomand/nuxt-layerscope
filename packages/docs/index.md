@@ -1,11 +1,11 @@
 ---
 layout: home
-title: Layer boundaries for Nuxt
+title: Linter for Nuxt layer boundaries
 # llms.txt reads this line. The page shows the shorter `intro.tagline`.
 tagline: Split a Nuxt app into layers and keep them apart. layerscope resolves every auto-import, component and server util the way Nuxt does, and fails CI when a layer uses one it may not.
 
 intro:
-  title: Layer boundaries for Nuxt, auto-imports included.
+  title: A linter for Nuxt layer boundaries, auto-imports included.
   tagline: layerscope resolves auto-imports, components and server utils the way Nuxt does, and fails CI when a layer crosses a boundary.
   command: npx nuxi module add nuxt-layerscope --dev
   action:

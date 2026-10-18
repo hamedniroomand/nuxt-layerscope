@@ -1,4 +1,8 @@
-# Layers
+---
+description: How layerscope names Nuxt layers, which files belong to each layer, and how extends, layers/ and npm layers are resolved.
+---
+
+# Nuxt layers
 
 layerscope uses the layers Nuxt resolves, in the same order and with the same directories. This
 page explains how they are named and which files belong to them.

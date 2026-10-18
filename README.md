@@ -5,7 +5,7 @@
 <h1 align="center">layerscope</h1>
 
 <p align="center">
-  Layer boundary checks for Nuxt, auto-imports included.
+  A linter for Nuxt layer boundaries, auto-imports included.
 </p>
 
 <p align="center">

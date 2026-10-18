@@ -1,13 +1,15 @@
 {
   "name": "nuxt-layerscope",
   "version": "0.10.0",
-  "description": "Layer boundary checks for Nuxt apps that see auto-imports",
+  "description": "Linter for Nuxt layer boundaries that sees auto-imports",
   "keywords": [
     "architecture",
     "auto-imports",
     "boundaries",
     "cli",
+    "layer-boundaries",
     "lint",
+    "linter",
     "nuxt",
     "nuxt-layers",
     "nuxt-module"

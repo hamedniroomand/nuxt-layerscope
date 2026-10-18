@@ -1,4 +1,8 @@
-# Continuous integration
+---
+description: Run layerscope in GitHub Actions, GitLab CI or git hooks to lint Nuxt layer boundaries, with exit codes, PR annotations and the baseline.
+---
+
+# Check layer boundaries in CI
 
 `layerscope check` exits with `1` when there are errors, so any CI fails on new violations. Run it
 after installing dependencies, and let it run `nuxi prepare` or run that yourself. With

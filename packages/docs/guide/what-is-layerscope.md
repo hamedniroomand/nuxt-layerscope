@@ -1,3 +1,7 @@
+---
+description: layerscope is a linter for Nuxt layer boundaries. It resolves auto-imports and components the way Nuxt does and fails CI when a layer crosses a boundary.
+---
+
 # What is layerscope?
 
 layerscope checks that the [layers](https://nuxt.com/docs/getting-started/layers) of a Nuxt 3 or

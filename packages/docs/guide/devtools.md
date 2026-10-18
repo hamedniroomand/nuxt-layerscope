@@ -1,3 +1,7 @@
+---
+description: The Layerscope tab in Nuxt DevTools shows the layer graph, every boundary finding and where each symbol is used, live while you edit.
+---
+
 # DevTools
 
 While `nuxi dev` runs, the [Nuxt module](./nuxt-module) adds a **Layerscope** tab to

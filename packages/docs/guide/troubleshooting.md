@@ -1,3 +1,7 @@
+---
+description: Fixes for layerscope errors such as a missing or stale registry, unresolved auto-imports and components, duplicate layer names and findings that differ between machines.
+---
+
 # Troubleshooting
 
 ## "… not found. Run "nuxi prepare" first"

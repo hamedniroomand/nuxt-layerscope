@@ -1,3 +1,7 @@
+---
+description: Get Nuxt layer boundary findings in ESLint and oxlint while you type, from the same analysis as layerscope check.
+---
+
 # Editor feedback
 
 `nuxt-layerscope/eslint` reports layer boundary findings while you type, from the same analysis as
