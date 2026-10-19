@@ -126,12 +126,15 @@ The suggestions and their counts are made for the findings that `check` shows on
   - Each dependency of the file may be used from the target. It must pass `allow`, and `expose` of
     the layer that holds it.
   - No file is at the new path, and no other planned move uses that path.
-  - The target has no other component and no other auto-import with the same name. A type export is
-    a name too. A relative `export * from` is read, and the names of that file count. layerscope
-    does not read an `export * from` a package or an alias, or one whose file unimport does not
-    find, such as `./y.js` for `y.ts`. Such a file can export any name. This applies to the moved
-    file and to the files in the target. Then the move conflicts with each auto-import on the other
-    side.
+  - No layer other than the owner has another component or another auto-import with the same name in
+    the dirs that Nuxt scans by default: not the target, and not a third layer. Nuxt then uses only
+    one of the files, for most dirs the one of the layer that comes first. So after the move, the
+    file of a third layer could take the name. layerscope does not compare the layer order. A type
+    export is a name too. A relative `export * from` is read, and the names of that file count.
+    layerscope does not read an `export * from` a package or an alias, or one whose file unimport
+    does not find, such as `./y.js` for `y.ts`. Such a file can export any name. This applies to the
+    moved file and to the files in the other layers. Then the move conflicts with each auto-import
+    of the other layers.
   - Nuxt finds the file in the target (see below).
 
   If several layers qualify, the one with the shortest `allow` list wins. After all moves are

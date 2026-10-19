@@ -102,12 +102,17 @@ describe('move targets: destinations', () => {
       ADMIN,
       SHOP,
     ]);
-    write(root, 'layers/store/app/composables/useCart.ts', 'export const useCart = () => 2;\n');
+    // Another name, so the two files do not conflict as auto-imports.
+    write(
+      root,
+      'layers/store/app/composables/useCart.ts',
+      'export const useStoreCart = () => 2;\n',
+    );
     write(
       root,
       'layers/admin/app/pages/store.vue',
       page(
-        "import { useCart as other } from '../../../store/app/composables/useCart';",
+        "import { useStoreCart as other } from '../../../store/app/composables/useCart';",
         'other();',
       ),
     );
@@ -115,7 +120,7 @@ describe('move targets: destinations', () => {
       root,
       'layers/shop/app/pages/store.vue',
       page(
-        "import { useCart as other } from '../../../store/app/composables/useCart';",
+        "import { useStoreCart as other } from '../../../store/app/composables/useCart';",
         'other();',
       ),
     );
@@ -143,12 +148,17 @@ describe('move targets: taken destinations', () => {
       "shop: { path: 'layers/shop', allow: ['shared', 'common'] }",
     ]);
     write(root, 'layers/common/app/utils/noop.ts', 'export const noop = () => 0;\n');
-    write(root, 'layers/store/app/composables/useCart.ts', 'export const useCart = () => 2;\n');
+    // Another name, so the two files do not conflict as auto-imports.
+    write(
+      root,
+      'layers/store/app/composables/useCart.ts',
+      'export const useStoreCart = () => 2;\n',
+    );
     write(
       root,
       'layers/admin/app/pages/store.vue',
       page(
-        "import { useCart as other } from '../../../store/app/composables/useCart';",
+        "import { useStoreCart as other } from '../../../store/app/composables/useCart';",
         'other();',
       ),
     );
@@ -156,7 +166,7 @@ describe('move targets: taken destinations', () => {
       root,
       'layers/shop/app/pages/store.vue',
       page(
-        "import { useCart as other } from '../../../store/app/composables/useCart';",
+        "import { useStoreCart as other } from '../../../store/app/composables/useCart';",
         'other();',
       ),
     );

@@ -62,6 +62,41 @@ describe('a name that the target has already', () => {
   });
 });
 
+describe('a name that a third layer has', () => {
+  // Nuxt uses only one of the files. After a move, the file of a third layer could win the name.
+  // layerscope does not compare the order, so each third layer stops the move.
+  const EXTRA = "extra: { path: 'layers/extra', allow: [] }";
+
+  it('does not move an auto-import when a third layer exports the name', async () => {
+    const root = autoImportProject('layers/web/app/composables/useCart.ts', [...LAYERS, EXTRA]);
+    expect(await plan(root)).toHaveLength(1);
+    write(root, 'layers/extra/app/composables/useCart.ts', 'export const useCart = () => 3;\n');
+    expect(await plan(root)).toEqual([]);
+  });
+
+  it('does not move an auto-import when a third layer has names that are not read', async () => {
+    const root = autoImportProject('layers/web/app/composables/useCart.ts', [...LAYERS, EXTRA]);
+    write(root, 'layers/extra/app/utils/lib.ts', "export * from 'cart-lib';\n");
+    expect(await plan(root)).toEqual([]);
+  });
+
+  it('does not move a component when a third layer has a component of the same name', async () => {
+    const root = cartProject([...LAYERS, EXTRA]);
+    write(root, 'layers/web/app/components/BaseButton.vue', '<template><button /></template>\n');
+    write(
+      root,
+      '.nuxt/components.d.ts',
+      `export {}\nexport const BaseButton: typeof import("../layers/web/app/components/BaseButton.vue")['default']\n`,
+    );
+    const template = '<template><BaseButton /></template>\n';
+    write(root, 'layers/admin/app/pages/admin.vue', template);
+    write(root, 'layers/shop/app/pages/shop.vue', template);
+    expect(await plan(root)).toHaveLength(1);
+    write(root, 'layers/extra/app/components/BaseButton.vue', '<template><i /></template>\n');
+    expect(await plan(root)).toEqual([]);
+  });
+});
+
 describe('a moved file with `export * from`', () => {
   // layerscope does not read a package, so the names are unknown. The package is no layer, so only
   // the names stop the move.
