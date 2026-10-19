@@ -30,7 +30,8 @@ pnpm --filter nuxt-layerscope bench --files 3000
 
 It generates a project of source files in ten layers (in the git-ignored
 `packages/layerscope/bench/.project`), runs `nuxi prepare` on it, and prints the times. The
-[performance page](./packages/docs/guide/performance.md) explains the method.
+[performance page](./packages/docs/guide/performance.md) explains the method. Run it on an idle
+machine. Other programs that use the CPU or the disk change the times.
 
 ## Trying the DevTools tab
 

@@ -12,6 +12,7 @@ import {
 
 import { dirname, join, resolve } from 'pathe';
 
+import { formatGrowthMarkdown, growthSentence } from '#src/report/drift.ts';
 import { git } from '#test/git-project.ts';
 import { tempDir } from '#test/watch-project.ts';
 
@@ -87,6 +88,26 @@ export interface Stubs {
   output: string;
 }
 
+/** The CLI stub of the action scripts. */
+function writeCliStub(scripts: string): void {
+  // The stub prints the report that the real CLI prints, or fails when STUB_LS_STATUS is set. With
+  // STUB_LS_GROWTH, it adds the growth end of the CLI and exits 1, as `--fail-on-growth` does. With
+  // STUB_LS_GROWTH_TEXT, the whole growth line is only inside another line.
+  writeFileSync(join(scripts, 'growth.md'), formatGrowthMarkdown(1, 'x'));
+  writeFileSync(
+    join(scripts, 'growth-text.md'),
+    `\n- layers/**${growthSentence(1, 'x', true)}**\n`,
+  );
+  writeFileSync(
+    join(scripts, 'layerscope.sh'),
+    '#!/usr/bin/env bash\n' +
+      'if [ -n "${STUB_LS_STATUS:-}" ]; then echo "boom" >&2; exit "$STUB_LS_STATUS"; fi\n' +
+      'printf "### layerscope\\n\\n**adds 1** against \\`%s\\`\\n" "$*"\n' +
+      'if [ -n "${STUB_LS_GROWTH:-}" ]; then cat "$(dirname "$0")/growth.md"; exit 1; fi\n' +
+      'if [ -n "${STUB_LS_GROWTH_TEXT:-}" ]; then cat "$(dirname "$0")/growth-text.md"; exit 1; fi\n',
+  );
+}
+
 /** A copy of drift.sh next to a stub layerscope.sh, and a stub gh that records its arguments. */
 function makeStubs(dir: string): Stubs {
   const bin = join(dir, 'bin');
@@ -97,15 +118,7 @@ function makeStubs(dir: string): Stubs {
   copyFileSync(join(SCRIPTS, 'drift.sh'), script);
   copyFileSync(join(SCRIPTS, 'comment.sh'), join(scripts, 'comment.sh'));
   copyFileSync(join(SCRIPTS, 'root-heading.sh'), join(scripts, 'root-heading.sh'));
-  // The stub prints the report that the real CLI prints, or fails when STUB_LS_STATUS is set. With
-  // STUB_LS_GROWTH, it adds the growth line and exits 1, as `--fail-on-growth` does.
-  writeFileSync(
-    join(scripts, 'layerscope.sh'),
-    '#!/usr/bin/env bash\n' +
-      'if [ -n "${STUB_LS_STATUS:-}" ]; then echo "boom" >&2; exit "$STUB_LS_STATUS"; fi\n' +
-      'printf "### layerscope\\n\\n**adds 1** against \\`%s\\`\\n" "$*"\n' +
-      'if [ -n "${STUB_LS_GROWTH:-}" ]; then printf "\\n**✖ The code has 1 error that the baseline at \\`x\\` does not have (--fail-on-growth).**\\n"; exit 1; fi\n',
-  );
+  writeCliStub(scripts);
   const calls = join(dir, 'gh-calls.txt');
   // A git that fails every fetch when STUB_FETCH_FAILS is set, and ls-remote with STUB_LS_REMOTE_FAILS.
   const realGit = execFileSync('which', ['git'], { encoding: 'utf8' }).trim();
