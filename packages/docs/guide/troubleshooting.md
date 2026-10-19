@@ -145,6 +145,17 @@ After an upgrade, `check` can report new findings for code that it did not read 
 gives a "Could not read import()" finding of `unresolved-reference`. Fix the code, or accept the
 findings with `layerscope check --update-baseline`.
 
+## "Unknown option" in the GitHub Action
+
+```
+layerscope: Unknown option `--strictBaseline`
+```
+
+When the option is `--summary`, `--strictBaseline` or `--failOnGrowth`, the CLI that the action ran
+is older than the action, and it does not know an option that the action gives to it. If the project
+installs `nuxt-layerscope`, update it. If not, remove the `version` input of the action or set it to
+0.10.0 or later. See [Which layerscope runs](../reference/github-action#which-layerscope-runs).
+
 ## Getting help
 
 Open an issue with the output of `npx layerscope check --verbose --format json`, your

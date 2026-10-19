@@ -40,6 +40,12 @@ jobs:
       - uses: hamedniroomand/nuxt-layerscope@v0
 ```
 
+When the project has a baseline file, add `with:` and `strict-baseline: true` to the action step.
+Then a fixed violation fails the check until it leaves the baseline, so it cannot come back unseen.
+To remove the fixed entries, run `layerscope check --update-baseline` and commit the file. This
+input needs `nuxt-layerscope` 0.10.0 or later. See
+[A workflow that works](./baseline#a-workflow-that-works).
+
 `@v0` follows the newest 0.x release. From the first release after 0.7.0, a full tag pins the
 action and the CLI that it runs when the project does not install it. If the project installs
 `nuxt-layerscope`, the action runs that version.
