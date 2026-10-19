@@ -141,7 +141,8 @@ layerscope check --format sarif > layerscope.sarif
   key: rule, file, symbol and target layer, without the line. For `layer-cycle` the key has no file.
   Code scanning uses it to match the same finding across runs, so a finding that moves down a file
   stays the same alert. Findings with the same key get an occurrence number, counted in report
-  order.
+  order. Two findings at the same place are counted live first, then in the order of their target
+  file, then of their message.
 - Findings that the baseline accepts are included with
   `suppressions: [{ "kind": "external", "justification": "layerscope baseline" }]`, so code
   scanning shows them as suppressed and not as fixed. These suppressed results have no suggestion.
