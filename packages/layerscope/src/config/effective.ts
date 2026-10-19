@@ -37,6 +37,23 @@ export function keysSet(config: ProjectConfig): string {
 }
 
 /**
+ * The options that a registry recorded, as the module writes them: only the project keys. The
+ * registry holds only the project keys; a recorded value that is not an object stops the run, and
+ * other keys are not read. `file` is the registry, for the message.
+ */
+export function recordedOptions(value: unknown, file: string): ProjectConfig | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    throw new LayerscopeError(
+      `${file}: the nuxt.config options (layerscope) that it recorded are not an object. Run "nuxi prepare" to write them again.`,
+    );
+  }
+  return pickProjectConfig(value as LayerscopeConfig);
+}
+
+/**
  * `layerscope.config.*` or the `layerscope` key of `nuxt.config`, which the module records in the
  * registry. Both at once is an error rather than a merge, so it is always clear which one applies.
  */
