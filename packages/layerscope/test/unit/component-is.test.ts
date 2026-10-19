@@ -131,3 +131,34 @@ describe('elementOnlyProps', () => {
     expect(elementOnlyProps('defineProps<{ a?: ', 'ts').kinds.size).toBe(0);
   });
 });
+
+describe('<component :is> bound to a const that holds resolveComponent()', () => {
+  it.each(["'MyButton'", '`my-button`'])('reads %s as one use and no runtime value', name => {
+    const scan = scanOf(`const C = resolveComponent(${name});`, 'C');
+    expect(scan.dynamicComponents).toEqual([]);
+    expect(scan.components.map(ref => ref.name)).toEqual(['MyButton']);
+  });
+
+  it.each([
+    ['a let', "let C = resolveComponent('MyButton');"],
+    ['a name chosen at runtime', 'const C = resolveComponent(name);'],
+  ])('still warns at <component :is> for %s', (_name, script) => {
+    const at = sfc(script, 'C').indexOf('<component');
+    expect(scanOf(script, 'C').dynamicComponents).toContain(at);
+  });
+});
+
+describe('a component tag with a plain <script>', () => {
+  it.each([
+    [
+      'props',
+      "<script>export default { props: ['myCard'] }</script><template><my-card /></template>",
+    ],
+    [
+      'a setup() return',
+      '<script>export default { setup() { return { MyCard: 1 } } }</script><template><MyCard /></template>',
+    ],
+  ])('reads the tag as a component next to %s', (_name, source) => {
+    expect(scanFile(source, '/app/card.vue').components.map(ref => ref.name)).toEqual(['MyCard']);
+  });
+});

@@ -61,7 +61,11 @@ A binding is the name that `createRequire` was assigned to, so a later reassignm
 does not change what counts.
 
 In a script, `resolveComponent()` with a fixed name (a string literal, or a template literal with no
-`${}`) is a use of that component. The name can be in PascalCase or in kebab-case.
+`${}`) is a use of that component. The name can be in PascalCase or in kebab-case. `<script setup>`
+can name a component in a top-level `const` whose value is directly such a call, for example
+`const C = resolveComponent('MyButton')`. Then `<component :is="C">` is not reported, because `C` is
+a fixed component. A `let`, a call inside another call or an expression (such as `as any`), and a
+name that is not fixed are still reported.
 
 In a `.vue`, `.jsx` or `.tsx` file outside the `server/` dir, `h(CartSummary)` is a use of the
 component `CartSummary` when Nuxt registers a component with that name, also when an import or a
