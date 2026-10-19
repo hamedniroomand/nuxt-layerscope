@@ -5,7 +5,8 @@ import { plural } from '#src/utils/strings.ts';
 import { plain } from '#src/utils/style.ts';
 import type { Paint } from '#src/utils/style.ts';
 
-import { describeEntry, UPDATE_HINT } from './baseline.ts';
+import { DEFAULT_RUN, describeEntry, strictEntries, updateHint } from './baseline.ts';
+import type { BaselineRun } from './baseline.ts';
 import { findingDetails } from './details.ts';
 import { summarize } from './summary.ts';
 
@@ -22,22 +23,26 @@ function formatFinding(finding: Finding, cwd: string, paint: Paint): string {
   return [head, ...details].join('\n');
 }
 
-function formatRemovable(baseline: BaselineResult, cwd: string): string | null {
+function formatRemovable(baseline: BaselineResult, cwd: string, command: string): string | null {
   if (baseline.removable.length === 0) {
     return null;
   }
   const entries = baseline.removable.map(entry => `  ${entry.file}  ${describeEntry(entry)}`);
   const count = baseline.removable.length;
-  const head = `${relative(cwd, baseline.file)}: ${plural(count, 'fixed entry', 'fixed entries')}. ${UPDATE_HINT} ${count === 1 ? 'it' : 'them'}.`;
+  const head = `${relative(cwd, baseline.file)}: ${plural(count, 'fixed entry', 'fixed entries')}. ${updateHint(command)} ${count === 1 ? 'it' : 'them'}.`;
   return [head, ...entries].join('\n');
 }
 
-function formatFooter(result: AnalyzeResult, paint: Paint): string {
+function formatFooter(result: AnalyzeResult, paint: Paint, run: BaselineRun): string {
   const suppressed = result.baseline?.suppressed.length ?? 0;
   const baselined = suppressed > 0 ? `, ${suppressed} more in the baseline` : '';
   if (result.findings.length === 0) {
-    const clean = `✔ No problems in ${plural(result.files.length, 'file')} across ${plural(result.layers.length, 'layer')}`;
-    return `${paint(['green', 'bold'], clean)}${baselined}`;
+    const counts = `in ${plural(result.files.length, 'file')} across ${plural(result.layers.length, 'layer')}`;
+    // Fixed entries fail a strict run, and the line after the report says so.
+    if (run.strict && strictEntries(result).length > 0) {
+      return `No new problems ${counts}${baselined}`;
+    }
+    return `${paint(['green', 'bold'], `✔ No problems ${counts}`)}${baselined}`;
   }
   const { errors, warnings } = summarize(result.findings);
   const counts = `✖ ${plural(result.findings.length, 'problem')} (${plural(errors, 'error')}, ${plural(warnings, 'warning')})`;
@@ -49,7 +54,12 @@ function hasError(findings: Finding[]): boolean {
 }
 
 /** Files with errors come last, next to the summary, where they are least likely to scroll away. */
-export function formatText(result: AnalyzeResult, cwd: string, paint: Paint = plain): string {
+export function formatText(
+  result: AnalyzeResult,
+  cwd: string,
+  paint: Paint = plain,
+  run: BaselineRun = DEFAULT_RUN,
+): string {
   const byFile = Map.groupBy(result.findings, finding => relative(cwd, finding.file));
   const files = [...byFile].toSorted(([, a], [, b]) => Number(hasError(a)) - Number(hasError(b)));
   const sections = files.map(([file, findings]) =>
@@ -57,7 +67,8 @@ export function formatText(result: AnalyzeResult, cwd: string, paint: Paint = pl
       '\n',
     ),
   );
-  const removable = result.baseline === undefined ? null : formatRemovable(result.baseline, cwd);
+  const removable =
+    result.baseline === undefined ? null : formatRemovable(result.baseline, cwd, run.command);
   const blocks = removable === null ? sections : [...sections, removable];
-  return `${[...blocks, formatFooter(result, paint)].join('\n\n')}\n`;
+  return `${[...blocks, formatFooter(result, paint, run)].join('\n\n')}\n`;
 }

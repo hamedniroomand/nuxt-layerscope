@@ -14,7 +14,7 @@ import { plural } from '#src/utils/strings.ts';
 import type { CheckFlags } from './check.ts';
 import { EXIT_CLEAN, toSource, writeNotes } from './shared.ts';
 
-export { assertStrictFlags, reportStrict } from './check-strict.ts';
+export { assertStrictFlags, baselineRun, reportStrict } from './check-strict.ts';
 
 export async function updateBaseline(rootDir: string, flags: CheckFlags): Promise<number> {
   const result = await analyze({

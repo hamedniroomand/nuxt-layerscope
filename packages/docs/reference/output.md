@@ -28,7 +28,9 @@ Severities, rules and the summary are colored when stdout is a terminal. `NO_COL
 off and `FORCE_COLOR` turns them on, for example in a CI log that renders them.
 
 Without findings: `✔ No problems in 20 files across 6 layers`. With a baseline the summary adds
-how many findings it accepted, and fixed entries are listed before it.
+how many findings it accepted, and fixed entries are listed before it. With `--strict-baseline` and
+fixed entries, the summary has no ✔ and is not green, because the check fails. The hint for fixed
+entries gives the update command with the root and options of your run.
 
 ## `github`
 
