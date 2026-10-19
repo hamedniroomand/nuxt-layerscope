@@ -80,7 +80,7 @@ export function nuxtScansSrcTypes(rootDir: string): boolean {
   const { version } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
     version?: unknown;
   };
-  const match = typeof version === 'string' ? /^(\d+)\.(\d+)\./u.exec(version) : null;
+  const match = typeof version === 'string' ? /^(\d+)\.(\d+)/u.exec(version) : null;
   if (match === null) {
     return false;
   }
