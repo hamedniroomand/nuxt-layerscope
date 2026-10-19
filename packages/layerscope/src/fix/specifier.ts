@@ -4,6 +4,8 @@ import { isExplicitImport } from '#src/suggest/scoped.ts';
 import type { Edge } from '#src/types.ts';
 
 const DECLARATION_EXTENSION = /\.d\.[cm]?ts$/u;
+// The extensions that TypeScript and Vite read as the TypeScript file with the same name.
+const MAPPED_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.jsx']);
 
 function realExtension(file: string): string {
   return DECLARATION_EXTENSION.exec(file)?.[0] ?? extname(file);
@@ -29,18 +31,27 @@ function dropTail(path: string, dropped: string): string {
 }
 
 /**
- * Whether the user wrote an extension when the written path does not start the path of the file
- * (a link, or another case). A name with a dot that starts the file name without its extension
- * (`x.module` for `x.module.ts`) or that is the name of its dir (`lib.v2` for `lib.v2/index.ts`)
- * has no extension, but `foo.d` for `foo.d.ts` keeps `.d`. The names are compared without case,
- * as the path of the file has its real case.
+ * Whether the user wrote an extension when the written path does not start the path of the file (a
+ * link, or another case): the written name and the file name are the same name with another
+ * extension, as `./foo.js` for `foo.ts` or `./foo.d` for `foo.d.ts`, or the written extension is
+ * the last extension of the file, as `./Link.vue` for a link to `Comp.vue` or `./bar.mts` for a
+ * link to `foo.d.mts`, or it is an extension that a resolver maps to a TypeScript file, as
+ * `./bar.mjs` for a link to `foo.mts`. A path that ends with `/` has no extension. A link name with
+ * a dot and another name than the file, such as `x.v2` for `foo.ts`, has no extension. A link name
+ * with the same name as the file, such as `foo.v2` for `foo.ts`, still keeps the dot part. The
+ * names are compared without case, as the path of the file has its real case.
  */
 function hasWrittenExtension(written: string, file: string): boolean {
-  const name = basename(written).toLowerCase();
+  if (written.endsWith('/')) {
+    return false;
+  }
+  const extension = extname(basename(written)).toLowerCase();
   return (
-    extname(written) !== '' &&
-    !`${stripExtension(basename(file)).toLowerCase()}.`.startsWith(`${name}.`) &&
-    basename(dirname(file)).toLowerCase() !== name
+    extension !== '' &&
+    (MAPPED_EXTENSIONS.has(extension) ||
+      extension === extname(file).toLowerCase() ||
+      stripExtension(basename(written)).toLowerCase() ===
+        stripExtension(basename(file)).toLowerCase())
   );
 }
 
@@ -66,8 +77,10 @@ export function newSpecifier(edge: Edge, importer: string, imported: string): st
       path = path.slice(0, path.length - realExtension(edge.to).length) + extname(written);
     } else {
       // The file path does not start with the written one (a link, or another case), and the
-      // written name has no extension: `./foo`, or a name with a dot such as `./x.module` for
-      // `x.module.ts` or `./lib.v2` for `lib.v2/index.ts`.
+      // written name has no extension: `./foo`, a name with a dot such as `./x.module` for
+      // `x.module.ts` or `./lib.v2` for `lib.v2/index.ts`, or a link name with a dot such as
+      // `./x.v2` for `foo.ts`. The new path has the name of the file, or of its dir for an `index`
+      // file.
       const base = basename(path, realExtension(path));
       path =
         base === 'index' && basename(written) !== 'index' ? dirname(path) : stripExtension(path);

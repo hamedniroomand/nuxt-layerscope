@@ -155,3 +155,35 @@ describe('newSpecifier with a dot in the written name', () => {
     expect(newSpecifier(edge, '/r/y/a.ts', '/real/x.module.ts')).toBe('../../real/x.module.js');
   });
 });
+
+describe('newSpecifier with a link name that has a dot', () => {
+  it('drops the dot part of a link name to a file', () => {
+    const edge = makeEdge({ symbol: './x.v2', file: '/r/x/a.ts', to: '/real/foo.ts' });
+    expect(newSpecifier(edge, '/r/y/a.ts', '/real/foo.ts')).toBe('../../real/foo');
+  });
+
+  it('drops the dot part of a link name to a dir', () => {
+    const edge = makeEdge({ symbol: './lib.v2', file: '/r/x/a.ts', to: '/real/pkg/index.ts' });
+    expect(newSpecifier(edge, '/r/y/a.ts', '/real/pkg/index.ts')).toBe('../../real/pkg');
+  });
+
+  it.each([
+    ['./bar.js', '/real/foo.ts', '../../real/foo.js'],
+    ['./bar.mjs', '/real/foo.mts', '../../real/foo.mjs'],
+    ['./lib.js', '/real/lib/index.ts', '../../real/lib/index.js'],
+    ['./bar.mts', '/real/foo.d.mts', '../../real/foo.mts'],
+  ])('keeps the written extension %s of a link to %s', (symbol, to, expected) => {
+    const edge = makeEdge({ symbol, file: '/r/x/a.ts', to });
+    expect(newSpecifier(edge, '/r/y/a.ts', to)).toBe(expected);
+  });
+
+  it('keeps the dir of a link with a dot and a trailing slash', () => {
+    const edge = makeEdge({ symbol: './lib.js/', file: '/r/x/a.ts', to: '/real/pkg/index.ts' });
+    expect(newSpecifier(edge, '/r/y/a.ts', '/real/pkg/index.ts')).toBe('../../real/pkg/');
+  });
+
+  it('keeps the name of a dot file found through a link', () => {
+    const edge = makeEdge({ symbol: './.foo', file: '/r/x/a.ts', to: '/real/.foo.ts' });
+    expect(newSpecifier(edge, '/r/y/a.ts', '/real/.foo.ts')).toBe('../../real/.foo');
+  });
+});
