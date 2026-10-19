@@ -55,7 +55,7 @@ describe('assertNoNuxtConfigLayers', () => {
     }).toThrow('"layers" is set in the "layerscope" key of nuxt.config');
   });
 
-  it('names only the keys that are set, and says to copy from a dry run, not to replace the config', () => {
+  it('names only the keys that are set, and says to copy from a dry run', () => {
     const onlyPreset = { config: { preset: 'layered' } } as unknown as AnalyzeResult;
     const message = refusalOf(onlyPreset);
     expect(message).toContain('"preset" is set');
@@ -63,7 +63,9 @@ describe('assertNoNuxtConfigLayers', () => {
     expect(message).toContain(
       'Then run init --prepare --dry-run and copy the layers and edges you need',
     );
-    expect(message).not.toContain('--force');
+    expect(message).toContain(
+      'because init does not write over an existing config without --force.',
+    );
     expect(message).toContain('(read from the Nuxt data of the last Nuxt run)');
     expect(message).not.toContain('.nuxt');
   });

@@ -69,7 +69,8 @@ JSON findings carry `target` (the file the symbol resolves to) and, for `layer-b
 Writes `layerscope.config.ts` with every layer and the smallest `allow` map the project passes with,
 and prints each allowed edge, how many references could not be resolved, and how many parts of files
 it could not read. `--baseline` also accepts the remaining findings, `--dry-run` writes nothing and
-`--force` replaces an existing config. Delete the edges you consider mistakes, then run `check`.
+`--force` replaces an existing config and keeps its keys other than `layers`. Delete the edges you
+consider mistakes, then run `check`.
 
 ### `layerscope fix (--dry-run | --apply) [root] [options]`
 

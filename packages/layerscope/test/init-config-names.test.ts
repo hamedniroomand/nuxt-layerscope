@@ -58,7 +58,7 @@ describe('init with a layerscope.config.mjs', () => {
     const { code, stderr } = await init(root);
     expect(code).toBe(EXIT_ERROR);
     expect(stderr).toContain(
-      `${shown(root, 'layerscope.config.mjs')} already exists. To keep it, run with --dry-run and copy what you need. To replace it, run with --force.`,
+      `${shown(root, 'layerscope.config.mjs')} already exists. To keep it, run with --dry-run and copy what you need. To write it again, run with --force. --force keeps its keys other than layers.`,
     );
   });
 
@@ -98,7 +98,7 @@ describe('init with a layerscope.config.ts, and with a baseline', () => {
     );
     expect(code).toBe(EXIT_ERROR);
     expect(stderr).toContain(
-      `${shown(root, 'layerscope-baseline.json')} already exists. To keep it, run with --dry-run and copy what you need. To replace it, run with --force.`,
+      `${shown(root, 'layerscope-baseline.json')} already exists. To keep it, run with --dry-run and copy what you need. To write it again, run with --force.`,
     );
   });
 });

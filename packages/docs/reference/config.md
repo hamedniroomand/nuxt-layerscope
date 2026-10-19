@@ -353,4 +353,5 @@ The [baseline](../guide/baseline) file, relative to the project root. `check`, `
 `check --update-baseline` and the DevTools tab write it. The `--baseline` option and the `baseline`
 input of the action override it. An absolute path is used as it is. A path can be outside the root,
 but `drift` and the action need it in the git repository. A value that is not a non-empty string is
-a config error (exit code `2`). `init --baseline` always writes `layerscope-baseline.json`.
+a config error (exit code `2`). `init --baseline` writes the file that the `baseline` key of the
+config names. Without the key, it writes `layerscope-baseline.json`.
