@@ -13,6 +13,7 @@ function snapshot(rev: number, findings = [makeFinding()]): Snapshot {
     durationMs: 1,
     result: makeResult({ findings }),
     cause: 'analysis',
+    envKey: 'k',
   };
 }
 

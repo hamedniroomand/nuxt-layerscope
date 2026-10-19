@@ -17,6 +17,8 @@ export interface Snapshot {
   result: AnalyzeResult;
   /** `baseline`: the tab wrote the baseline file and it was applied again, without a new analysis. */
   cause: 'analysis' | 'baseline';
+  /** The env key of the run that made the result: the config and the generated files it read. */
+  envKey: string;
 }
 
 export interface AnalyzerOptions {
@@ -75,6 +77,8 @@ function fingerprint(result: AnalyzeResult): string {
     result.findings,
     result.baseline?.file,
     result.baseline?.suppressed,
+    // The tab lists the fixed entries, and a hand edit of the file can change only them.
+    result.baseline?.removable,
     result.config.layers,
     result.config.typeImports,
     layerStats(result),
@@ -133,6 +137,11 @@ export class Analyzer {
     return true;
   }
 
+  /** Whether `snapshot` was made with the config and the generated files that are there now. */
+  public async isCurrent(snapshot: Snapshot): Promise<boolean> {
+    return (await this.options.envKey()) === snapshot.envKey;
+  }
+
   public async get(): Promise<Snapshot> {
     if (this.snapshot !== undefined && !this.dirty) {
       return this.snapshot;
@@ -161,8 +170,8 @@ export class Analyzer {
     return snapshot;
   }
 
-  private async start(): Promise<Snapshot> {
-    this.inflight = this.analyze().finally(() => {
+  private async start(cause: Snapshot['cause'] = 'analysis'): Promise<Snapshot> {
+    this.inflight = this.analyze(cause).finally(() => {
       this.inflight = undefined;
     });
     const snapshot = await this.inflight;
@@ -175,8 +184,10 @@ export class Analyzer {
   }
 
   /**
-   * Applies the baseline file again to the last result, after the tab wrote it: no file is
-   * analyzed again. Waits for an analysis in flight, and later requests wait for this one.
+   * Shows the baseline file after the tab wrote it. When the snapshot is stale (marked by
+   * `invalidate` or `invalidateIfChanged`), it runs a full analysis. Else it applies the baseline
+   * file again to the last result, and no file is analyzed again. Waits for an analysis in flight,
+   * and later requests wait for this one.
    */
   public async rebaseline(): Promise<Snapshot> {
     // Another run can start while this one waits, so wait until none is in flight and a
@@ -184,6 +195,12 @@ export class Analyzer {
     while (this.inflight !== undefined || this.snapshot === undefined) {
       // eslint-disable-next-line no-await-in-loop -- waits for each run in turn
       await (this.inflight === undefined ? this.get() : Promise.allSettled([this.inflight]));
+    }
+    // A file or the config changed after the last run: only a full run shows it. It also applies
+    // the baseline file. Its cause stays `baseline`, so the tab shows no change toast for it.
+    if (this.dirty) {
+      const snapshot = await this.start('baseline');
+      return snapshot;
     }
     const base = this.snapshot;
     this.inflight = this.reapply(base).finally(() => {
@@ -207,10 +224,10 @@ export class Analyzer {
     const fresh = { ...result, findings: all, baseline: undefined };
     // The suggestions count the findings that are shown, so they are made again.
     const applied = await withSuggestions(applyBaselineFile(fresh, this.baselineFileOf(result)));
-    return this.commit(applied, started, 'baseline');
+    return this.commit(applied, started, 'baseline', base.envKey);
   }
 
-  private async analyze(): Promise<Snapshot> {
+  private async analyze(cause: Snapshot['cause']): Promise<Snapshot> {
     // Cleared before the run, so an invalidation that lands mid-run is kept for the next request.
     this.dirty = false;
     const started = Date.now();
@@ -227,7 +244,7 @@ export class Analyzer {
         envKey,
         extraFiles: this.options.extraFiles,
       });
-      return this.commit(result, started, 'analysis');
+      return this.commit(result, started, cause, envKey);
     } catch (error) {
       this.dirty = true;
       throw error;
@@ -235,7 +252,12 @@ export class Analyzer {
   }
 
   /** Stores a new snapshot, bumping the revision when the output changed, and tells listeners. */
-  private commit(result: AnalyzeResult, started: number, cause: Snapshot['cause']): Snapshot {
+  private commit(
+    result: AnalyzeResult,
+    started: number,
+    cause: Snapshot['cause'],
+    envKey: string,
+  ): Snapshot {
     const next = fingerprint(result);
     const changed = this.snapshot !== undefined && next !== this.lastFingerprint;
     this.lastFingerprint = next;
@@ -246,6 +268,7 @@ export class Analyzer {
       durationMs: Date.now() - started,
       result,
       cause,
+      envKey,
     };
     this.snapshot = snapshot;
     for (const listener of this.listeners) {
