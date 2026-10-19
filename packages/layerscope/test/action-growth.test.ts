@@ -44,6 +44,14 @@ describe('drift.sh with fail-on-growth', () => {
     expect(existsSync(join(dir, 'grew'))).toBe(false);
   });
 
+  it('says failed, and writes no `grew`, when the growth text is only inside another line', () => {
+    const result = setup(false).report({ ...env, STUB_LS_GROWTH_TEXT: '1' });
+    const dir = dirOf(result.output);
+    expect(result.status).toBe(1);
+    expect(readFileSync(join(dir, 'state'), 'utf8')).toBe('failed');
+    expect(existsSync(join(dir, 'grew'))).toBe(false);
+  });
+
   it('writes `nobase` when the event has no base commit', () => {
     const result = setup(false).report({ ...env, GITHUB_BASE_REF: '', BASE_SHA: '' });
     expect(existsSync(join(dirOf(result.output), 'nobase'))).toBe(true);

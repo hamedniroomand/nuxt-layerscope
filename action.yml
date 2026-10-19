@@ -22,7 +22,7 @@ inputs:
     description: Fail the check when the baseline has fixed entries (entries that no finding matches). Then run "layerscope check --update-baseline" and commit the file. The version of `nuxt-layerscope` that the action runs must be 0.10.0 or later.
     default: 'false'
   fail-on-growth:
-    description: 'Fail the job when the drift report shows errors that the baseline at the base does not have, also when the change adds them to the baseline. Turn it on after the baseline file is on the base branch. Also fail when the report cannot be made, except for an event with no base commit. A pull request with the label `layerscope: accept growth` passes on growth. The version of `nuxt-layerscope` that the action runs must be 0.10.0 or later.'
+    description: 'Fail the job when the drift report shows errors that the baseline at the base commit does not have, also when the change adds them to the baseline. The base commit is the latest commit of the base branch on a pull request, the commit before the push on a push, and the base of the merge group in a merge queue. Turn it on after the baseline file is in the base commit. Also fail when the report cannot be made, except for an event with no base commit (for example a push of a new branch), which passes with a notice. A pull request with the label `layerscope: accept growth` passes on growth. The version of `nuxt-layerscope` that the action runs must be 0.10.0 or later.'
     default: 'false'
   comment:
     description: Post the drift report as a pull request comment, one for each root. Needs `pull-requests` write permission. Skipped on a `pull_request` event from a fork.

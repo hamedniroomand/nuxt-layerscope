@@ -92,8 +92,10 @@ report="$(mktemp)"
 status=0
 "$(dirname "$0")/layerscope.sh" "${args[@]}" > "$report" || status=$?
 
-# Exit 1 is growth only with the growth line: the wrapper (npx) can also exit 1.
-if [ "$status" -eq 1 ] && grep -qF '(--fail-on-growth).' "$report"; then
+# Exit 1 is growth only with the growth line: the wrapper (npx) can also exit 1. The growth line is a
+# whole line, as growthSentence and formatGrowthMarkdown write it.
+if [ "$status" -eq 1 ] &&
+  grep -qE '^\*\*✖ The code has [0-9]+ errors? that the baseline at .* does not have \(--fail-on-growth\)\.\*\*$' "$report"; then
   printf '%s' "$base" > "$dir/grew"
   status=0
 fi

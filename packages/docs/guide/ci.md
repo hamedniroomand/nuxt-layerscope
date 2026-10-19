@@ -51,7 +51,8 @@ The action adds a summary to each run that has a base commit (see
 and `Baseline: 47 → 42 (−5)`, so a team can watch the baseline shrink. Set `comment: true` (with
 `pull-requests: write`) to post it on the pull request. On a `pull_request` event from a fork, the
 action skips the comment. Set `fail-on-growth: true` to fail the job when the code has errors that
-the baseline on the base branch does not have (see
+the baseline at the base commit does not have (the latest commit of the base branch on a pull
+request, the commit before the push on a push, the base of the merge group in a merge queue; see
 [Stop the baseline from growing](./baseline#stop-the-baseline-from-growing)). Without the action,
 run `layerscope drift --base origin/main --format markdown`.
 

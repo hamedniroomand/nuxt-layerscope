@@ -44,10 +44,12 @@ npx layerscope check
 
 A pull request can add a violation and run `--update-baseline` in the same change. Then `check`
 passes. `drift --fail-on-growth` (the action input `fail-on-growth: true`) fails when the code has
-errors that the baseline on the base branch does not have, so such a pull request fails. It counts
+errors that the baseline at the base commit does not have (the latest commit of the base branch on
+a pull request, the commit before the push on a push, the base of the merge group in a merge queue),
+so such a pull request fails. It counts
 the added errors, not the size of the file, so a change that fixes one violation and accepts another
 also fails. A base without the baseline file counts as an empty baseline, so turn the option on
-after the file is on the base branch. A growth that you want, for example after a stricter config or
+after the file is in the base commit. A growth that you want, for example after a stricter config or
 a newer layerscope, also fails: add the label `layerscope: accept growth` to the pull request (see
 [GitHub Action](../reference/github-action#drift-summary)), or merge it without this check. After
 such a merge, the push run on the base branch fails once, because it compares with the commit before
@@ -151,7 +153,7 @@ In JSON output the accepted findings are listed under `baseline.suppressed` and 
 1. Add layerscope with the rules you want, and run `--update-baseline` once.
 2. Turn the check on in CI with `--strict-baseline` (the action input `strict-baseline: true`). New
    violations are blocked, and `fail-on-growth: true` fails a pull request that accepts them. Turn
-   it on after the baseline file is on the base branch. A fixed violation must leave the file in the
+   it on after the baseline file is in the base commit. A fixed violation must leave the file in the
    same pull request.
 3. Fix accepted violations when you work in those files, and run `--update-baseline` in the same
    pull request.
