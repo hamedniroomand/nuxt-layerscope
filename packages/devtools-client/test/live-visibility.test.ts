@@ -23,7 +23,7 @@ function hostWith(element: HTMLElement): FrameWindow {
 
 describe('visibility watcher', () => {
   it('reports when a frame is hidden and shown again', async () => {
-    const element = document.createElement('iframe');
+    const element = document.createElement('div');
     document.body.append(element);
     const changes: boolean[] = [];
     const stop = watchVisibility(hostWith(element), visible => {
@@ -42,7 +42,7 @@ describe('visibility watcher', () => {
 
 describe('live connection and visibility', () => {
   it('closes the stream while hidden and reconnects and reloads when shown', async () => {
-    const element = document.createElement('iframe');
+    const element = document.createElement('div');
     document.body.append(element);
     const sources: { closed: boolean }[] = [];
     const open = (): EventSourceLike => {
