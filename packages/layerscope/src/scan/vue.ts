@@ -9,6 +9,8 @@ import { scanTemplate } from './template.ts';
 import type { FileScan, Lang, OffsetMapper } from './types.ts';
 import { emptyScan, toLang } from './types.ts';
 
+type Statement = NonNullable<SFCScriptBlock['scriptSetupAst']>[number];
+
 interface CombinedScript {
   code: string;
   lang: Lang;
@@ -33,9 +35,37 @@ function combineScripts(blocks: SFCScriptBlock[], descriptor: SFCDescriptor): Co
   };
 }
 
+/** The names of the top-level `const X = resolveComponent('name')` declarations that have a fixed name. */
+function componentConsts(statements: Statement[]): string[] {
+  return statements.flatMap(statement =>
+    statement.type === 'VariableDeclaration' && statement.kind === 'const'
+      ? statement.declarations.flatMap(({ id, init }) => {
+          const arg = init?.type === 'CallExpression' ? init.arguments[0] : undefined;
+          const fixed =
+            arg?.type === 'StringLiteral' ||
+            (arg?.type === 'TemplateLiteral' && arg.expressions.length === 0);
+          const named =
+            init?.type === 'CallExpression' &&
+            init.callee.type === 'Identifier' &&
+            init.callee.name === 'resolveComponent';
+          return id.type === 'Identifier' && named && fixed ? [id.name] : [];
+        })
+      : [],
+  );
+}
+
 function templateBindings(descriptor: SFCDescriptor, script: CombinedScript): Bindings {
   try {
-    return compileScript(descriptor, { id: 'layerscope' }).bindings ?? {};
+    const compiled = compileScript(descriptor, { id: 'layerscope' });
+    // Not a copy: the object holds `__isScriptSetup` as a property that a spread does not copy. Each
+    // compile gives a new object.
+    const bindings: Bindings = compiled.bindings ?? {};
+    // A `const` that holds `resolveComponent()` with a fixed name is that component, not a runtime
+    // value. In the non-inline render code, `setup-const` and `setup-maybe-ref` both give `$setup.X`.
+    for (const name of componentConsts(compiled.scriptSetupAst ?? [])) {
+      bindings[name] = 'setup-const';
+    }
+    return bindings;
   } catch {
     // Type-based macros may reference types the compiler cannot load on its own.
     return collectTopLevelNames(script.code, script.lang);
