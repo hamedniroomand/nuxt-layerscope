@@ -74,6 +74,19 @@ describe('action.yml, the check step', () => {
   });
 });
 
+describe('action.yml, the boolean inputs', () => {
+  // GitHub compares strings without case. The scripts compare with `=`, so the action gives them
+  // the result of the compare, `true` or `false`.
+  it.each([
+    ['prepare', 2],
+    ['strict-baseline', 1],
+    ['comment', 1],
+  ])('reads %s only as a compare with true', (name, uses) => {
+    expect(ACTION.match(new RegExp(String.raw`inputs\.${name}(?![\w-])`, 'gu'))).toHaveLength(uses);
+    expect(ACTION.split(`\${{ inputs.${name} == 'true' }}`)).toHaveLength(uses + 1);
+  });
+});
+
 describe('drift.sh, the step that builds the report', () => {
   const env = { GITHUB_BASE_REF: 'main', INPUT_COMMENT: 'true', PR_NUMBER: '7' };
   const dirOf = (output: string): string => /^dir=(.*)$/mu.exec(output)?.[1] ?? '';

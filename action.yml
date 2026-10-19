@@ -44,9 +44,9 @@ runs:
       env:
         INPUT_ROOT: ${{ inputs.root }}
         INPUT_CONFIG: ${{ inputs.config }}
-        INPUT_PREPARE: ${{ inputs.prepare }}
+        INPUT_PREPARE: ${{ inputs.prepare == 'true' }}
         INPUT_BASELINE: ${{ inputs.baseline }}
-        INPUT_STRICT_BASELINE: ${{ inputs.strict-baseline }}
+        INPUT_STRICT_BASELINE: ${{ inputs.strict-baseline == 'true' }}
         INPUT_VERSION: ${{ inputs.version }}
       run: '"$GITHUB_ACTION_PATH/scripts/check.sh"'
 
@@ -59,7 +59,7 @@ runs:
       env:
         INPUT_ROOT: ${{ inputs.root }}
         INPUT_CONFIG: ${{ inputs.config }}
-        INPUT_PREPARE: ${{ inputs.prepare }}
+        INPUT_PREPARE: ${{ inputs.prepare == 'true' }}
         INPUT_BASELINE: ${{ inputs.baseline }}
         INPUT_FAIL_ON_GROWTH: ${{ inputs.fail-on-growth == 'true' }}
         INPUT_VERSION: ${{ inputs.version }}
@@ -74,7 +74,7 @@ runs:
       continue-on-error: true
       env:
         INPUT_ROOT: ${{ inputs.root }}
-        INPUT_COMMENT: ${{ inputs.comment }}
+        INPUT_COMMENT: ${{ inputs.comment == 'true' }}
         REPORT_DIR: ${{ steps.report.outputs.dir }}
         GH_TOKEN: ${{ github.token }}
         GH_ENTERPRISE_TOKEN: ${{ github.token }}
