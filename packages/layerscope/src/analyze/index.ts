@@ -36,9 +36,9 @@ export interface AnalyzeOptions {
   /**
    * Baseline file, relative to the root. Findings it lists are moved to `baseline.suppressed`.
    * Ignored when the file does not exist. `true`: the `baseline` key of the config, else
-   * `layerscope-baseline.json`. Not set: no baseline is applied.
+   * `layerscope-baseline.json`. `false` or not set: no baseline is applied.
    */
-  baseline?: string | true;
+  baseline?: string | boolean;
   /**
    * Report only the findings in these files (absolute paths), and scan only them, so a check of a
    * few files is fast. The environment still loads for the whole project. With the `layer-cycle`
@@ -58,10 +58,15 @@ export interface AnalyzeOptions {
 /** The result with the baseline of `option` applied. See `AnalyzeOptions.baseline`. */
 function withBaseline(
   result: AnalyzeResult,
-  option: string | true | undefined,
+  option: string | boolean | undefined,
   inScope?: (relativeFile: string) => boolean,
 ): AnalyzeResult {
-  const name = option === true ? baselineName(undefined, result.config) : option;
+  const name =
+    option === true
+      ? baselineName(undefined, result.config)
+      : option === false
+        ? undefined
+        : option;
   return name === undefined
     ? result
     : applyBaselineFile(result, baselinePath(result.rootDir, name), inScope);
@@ -90,7 +95,7 @@ function fromEnvironment(
 }
 
 export async function analyze(options: AnalyzeOptions = {}): Promise<AnalyzeResult> {
-  if (typeof options.baseline === 'string') {
+  if (options.baseline !== undefined && typeof options.baseline !== 'boolean') {
     assertBaselineName(options.baseline);
   }
   const rootDir = projectRoot(options.rootDir);

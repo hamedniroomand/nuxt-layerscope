@@ -65,8 +65,8 @@ export function baselinePath(rootDir: string, name: string): string {
 }
 
 /** The check for the public API: it must not name a command line flag. */
-export function assertBaselineName(name: string): void {
-  if (name === '') {
+export function assertBaselineName(name: unknown): void {
+  if (typeof name !== 'string' || name === '') {
     throw new LayerscopeError('baseline must be a non-empty file name.');
   }
 }

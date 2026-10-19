@@ -89,6 +89,30 @@ export function acceptDashedBooleans(cli: Cli): void {
 }
 
 /**
+ * The value of `--config`, for every command. The option parser gives a number for an empty value
+ * and for a value like `007`, `true` for no value, and a list for a flag that is given more than
+ * once, as for `--baseline`.
+ */
+export function assertConfigOption(value: unknown): void {
+  if (value === undefined) {
+    return;
+  }
+  if (Array.isArray(value)) {
+    throw new LayerscopeError('--config was given more than once. Give it one time.');
+  }
+  if (typeof value === 'string' && value !== '') {
+    return;
+  }
+  const hint =
+    typeof value === 'number' && value !== 0
+      ? ' For a file name that is a number, write it as ./<name>.'
+      : '';
+  throw new LayerscopeError(
+    `--config needs a file name. Leave it out to use the layerscope.config.* file in the root.${hint}`,
+  );
+}
+
+/**
  * The value of `--summary`. The option parser gives a number for an empty value and for a value
  * like `2024`, and a list for a flag that is given more than once, as for `--baseline`.
  */

@@ -6,7 +6,12 @@ import { registerFix } from '#src/commands/fix.ts';
 import { registerGraph } from '#src/commands/graph.ts';
 import { registerInit } from '#src/commands/init.ts';
 import { registerMcp } from '#src/commands/mcp.ts';
-import { EXIT_CLEAN, EXIT_ERROR, acceptDashedBooleans } from '#src/commands/shared.ts';
+import {
+  EXIT_CLEAN,
+  EXIT_ERROR,
+  acceptDashedBooleans,
+  assertConfigOption,
+} from '#src/commands/shared.ts';
 import { registerUnused } from '#src/commands/unused.ts';
 import { registerWhy } from '#src/commands/why.ts';
 
@@ -42,6 +47,7 @@ export async function run(argv: string[] = process.argv): Promise<number> {
       cli.outputHelp();
       return EXIT_ERROR;
     }
+    assertConfigOption(cli.options.config);
     return await (cli.runMatchedCommand() as Promise<number>);
   } catch (error) {
     process.stderr.write(`layerscope: ${(error as Error).message}\n`);

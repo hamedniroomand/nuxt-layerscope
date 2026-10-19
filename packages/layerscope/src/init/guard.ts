@@ -5,7 +5,7 @@ import { relative, resolve } from 'pathe';
 import { isConfigNewer } from '#src/analyze/config-freshness.ts';
 import { BASELINE_FILE } from '#src/baseline/index.ts';
 import { hasProjectConfig, keysSet } from '#src/config/effective.ts';
-import { findConfigFile } from '#src/config/load.ts';
+import { findConfigFile, isConfigThere } from '#src/config/load.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { currentDir } from '#src/utils/fs.ts';
@@ -27,7 +27,7 @@ export function findExistingConfig(
   if (customConfig === undefined) {
     return findConfigFile(rootDir);
   }
-  return existsSync(customConfig) ? customConfig : null;
+  return isConfigThere(customConfig) ? customConfig : null;
 }
 
 export function assertWritable(
