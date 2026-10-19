@@ -179,6 +179,8 @@ Nuxt 4.0 and later 4.x releases order the `layers/*` directories differently. If
 override each other, which one wins depends on your Nuxt version. The
 [`shadowed-component`](../reference/rules#shadowed-component),
 [`shadowed-layout`](../reference/rules#shadowed-layout),
-[`shadowed-middleware`](../reference/rules#shadowed-middleware) and
-[`shadowed-page`](../reference/rules#shadowed-page) rules make such overrides visible.
+[`shadowed-middleware`](../reference/rules#shadowed-middleware),
+[`shadowed-page`](../reference/rules#shadowed-page) and
+[`shadowed-auto-import`](../reference/rules#shadowed-auto-import) rules make such overrides
+visible.
 :::

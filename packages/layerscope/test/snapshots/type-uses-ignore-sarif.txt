@@ -94,6 +94,16 @@ exit 1
               "defaultConfiguration": {
                 "level": "warning"
               }
+            },
+            {
+              "id": "shadowed-auto-import",
+              "shortDescription": {
+                "text": "An auto-import is replaced by an auto-import of the same name from another file or package."
+              },
+              "helpUri": "https://layerscope.kitdev.space/reference/rules#shadowed-auto-import",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
             }
           ]
         }

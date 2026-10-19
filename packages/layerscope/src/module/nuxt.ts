@@ -19,6 +19,11 @@ export interface UnimportImport {
   from: string;
   type?: boolean;
   disabled?: boolean;
+  /**
+   * `enum`, `const enum` or `class` on an entry that unimport never drops: the type twin of a
+   * scanned `enum` or `class`, or an entry from a preset.
+   */
+  declarationType?: string;
 }
 
 export interface Unimport {

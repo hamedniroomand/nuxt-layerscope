@@ -25,6 +25,7 @@ const REGISTRY = {
   shadowedLayouts: [],
   shadowedMiddleware: [],
   shadowedPages: [],
+  shadowedImports: [],
   componentDirs: [],
   importDirs: [],
   nuxtIgnore: noNuxtIgnore(),

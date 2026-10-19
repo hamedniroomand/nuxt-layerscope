@@ -83,7 +83,8 @@
             "shadowed-component",
             "shadowed-layout",
             "shadowed-middleware",
-            "shadowed-page"
+            "shadowed-page",
+            "shadowed-auto-import"
           ]
         },
         "severity": { "enum": ["error", "warn"] },
@@ -199,7 +200,8 @@
             "shadowed-component",
             "shadowed-layout",
             "shadowed-middleware",
-            "shadowed-page"
+            "shadowed-page",
+            "shadowed-auto-import"
           ]
         },
         "file": { "type": "string" },

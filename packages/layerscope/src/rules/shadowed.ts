@@ -85,6 +85,11 @@ function kindFindings<T extends ShadowedFile>(
       return [];
     }
     const to = ownerOf(target);
+    // Two files of the same layer. Only auto-imports can give such a pair. It is not reported,
+    // because this is the safe side.
+    if (to?.name === from.name) {
+      return [];
+    }
     const winner = to === null ? target : `layer "${to.name}"`;
     const finding: Finding = {
       rule,
@@ -109,7 +114,10 @@ function describePage(page: ShadowedPage): string {
     : `Page "${page.name}"`;
 }
 
-/** Layouts, route middleware and pages that a file of the same name in another layer replaces. */
+/**
+ * Layouts, route middleware, pages and auto-imports that a file of the same name in another layer
+ * replaces.
+ */
 export function shadowedFileFindings(
   registry: Registry,
   ownerOf: OwnerLookup,
@@ -131,5 +139,12 @@ export function shadowedFileFindings(
       config,
     ),
     ...kindFindings(registry.shadowedPages, 'shadowed-page', describePage, ownerOf, config),
+    ...kindFindings(
+      registry.shadowedImports,
+      'shadowed-auto-import',
+      entry => `Auto-import "${entry.name}"`,
+      ownerOf,
+      config,
+    ),
   ];
 }

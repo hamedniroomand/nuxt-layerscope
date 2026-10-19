@@ -109,9 +109,9 @@ function isComponentDir(entry: unknown): boolean {
  * Whether the file has each field that this release needs, with the right type: `modulesDir` or
  * `publicDir` of a layer (layerscope would scan the Nuxt modules and public dirs), `importDirs`
  * and `nuxtIgnore` (the stale check of new files), `global` of a component and `nuxtContent` (the
- * "possibly used" marks of `unused`), and `shadowedLayouts`, `shadowedMiddleware` and
- * `shadowedPages` (the shadowed rules). A file without one is stale, or damaged, for example
- * with a bad entry in `componentDirs`.
+ * "possibly used" marks of `unused`), and `shadowedLayouts`, `shadowedMiddleware`,
+ * `shadowedPages` and `shadowedImports` (the shadowed rules). A file without one is stale, or
+ * damaged, for example with a bad entry in `componentDirs`.
  */
 function isComplete(registry: Record<string, unknown>): boolean {
   const {
@@ -124,6 +124,7 @@ function isComplete(registry: Record<string, unknown>): boolean {
     shadowedLayouts,
     shadowedMiddleware,
     shadowedPages,
+    shadowedImports,
   } = registry;
   return (
     Array.isArray(layers) &&
@@ -139,6 +140,7 @@ function isComplete(registry: Record<string, unknown>): boolean {
     isShadowedFiles(shadowedLayouts) &&
     isShadowedFiles(shadowedMiddleware) &&
     isShadowedPages(shadowedPages) &&
+    isShadowedFiles(shadowedImports) &&
     isNuxtIgnore(nuxtIgnore) &&
     (importDirs === null ||
       (Array.isArray(importDirs) && importDirs.every(entry => isImportDir(entry))))

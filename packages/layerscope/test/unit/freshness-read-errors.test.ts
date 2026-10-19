@@ -31,6 +31,7 @@ function emptyRegistry(): Registry {
     shadowedLayouts: [],
     shadowedMiddleware: [],
     shadowedPages: [],
+    shadowedImports: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),
