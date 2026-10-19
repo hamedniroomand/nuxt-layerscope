@@ -32,6 +32,8 @@ function list(title: string, entries: BaselineEntry[], bullet: string): string[]
 function formatJson(drift: Drift): string {
   const report = {
     ...drift,
+    // The notes go to stderr, so the JSON report does not change.
+    notes: undefined,
     adds: baselineSize(drift.added),
     fixes: baselineSize(drift.fixed),
   };

@@ -78,7 +78,10 @@ same place in another layer can take the accepted entries of a deleted file that
 layer, such as `unresolved-reference` entries. A rename that git does not find, a copy, a rename
 into or out of the root, and an alias import of a renamed file (`#layers/...`) still count as added
 and fixed. A move to another layer counts as added and fixed for a finding that names a target
-layer.
+layer. When many files in the root were added and deleted, git can skip its check for renames with
+edits, because of its rename limit (`diff.renameLimit`). Then `drift` prints a note on stderr. The
+note names the limit that git advises. A file that moved with edits then counts as added and fixed.
+A file that moved with no edits is still found.
 
 A `layer-cycle` entry is identified by its **rule**, **symbol** and **target layer**, but not by its
 **file**. The symbol is the chain of layers, for example `auth → shop → auth`, and the target layer
