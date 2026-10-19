@@ -88,7 +88,7 @@
     "ajv": "^8.20.0",
     "eslint": "^10.13.0",
     "typescript-eslint": "^8.71.2",
-    "unimport": "6.5.0",
+    "unimport": "7.0.2",
     "unrouting": "0.2.3",
     "vite-plus": "catalog:",
     "vue-eslint-parser": "^10.4.1"
