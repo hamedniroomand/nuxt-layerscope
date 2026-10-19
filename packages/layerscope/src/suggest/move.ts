@@ -9,7 +9,7 @@ import { compareStrings, plural } from '#src/utils/strings.ts';
 import type { Context } from './context.ts';
 import { isMoveTarget, permits } from './context.ts';
 import type { DirKind } from './names.ts';
-import { componentName, exportedNames, isAutoImported, namesOfLayer } from './names.ts';
+import { componentName, exportedNames, isAutoImported, namesOfLayer, SCANNED } from './names.ts';
 
 const DIR_KINDS: DirKind[] = ['srcDir', 'serverDir', 'sharedDir'];
 
@@ -32,8 +32,10 @@ function usesComponent(edge: Edge): boolean {
  * Where the file lands in `target`: the same path inside the same kind of source dir. `null`
  * when the file is in no source dir of its owner, or when Nuxt would not find it there under its
  * default dirs: an auto-import dir (the script files at its top level), or a `components/` dir
- * for a file that is used as a component. A target that sets its own `imports` dirs or component
- * dirs is not used, as layerscope does not know them.
+ * for a file that is used as a component. A target that sets `imports.dirs` or turns
+ * `imports.scan` off is not used for a file that is used as an auto-import, and a target that sets
+ * `components` is not used for a file that is used as a component. layerscope does not know the
+ * dirs of these layers. `moveTargets` also skips a script file for such an `imports` target.
  */
 export function destinationOf(
   file: string,
@@ -106,6 +108,11 @@ function moveTargets(context: Context, file: string, owner: Layer, uses: Edge[])
   for (const layer of context.layers) {
     const moved = destinationOf(file, owner, layer, uses);
     if (layer.name === owner.name || !isMoveTarget(layer, context.rootDir) || moved === null) {
+      continue;
+    }
+    // A layer that sets `imports.dirs` or turns `imports.scan` off can scan any dir, so it gets no
+    // script file.
+    if (layer.defaultImports === false && SCANNED.test(moved)) {
       continue;
     }
     // After the move every user, in the owner layer too, would point into the candidate layer.
