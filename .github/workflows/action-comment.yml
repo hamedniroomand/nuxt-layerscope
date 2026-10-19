@@ -42,7 +42,8 @@ jobs:
             echo "::error::examples/shop uses $real, not the build of this pull request."
             exit 1
           fi
-      # Two runs on one pull request: the second run must update the comment of the first.
+      # Two runs on one pull request: the second run must update the comment of the first. The
+      # second run writes the inputs with capital letters (True, TRUE), as a user can.
       - uses: ./
         id: first
         with:
@@ -53,8 +54,8 @@ jobs:
         id: second
         with:
           root: examples/shop
-          prepare: 'true'
-          comment: 'true'
+          prepare: 'True'
+          comment: 'TRUE'
       # A pull request from a fork has a read-only token. The action skips the comment there.
       - name: Check the comment
         if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
