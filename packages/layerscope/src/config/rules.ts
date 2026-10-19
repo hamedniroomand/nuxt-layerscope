@@ -8,6 +8,7 @@ export const DEFAULT_SEVERITY: Record<RuleName, Severity> = {
   'shadowed-component': 'warn',
   'shadowed-layout': 'warn',
   'shadowed-middleware': 'warn',
+  'shadowed-page': 'warn',
 };
 
 /**
@@ -18,6 +19,7 @@ export const REGISTRY_ONLY_RULES: readonly RuleName[] = [
   'shadowed-component',
   'shadowed-layout',
   'shadowed-middleware',
+  'shadowed-page',
 ];
 
 /** Shown when a registry-only rule is on and the run has no registry. */

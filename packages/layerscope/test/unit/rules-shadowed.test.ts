@@ -184,3 +184,38 @@ describe('shadowedFileFindings and files that are gone', () => {
     expect(() => shadowedFileFindings(registry, lookup, {})).toThrow(/EACCES/u);
   });
 });
+
+describe('shadowedFileFindings and the pages', () => {
+  function pageRegistry(root: string, routes: string[]): Registry {
+    const entry = { ...entryOf(root, 'shop/[id]', 'pages/shop/[id].vue'), routes };
+    return registryWith({ shadowedPages: [entry] });
+  }
+
+  it('names the route when the page that Nuxt uses has one', () => {
+    const { root, lookup } = layers(['base/pages/shop/[id].vue', 'app/pages/shop/[id].vue']);
+    expect(shadowedFileFindings(pageRegistry(root, ['/shop/:id()']), lookup, {})).toMatchObject([
+      {
+        rule: 'shadowed-page',
+        severity: 'warn',
+        symbol: 'shop/[id]',
+        message:
+          'Page "shop/[id]" (route /shop/:id()) of layer "base" is overridden by layer "app"',
+      },
+    ]);
+  });
+
+  it.each([
+    ['no route', []],
+    ['two routes', ['/shop/:id()', '/de/shop/:id()']],
+  ])('names no route when the page that Nuxt uses has %s', (_name, routes) => {
+    const { root, lookup } = layers(['base/pages/shop/[id].vue', 'app/pages/shop/[id].vue']);
+    const [finding] = shadowedFileFindings(pageRegistry(root, routes), lookup, {});
+    expect(finding.message).toBe('Page "shop/[id]" of layer "base" is overridden by layer "app"');
+  });
+
+  it('reports nothing when the rule is off', () => {
+    const { root, lookup } = layers(['base/pages/shop/[id].vue', 'app/pages/shop/[id].vue']);
+    const config = { rules: { 'shadowed-page': 'off' as const } };
+    expect(shadowedFileFindings(pageRegistry(root, ['/']), lookup, config)).toEqual([]);
+  });
+});

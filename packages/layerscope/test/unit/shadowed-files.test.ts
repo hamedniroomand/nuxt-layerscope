@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { join } from 'pathe';
@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vite-plus/test';
 
 import type { Nuxt } from '#src/module/nuxt.ts';
 import { recordShadowedFiles, shadowedFiles } from '#src/module/shadowed-files.ts';
+import { shadowedNuxt, shadowedProject } from '#test/shadowed-project.ts';
 
 const created: string[] = [];
 
@@ -66,48 +67,16 @@ describe('shadowedFiles', () => {
   });
 });
 
-/** A project with a root layer and a `base` layer, with empty files at the paths. */
-function project(files: string[]): { root: string; base: string } {
-  const root = mkdtempSync(join(tmpdir(), 'layerscope-shadowed-'));
-  created.push(root);
-  const base = join(root, 'layers/base');
-  for (const file of files) {
-    mkdirSync(join(root, file, '..'), { recursive: true });
-    writeFileSync(join(root, file), '');
-  }
-  return { root, base };
-}
-
-function fakeNuxt(
-  root: string,
-  base: string,
-  app: { layouts: Record<string, { name: string; file: string }>; middleware: object[] },
-): Nuxt {
-  const layer = (dir: string): object => ({
-    cwd: dir,
-    config: { rootDir: dir, srcDir: join(dir, 'app') },
-  });
-  return {
-    apps: { default: app },
-    options: {
-      rootDir: root,
-      srcDir: join(root, 'app'),
-      extensions: ['.ts', '.vue'],
-      ignore: [],
-      _layers: [layer(root), layer(base)],
-    },
-  } as unknown as Nuxt;
-}
-
 describe('recordShadowedFiles', () => {
   it('scans the layouts in sub dirs and the middleware of each layer', async () => {
-    const { root, base } = project([
+    const project = shadowedProject([
       'app/layouts/admin/wide.vue',
       'layers/base/app/layouts/admin/wide.vue',
       'app/middleware/auth.ts',
       'layers/base/app/middleware/auth.ts',
     ]);
-    const nuxt = fakeNuxt(root, base, {
+    const { root, base } = project;
+    const nuxt = shadowedNuxt(project, {
       layouts: {
         'admin-wide': { name: 'admin-wide', file: join(root, 'app/layouts/admin/wide.vue') },
       },
@@ -128,16 +97,27 @@ describe('recordShadowedFiles', () => {
           shadowedBy: join(root, 'app/middleware/auth.ts'),
         },
       ],
+      pages: [],
     });
   });
+});
 
+describe('recordShadowedFiles before Nuxt resolves the app', () => {
   it('gives nothing before Nuxt resolves the layouts and the middleware of the app', async () => {
     const nuxt = { apps: { default: {} } } as unknown as Nuxt;
-    expect(await recordShadowedFiles(nuxt, path => path)).toEqual({ layouts: [], middleware: [] });
+    expect(await recordShadowedFiles(nuxt, path => path)).toEqual({
+      layouts: [],
+      middleware: [],
+      pages: [],
+    });
   });
 
   it('gives nothing before Nuxt adds the app', async () => {
     const nuxt = { apps: {} } as unknown as Nuxt;
-    expect(await recordShadowedFiles(nuxt, path => path)).toEqual({ layouts: [], middleware: [] });
+    expect(await recordShadowedFiles(nuxt, path => path)).toEqual({
+      layouts: [],
+      middleware: [],
+      pages: [],
+    });
   });
 });

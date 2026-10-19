@@ -82,7 +82,8 @@
             "unresolved-reference",
             "shadowed-component",
             "shadowed-layout",
-            "shadowed-middleware"
+            "shadowed-middleware",
+            "shadowed-page"
           ]
         },
         "severity": { "enum": ["error", "warn"] },
@@ -91,12 +92,12 @@
         "column": { "type": "integer", "minimum": 1 },
         "symbol": {
           "type": "string",
-          "description": "Identifier, component name, import specifier, or a layer-cycle chain."
+          "description": "Identifier, component name, import specifier, a layer-cycle chain, or the name or path of an overridden file."
         },
         "fromLayer": { "type": "string", "description": "The layer the file belongs to." },
         "toLayer": {
           "type": ["string", "null"],
-          "description": "The layer the symbol resolves to; null for packages and unresolved references."
+          "description": "The layer the symbol resolves to; null for packages and unresolved references, and for a shadowed rule when the winner is in no layer."
         },
         "target": {
           "type": ["string", "null"],
@@ -197,7 +198,8 @@
             "unresolved-reference",
             "shadowed-component",
             "shadowed-layout",
-            "shadowed-middleware"
+            "shadowed-middleware",
+            "shadowed-page"
           ]
         },
         "file": { "type": "string" },

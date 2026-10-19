@@ -127,8 +127,9 @@ The rules look at the edges and the registry:
 - [`unresolved-reference`](../reference/rules#unresolved-reference) reports references that could
   not be resolved, so layerscope never calls them safe.
 - [`shadowed-component`](../reference/rules#shadowed-component) reports overridden components.
-- [`shadowed-layout`](../reference/rules#shadowed-layout) and
-  [`shadowed-middleware`](../reference/rules#shadowed-middleware) report overridden layouts and
-  route middleware.
+- [`shadowed-layout`](../reference/rules#shadowed-layout),
+  [`shadowed-middleware`](../reference/rules#shadowed-middleware) and
+  [`shadowed-page`](../reference/rules#shadowed-page) report overridden layouts, route middleware
+  and pages.
 
 Findings are sorted by file, line, column, rule and symbol, so reports are deterministic.

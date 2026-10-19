@@ -9,7 +9,8 @@ export type RuleName =
   | 'unresolved-reference'
   | 'shadowed-component'
   | 'shadowed-layout'
-  | 'shadowed-middleware';
+  | 'shadowed-middleware'
+  | 'shadowed-page';
 
 export type PresetName = 'layered' | 'stacked' | 'features';
 

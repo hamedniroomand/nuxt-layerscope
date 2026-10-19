@@ -4,7 +4,7 @@ import { isAbsolute } from 'pathe';
 
 import { ruleSeverity } from '#src/config/rules.ts';
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
-import type { Registry, ShadowedFile } from '#src/registry/schema.ts';
+import type { Registry, ShadowedFile, ShadowedPage } from '#src/registry/schema.ts';
 import type { Finding, LayerscopeConfig, RuleName } from '#src/types.ts';
 import { isGone, realPath } from '#src/utils/fs.ts';
 
@@ -57,10 +57,13 @@ function isMissing(file: string): boolean {
   }
 }
 
-function kindFindings(
-  entries: ShadowedFile[],
+/** How the message names the file that Nuxt does not use, for example `Layout "default"`. */
+type Describe<T> = (entry: T) => string;
+
+function kindFindings<T extends ShadowedFile>(
+  entries: T[],
   rule: RuleName,
-  label: string,
+  describe: Describe<T>,
   ownerOf: OwnerLookup,
   config: LayerscopeConfig,
 ): Finding[] {
@@ -93,26 +96,40 @@ function kindFindings(
       fromLayer: from.name,
       toLayer: to?.name ?? null,
       target,
-      message: `${label} "${entry.name}" of layer "${from.name}" is overridden by ${winner}`,
+      message: `${describe(entry)} of layer "${from.name}" is overridden by ${winner}`,
     };
     return [finding];
   });
 }
 
-/** Layouts and route middleware that a file of the same name in another layer replaces. */
+/** A page names its route only when the file that Nuxt uses gives exactly one route. */
+function describePage(page: ShadowedPage): string {
+  return page.routes.length === 1
+    ? `Page "${page.name}" (route ${page.routes.join('')})`
+    : `Page "${page.name}"`;
+}
+
+/** Layouts, route middleware and pages that a file of the same name in another layer replaces. */
 export function shadowedFileFindings(
   registry: Registry,
   ownerOf: OwnerLookup,
   config: LayerscopeConfig,
 ): Finding[] {
   return [
-    ...kindFindings(registry.shadowedLayouts, 'shadowed-layout', 'Layout', ownerOf, config),
     ...kindFindings(
-      registry.shadowedMiddleware,
-      'shadowed-middleware',
-      'Middleware',
+      registry.shadowedLayouts,
+      'shadowed-layout',
+      entry => `Layout "${entry.name}"`,
       ownerOf,
       config,
     ),
+    ...kindFindings(
+      registry.shadowedMiddleware,
+      'shadowed-middleware',
+      entry => `Middleware "${entry.name}"`,
+      ownerOf,
+      config,
+    ),
+    ...kindFindings(registry.shadowedPages, 'shadowed-page', describePage, ownerOf, config),
   ];
 }

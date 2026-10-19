@@ -1,9 +1,8 @@
 import { join } from 'pathe';
 
-import { REGISTRY_VERSION } from '#src/registry/schema.ts';
 import type { Registry } from '#src/registry/schema.ts';
 
-import { makeLayer, noNuxtIgnore } from './factories.ts';
+import { makeLayer, makeRegistry } from './factories.ts';
 import { tempDir, write } from './watch-project.ts';
 
 /**
@@ -27,8 +26,7 @@ export function project(config = ''): string {
     "export const CartSummary: typeof import('../layers/shop/app/components/CartSummary.vue')['default']\n",
   );
   const registry: Registry = {
-    version: REGISTRY_VERSION,
-    generator: { name: 'nuxt-layerscope', version: '0.0.0', nuxt: '4.0.0' },
+    ...makeRegistry(),
     layers: [
       makeLayer('admin', join(root, 'layers/admin')),
       makeLayer('shop', join(root, 'layers/shop')),
@@ -43,13 +41,6 @@ export function project(config = ''): string {
         priority: 0,
       },
     ],
-    shadowedComponents: [],
-    shadowedLayouts: [],
-    shadowedMiddleware: [],
-    componentDirs: [],
-    importDirs: [],
-    nuxtIgnore: noNuxtIgnore(),
-    nuxtContent: false,
     imports: { app: [{ name: 'useCart', from: useCart }], server: [], shared: [] },
   };
   write(root, '.nuxt/layerscope/registry.json', JSON.stringify(registry));

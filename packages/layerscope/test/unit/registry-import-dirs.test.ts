@@ -39,6 +39,7 @@ function buildDirWith(extra: Record<string, unknown>): string {
       nuxtContent: false,
       shadowedLayouts: [],
       shadowedMiddleware: [],
+      shadowedPages: [],
       imports: { app: [], server: [], shared: [] },
       ...extra,
     }),
@@ -125,6 +126,23 @@ describe('readRegistry and the shadowed layouts and middleware', () => {
       }
     },
   );
+});
+
+const PAGE = { ...SHADOWED, name: 'index', routes: ['/'] };
+
+describe('readRegistry and the shadowed pages', () => {
+  it('reads a good shadowedPages list', () => {
+    expect(readRegistry(buildDirWith({ importDirs: [], shadowedPages: [PAGE] })).kind).toBe('ok');
+  });
+
+  it.each([
+    ['is missing', undefined],
+    ['has an entry with no routes', [{ ...PAGE, routes: undefined }]],
+    ['has a route that is not a string', [{ ...PAGE, routes: [1] }]],
+    ['has an entry with a bad file', [{ ...PAGE, file: 1 }]],
+  ])('marks the registry as stale when shadowedPages %s', (_name, shadowedPages) => {
+    expect(readRegistry(buildDirWith({ importDirs: [], shadowedPages })).kind).toBe('stale');
+  });
 });
 
 const RULES = noNuxtIgnore();

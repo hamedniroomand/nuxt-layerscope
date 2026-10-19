@@ -84,6 +84,16 @@ exit 1
               "defaultConfiguration": {
                 "level": "warning"
               }
+            },
+            {
+              "id": "shadowed-page",
+              "shortDescription": {
+                "text": "A page is replaced by a page with the same path in the pages dir of another layer."
+              },
+              "helpUri": "https://layerscope.kitdev.space/reference/rules#shadowed-page",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
             }
           ]
         }
