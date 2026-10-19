@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 
 import { join } from 'pathe';
 
+import { recordedOptions } from '#src/config/effective.ts';
 import type { ComponentMap, SymbolMap, SymbolTable } from '#src/nuxt/symbols.ts';
 import { addComponent, targetOf } from '#src/nuxt/symbols.ts';
 import { readJson } from '#src/utils/fs.ts';
@@ -115,10 +116,11 @@ export function readRegistry(buildDir: string): RegistryRead {
     isNuxtIgnore(nuxtIgnore) &&
     (importDirs === null ||
       (Array.isArray(importDirs) && importDirs.every(entry => isImportDir(entry))));
+  const config = recordedOptions((registry as { config?: unknown }).config, file);
   return {
     kind: complete ? 'ok' : 'stale',
     file,
-    registry: registry as Registry,
+    registry: { ...(registry as Registry), config },
   };
 }
 
