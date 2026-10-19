@@ -8,7 +8,7 @@ import { compareStrings, plural } from '#src/utils/strings.ts';
 
 import type { Context } from './context.ts';
 import { isMoveTarget, permits } from './context.ts';
-import type { DirKind } from './names.ts';
+import type { DirKind, LayerNames } from './names.ts';
 import { componentName, exportedNames, isAutoImported, namesOfLayer, SCANNED } from './names.ts';
 
 const DIR_KINDS: DirKind[] = ['srcDir', 'serverDir', 'sharedDir'];
@@ -66,24 +66,38 @@ export function destinationOf(
   return join(target[found.kind], inside);
 }
 
-/**
- * Whether a name of the moved file is already in the target, in another file. Then the file
- * would be a second one with that name, and Nuxt would use one of them. The names are the ones
- * in the dirs that Nuxt scans by default. A file with an `export * from` a package, an alias, or a
- * path whose file unimport does not find can export any name, so it conflicts with any name on the
- * other side.
- */
-function hasNameConflict(context: Context, file: string, target: Layer, dest: string): boolean {
-  let names = context.names.get(target.name);
+function namesOf(context: Context, layer: Layer): LayerNames {
+  let names = context.names.get(layer.name);
   if (names === undefined) {
-    names = namesOfLayer(target);
-    context.names.set(target.name, names);
+    names = namesOfLayer(layer);
+    context.names.set(layer.name, names);
   }
+  return names;
+}
+
+/**
+ * Whether a name of the moved file is already in a layer other than the owner, in another file.
+ * Then the file would be a second one with that name, and Nuxt would use one of them. In the target
+ * the two files conflict. In a third layer, Nuxt then uses only one of the files, for most dirs the
+ * one of the layer that comes first, so after the move the file of the third layer could take the
+ * name. layerscope does not compare the layer order. The names are the ones in the dirs that Nuxt
+ * scans by default. A file with an `export * from` a package, an alias, or a path whose file
+ * unimport does not find can export any name, so it conflicts with any name in the other layers.
+ */
+function hasNameConflict(
+  context: Context,
+  file: string,
+  owner: Layer,
+  target: Layer,
+  dest: string,
+): boolean {
+  const others = context.layers.filter(layer => layer.name !== owner.name);
   const components = join(target.srcDir, 'components');
-  const clash =
-    dest.startsWith(`${components}/`) &&
-    /\.(?:vue|jsx|tsx)$/u.test(dest) &&
-    names.components.has(componentName(relative(components, dest)));
+  const name =
+    dest.startsWith(`${components}/`) && /\.(?:vue|jsx|tsx)$/u.test(dest)
+      ? componentName(relative(components, dest))
+      : null;
+  const clash = name !== null && others.some(layer => namesOf(context, layer).components.has(name));
   const sources = DIR_KINDS.some(kind =>
     (['composables', 'utils', 'types'] as const).some(dir =>
       dest.startsWith(`${join(target[kind], dir)}/`),
@@ -96,9 +110,14 @@ function hasNameConflict(context: Context, file: string, target: Layer, dest: st
   const moved = exportedNames(file);
   return (
     clash ||
-    moved.names.some(name => names.imports.has(name)) ||
-    (moved.unknown && (names.imports.size > 0 || names.unknownImports)) ||
-    (names.unknownImports && moved.names.length > 0)
+    others.some(layer => {
+      const names = namesOf(context, layer);
+      return (
+        moved.names.some(exported => names.imports.has(exported)) ||
+        (moved.unknown && (names.imports.size > 0 || names.unknownImports)) ||
+        (names.unknownImports && moved.names.length > 0)
+      );
+    })
   );
 }
 
@@ -127,7 +146,7 @@ function moveTargets(context: Context, file: string, owner: Layer, uses: Edge[])
       const after = { ...edge, fromLayer: layer.name };
       return permits(context, after) && isExposed(after, context.config, context.layers);
     });
-    if (usersFit && dependenciesFit && !hasNameConflict(context, file, layer, moved)) {
+    if (usersFit && dependenciesFit && !hasNameConflict(context, file, owner, layer, moved)) {
       targets.push({ layer, file: moved });
     }
   }

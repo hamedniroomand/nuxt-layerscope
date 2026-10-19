@@ -111,15 +111,15 @@ describe('fix --apply plain moves', () => {
     const root = repoProject();
     // An absolute specifier is the same case as an alias: layerscope does not rewrite it.
     const absolute = `${root}/layers/web/app/composables/useCart`;
-    write(root, 'layers/shop/app/utils/abs.ts', `export { useCart } from '${absolute}';\n`);
+    write(root, 'layers/shop/app/lib/abs.ts', `export { useCart } from '${absolute}';\n`);
     git(root, 'add', '-A');
     git(root, 'commit', '-q', '-m', 'absolute');
     const output = silence();
     expect(await run(applyArgs(root))).toBe(EXIT_CLEAN);
     expect(output.stdout()).toContain(
-      `Update by hand: layerscope does not change imports that use an alias.\n  ${shown(root, 'layers/shop/app/utils/abs.ts')}:1:25  "${absolute}"`,
+      `Update by hand: layerscope does not change imports that use an alias.\n  ${shown(root, 'layers/shop/app/lib/abs.ts')}:1:25  "${absolute}"`,
     );
-    expect(read(root, 'layers/shop/app/utils/abs.ts')).toContain(absolute);
+    expect(read(root, 'layers/shop/app/lib/abs.ts')).toContain(absolute);
   });
 });
 
