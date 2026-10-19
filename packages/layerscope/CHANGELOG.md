@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.1
+
+### Patch Changes
+
+- [#263](https://github.com/hamedniroomand/nuxt-layerscope/pull/263) [`7ea63ae`](https://github.com/hamedniroomand/nuxt-layerscope/commit/7ea63ae2f5532f2b5c410810949e92b85191e260) - Move suggestions now treat `types/` in `srcDir` (`app/types` by default) as an auto-import dir on Nuxt 4.6 and later. A suggested move no longer makes a name conflict with a file there.
+
 ## 0.12.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 {
   "name": "nuxt-layerscope",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "description": "Linter for Nuxt layer boundaries that sees auto-imports",
   "keywords": [
     "architecture",
