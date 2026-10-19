@@ -55,6 +55,11 @@ function hasWrittenExtension(written: string, file: string): boolean {
   );
 }
 
+/** The path part of a specifier: the part before a query or a hash. */
+export function pathPart(specifier: string): string {
+  return specifier.slice(0, /[?#]/u.exec(specifier)?.index ?? specifier.length);
+}
+
 /**
  * The relative specifier of an import after the importer or the imported file moves. It keeps
  * the style that the user wrote: a dropped extension or `/index` stays dropped, a written
@@ -64,8 +69,7 @@ export function newSpecifier(edge: Edge, importer: string, imported: string): st
   if (!edge.symbol.startsWith('.') || edge.to === null) {
     return null;
   }
-  const suffix = /[?#]/u.exec(edge.symbol)?.index ?? edge.symbol.length;
-  const written = edge.symbol.slice(0, suffix);
+  const written = pathPart(edge.symbol);
   const resolved = join(dirname(edge.file), written);
   let path = relative(dirname(importer), imported);
   if (edge.to !== resolved) {
@@ -87,7 +91,7 @@ export function newSpecifier(edge: Edge, importer: string, imported: string): st
     }
   }
   const style = written.endsWith('/') && !path.endsWith('/') ? `${path}/` : path;
-  return `${style.startsWith('.') ? style : `./${style}`}${edge.symbol.slice(suffix)}`;
+  return `${style.startsWith('.') ? style : `./${style}`}${edge.symbol.slice(written.length)}`;
 }
 
 /**

@@ -1,7 +1,7 @@
-import { join, relative } from 'pathe';
+import { dirname, join, relative } from 'pathe';
 
 import { keyOf, toKeyed } from '#src/baseline/index.ts';
-import { newSpecifier } from '#src/fix/specifier.ts';
+import { newSpecifier, pathPart } from '#src/fix/specifier.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
 import { destinationOf } from '#src/suggest/move.ts';
@@ -53,9 +53,11 @@ function pathAtBase(file: string, renames: Map<string, string>, rootDir: string)
 /**
  * The finding as it was at the base. The file gets its old path. A relative import gets the
  * specifier that pointed from the old importer to the old target, made by the function that `fix`
- * uses to rewrite imports after a move. The rule and the target layer do not change, so a changed
- * dependency still counts as new. A finding with a target layer in a file that moved from another
- * layer keeps its path: the key has no source layer, so it is a new layer crossing.
+ * uses to rewrite imports after a move. When only the importer moved, the target is the path that
+ * the import names, so an import through a link keeps the name of the link. The rule and the
+ * target layer do not change, so a changed dependency still counts as new. A finding with a target
+ * layer in a file that moved from another layer keeps its path: the key has no source layer, so it
+ * is a new layer crossing.
  */
 function findingAtBase(
   finding: Finding,
@@ -79,8 +81,12 @@ function findingAtBase(
   if (file === finding.file && oldTarget === target) {
     return { ...finding, file };
   }
-  const edge = { symbol: finding.symbol, file: finding.file, to: target } as Edge;
-  return { ...finding, file, symbol: newSpecifier(edge, file, oldTarget) ?? finding.symbol };
+  // When only the importer moved, the import names the same path as at the base, also when the
+  // path goes through a link. So the specifier goes from the old importer to that path.
+  const named = join(dirname(finding.file), pathPart(finding.symbol));
+  const [to, imported] = oldTarget === target ? [named, named] : [target, oldTarget];
+  const edge = { symbol: finding.symbol, file: finding.file, to } as Edge;
+  return { ...finding, file, symbol: newSpecifier(edge, file, imported) ?? finding.symbol };
 }
 
 export interface MappedFindings {
