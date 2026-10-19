@@ -14,6 +14,7 @@ import {
   UI_STORE,
   importsOf,
   outcomes,
+  packagesOf,
   project,
 } from '#test/layer-package-project.ts';
 
@@ -81,7 +82,7 @@ describe('the package name of a layer', () => {
   it('does not take a Node builtin', () => {
     const root = project({ 'layers/events/package.json': JSON.stringify({ name: 'events' }) });
     const from = join(root, 'layers/admin/app/utils/use.ts');
-    const packages = new Map([['events', 'events']]);
+    const packages = new Map([['events', { name: 'events', root: join(root, 'layers/events') }]]);
     expect(resolveSpecifier('events', from, [], join(root, '.nuxt'), packages)).toEqual({
       kind: 'external',
       module: 'events',
@@ -96,7 +97,7 @@ describe('the package name of a layer', () => {
       from,
       [],
       join(root, '.nuxt'),
-      new Map([['@acme/kit', 'kit']]),
+      packagesOf(root),
     );
     // On Linux the dir `@ACME` does not exist, so the import does not resolve.
     const ignoresCase = existsSync(join(root, 'node_modules/@ACME/kit'));
@@ -115,20 +116,25 @@ describe('layerPackageNames', () => {
       'layers/two/package.json': JSON.stringify({ name: '@acme/kit' }),
     });
     const layers = ['one', 'two'].map(name => layerFromPath(name, join(root, 'layers', name)));
-    expect([...layerPackageNames(layers)]).toEqual([['@acme/kit', 'one']]);
+    expect([...layerPackageNames(layers)]).toEqual([
+      ['@acme/kit', { name: 'one', root: realpathSync(join(root, 'layers/one')) }],
+    ]);
   });
 });
 
-describe('a package.json of a layer that changes after exsolve read it', () => {
-  const missing = '@acme/ui-layer/app/composables/nope';
-  const packages = new Map([['@acme/ui-layer', 'ui']]);
-
+describe('a package.json of a layer that changes after the resolver read it', () => {
+  /** A bare import that only the lookup of `main` finds, so it reads the package.json again. */
   function resolveAfter(content: string): () => unknown {
-    const root = project();
+    const root = project({
+      [`${UI_STORE}/package.json`]: JSON.stringify({
+        name: '@acme/ui-layer',
+        main: './nuxt.config',
+      }),
+    });
     const from = join(root, 'layers/admin/app/utils/use.ts');
     const resolve = (): unknown =>
-      resolveSpecifier(missing, from, [], join(root, '.nuxt'), packages);
-    expect(resolve()).toEqual({ kind: 'missing' });
+      resolveSpecifier('@acme/ui-layer', from, [], join(root, '.nuxt'), packagesOf(root));
+    expect(resolve()).toMatchObject({ kind: 'file' });
     writeFileSync(join(root, UI_STORE, 'package.json'), content);
     return resolve;
   }

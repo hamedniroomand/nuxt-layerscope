@@ -16,6 +16,7 @@ import {
   analyzeProject,
   importsOf,
   link,
+  packagesOf,
   project,
   write,
 } from '#test/layer-package-project.ts';
@@ -60,10 +61,7 @@ describe('resolveSpecifier for a layer package', () => {
   it('sees a file that is added after a failed lookup, with and without exports', () => {
     const root = project();
     const from = join(root, 'layers/admin/app/utils/use.ts');
-    const layerPackages = new Map([
-      ['@acme/ui-layer', 'ui'],
-      ['@acme/kit', 'kit'],
-    ]);
+    const layerPackages = packagesOf(root);
     for (const [specifier, dir] of [
       ['@acme/ui-layer/app/composables/useLate', UI_STORE],
       ['@acme/kit/app/composables/useLate', KIT],

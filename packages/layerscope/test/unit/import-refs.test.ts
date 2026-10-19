@@ -20,7 +20,7 @@ const env = {
   table,
   aliases: [] as [string, string][],
   buildDir: '/app/.nuxt',
-  layerPackages: new Map<string, string>(),
+  layerPackages: new Map(),
 };
 
 function ref(specifier: string, names: string[]): ImportRef {

@@ -4,7 +4,7 @@ import { join } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { resolveSpecifier } from '#src/resolve/specifier.ts';
-import { KIT, UI_STORE, analyzeProject, project } from '#test/layer-package-project.ts';
+import { KIT, UI_STORE, analyzeProject, packagesOf, project } from '#test/layer-package-project.ts';
 
 /**
  * The error that `readJson` throws for each read of a file that ends with `failing.suffix`, until
@@ -32,23 +32,17 @@ afterEach(() => {
 });
 
 /**
- * A layer import that exsolve cannot resolve and that only the lookup of a relative path finds
- * (`.js` → `.ts`), so the result shows whether that lookup ran after the second read.
+ * A bare import of a layer whose `main` has no extension, so Node finds no file and only the
+ * lookup of `main` finds it. The result shows whether that lookup ran after the second read.
  */
 function resolveAfterSecondRead(code: string): () => unknown {
-  const root = project();
+  const root = project({
+    [`${UI_STORE}/package.json`]: JSON.stringify({ name: '@acme/ui-layer', main: './nuxt.config' }),
+  });
   const from = join(root, 'layers/admin/app/utils/use.ts');
-  const packages = new Map([['@acme/ui-layer', 'ui']]);
   failing.suffix = `${UI_STORE}/package.json`;
   failing.code = code;
-  return () =>
-    resolveSpecifier(
-      '@acme/ui-layer/app/composables/useTheme.js',
-      from,
-      [],
-      join(root, '.nuxt'),
-      packages,
-    );
+  return () => resolveSpecifier('@acme/ui-layer', from, [], join(root, '.nuxt'), packagesOf(root));
 }
 
 describe('a package.json of a layer that the second read cannot read', () => {

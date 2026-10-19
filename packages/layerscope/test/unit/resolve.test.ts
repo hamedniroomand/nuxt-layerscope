@@ -5,13 +5,14 @@ import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { loadAliases } from '#src/nuxt/aliases.ts';
+import type { LayerPackages } from '#src/resolve/layer-package.ts';
 import { packageName } from '#src/resolve/package-name.ts';
 import { resolveSpecifier } from '#src/resolve/specifier.ts';
 import { NUXT4_ROOT } from '#test/fixtures.ts';
 
 const buildDir = join(NUXT4_ROOT, '.nuxt');
 const aliases = loadAliases(buildDir);
-const NO_LAYER_PACKAGES = new Map<string, string>();
+const NO_LAYER_PACKAGES: LayerPackages = new Map();
 const from = join(NUXT4_ROOT, 'layers/admin/app/utils/exportCsv.ts');
 
 describe('resolveSpecifier', () => {
