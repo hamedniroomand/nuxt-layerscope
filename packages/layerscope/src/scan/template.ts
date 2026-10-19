@@ -1,6 +1,6 @@
-import type { SFCDescriptor, SFCTemplateBlock } from '@vue/compiler-sfc';
+import type { SFCDescriptor, SFCTemplateBlock, SFCTemplateCompileResults } from '@vue/compiler-sfc';
 import { compileTemplate } from '@vue/compiler-sfc';
-import type { ImportExpression, Node } from 'oxc-parser';
+import type { ImportExpression } from 'oxc-parser';
 import { parseAndWalk, walk } from 'oxc-walker';
 
 import { escapeRegExp } from '#src/utils/strings.ts';
@@ -11,6 +11,7 @@ import { visitRenderCall, visitRenderMember } from './render-visitors.ts';
 import { recordImportCall } from './script-visitors.ts';
 import type { TemplateIndex, VueAstNode } from './template-index.ts';
 import { indexTemplate } from './template-index.ts';
+import { importOffset, mapPairs } from './template-map.ts';
 import type { FileScan, Unread } from './types.ts';
 
 function firstIdentOffset(name: string, source: string, index: TemplateIndex): number | null {
@@ -22,6 +23,27 @@ function firstIdentOffset(name: string, source: string, index: TemplateIndex): n
     }
   }
   return null;
+}
+
+/**
+ * Whether the text from `from` to `to` is in one template expression, and Vue reads the source text
+ * of that expression up to `end` as it is. Vue decodes an HTML character reference, such as `&amp;`,
+ * before it maps the names, so each mapping after it in the same expression is too early. A mapping
+ * that is not in an expression, such as the end of an element, can match text outside of it.
+ */
+function isClean(
+  { from, to, end }: { from: number; to: number; end: number },
+  source: string,
+  index: TemplateIndex,
+): boolean {
+  const range = index.expressions.find(([start, stop]) => start <= from && to <= stop);
+  // After a decode, the text that Vue reads starts with the source text only if the source text from
+  // the reference to `end` holds only reference characters, such as `amp;`. For a mapping before the
+  // path, `end` is the path, and the `(`, the space or the comment before a path is not such a
+  // character. For a mapping after the path, the text holds the quote of the path. A decode moves a
+  // name mapping and the path by the same amount. The mapping at the end of an expression does not
+  // move, so the text up to it must be the same in full.
+  return range?.[2].startsWith(source.slice(range[0], end)) === true;
 }
 
 /** The tag and the reason, when layerscope cannot read the template; `null` when it can. */
@@ -44,60 +66,21 @@ function unreadReason(template: SFCTemplateBlock): Pick<Unread, 'reason' | 'mess
   return null;
 }
 
-/**
- * The offset of the path of each `import()` in the template expressions, in source order. A match
- * inside a string or a comment is also found. The offset is only a hint for the line.
- */
-function importPaths(source: string, index: TemplateIndex): number[] {
-  const offsets: number[] = [];
-  for (const [start, end] of index.expressions) {
-    for (const match of source
-      .slice(start, end)
-      .matchAll(/(?<![\w$.])import(?:\s|\/\*(?:[^*]|\*(?!\/))*\*\/)*\(\s*/gu)) {
-      offsets.push(start + match.index + match[0].length);
-    }
-  }
-  return offsets.toSorted((a, b) => a - b);
-}
-
-/**
- * The start of an `import()` path that Vue does not change. Vue changes only names (`a` to
- * `_ctx.a`). For a string, it is the whole string. For a template literal, it is the text before the
- * first `${`. For any other path, it is empty.
- */
-function pathHead(code: string, path: Node): string {
-  if (path.type === 'Literal') {
-    return code.slice(path.start, path.end);
-  }
-  if (path.type === 'TemplateLiteral') {
-    return code.slice(path.start, path.quasis[0]?.end ?? path.start);
-  }
-  return '';
-}
-
-/**
- * Gives each `import()` of the render code the offset of its own path in the template. Two paths get
- * different offsets when the template has a match for each of them. If no match is left, the offset
- * is the start of the template. A longer head takes its offset first: a path with no head (a name)
- * then cannot take the offset of a path with a head.
- */
+/** The offset of the path of each `import()`. Only a template with an `import()` reads the source map. */
 function importOffsets(
-  heads: string[],
+  compiled: SFCTemplateCompileResults,
+  template: SFCTemplateBlock,
   source: string,
-  paths: number[],
-  fallback: number,
-): number[] {
-  const taken = new Set<number>();
-  const offsets = heads.map(() => fallback);
-  const order = heads.map((_, at) => at).toSorted((a, b) => heads[b].length - heads[a].length);
-  for (const at of order) {
-    const offset = paths.find(path => !taken.has(path) && source.startsWith(heads[at], path));
-    if (offset !== undefined) {
-      taken.add(offset);
-      offsets[at] = offset;
-    }
-  }
-  return offsets;
+  index: TemplateIndex,
+): (node: ImportExpression) => number {
+  const start = template.loc.start.offset;
+  let pairs: [number, number][] | undefined;
+  return node => {
+    pairs ??= mapPairs(compiled.code, template.content, compiled.map?.mappings ?? '');
+    return importOffset(node, compiled.code, template.content, pairs, start, span =>
+      isClean(span, source, index),
+    );
+  };
 }
 
 /** Walks the render code. A parse error is reported, so a use that it hides is never dropped. */
@@ -106,7 +89,7 @@ function readRender(
   lang: 'js' | 'ts',
   ctx: RenderContext,
   templateStart: number,
-  importOffsetsOf: (heads: string[]) => number[],
+  importOffsetOf: (node: ImportExpression) => number,
 ): void {
   const { program, errors } = parseAndWalk(code, `render.${lang}`, { parseOptions: { lang } });
   const parseError = errors.at(0);
@@ -130,9 +113,8 @@ function readRender(
       }
     },
   });
-  const offsets = importOffsetsOf(imports.map(node => pathHead(code, node.source)));
-  for (const [at, node] of imports.entries()) {
-    recordImportCall(node, ctx.scan, offsets[at] ?? templateStart);
+  for (const node of imports) {
+    recordImportCall(node, ctx.scan, importOffsetOf(node));
   }
 }
 
@@ -199,8 +181,7 @@ export function scanTemplate(
     elementOffset: predicate => index.elements.find(predicate)?.offset ?? templateStart,
     identOffset: name => firstIdentOffset(name, source, index) ?? templateStart,
   };
-  readRender(compiled.code, renderLang, ctx, templateStart, heads =>
-    importOffsets(heads, source, importPaths(source, index), templateStart),
-  );
+  const offsets = importOffsets(compiled, template, source, index);
+  readRender(compiled.code, renderLang, ctx, templateStart, offsets);
   readIslands(index, scan);
 }

@@ -87,6 +87,17 @@ describe('the rewrite of a specifier', () => {
     expect(rewrite('import x from "./a";', [at('./a', './b')])).toBe('import x from "./b";');
   });
 
+  it.each(['&quot;', '&grave;', '&#x60;', '&quot', '&#034;'])(
+    'tells the user to write a quote for %s',
+    entity => {
+      const text = `<div :x="import(${entity}./a${entity})" />`;
+      const result = rewrite(text, [{ ...at('./a', './b'), column: text.indexOf('&') + 1 }]);
+      expect(result).toMatchObject({
+        reason: `uses an HTML character reference, such as &quot;, as the quote of "./a". Use ' or " as the quote, then run the command again.`,
+      });
+    },
+  );
+
   it.each([
     ['a quote of the same kind', "import x from './a';", "./b'c"],
     ['a backslash', "import x from './a';", '.\\b'],

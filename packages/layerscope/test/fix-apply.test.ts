@@ -221,7 +221,7 @@ describe('fix --apply stale plan', () => {
       '<script setup lang="ts">\n// edited\n</script>\n',
     );
     expect(() => prepareApply(moves, root, { allowDirty: true, cwd: process.cwd() })).toThrow(
-      `${shown(root, 'layers/admin/app/pages/admin.vue')}:2 does not have "${OLD}" now. Run the command again.`,
+      `${shown(root, 'layers/admin/app/pages/admin.vue')}:2 does not have "${OLD}" at the place that layerscope found. If the file changed, run the command again. If not, layerscope cannot find the exact place of this import() in the template, for example when the same expression has an HTML character reference. Move the import() into a function in <script setup>, then run the command again.`,
     );
   });
 
