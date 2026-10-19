@@ -31,9 +31,9 @@ function usesComponent(edge: Edge): boolean {
 /**
  * Where the file lands in `target`: the same path inside the same kind of source dir. `null`
  * when the file is in no source dir of its owner, or when Nuxt would not find it there under its
- * default dirs: an auto-import dir (the script files in it, and the `index` file of each sub dir),
- * or a `components/` dir for a file that is used as a component. A target that sets its own
- * `imports` dirs or component dirs is not used, as layerscope does not know them.
+ * default dirs: an auto-import dir (the script files at its top level), or a `components/` dir
+ * for a file that is used as a component. A target that sets its own `imports` dirs or component
+ * dirs is not used, as layerscope does not know them.
  */
 export function destinationOf(
   file: string,

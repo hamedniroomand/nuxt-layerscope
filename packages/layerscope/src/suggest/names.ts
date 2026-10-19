@@ -11,7 +11,6 @@ const COMPONENT = /\.(?:vue|jsx|tsx)$/u;
 const INDEX = /^index\.(?:ts|js|mjs|mts)$/u;
 /** The file kinds that unimport reads in a dir that Nuxt scans for auto-imports. */
 const SCANNED = /\.(?:mts|cts|ts|tsx|mjs|cjs|js|jsx)$/u;
-const SCANNED_INDEX = /^index\.(?:mts|cts|ts|tsx|mjs|cjs|js|jsx)$/u;
 
 /** The dirs that Nuxt scans for auto-imports by default, in each source dir of a layer. */
 export const AUTO_IMPORT_DIRS = {
@@ -23,10 +22,9 @@ export const AUTO_IMPORT_DIRS = {
 export type DirKind = keyof typeof AUTO_IMPORT_DIRS;
 
 /**
- * Whether Nuxt scans a path by default. `inside` is the path in the source dir. Nuxt reads the
- * script files in the dir, and the `index` file of each sub dir. It does not read deeper. Nitro
- * reads `server/utils` at any depth. layerscope moves a file there only to the top level or to the
- * `index` file of a sub dir.
+ * Whether Nuxt scans a path by default. `inside` is the path in the source dir. Nuxt reads only the
+ * script files at the top level of the dir. Nitro reads `server/utils` at any depth. layerscope
+ * moves a file there only to the top level or to the `index` file of a sub dir.
  */
 export function isAutoImported(kind: DirKind, inside: string): boolean {
   const parts = inside.split('/');
@@ -36,7 +34,7 @@ export function isAutoImported(kind: DirKind, inside: string): boolean {
   if (parts.length === 2) {
     return SCRIPT.test(parts[1]);
   }
-  return parts.length === 3 && INDEX.test(parts[2]);
+  return kind === 'serverDir' && parts.length === 3 && INDEX.test(parts[2]);
 }
 
 function pascal(text: string): string {
@@ -122,14 +120,9 @@ function listDir(dir: string): { name: string; directory: boolean }[] {
 }
 
 function scriptFiles(dir: string): string[] {
-  return listDir(dir).flatMap(entry => {
-    if (!entry.directory) {
-      return SCANNED.test(entry.name) ? [join(dir, entry.name)] : [];
-    }
-    return listDir(join(dir, entry.name))
-      .filter(inner => !inner.directory && SCANNED_INDEX.test(inner.name))
-      .map(inner => join(dir, entry.name, inner.name));
-  });
+  return listDir(dir)
+    .filter(entry => !entry.directory && SCANNED.test(entry.name))
+    .map(entry => join(dir, entry.name));
 }
 
 /** The files in the dir and in its sub dirs at any depth whose names match `pattern`. */
@@ -159,8 +152,7 @@ export function namesOfLayer(layer: Layer): LayerNames {
   let unknownImports = false;
   for (const kind of Object.keys(AUTO_IMPORT_DIRS) as DirKind[]) {
     for (const dir of AUTO_IMPORT_DIRS[kind]) {
-      // Nitro reads `server/utils` at any depth. Nuxt reads the files in the other dirs and the
-      // `index` file of each sub dir.
+      // Nitro reads `server/utils` at any depth. Nuxt reads only the top level of the other dirs.
       const root = join(layer[kind], dir);
       const files = kind === 'serverDir' ? filesUnder(root, SCANNED) : scriptFiles(root);
       for (const file of files) {

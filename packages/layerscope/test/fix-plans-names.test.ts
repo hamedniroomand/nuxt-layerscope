@@ -42,6 +42,13 @@ describe('a name that the target has already', () => {
     expect(await plan(root)).toEqual([]);
   });
 
+  it('moves an auto-import into a layer with the name in the index file of a sub dir', async () => {
+    // Nuxt does not read `composables/cart/index.ts`, so its name is no auto-import.
+    const root = autoImportProject('layers/web/app/composables/useCart.ts');
+    write(root, 'layers/shared/app/composables/cart/index.ts', 'export const useCart = () => 2;\n');
+    expect(await plan(root)).toHaveLength(1);
+  });
+
   it.each([
     'export type useCart = () => number;',
     'export interface useCart { (): number }',
