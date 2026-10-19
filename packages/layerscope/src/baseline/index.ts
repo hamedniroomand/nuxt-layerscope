@@ -24,6 +24,7 @@ export {
   assertNotDirectory,
   BASELINE_FILE,
   BASELINE_VERSION,
+  baselineFileOf,
   baselineName,
   baselinePath,
   cannotRead,

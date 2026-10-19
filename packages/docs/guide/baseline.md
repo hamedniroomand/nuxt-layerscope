@@ -135,9 +135,9 @@ that the `baseline` key of the config names. Without the key, it writes `layersc
 Without a baseline file, `check` behaves as if there were none.
 
 A baseline file that is not valid stops `check`, `fix` and `drift` with exit code `2`, and the
-message names the file. When `--staged`, `--changed` or `--since` selects no file, `check` exits
-`0`: with `--format json`, `sarif` or `gitlab` the error is in a note of the report, and with `text`
-and `github` the file is not read. These files are not valid: an empty file, a file that is not
+message names the file. When `--staged`, `--changed`, `--since` or file arguments select no source
+file, `check` still reads the baseline, and exits `2` for a file that is not valid. These files are
+not valid: an empty file, a file that is not
 JSON, a directory, a file with an entry whose `count` is not a whole number above 0, a file with
 another version, and a file that layerscope cannot read. An empty `--baseline` value is also
 refused. A `baseline` key that is not a non-empty string is also refused. `drift` also stops for a

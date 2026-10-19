@@ -1,9 +1,4 @@
-import {
-  applyBaselineFile,
-  assertBaselineName,
-  baselineName,
-  baselinePath,
-} from '#src/baseline/index.ts';
+import { applyBaselineFile, assertBaselineName, baselineFileOf } from '#src/baseline/index.ts';
 import { compareByPosition } from '#src/rules/compare.ts';
 import { runRules } from '#src/rules/index.ts';
 import { withRootNotes, withSuggestions } from '#src/suggest/index.ts';
@@ -61,15 +56,8 @@ function withBaseline(
   option: string | boolean | undefined,
   inScope?: (relativeFile: string) => boolean,
 ): AnalyzeResult {
-  const name =
-    option === true
-      ? baselineName(undefined, result.config)
-      : option === false
-        ? undefined
-        : option;
-  return name === undefined
-    ? result
-    : applyBaselineFile(result, baselinePath(result.rootDir, name), inScope);
+  const file = baselineFileOf(option, result.config, result.rootDir);
+  return file === undefined ? result : applyBaselineFile(result, file, inScope);
 }
 
 type EnvironmentFields = 'source' | 'sourceFile' | 'recordedFile';
