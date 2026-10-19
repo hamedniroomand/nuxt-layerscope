@@ -47,7 +47,13 @@ export function projectFor(file: string, root: string | undefined): ProjectLoad 
       message: `No ${DEFAULT_REGISTRY} above this file. Run "nuxi prepare", or set the rule's "root" option to the Nuxt project.`,
     };
   }
-  const configFile = findConfigFile(rootDir);
+  let configFile: string | null;
+  try {
+    configFile = findConfigFile(rootDir);
+  } catch (error) {
+    // A config that cannot be read is one lint message, as a project that does not load is.
+    return { ok: false, message: (error as Error).message };
+  }
   const registry = join(rootDir, DEFAULT_REGISTRY);
   const stamp = `${mtime(configFile)}:${mtime(registry)}`;
   const cached = cache.get(rootDir);

@@ -1,10 +1,11 @@
-import { existsSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import type { Jiti } from 'jiti';
 import { createJiti } from 'jiti';
 import { resolve } from 'pathe';
 
+import { cannotRead } from '#src/baseline/input.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { LayerscopeConfig } from '#src/types.ts';
 import { realPath } from '#src/utils/fs.ts';
@@ -30,15 +31,33 @@ function defineConfigModule(): string {
   return candidates.find(path => existsSync(path)) ?? candidates[0];
 }
 
+/**
+ * Whether the config file is there. Only a missing file, or a missing folder or a file in place of
+ * a folder on its path, means "not there". Any other error, for example no permission on a
+ * folder, stops the run: without it, the run would go on with no config.
+ */
+export function isConfigThere(file: string): boolean {
+  try {
+    statSync(file);
+    return true;
+  } catch (error) {
+    const { code } = error as NodeJS.ErrnoException;
+    if (code === 'ENOENT' || code === 'ENOTDIR') {
+      return false;
+    }
+    throw cannotRead(file, error);
+  }
+}
+
 function findConfigFile(rootDir: string, configFile?: string): string | null {
   if (configFile !== undefined) {
     const file = realPath(resolve(rootDir, configFile));
-    if (!existsSync(file)) {
+    if (!isConfigThere(file)) {
       throw new LayerscopeError(`Config file not found: ${file}`);
     }
     return file;
   }
-  return CONFIG_NAMES.map(name => resolve(rootDir, name)).find(path => existsSync(path)) ?? null;
+  return CONFIG_NAMES.map(name => resolve(rootDir, name)).find(path => isConfigThere(path)) ?? null;
 }
 
 function createLoader(): Jiti {
