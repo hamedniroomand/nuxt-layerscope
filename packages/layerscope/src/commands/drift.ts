@@ -54,6 +54,10 @@ export async function drift(root: string | undefined, flags: DriftFlags): Promis
     flags.baseline,
   );
   process.stdout.write(formatDrift(result, format));
+  const paint = paintFor(process.stderr);
+  for (const note of result.notes ?? []) {
+    process.stderr.write(`${paint(['yellow', 'bold'], 'layerscope: note:')} ${note}\n`);
+  }
   const added = baselineSize(result.added);
   if (flags.failOnGrowth !== true || added === 0) {
     return EXIT_CLEAN;

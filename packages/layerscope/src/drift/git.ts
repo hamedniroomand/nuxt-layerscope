@@ -7,7 +7,7 @@ import { baselinePath, cannotRead, parseBaselineText } from '#src/baseline/index
 import { LayerscopeError } from '#src/errors.ts';
 import { isSymlink } from '#src/fix/paths.ts';
 import { realPath } from '#src/utils/fs.ts';
-import { git, splitNul, topLevel } from '#src/utils/git.ts';
+import { git, gitWithStderr, splitNul, topLevel } from '#src/utils/git.ts';
 
 function assertRef(rootDir: string, ref: string): void {
   try {
@@ -184,28 +184,78 @@ export interface Rename {
   score: number;
 }
 
+/** The renamed files, and the notes about a rename check that git did not finish. */
+export interface Renames {
+  renames: Map<string, Rename>;
+  notes: string[];
+}
+
+/** The path of the root for git, relative to the top of the work tree, with `/`. */
+function scopeOf(top: string, root: string): string {
+  const scope = relative(top, root);
+  if (isOutside(scope)) {
+    throw new LayerscopeError(
+      `drift cannot limit the rename check to ${root}, because it is not in the git work tree ${top}.`,
+    );
+  }
+  return scope;
+}
+
+/**
+ * A note when git skipped its rename check because of `diff.renameLimit`. Only the two texts of
+ * git for it count: another warning can name a file with `rename` in its path.
+ */
+export function renameNotes(stderr: string, ref: string): string[] {
+  const warnings = stderr
+    .split('\n')
+    .filter(
+      line =>
+        line.startsWith('warning:') &&
+        (line.includes('rename detection was skipped') || line.includes('diff.renameLimit')),
+    )
+    .map(line => line.slice('warning:'.length).trim());
+  return warnings.length === 0
+    ? []
+    : [
+        `git did not check every rename since ${ref}: ${warnings.join(' ')} A file that moved with edits, for example by \`layerscope fix\`, can then count as added and fixed.`,
+      ];
+}
+
 /**
  * The files that git renamed between `ref` and the working tree, as the analysis sees them: the
  * new path to the old path, both relative to the real path of `rootDir`, as baseline entries are.
  * `-M30%` is given, so a `diff.renames=false` config does not turn it off. A copy, and a rename that
- * git does not find (a file with many edits), are not in it. A rename with a side outside `rootDir`
- * crosses the root of the project, so it is not used. The caller decides which scores to follow.
+ * git does not find (a file with many edits), are not in it. Git looks only in `rootDir`, so a
+ * rename with a side outside it is an added or a deleted file. The caller decides which scores to
+ * follow.
  */
-export function renamesSince(rootDir: string, ref: string): Map<string, Rename> {
+export function renamesSince(rootDir: string, ref: string): Renames {
   const top = workTree(rootDir);
   assertRef(rootDir, ref);
-  let output: string;
+  const root = realPath(rootDir);
+  const scope = scopeOf(top, root);
+  // `literal`, so a `*` or a `[` in a dir name is not a pattern.
+  const paths = scope === '' ? [] : ['--', `:(literal)${scope}`];
+  let output: { stdout: string; stderr: string };
   try {
     // 30%, so git also pairs the small files that `fix` moves. `mapToBase` filters the pairs.
-    output = git(top, 'diff', '-M30%', '--no-relative', '-z', '--name-status', ref);
+    output = gitWithStderr(
+      top,
+      'diff',
+      '-M30%',
+      '--no-relative',
+      '-z',
+      '--name-status',
+      ref,
+      ...paths,
+    );
   } catch (error) {
     throw new LayerscopeError(
       `Could not list the renamed files since ${ref} (${firstLine(error)}). Fix the git error, or use another ref with --base.`,
     );
   }
-  const root = realPath(rootDir);
   const renames = new Map<string, Rename>();
-  const fields = splitNul(output);
+  const fields = splitNul(output.stdout);
   for (let index = 0; index < fields.length; index += 1) {
     const status = fields[index];
     // A rename or a copy has two paths, every other status has one.
@@ -220,5 +270,5 @@ export function renamesSince(rootDir: string, ref: string): Map<string, Rename> 
       index += 1;
     }
   }
-  return renames;
+  return { renames, notes: renameNotes(output.stderr, ref) };
 }

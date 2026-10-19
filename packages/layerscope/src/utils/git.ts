@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 
 import { dirname, resolve } from 'pathe';
 
@@ -87,6 +87,38 @@ export function git(rootDir: string, ...args: string[]): string {
     stdio: 'pipe',
     maxBuffer: 256 * 1024 * 1024,
   });
+}
+
+/**
+ * The environment of `gitWithStderr`. Git translates its warnings, so the C locale keeps them in
+ * English for the code that reads them. With the C locale, gettext also does not read `LANGUAGE`.
+ */
+export function englishGitEnv(rootDir: string): NodeJS.ProcessEnv {
+  const env = gitEnv(rootDir);
+  Reflect.deleteProperty(env, 'LANGUAGE');
+  return { ...env, LC_ALL: 'C' };
+}
+
+/**
+ * Like `git`, but it also gives what git printed on stderr, in English, for a warning of a
+ * command that did not fail. A failure throws an error with `stderr`, as `git` does.
+ */
+export function gitWithStderr(
+  rootDir: string,
+  ...args: string[]
+): { stdout: string; stderr: string } {
+  const result = spawnSync('git', ['-C', rootDir, ...args], {
+    encoding: 'utf8',
+    env: englishGitEnv(rootDir),
+    maxBuffer: 256 * 1024 * 1024,
+  });
+  if (result.error !== undefined) {
+    throw result.error;
+  }
+  if (result.status !== 0) {
+    throw Object.assign(new Error(`git ${args.join(' ')} failed`), { stderr: result.stderr });
+  }
+  return { stdout: result.stdout, stderr: result.stderr };
 }
 
 /** The top dir of the work tree of `dir`, as git gives it. Throws when git fails. */

@@ -25,6 +25,8 @@ export interface Drift {
   fixed: BaselineEntry[];
   /** All the entries of the baseline on the base ref and in the working tree, warnings too. */
   baselineSize: { base: number; current: number };
+  /** Notes for stderr, such as a rename check that git did not finish. */
+  notes?: string[];
 }
 
 /**
@@ -55,7 +57,7 @@ export async function measureDrift(
       ? (options.config ?? (await loadConfig(options.rootDir, options.configFile)))
       : {};
   const baselineFile = baselineName(baselineOption, config);
-  const renames = renamesSince(options.rootDir, base);
+  const { renames, notes } = renamesSince(options.rootDir, base);
   // A renamed baseline file is read at its old path on the base. `fix` does not move it, so the
   // file must be at least 50% the same.
   const file = baselinePath(options.rootDir, baselineFile);
@@ -75,5 +77,6 @@ export async function measureDrift(
     added: added.map(entry => mapped.today(entry)),
     fixed,
     baselineSize: { base: baselineSize(before.entries), current: baselineSize(committed) },
+    notes,
   };
 }
