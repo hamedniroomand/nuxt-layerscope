@@ -82,6 +82,14 @@ function isShadowedFiles(value: unknown): boolean {
   );
 }
 
+/** The check of a stored shadowed page: the fields of a shadowed file, and the routes. */
+function isShadowedPages(value: unknown): boolean {
+  return (
+    isShadowedFiles(value) &&
+    (value as Record<string, unknown>[]).every(entry => isStrings(entry.routes))
+  );
+}
+
 /** The check of a stored component dir: the type of each field, as for an auto-import dir. */
 function isComponentDir(entry: unknown): boolean {
   if (typeof entry !== 'object' || entry === null) {
@@ -101,9 +109,9 @@ function isComponentDir(entry: unknown): boolean {
  * Whether the file has each field that this release needs, with the right type: `modulesDir` or
  * `publicDir` of a layer (layerscope would scan the Nuxt modules and public dirs), `importDirs`
  * and `nuxtIgnore` (the stale check of new files), `global` of a component and `nuxtContent` (the
- * "possibly used" marks of `unused`), and `shadowedLayouts` and `shadowedMiddleware` (the shadowed
- * rules). A file without one is stale, or damaged, for example with a bad entry in
- * `componentDirs`.
+ * "possibly used" marks of `unused`), and `shadowedLayouts`, `shadowedMiddleware` and
+ * `shadowedPages` (the shadowed rules). A file without one is stale, or damaged, for example
+ * with a bad entry in `componentDirs`.
  */
 function isComplete(registry: Record<string, unknown>): boolean {
   const {
@@ -115,6 +123,7 @@ function isComplete(registry: Record<string, unknown>): boolean {
     nuxtContent,
     shadowedLayouts,
     shadowedMiddleware,
+    shadowedPages,
   } = registry;
   return (
     Array.isArray(layers) &&
@@ -129,6 +138,7 @@ function isComplete(registry: Record<string, unknown>): boolean {
     typeof nuxtContent === 'boolean' &&
     isShadowedFiles(shadowedLayouts) &&
     isShadowedFiles(shadowedMiddleware) &&
+    isShadowedPages(shadowedPages) &&
     isNuxtIgnore(nuxtIgnore) &&
     (importDirs === null ||
       (Array.isArray(importDirs) && importDirs.every(entry => isImportDir(entry))))

@@ -178,6 +178,7 @@ higher-priority layer, and so does layerscope. The project itself has the highes
 Nuxt 4.0 and later 4.x releases order the `layers/*` directories differently. If two of them
 override each other, which one wins depends on your Nuxt version. The
 [`shadowed-component`](../reference/rules#shadowed-component),
-[`shadowed-layout`](../reference/rules#shadowed-layout) and
-[`shadowed-middleware`](../reference/rules#shadowed-middleware) rules make such overrides visible.
+[`shadowed-layout`](../reference/rules#shadowed-layout),
+[`shadowed-middleware`](../reference/rules#shadowed-middleware) and
+[`shadowed-page`](../reference/rules#shadowed-page) rules make such overrides visible.
 :::

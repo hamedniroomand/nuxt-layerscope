@@ -11,6 +11,7 @@ const SHADOWED_OFF = {
   'shadowed-component': 'off',
   'shadowed-layout': 'off',
   'shadowed-middleware': 'off',
+  'shadowed-page': 'off',
 } as const;
 
 describe('compareByPosition', () => {

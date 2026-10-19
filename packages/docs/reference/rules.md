@@ -310,7 +310,7 @@ Limits:
   reported. `admin/default.vue` and `AdminDefault.vue` in two layers (both are named
   `admin-default`) are not reported.
 - Two files in the same layer are not reported.
-- A layout or a middleware in a file that no layer owns is not reported.
+- A layout, a middleware or a page in a file that no layer owns is not reported.
 - A file that is added after the last `nuxi prepare` or dev write is not reported until the
   registry is written again.
 
@@ -338,11 +338,48 @@ Limits:
 - Only files that have the same name in the middleware dir of each layer are reported. `Auth.ts`
   and `auth.ts` in two layers (both are named `auth`) are not reported.
 - Two files in the same layer are not reported.
-- A layout or a middleware in a file that no layer owns is not reported.
+- A layout, a middleware or a page in a file that no layer owns is not reported.
 - `middleware/<name>/index.ts` is not used by Nuxt and is not reported.
 - A file that is added after the last `nuxi prepare` or dev write is not reported until the
   registry is written again.
 - Plugins, server middleware and Nitro plugins are not reported, because Nuxt and Nitro use all of
   them.
+
+Without the registry, the rule reports nothing and prints the note of the shadowed-\* rules.
+
+## `shadowed-page`
+
+- Default: `warn`
+- Needs the [Nuxt module](../guide/nuxt-module)
+
+Two layers have a page with the same path in the pages dir, and Nuxt uses only one of them.
+layerscope reports the one that Nuxt does not use:
+
+```text
+layers/base/app/pages/shop/[id].vue
+  1:1     warn   Page "shop/[id]" (route /shop/:id()) of layer "base" is overridden by layer "root"  shadowed-page
+                 shop/[id] → app/pages/shop/[id].vue
+```
+
+The name of a page is the path of its file in the pages dir, without the extension. The message
+names the route only when the file that Nuxt uses gives exactly one route. The route is the route
+of that file, not of the reported file.
+
+An override is often on purpose. Once it is on purpose, accept it with a
+[baseline](../guide/baseline) or turn the rule off.
+
+Limits:
+
+- Only files that have the same path (without the extension) in the pages dir of each layer are
+  reported. Two files with other paths that give the same route, for example `foo.vue` and
+  `foo/index.vue`, are not reported.
+- Two files in the same layer are not reported.
+- A layout, a middleware or a page in a file that no layer owns is not reported.
+- Nothing is reported when the pages feature of Nuxt is off. Pages that a module or a
+  `pages:extend` hook adds are not reported.
+- When the file that Nuxt uses is a named view (`cart@view.vue`), or has a mode file of the same
+  route next to it (`cart.client.vue`), the page that it replaces is not reported.
+- A file that is added after the last `nuxi prepare` or dev write is not reported until the
+  registry is written again.
 
 Without the registry, the rule reports nothing and prints the note of the shadowed-\* rules.

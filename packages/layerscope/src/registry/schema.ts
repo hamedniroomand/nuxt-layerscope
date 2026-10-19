@@ -29,7 +29,10 @@ export interface ShadowedComponent extends RegistryComponent {
   shadowedBy: string;
 }
 
-/** A layout or a route middleware that lost to a file of the same name in another layer. */
+/**
+ * A layout or a route middleware that lost to a file of the same name in another layer. A page
+ * adds `routes`.
+ */
 export interface ShadowedFile {
   /** The name that Nuxt gives the layout or the middleware. */
   name: string;
@@ -37,6 +40,14 @@ export interface ShadowedFile {
   file: string;
   /** Absolute path of the file that Nuxt uses instead. */
   shadowedBy: string;
+}
+
+/** A page that lost to a page with the same path in the pages dir of another layer. */
+export interface ShadowedPage extends ShadowedFile {
+  /** The path of the file relative to the pages dir, without the extension. */
+  name: string;
+  /** The full paths of the routes that Nuxt makes from the file that it uses. */
+  routes: string[];
 }
 
 export interface RegistryComponentDir {
@@ -78,6 +89,7 @@ export interface Registry {
   shadowedComponents: ShadowedComponent[];
   shadowedLayouts: ShadowedFile[];
   shadowedMiddleware: ShadowedFile[];
+  shadowedPages: ShadowedPage[];
   componentDirs: RegistryComponentDir[];
   /**
    * Every dir that Nuxt or Nitro scans for auto-imports, for the stale check. `null` when the

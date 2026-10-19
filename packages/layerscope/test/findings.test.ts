@@ -139,3 +139,16 @@ describe('a component name with files in two layers of the matrix fixture', () =
     },
   );
 });
+
+describe('the overridden pages of the matrix fixture', () => {
+  // The messages are not in the snapshot. They name a route that Nuxt makes, so this checks that
+  // each Nuxt release in CI gives the module the routes in the same form.
+  it('names the route of a page that Nuxt makes one route from', async () => {
+    const { findings } = await analyze({ rootDir: MATRIX_ROOT, source: 'registry' });
+    const pages = findings.filter(f => f.rule === 'shadowed-page');
+    expect(pages.map(f => f.message)).toEqual([
+      'Page "index" (route /) of layer "base" is overridden by layer "root"',
+      'Page "shop/[id]" (route /shop/:id()) of layer "base" is overridden by layer "root"',
+    ]);
+  });
+});

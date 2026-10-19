@@ -22,6 +22,8 @@ const DESCRIPTIONS: Record<RuleName, string> = {
   'shadowed-layout': 'A layout is replaced by a layout of the same name in another layer.',
   'shadowed-middleware':
     'A route middleware is replaced by a middleware of the same name in another layer.',
+  'shadowed-page':
+    'A page is replaced by a page with the same path in the pages dir of another layer.',
 };
 
 const RULES = Object.keys(DEFAULT_SEVERITY) as RuleName[];

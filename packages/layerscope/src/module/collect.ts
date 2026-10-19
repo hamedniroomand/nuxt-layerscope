@@ -10,6 +10,7 @@ import type {
   RegistryImportDir,
   ShadowedComponent,
   ShadowedFile,
+  ShadowedPage,
 } from '#src/registry/schema.ts';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
 import { packageVersion } from '#src/version.ts';
@@ -34,6 +35,7 @@ interface AppPart {
   shadowedComponents: ShadowedComponent[];
   shadowedLayouts: ShadowedFile[];
   shadowedMiddleware: ShadowedFile[];
+  shadowedPages: ShadowedPage[];
   /** Not resolved yet: the shared imports compare the raw `from` with the server imports. */
   imports: UnimportImport[];
   importDirs: RegistryImportDir[] | null;
@@ -167,6 +169,7 @@ export class RegistryCollector {
       shadowedComponents: app.shadowedComponents,
       shadowedLayouts: app.shadowedLayouts,
       shadowedMiddleware: app.shadowedMiddleware,
+      shadowedPages: app.shadowedPages,
       componentDirs: app.componentDirs,
       importDirs,
       nuxtIgnore: readNuxtIgnore(this.nuxt),
@@ -200,6 +203,7 @@ export class RegistryCollector {
       shadowedComponents: this.shadowed(components),
       shadowedLayouts: shadowedFiles.layouts,
       shadowedMiddleware: shadowedFiles.middleware,
+      shadowedPages: shadowedFiles.pages,
       imports,
       importDirs,
     };
