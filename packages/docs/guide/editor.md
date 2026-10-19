@@ -158,7 +158,8 @@ layerscope check --watch
   the start. When `nuxi dev` runs, the error can show for a short time after you add or delete a
   component or an auto-import file. The layerscope module then writes the registry again, and the
   next run is clean. With the registry, a new file that Nuxt ignores, such as
-  `composables/useCart.spec.ts`, does not cause the error. Nitro auto-imports such a file from its
+  `composables/useCart.spec.ts`, does not cause the error. Without the registry, this holds for
+  component files in the default `components/` dirs. Nitro auto-imports such a file from its
   dirs, such as `server/utils` and `shared/utils`. Under `nuxi dev`, the module does not write the
   registry again for that file. Then each run stops until the module writes the registry again for
   another change, or until you run `nuxi prepare`. If the error stays, run `nuxi prepare`.

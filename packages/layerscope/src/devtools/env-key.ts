@@ -54,5 +54,7 @@ export function computeEnvKey(rootDir: string, buildDir: string): string {
   return [
     ...WATCHED.map(name => stamp(join(buildDir, name))),
     ...configs.map(name => stamp(join(rootDir, name))),
+    // The ignore rules of the stale check without the registry come from it.
+    stamp(join(rootDir, '.nuxtignore')),
   ].join('|');
 }

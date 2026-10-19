@@ -16,6 +16,10 @@ deleted since `nuxi prepare` last ran. Run it again, or pass `--prepare`. In CI,
 `nuxi dev`, the generated files are written again after a short time, and the error goes away.
 If it stays, run `nuxi prepare`.
 
+A component file that Nuxt ignores (`ignore`, `ignorePrefix` or `.nuxtignore`) does not cause
+"… is missing from components.d.ts". With the `types` source, this holds only when the project has
+a `@nuxt/kit` that gives the ignore rules. If the file is not ignored, run `nuxi prepare`.
+
 "… is missing from the layerscope registry" names the new file. It comes only from the registry,
 not from the `.d.ts` files. The file can be any new file in an auto-import dir, not only a
 composable. For example, the `server/utils/**/*` pattern of Nitro also matches a `README.md` or a

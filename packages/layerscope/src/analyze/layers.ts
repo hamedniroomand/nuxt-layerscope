@@ -2,13 +2,13 @@ import { existsSync } from 'node:fs';
 
 import { join, relative } from 'pathe';
 
-import { resolveLayers } from '#src/nuxt/layers.ts';
+import { resolveLayersAndIgnore } from '#src/nuxt/layers.ts';
+import type { ResolvedLayers } from '#src/nuxt/layers.ts';
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
 import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import type { Layer, LayerscopeConfig } from '#src/types.ts';
 
-export interface AnalysisLayers {
-  layers: Layer[];
+export interface AnalysisLayers extends ResolvedLayers {
   ownerOf: OwnerLookup;
   notes: string[];
 }
@@ -36,6 +36,11 @@ export async function loadLayers(
   config: LayerscopeConfig,
   registryLayers: Layer[] | undefined,
 ): Promise<AnalysisLayers> {
-  const layers = await resolveLayers(rootDir, config, registryLayers);
-  return { layers, ownerOf: createOwnerLookup(layers), notes: layerNotes(layers, rootDir) };
+  const { layers, isNuxtIgnored } = await resolveLayersAndIgnore(rootDir, config, registryLayers);
+  return {
+    layers,
+    isNuxtIgnored,
+    ownerOf: createOwnerLookup(layers),
+    notes: layerNotes(layers, rootDir),
+  };
 }

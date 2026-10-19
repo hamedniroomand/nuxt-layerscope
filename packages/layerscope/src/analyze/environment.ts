@@ -15,6 +15,7 @@ import { staleConfigNote } from './config-freshness.ts';
 import type { AnalysisEnv } from './file-analysis.ts';
 import { assertFresh, assertRegistryFresh } from './freshness.ts';
 import { loadLayers } from './layers.ts';
+import type { AnalysisLayers } from './layers.ts';
 import { loadSymbols } from './symbols.ts';
 
 export interface EnvironmentOptions {
@@ -40,6 +41,8 @@ export interface Environment {
   /** The Nuxt build dir, which holds the generated files. */
   buildDir: string;
   layers: Layer[];
+  /** The ignore rules of Nuxt for the stale check without the registry. */
+  isNuxtIgnored: AnalysisLayers['isNuxtIgnored'];
   env: AnalysisEnv;
   notes: string[];
 }
@@ -83,8 +86,11 @@ export async function assertSymbolsFresh(
   table: AnalysisEnv['table'],
   layers: Layer[],
   registry: Registry | null,
+  isNuxtIgnored: AnalysisLayers['isNuxtIgnored'],
 ): Promise<void> {
-  await (registry === null ? assertFresh(table, layers) : assertRegistryFresh(table, registry));
+  await (registry === null
+    ? assertFresh(table, layers, isNuxtIgnored)
+    : assertRegistryFresh(table, registry));
 }
 
 /** Everything the analysis reads from Nuxt: layers, the symbol registry and aliases. */
@@ -97,15 +103,17 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
     symbols.sourceFile,
   );
   const effective = effectiveConfig(options.config, recorded);
-  const { layers, ownerOf, notes } = await loadLayers(rootDir, effective, registry?.layers).catch(
-    (error: unknown) => {
-      throw labelConfigError(error, recorded);
-    },
-  );
+  const { layers, isNuxtIgnored, ownerOf, notes } = await loadLayers(
+    rootDir,
+    effective,
+    registry?.layers,
+  ).catch((error: unknown) => {
+    throw labelConfigError(error, recorded);
+  });
   const config = presetApplied(effective, layers, recorded);
   const presetLayers = layersFilledByPreset(effective, config);
   const stale = recordedFile === undefined ? null : staleConfigNote(rootDir, recordedFile);
-  await assertSymbolsFresh(table, layers, registry);
+  await assertSymbolsFresh(table, layers, registry, isNuxtIgnored);
   return {
     ...symbols,
     config,
@@ -116,6 +124,7 @@ export async function loadEnvironment(options: EnvironmentOptions): Promise<Envi
     registry,
     buildDir,
     layers,
+    isNuxtIgnored,
     env: createAnalysisEnv(table, ownerOf, buildDir, config, layers),
   };
 }

@@ -48,7 +48,12 @@ async function environmentOf(
   });
   // A new load ran the stale check already.
   if (cached !== fresh && options.recheckStale === true) {
-    await assertSymbolsFresh(cached.env.table, cached.layers, cached.registry);
+    await assertSymbolsFresh(
+      cached.env.table,
+      cached.layers,
+      cached.registry,
+      cached.isNuxtIgnored,
+    );
   }
   return cached;
 }

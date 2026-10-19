@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
 import { dirname, join } from 'pathe';
@@ -28,6 +28,22 @@ describe('computeEnvKey', () => {
     writeFileSync(file, 'longer');
     utimesSync(file, new Date(), new Date(Date.now() + 5000));
     expect(computeEnvKey(root, buildDir)).not.toBe(before);
+  });
+
+  it('changes when .nuxtignore in the root is added, changed or removed', () => {
+    const root = mkdtempSync(join(tmpdir(), 'layerscope-envkey-'));
+    const buildDir = join(root, '.nuxt');
+    const file = join(root, '.nuxtignore');
+    const keys = [computeEnvKey(root, buildDir)];
+    writeFileSync(file, 'a');
+    keys.push(computeEnvKey(root, buildDir));
+    writeFileSync(file, 'longer');
+    utimesSync(file, new Date(), new Date(Date.now() + 5000));
+    keys.push(computeEnvKey(root, buildDir));
+    rmSync(file);
+    keys.push(computeEnvKey(root, buildDir));
+    expect(new Set(keys.slice(0, 3)).size).toBe(3);
+    expect(keys[3]).toBe(keys[0]);
   });
 
   it('does not change when a file is written again with the same content', () => {

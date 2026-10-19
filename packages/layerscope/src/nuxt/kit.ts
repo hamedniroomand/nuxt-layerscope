@@ -23,6 +23,8 @@ export interface NuxtLayer {
 
 export interface NuxtOptions {
   _layers: NuxtLayer[];
+  rootDir?: string;
+  ignoreOptions?: Record<string, unknown>;
   /** Absolute. Kit resolves it, so a `buildDir` of `nuxt.config` is already applied. */
   buildDir?: string;
   serverDir?: string;
@@ -46,6 +48,10 @@ export interface NuxtKit {
   }) => Promise<NuxtOptions>;
   /** Missing from older `@nuxt/kit` releases; reads only `nuxt.options`. */
   getLayerDirectories?: (nuxt: { options: NuxtOptions }) => LayerDirectories[];
+  /** Missing from older `@nuxt/kit` releases. */
+  runWithNuxtContext?: <T>(nuxt: { options: NuxtOptions }, fn: () => T) => T;
+  /** Reads `nuxt.options` of the Nuxt in the context. Missing from older `@nuxt/kit` releases. */
+  resolveIgnorePatterns?: () => string[];
 }
 
 function findPackageDir(from: string, name: string): string | null {

@@ -1,6 +1,7 @@
 import { resolve } from 'pathe';
 
 import { LayerscopeError } from '#src/errors.ts';
+import { createNuxtIgnore } from '#src/registry/nuxt-ignore.ts';
 import type { Layer, LayerscopeConfig } from '#src/types.ts';
 import { realPath } from '#src/utils/fs.ts';
 
@@ -38,11 +39,52 @@ function layersFromConfig(rootDir: string, config: LayerscopeConfig): Layer[] {
     : [layerFromPath(ROOT_LAYER_NAME, root), ...layers];
 }
 
-async function layersFromNuxt(kit: NuxtKit, rootDir: string): Promise<Layer[]> {
+/** The layers, and the test of the ignore rules of Nuxt when no registry gives them. */
+export interface ResolvedLayers {
+  layers: Layer[];
+  /**
+   * Whether Nuxt ignores a file. Always `false` for recorded layers, layers from the config, and a
+   * kit that cannot give the rules.
+   */
+  isNuxtIgnored: (file: string) => boolean;
+}
+
+const NO_RULES = (): boolean => false;
+
+/**
+ * The ignore rules of Nuxt from kit. Only a kit without the functions gives no rules: an error of
+ * kit, such as a `.nuxtignore` that it cannot read, stops the run.
+ */
+function nuxtIgnoreOf(
+  kit: NuxtKit,
+  options: NuxtOptions,
+  layers: Layer[],
+): (file: string) => boolean {
+  const { runWithNuxtContext, resolveIgnorePatterns } = kit;
+  if (
+    runWithNuxtContext === undefined ||
+    resolveIgnorePatterns === undefined ||
+    options.rootDir === undefined
+  ) {
+    return NO_RULES;
+  }
+  return createNuxtIgnore({
+    rootDir: realPath(options.rootDir),
+    // The real paths of the layers, as the stale check globs them. Kit has another path for a
+    // layer behind a symlink, so its own roots would not match.
+    roots: layers.map(layer => `${layer.root}/`),
+    // Kit reads the rules from the Nuxt in the context, and it reads only `options`.
+    patterns: runWithNuxtContext({ options }, () => resolveIgnorePatterns()),
+    options: options.ignoreOptions ?? null,
+  });
+}
+
+async function layersFromNuxt(kit: NuxtKit, rootDir: string): Promise<ResolvedLayers> {
   const options = await kit.loadNuxtConfig({ cwd: rootDir }).catch((error: unknown) => {
     throw new LayerscopeError(`Failed to load Nuxt config: ${(error as Error).message}`);
   });
-  return layersFromOptions(kit, options);
+  const layers = layersFromOptions(kit, options);
+  return { layers, isNuxtIgnored: nuxtIgnoreOf(kit, options, layers) };
 }
 
 /**
@@ -105,19 +147,38 @@ export function nameLayers(layers: Layer[], rootDir: string, config: LayerscopeC
   return named;
 }
 
+async function unnamedLayers(
+  rootDir: string,
+  config: LayerscopeConfig,
+  recorded: Layer[] | undefined,
+): Promise<ResolvedLayers> {
+  if (recorded !== undefined) {
+    return { layers: recorded, isNuxtIgnored: NO_RULES };
+  }
+  const kit = await loadNuxtKit(rootDir);
+  return kit === null
+    ? { layers: layersFromConfig(rootDir, config), isNuxtIgnored: NO_RULES }
+    : layersFromNuxt(kit, rootDir);
+}
+
 /**
  * The ordered layer list, highest priority first. `recorded` are the layers the Nuxt module
  * wrote to the registry; without them the layers come from the project's `@nuxt/kit`.
  */
+export async function resolveLayersAndIgnore(
+  rootDir: string,
+  config: LayerscopeConfig,
+  recorded?: Layer[],
+): Promise<ResolvedLayers> {
+  const resolved = await unnamedLayers(rootDir, config, recorded);
+  return { ...resolved, layers: nameLayers(resolved.layers, rootDir, config) };
+}
+
+/** The layers of `resolveLayersAndIgnore`. */
 export async function resolveLayers(
   rootDir: string,
   config: LayerscopeConfig,
   recorded?: Layer[],
 ): Promise<Layer[]> {
-  let layers = recorded;
-  if (layers === undefined) {
-    const kit = await loadNuxtKit(rootDir);
-    layers = kit === null ? layersFromConfig(rootDir, config) : await layersFromNuxt(kit, rootDir);
-  }
-  return nameLayers(layers, rootDir, config);
+  return (await resolveLayersAndIgnore(rootDir, config, recorded)).layers;
 }

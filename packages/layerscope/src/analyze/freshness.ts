@@ -63,15 +63,21 @@ function isRegisteredName(file: string, names: string[]): boolean {
 /**
  * Stale generated types either point at deleted files or miss new components. File mtimes are
  * not used: Nuxt skips rewriting unchanged templates, so they would report false staleness.
- * Without the registry only the default `components/` dirs are known.
+ * Without the registry only the default `components/` dirs are known. A file that
+ * `isNuxtIgnored` accepts is skipped.
  */
-export async function assertFresh(table: SymbolTable, layers: Layer[]): Promise<void> {
+export async function assertFresh(
+  table: SymbolTable,
+  layers: Layer[],
+  isNuxtIgnored: (file: string) => boolean = () => false,
+): Promise<void> {
   const targets = allTargets(table);
   assertNoDeletedTargets(targets);
   const known = new Set(targets.map(target => target.file));
   const names = [...table.components.keys()];
+  // Nuxt does not register a component file that it ignores.
   const unknown = (await defaultComponentFiles(layers)).find(
-    file => !known.has(file) && !isRegisteredName(file, names),
+    file => !known.has(file) && !isRegisteredName(file, names) && !isNuxtIgnored(file),
   );
   if (unknown !== undefined) {
     throw new LayerscopeError(`${unknown} is missing from components.d.ts. ${RERUN_HINT}`);

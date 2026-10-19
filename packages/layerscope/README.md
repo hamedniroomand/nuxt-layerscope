@@ -315,8 +315,10 @@ module records them on `nuxi prepare`, `dev` and `build`; use one place or the o
    have in common, as Nuxt 4 does.
 6. Generated files that point at deleted files, or that miss a component, are treated as stale
    (exit `2`). With the registry every dir Nuxt scanned is compared, including custom component
-   dirs and auto-import dirs, so a new file in one of them is found (a file that Nuxt ignores is skipped, except in the auto-import dirs of Nitro); without it only the default
-   `components/` dirs are.
+   dirs and auto-import dirs, so a new file in one of them is found (a file that Nuxt ignores is
+   skipped, except in the auto-import dirs of Nitro). Without it, only the default `components/`
+   dirs are checked, and a file that Nuxt ignores is skipped there when the project's `@nuxt/kit`
+   gives the rules.
 
 The JSON report (`--format json`) is versioned and deterministic: the same input produces the same
 bytes.
