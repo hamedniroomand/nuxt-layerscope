@@ -36,8 +36,9 @@ async function post(path: string, session: Session): Promise<object> {
 async function read(event: H3Event, path: string, session: Session): Promise<string> {
   // Every GET route of the tab reads here. An edit of the config fires no Nuxt hook, so without
   // this check the tab can show the old baseline file and findings.
-  await session.analyzer.invalidateIfChanged();
-  const snapshot = await session.analyzer.get();
+  // A run in flight can have the old config, so a change needs a new run.
+  const changed = await session.analyzer.invalidateIfChanged();
+  const snapshot = changed ? await session.analyzer.refresh() : await session.analyzer.get();
   const { live } = session;
   setResponseHeader(event, 'cache-control', 'no-cache');
   // The marker and the pause flag change what the tab shows without a new revision.

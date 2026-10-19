@@ -152,8 +152,8 @@ makes to your files. The dev server accepts it only when all of these are true:
 - the request carries a random token that only the tab has, created each time the dev server
   starts,
 - the request names findings by their key, and the server finds them in its own last analysis,
-- the findings did not change since the tab loaded them. If they did, the server refuses with
-  `409`, and the tab loads the new findings.
+- the findings and the config did not change since the tab loaded the findings. If they did, the
+  server refuses with `409`, and the tab loads the new findings.
 
 The server writes one change at a time, and only to the baseline file of the config, or, for undo,
 to the file of that change. The tab cannot read or use the `--baseline` path of the CLI: set the
