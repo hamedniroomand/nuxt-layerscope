@@ -81,9 +81,11 @@ that root owns the files. Paths are compared after resolving symlinks, so pnpm's
   files. A path that `exports` sets to `null` does not resolve. An `import` uses the `import`
   condition of `exports`. A `require()` uses the `require` condition and also the `import`
   condition, as Nitro and the SSR build of Nuxt do. Without `exports`, an import of the package name
-  uses `main`, then the layer root. Any other path is looked up in the layer root, as for a relative
-  path. If the importing file finds a copy of the package outside the layer, the import is external.
-  A path that does not resolve is reported by
+  uses `main`, then the layer root. Vite can use `browser` or `module` instead of `main`. That file
+  is in the same layer, so the layer of the import is the same. Only an `expose` or `only` glob that
+  names one of these files can give another result. Any other path is looked up in the layer root,
+  as for a relative path. If the importing file finds a copy of the package outside the layer, the
+  import is external. A path that does not resolve is reported by
   [`unresolved-reference`](../reference/rules#unresolved-reference).
 
 ## Which files are checked
