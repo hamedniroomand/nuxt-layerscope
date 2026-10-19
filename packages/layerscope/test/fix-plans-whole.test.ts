@@ -117,10 +117,9 @@ describe('where Nuxt scans', () => {
     expect(await plan(root)).toEqual([]);
   });
 
-  it('moves the index file of a sub dir, which Nuxt reads', async () => {
+  it('does not move the index file of a sub dir, which Nuxt does not read', async () => {
     const root = autoImportProject('layers/web/app/composables/cart/index.ts');
-    const [move] = await plan(root);
-    expect(move.to).toBe(join(root, 'layers/shared/app/composables/cart/index.ts'));
+    expect(await plan(root)).toEqual([]);
   });
 });
 

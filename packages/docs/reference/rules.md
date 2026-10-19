@@ -143,9 +143,9 @@ The suggestions and their counts are made for the findings that `check` shows on
   The file lands in the same source dir of the target: `srcDir`, `serverDir` or `sharedDir`. A file
   that is in none of these dirs gets no move. For a file that is used as an auto-import, layerscope
   assumes the default dirs of Nuxt: `composables/` and `utils/` in `srcDir`, `utils/` in
-  `serverDir`, and `utils/` and `types/` in `sharedDir`. Nuxt reads the script files in these dirs
-  and the `index` file of each sub dir. It does not read deeper, so a file at
-  `composables/cart/useCart.ts` gets no move. Nitro reads `server/utils` at any depth. layerscope
+  `serverDir`, and `utils/` and `types/` in `sharedDir`. Nuxt reads only the script files at the
+  top level of the dirs in `srcDir` and `sharedDir`. It does not read sub dirs, so a file at
+  `composables/cart/useCart.ts` or `composables/cart/index.ts` gets no move. Nitro reads `server/utils` at any depth. layerscope
   moves a file there only to the top level or to the `index` file of a sub dir. A file that is used
   as a component must be in `components/`. A target that sets `imports.dirs` to a list that is not
   empty, or turns `imports.scan` off, is not a target for an auto-import file. A target that sets
