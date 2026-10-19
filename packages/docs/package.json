@@ -13,11 +13,11 @@
     "screenshots": "node scripts/screenshots.ts"
   },
   "devDependencies": {
-    "mermaid": "^12.1.0",
-    "playwright-core": "^1.64.0",
+    "mermaid": "^12.2.0",
+    "playwright-core": "^1.64.1",
     "sharp": "^0.35.5",
     "vitepress": "2.0.0-alpha.20",
     "vitepress-plugin-llms": "^1.14.0",
-    "vue": "^3.5.43"
+    "vue": "^3.5.44"
   }
 }

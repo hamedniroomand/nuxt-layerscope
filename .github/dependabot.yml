@@ -5,14 +5,26 @@ updates:
     directory: /
     schedule:
       interval: weekly
+      day: monday
+    commit-message:
+      prefix: ci
     groups:
       actions:
-        patterns: ['*']
+        patterns:
+          - '*'
 
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 3
+      semver-major-days: 14
+    commit-message:
+      prefix: chore
+      include: scope
     exclude-paths:
       - packages/layerscope/test/fixtures/**
     groups:
