@@ -3,13 +3,15 @@ import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'pathe';
 
 import { analyze } from '#src/analyze/index.ts';
-import { BASELINE_FILE, createBaseline, writeBaseline } from '#src/baseline/index.ts';
+import { baselineName, baselinePath, createBaseline, writeBaseline } from '#src/baseline/index.ts';
 import {
+  analysisConfig,
   assertNoNuxtConfigLayers,
   assertWritable,
   findExistingConfig,
   initBuildDir,
   propose,
+  readOldConfig,
   renderConfig,
 } from '#src/init/index.ts';
 import { REGISTRY_FILE } from '#src/registry/schema.ts';
@@ -63,28 +65,28 @@ export async function init(root: string | undefined, flags: InitFlags): Promise<
   // that file, so a second config never appears next to it. With `--config`, the file is the one named.
   const existing = findExistingConfig(rootDir, customConfig);
   const configFile = customConfig ?? existing ?? resolve(rootDir, CONFIG_NAME);
-  const baselineFile = resolve(rootDir, BASELINE_FILE);
   const write = flags.dryRun !== true;
   if (write && flags.force !== true) {
     assertWritable(rootDir, customConfig, flags.baseline === true);
   }
 
+  const old = await readOldConfig(rootDir, existing);
+  // Only `--force` keeps the keys of the old config. Without it, the old config gives only `buildDir`.
+  const kept = flags.force === true ? old : undefined;
+  const baselineFile = baselinePath(rootDir, baselineName(undefined, kept?.config ?? {}));
+  const buildDir = await initBuildDir(rootDir, old.config);
   // Without an `allow` map every layer is unrestricted, so the edges are what exists today.
-  const buildDir = await initBuildDir(rootDir, existing);
   const result = await analyze({
     rootDir,
-    config: { buildDir },
+    config: analysisConfig(kept, buildDir),
     prepare: flags.prepare,
     source: toSource(flags.source),
   });
   assertNoNuxtConfigLayers(result, existing !== null);
 
   const proposal = propose(result);
-  const source = renderConfig(
-    result.layers.map(layer => layer.name),
-    proposal.edges,
-    buildDir,
-  );
+  const layers = result.layers.map(layer => layer.name);
+  const source = renderConfig(layers, proposal.edges, buildDir, kept);
   if (write) {
     writeFileSync(configFile, source);
     if (flags.baseline === true) {
@@ -101,7 +103,7 @@ export async function init(root: string | undefined, flags: InitFlags): Promise<
     }),
   );
   writeNotes(
-    { ...result, notes: [...result.notes, ...moduleNote(result, flags)] },
+    { ...result, notes: [...result.notes, ...(kept?.notes ?? []), ...moduleNote(result, flags)] },
     flags.verbose === true,
   );
   return EXIT_CLEAN;
@@ -112,7 +114,10 @@ export function registerInit(cli: Cli): void {
     cli
       .command('init [root]', 'Write a starter config from the dependencies that exist today')
       .option('--baseline', 'Also write a baseline for the findings the config still reports')
-      .option('--force', 'Replace an existing config or baseline')
+      .option(
+        '--force',
+        'Replace an existing config or baseline. A new config keeps the old keys other than layers',
+      )
       .option('--dry-run', 'Print the proposal and write nothing'),
   ).action(init);
 }

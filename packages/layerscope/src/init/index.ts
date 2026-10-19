@@ -7,6 +7,8 @@ import type { Proposal } from './types.ts';
 
 export { assertNoNuxtConfigLayers, assertWritable, findExistingConfig } from './guard.ts';
 export { DEFAULT_BUILD_DIR, initBuildDir } from './build-dir.ts';
+export { analysisConfig, readOldConfig } from './old-config.ts';
+export type { OldConfig } from './old-config.ts';
 export { renderConfig } from './render.ts';
 export type { AllowedEdge, Cluster, PresetFit, Proposal, Readiness } from './types.ts';
 

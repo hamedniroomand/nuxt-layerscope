@@ -10,9 +10,10 @@ import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { currentDir } from '#src/utils/fs.ts';
 
-function alreadyExists(file: string): LayerscopeError {
+function alreadyExists(file: string, isConfig: boolean): LayerscopeError {
+  const keys = isConfig ? ' --force keeps its keys other than layers.' : '';
   return new LayerscopeError(
-    `${relative(currentDir(), file)} already exists. To keep it, run with --dry-run and copy what you need. To replace it, run with --force.`,
+    `${relative(currentDir(), file)} already exists. To keep it, run with --dry-run and copy what you need. To write it again, run with --force.${keys}`,
   );
 }
 
@@ -37,11 +38,12 @@ export function assertWritable(
 ): void {
   const current = configFile ?? findConfigFile(rootDir);
   if (current !== null && existsSync(current)) {
-    throw alreadyExists(current);
+    throw alreadyExists(current, true);
   }
+  // Without `--force`, no key of a config is kept, so the baseline is the default file.
   const baselineFile = resolve(rootDir, BASELINE_FILE);
   if (withBaseline && existsSync(baselineFile)) {
-    throw alreadyExists(baselineFile);
+    throw alreadyExists(baselineFile, false);
   }
 }
 
@@ -57,7 +59,7 @@ export function assertNoNuxtConfigLayers(result: AnalyzeResult, hasConfigFile: b
       );
     }
     throw new LayerscopeError(
-      `${keys} ${many ? 'are' : 'is'} set in the "layerscope" key of nuxt.config (read from the Nuxt data of the last Nuxt run). Move ${many ? 'them' : 'it'} to layerscope.config.ts and remove the key. Then run init --prepare --dry-run and copy the layers and edges you need, because init does not replace an existing config.`,
+      `${keys} ${many ? 'are' : 'is'} set in the "layerscope" key of nuxt.config (read from the Nuxt data of the last Nuxt run). Move ${many ? 'them' : 'it'} to layerscope.config.ts and remove the key. Then run init --prepare --dry-run and copy the layers and edges you need, because init does not write over an existing config without --force.`,
     );
   }
 }
