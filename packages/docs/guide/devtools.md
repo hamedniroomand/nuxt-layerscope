@@ -139,14 +139,14 @@ The tab asks first, inline, and says how many entries, findings and files the ch
 until the next change, and can remove entries.
 
 The file that the tab writes is the same file that `layerscope check --update-baseline` writes for
-those findings, when you do not use `--baseline`: the [`baseline`](../reference/config#baseline)
-key of the config, else `layerscope-baseline.json` in the project root. Commit it to share it with
-your team.
+those findings, when you do not use `--baseline`: the [`baseline`](../reference/config#baseline) key
+of the config, else `layerscope-baseline.json` in the project root. Commit it to share it with your
+team. The tab makes the folder of the file when it does not exist.
 
 ### Why this is safe
 
-The baseline write is the only change the tab makes to your files. The dev server accepts it only
-when all of these are true:
+The baseline write, with the folder of the file when it does not exist, is the only change the tab
+makes to your files. The dev server accepts it only when all of these are true:
 
 - the request comes from the same origin as the tab,
 - the request carries a random token that only the tab has, created each time the dev server

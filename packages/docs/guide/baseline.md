@@ -131,6 +131,9 @@ A file outside the root has a path that starts with `../`.
 Set the [`baseline`](../reference/config#baseline) key in the config to use another file in `check`,
 `fix`, `drift`, `mcp`, the DevTools tab and the GitHub Action. `init --baseline` writes the file
 that the `baseline` key of the config names. Without the key, it writes `layerscope-baseline.json`.
+`check --update-baseline`, `init --baseline` and the DevTools tab make the folder of the file when
+it does not exist. When a command cannot make the folder or write the file, it exits `2` and the
+message names the file and the error code.
 
 Without a baseline file, `check` behaves as if there were none.
 
