@@ -387,3 +387,45 @@ Limits:
   registry is written again.
 
 Without the registry, the rule reports nothing and prints the note of the shadowed-\* rules.
+
+## `shadowed-auto-import`
+
+- Default: `warn`
+- Needs the [Nuxt module](../guide/nuxt-module)
+
+Two files give an auto-import with the same name, and Nuxt uses only one of them. layerscope
+reports each file that Nuxt does not use:
+
+```text
+layers/base/app/composables/useTheme.ts
+  1:1     warn   Auto-import "useTheme" of layer "base" is overridden by layer "root"  shadowed-auto-import
+                 useTheme → app/composables/useTheme.ts
+```
+
+An override is often on purpose. Once it is on purpose, accept it with a
+[baseline](../guide/baseline) or turn the rule off.
+
+Nuxt uses the auto-import with the highest priority. A file in the source dir of a layer gets the
+priority of its layer, so the higher layer wins. A file outside every source dir, for example in
+`shared/utils` in Nuxt 4, gets a higher priority than any layer file. It wins over the files of all
+layers, also over a file of a higher layer. Nuxt prints `Duplicated imports` only when two files
+have the same priority. Then the file of the lower layer wins. A built-in auto-import of Nuxt usually
+also wins over a file in the source dir of a layer.
+
+Limits:
+
+- Only the auto-imports of the app are checked. Server utils (`server/utils`) are not. The scan
+  of `shared/utils` by Nitro is not checked either.
+- Type exports are not reported.
+- Two files of the same layer with the same auto-import name are not reported.
+- An auto-import in a file that no layer owns is not reported.
+- An auto-import that comes from a package, or from a module in `node_modules`, is not reported
+  when it loses.
+- When the winner is in no layer (for example a built-in auto-import of Nuxt), the message names
+  the file or the import path of the winner instead of a layer.
+- A file that re-exports the same function from another layer (`export { useX } from ...`) makes
+  the other file look overridden, and it is reported.
+- A file that is added after the last `nuxi prepare` or dev write is not reported until the
+  registry is written again.
+
+Without the registry, the rule reports nothing and prints the note of the shadowed-\* rules.

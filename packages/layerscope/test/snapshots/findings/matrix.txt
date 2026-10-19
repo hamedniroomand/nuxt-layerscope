@@ -1,4 +1,5 @@
 warn shadowed-component npm:app/components/BaseCard.vue:1:1 BaseCard (npm) → theme:app/components/BaseCard.vue
+warn shadowed-auto-import base:app/composables/useTheme.ts:1:1 useTheme (base) → root:app/composables/useTheme.ts
 warn shadowed-layout base:app/layouts/default.vue:1:1 default (base) → root:app/layouts/default.vue
 warn shadowed-middleware base:app/middleware/auth.ts:1:1 auth (base) → root:app/middleware/auth.ts
 warn shadowed-page base:app/pages/index.vue:1:1 index (base) → root:app/pages/index.vue
@@ -11,3 +12,4 @@ error layer-boundary shop:app/components/ShopPanel.vue:11:5 Clock (shop) → the
 error layer-boundary shop:app/components/ShopPanel.vue:12:5 Pair (shop) → theme:app/components/Pair.client.vue
 error layer-boundary shop:app/components/ShopPanel.vue:13:5 NpmBadge (shop) → npm:app/components/NpmBadge.vue
 error layer-boundary shop:app/components/ShopPanel.vue:14:5 Weather (shop) → theme:app/components/islands/Weather.vue
+warn shadowed-auto-import root:shared/utils/formatDate.ts:1:1 formatDate (root) → base:shared/utils/formatDate.ts

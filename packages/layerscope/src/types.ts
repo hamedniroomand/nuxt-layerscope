@@ -10,7 +10,8 @@ export type RuleName =
   | 'shadowed-component'
   | 'shadowed-layout'
   | 'shadowed-middleware'
-  | 'shadowed-page';
+  | 'shadowed-page'
+  | 'shadowed-auto-import';
 
 export type PresetName = 'layered' | 'stacked' | 'features';
 

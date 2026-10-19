@@ -17,7 +17,13 @@ import { packageVersion } from '#src/version.ts';
 
 import { recordComponentDirs, shadowedBy } from './components.ts';
 import { ImportDirRecorder, mergeImportDirs } from './import-dirs.ts';
-import { NitroImports, activeImports, registryImports, resolveAlias } from './imports.ts';
+import {
+  NitroImports,
+  activeImports,
+  registryImports,
+  resolveAlias,
+  shadowedImports,
+} from './imports.ts';
 import type { Component, ComponentsDir, Nitro, Nuxt, Unimport, UnimportImport } from './nuxt.ts';
 import { onNitroInit, readNuxtIgnore, usesNuxtContent } from './nuxt.ts';
 import { recordShadowedFiles } from './shadowed-files.ts';
@@ -36,6 +42,7 @@ interface AppPart {
   shadowedLayouts: ShadowedFile[];
   shadowedMiddleware: ShadowedFile[];
   shadowedPages: ShadowedPage[];
+  shadowedImports: ShadowedFile[];
   /** Not resolved yet: the shared imports compare the raw `from` with the server imports. */
   imports: UnimportImport[];
   importDirs: RegistryImportDir[] | null;
@@ -170,6 +177,7 @@ export class RegistryCollector {
       shadowedLayouts: app.shadowedLayouts,
       shadowedMiddleware: app.shadowedMiddleware,
       shadowedPages: app.shadowedPages,
+      shadowedImports: app.shadowedImports,
       componentDirs: app.componentDirs,
       importDirs,
       nuxtIgnore: readNuxtIgnore(this.nuxt),
@@ -190,12 +198,15 @@ export class RegistryCollector {
     }
     // Cleared before the reads: a scan during them sets it again for the next collect.
     this.appScanned = false;
-    const [componentDirs, imports, importDirs, shadowedFiles] = await Promise.all([
-      this.componentDirs(),
-      activeImports(this.appImports),
-      this.importDirs.recordApp(this.nuxt.options.rootDir),
-      recordShadowedFiles(this.nuxt, path => this.toFile(path)),
-    ]);
+    const toFile = (path: string): string => this.toFile(path);
+    const [componentDirs, imports, importDirs, shadowedFiles, overriddenImports] =
+      await Promise.all([
+        this.componentDirs(),
+        activeImports(this.appImports),
+        this.importDirs.recordApp(this.nuxt.options.rootDir),
+        recordShadowedFiles(this.nuxt, toFile),
+        shadowedImports(this.appImports, toFile),
+      ]);
     const components = this.components();
     this.app = {
       componentDirs,
@@ -204,6 +215,7 @@ export class RegistryCollector {
       shadowedLayouts: shadowedFiles.layouts,
       shadowedMiddleware: shadowedFiles.middleware,
       shadowedPages: shadowedFiles.pages,
+      shadowedImports: overriddenImports,
       imports,
       importDirs,
     };

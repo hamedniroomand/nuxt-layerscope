@@ -1,6 +1,8 @@
 import { isAbsolute, resolve } from 'pathe';
 
-import type { Registry, RegistryImport } from '#src/registry/schema.ts';
+import type { Registry, RegistryImport, ShadowedFile } from '#src/registry/schema.ts';
+import { resolveFile } from '#src/resolve/file.ts';
+import { realPath } from '#src/utils/fs.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
 import { loadUnimport } from './import-dirs.ts';
@@ -38,6 +40,64 @@ export async function activeImports(
 ): Promise<UnimportImport[]> {
   const imports = context === null || context === undefined ? [] : await context.getImports();
   return imports.filter(entry => entry.type !== true && entry.disabled !== true);
+}
+
+/**
+ * unimport never drops an entry that has one of these declaration types. A scanned file gives it
+ * only to the type twin of an `enum` or a `class`: the value entry has no declaration type, and
+ * unimport drops it as any other value. An entry from a preset can carry it too.
+ */
+const KEPT_DECLARATIONS = new Set(['enum', 'const enum', 'class']);
+
+/** An entry that can replace another entry of the same name, or be replaced by one. */
+function isValueImport(entry: UnimportImport): boolean {
+  return (
+    entry.type !== true &&
+    entry.disabled !== true &&
+    !KEPT_DECLARATIONS.has(entry.declarationType ?? '')
+  );
+}
+
+/**
+ * The auto-imports that unimport drops for an auto-import of the same name, each with the file or
+ * the package that it uses instead. unimport keeps each entry before its dedupe in the internal
+ * context, and `getImports()` gives the entries that it uses. So the winner is the real one, also
+ * when two files have the same priority and the later one wins. `toFile` resolves the aliases of
+ * a path. Without the internal context (an older unimport), nothing is given.
+ */
+export async function shadowedImports(
+  context: Unimport | null,
+  toFile: (path: string) => string,
+): Promise<ShadowedFile[]> {
+  const state = context?.getInternalContext?.();
+  if (context === null || state === undefined) {
+    return [];
+  }
+  const active = (await activeImports(context)).filter(entry => isValueImport(entry));
+  const winners = new Map(active.map(entry => [importName(entry), entry]));
+  const entries = [...(state.staticImports ?? []), ...(state.dynamicImports ?? [])];
+  const found = new Map<string, ShadowedFile>();
+  for (const entry of entries.filter(candidate => isValueImport(candidate))) {
+    const name = importName(entry);
+    const winner = winners.get(name);
+    const file = toFile(entry.from);
+    // The entry that unimport uses is not dropped, and a package is not a file of a layer.
+    if (winner === undefined || winner.from === entry.from || !isAbsolute(file)) {
+      continue;
+    }
+    // A preset or a module can give a path without an extension, for example
+    // `#app/composables/fetch`: its file is found as a bundler finds it. When no file is found,
+    // the import path is kept.
+    const resolved = toFile(winner.from);
+    const shadowedBy = resolveFile(resolved) ?? winner.from;
+    // Another path of the file that unimport uses (a symbolic link) is not dropped.
+    if (realPath(file) !== realPath(shadowedBy)) {
+      found.set(`${name}\0${file}`, { name, file, shadowedBy });
+    }
+  }
+  return [...found.values()].toSorted(
+    (a, b) => compareStrings(a.file, b.file) || compareStrings(a.name, b.name),
+  );
 }
 
 function toRegistryImports(imports: UnimportImport[], aliases: AliasMap): RegistryImport[] {

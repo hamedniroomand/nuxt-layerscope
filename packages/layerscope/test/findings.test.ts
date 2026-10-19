@@ -152,3 +152,22 @@ describe('the overridden pages of the matrix fixture', () => {
     ]);
   });
 });
+
+describe('the overridden auto-imports of the matrix fixture', () => {
+  // A composable in the source dir of a layer has the priority of the layer, so root wins. A
+  // shared util has no layer priority, so the later file wins: the one of `base`.
+  it('reports the file that Nuxt does not use, as unimport picks the winner', async () => {
+    const { findings } = await analyze({ rootDir: MATRIX_ROOT, source: 'registry' });
+    const overridden = findings.filter(f => f.rule === 'shadowed-auto-import');
+    expect(overridden.map(f => [relative(MATRIX_ROOT, f.file), f.message])).toEqual([
+      [
+        'layers/base/app/composables/useTheme.ts',
+        'Auto-import "useTheme" of layer "base" is overridden by layer "root"',
+      ],
+      [
+        'shared/utils/formatDate.ts',
+        'Auto-import "formatDate" of layer "root" is overridden by layer "base"',
+      ],
+    ]);
+  });
+});

@@ -219,3 +219,32 @@ describe('shadowedFileFindings and the pages', () => {
     expect(shadowedFileFindings(pageRegistry(root, ['/']), lookup, config)).toEqual([]);
   });
 });
+
+describe('shadowedFileFindings and the auto-imports', () => {
+  it('reports an auto-import that a file of another layer replaces', () => {
+    const { root, lookup } = layers(['base/composables/useCart.ts', 'app/composables/useCart.ts']);
+    const entry = entryOf(root, 'useCart', 'composables/useCart.ts');
+    expect(
+      shadowedFileFindings(registryWith({ shadowedImports: [entry] }), lookup, {}),
+    ).toMatchObject([
+      {
+        rule: 'shadowed-auto-import',
+        severity: 'warn',
+        symbol: 'useCart',
+        message: 'Auto-import "useCart" of layer "base" is overridden by layer "app"',
+      },
+    ]);
+  });
+
+  it('reports nothing for two files of the same layer', () => {
+    const { root, lookup } = layers(['base/composables/a.ts', 'base/utils/b.ts']);
+    const entry = {
+      name: 'useCart',
+      file: join(root, 'base/composables/a.ts'),
+      shadowedBy: join(root, 'base/utils/b.ts'),
+    };
+    expect(shadowedFileFindings(registryWith({ shadowedImports: [entry] }), lookup, {})).toEqual(
+      [],
+    );
+  });
+});

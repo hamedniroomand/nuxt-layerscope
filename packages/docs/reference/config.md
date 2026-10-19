@@ -248,6 +248,7 @@ suggests the strictest preset that allows every dependency that exists today.
 | [`shadowed-layout`](./rules#shadowed-layout)           | `warn`  |
 | [`shadowed-middleware`](./rules#shadowed-middleware)   | `warn`  |
 | [`shadowed-page`](./rules#shadowed-page)               | `warn`  |
+| [`shadowed-auto-import`](./rules#shadowed-auto-import) | `warn`  |
 
 `error` findings fail the check (exit `1`), `warn` findings are reported only, `off` disables
 the rule. An unknown rule name is a config error.
