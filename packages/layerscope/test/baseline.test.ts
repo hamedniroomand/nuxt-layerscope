@@ -5,6 +5,7 @@ import { dirname, join } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { EXIT_CLEAN, EXIT_VIOLATIONS, run } from '#src/cli.ts';
+import { updateCommand } from '#src/commands/check-strict.ts';
 
 const PAGE = 'layers/admin/app/pages/admin.vue';
 
@@ -118,7 +119,7 @@ describe('layerscope check with fixed baseline entries', () => {
     expect(code).toBe(EXIT_CLEAN);
     expect(out).toContain(
       [
-        'layerscope-baseline.json: 1 fixed entry. Run "layerscope check --update-baseline" to remove it.',
+        `layerscope-baseline.json: 1 fixed entry. Run "${updateCommand(root, {})}" to remove it.`,
         `  ${PAGE}  layer-boundary useCart → web`,
       ].join('\n'),
     );

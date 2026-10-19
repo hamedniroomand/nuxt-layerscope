@@ -6,7 +6,7 @@ import type { OutputFormat } from '#src/report/index.ts';
 import { repoRoot } from '#src/report/paths.ts';
 import { paintFor } from '#src/utils/style.ts';
 
-import { assertStrictFlags, reportStrict, updateBaseline } from './check-baseline.ts';
+import { assertStrictFlags, baselineRun, reportStrict, updateBaseline } from './check-baseline.ts';
 import { deletedNote, selectTarget, splitArguments } from './check-files.ts';
 import { checkNothing } from './check-nothing.ts';
 import type { Cli, CommonFlags } from './shared.ts';
@@ -33,7 +33,12 @@ export interface CheckFlags extends CommonFlags {
   summary?: string | boolean;
 }
 
-async function watch(rootDir: string, format: OutputFormat, flags: CheckFlags): Promise<number> {
+async function watch(
+  rootDir: string,
+  format: OutputFormat,
+  flags: CheckFlags,
+  run: ReturnType<typeof baselineRun>,
+): Promise<number> {
   // Loaded here, so a one-shot check does not load the watch code.
   const { watchCheck } = await import('#src/watch/index.ts');
   const abort = new AbortController();
@@ -51,7 +56,7 @@ async function watch(rootDir: string, format: OutputFormat, flags: CheckFlags): 
       source: toSource(flags.source),
       baseline: flags.baseline,
       prepare: flags.prepare === true,
-      render: result => formatResult(result, format, currentDir(), paint, repository),
+      render: result => formatResult(result, format, currentDir(), paint, repository, run),
       human: format === 'text' || format === 'github',
       tty: process.stdout.isTTY,
       write: text => {
@@ -87,8 +92,9 @@ export async function check(
   if (flags.updateBaseline === true) {
     return updateBaseline(rootDir, flags);
   }
+  const run = baselineRun(splitArguments(root, files).root, flags);
   if (flags.watch === true) {
-    return watch(rootDir, format, flags);
+    return watch(rootDir, format, flags, run);
   }
   if (selection?.files.length === 0) {
     return checkNothing(rootDir, selection, format, flags);
@@ -107,9 +113,8 @@ export async function check(
   }
   // Only `sarif` and `gitlab` read the repository root; the others do not run git.
   const repository = format === 'sarif' || format === 'gitlab' ? repoRoot(rootDir) : rootDir;
-  const strict = flags.strictBaseline === true;
   const paint = paintFor(process.stdout);
-  process.stdout.write(formatResult(result, format, currentDir(), paint, repository, strict));
+  process.stdout.write(formatResult(result, format, currentDir(), paint, repository, run));
   const stale = reportStrict(result, splitArguments(root, files).root, flags);
   writeSummary(flags.summary, result.findings, stale.summary);
   writeNotes(result, flags.verbose === true);

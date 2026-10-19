@@ -36,6 +36,9 @@ npx layerscope check
     layers/admin/app/utils/exportCsv.ts  layer-boundary #layers/shop/app/composables/useCart → shop
   ```
 
+  The command in the hint has the same root and options as your run, for example
+  `layerscope check apps/web --config site.ts --update-baseline`.
+
   By default, fixed entries do not fail the check. A fixed entry that stays in the file accepts the
   violation again if it comes back. With `--strict-baseline`, fixed entries fail the check, so the
   file is updated when a violation is fixed. Use it in CI.

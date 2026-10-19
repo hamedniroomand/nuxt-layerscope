@@ -2,7 +2,8 @@ import { relative } from 'pathe';
 
 import type { AnalyzeResult, BaselineEntry, Finding } from '#src/types.ts';
 
-import { describeEntry, failsStrict, UPDATE_HINT } from './baseline.ts';
+import { DEFAULT_RUN, describeEntry, failsStrict, updateHint } from './baseline.ts';
+import type { BaselineRun } from './baseline.ts';
 import { findingDetails } from './details.ts';
 
 // Escaping rules of GitHub Actions workflow commands.
@@ -26,15 +27,24 @@ function formatAnnotation(finding: Finding, cwd: string): string {
   return `::${command} ${properties}::${escapeData(message)}\n`;
 }
 
-function formatRemovable(entry: BaselineEntry, file: string, fails: boolean): string {
-  const message = `Fixed baseline entry in ${entry.file}: ${describeEntry(entry)}. ${UPDATE_HINT} it.`;
+function formatRemovable(
+  entry: BaselineEntry,
+  file: string,
+  fails: boolean,
+  command: string,
+): string {
+  const message = `Fixed baseline entry in ${entry.file}: ${describeEntry(entry)}. ${updateHint(command)} it.`;
   // With `--strict-baseline`, the entry fails the check, so it is an error.
-  const command = fails ? 'error' : 'notice';
-  return `::${command} file=${escapeProperty(file)},title=layerscope baseline::${escapeData(message)}\n`;
+  const level = fails ? 'error' : 'notice';
+  return `::${level} file=${escapeProperty(file)},title=layerscope baseline::${escapeData(message)}\n`;
 }
 
 /** Workflow commands that GitHub shows inline on the pull request diff. */
-export function formatGithub(result: AnalyzeResult, cwd: string, strictBaseline = false): string {
+export function formatGithub(
+  result: AnalyzeResult,
+  cwd: string,
+  run: BaselineRun = DEFAULT_RUN,
+): string {
   const annotations = result.findings.map(finding => formatAnnotation(finding, cwd));
   const { baseline } = result;
   const removable =
@@ -44,7 +54,8 @@ export function formatGithub(result: AnalyzeResult, cwd: string, strictBaseline 
           formatRemovable(
             entry,
             relative(cwd, baseline.file),
-            strictBaseline && failsStrict(entry, result),
+            run.strict && failsStrict(entry, result),
+            run.command,
           ),
         );
   return [...annotations, ...removable].join('');

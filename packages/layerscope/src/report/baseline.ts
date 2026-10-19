@@ -10,7 +10,20 @@ export function describeEntry(entry: BaselineEntry): string {
   return `${entry.rule} ${entry.symbol}${target}${count}`;
 }
 
-export const UPDATE_HINT = 'Run "layerscope check --update-baseline" to remove';
+/** How the run treats the baseline: `--strict-baseline`, and the command that removes fixed entries. */
+export interface BaselineRun {
+  strict: boolean;
+  command: string;
+}
+
+export const DEFAULT_RUN: BaselineRun = {
+  strict: false,
+  command: 'layerscope check --update-baseline',
+};
+
+export function updateHint(command: string): string {
+  return `Run "${command}" to remove`;
+}
 
 /**
  * Whether `--strict-baseline` fails a fixed entry. With the `.d.ts` source, the registry-only

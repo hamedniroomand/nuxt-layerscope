@@ -94,3 +94,19 @@ describe('formatText with a baseline', () => {
     expect(output).toContain('✔ No problems in 2 files across 2 layers, 1 more in the baseline');
   });
 });
+
+describe('formatText with a baseline run', () => {
+  it('gives the command of the run for fixed entries, and no ✔ line when they fail', () => {
+    const entry = { rule: 'layer-boundary' as const, file: 'a.vue', symbol: 'x', toLayer: 'web' };
+    const result = makeResult({
+      baseline: { file: '/app/b.json', suppressed: [], removable: [entry] },
+    });
+    const output = formatText(result, CWD, undefined, {
+      strict: true,
+      command: 'layerscope check x',
+    });
+    expect(output).toBe(
+      'b.json: 1 fixed entry. Run "layerscope check x" to remove it.\n  a.vue  layer-boundary x → web\n\nNo new problems in 2 files across 2 layers\n',
+    );
+  });
+});

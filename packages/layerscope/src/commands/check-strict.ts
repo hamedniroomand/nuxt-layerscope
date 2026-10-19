@@ -2,6 +2,7 @@ import { relative } from 'pathe';
 
 import { LayerscopeError } from '#src/errors.ts';
 import { strictEntries } from '#src/report/baseline.ts';
+import type { BaselineRun } from '#src/report/baseline.ts';
 import { formatStaleSummary } from '#src/report/findings-summary.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { paintFor } from '#src/utils/style.ts';
@@ -38,6 +39,15 @@ function shellWord(value: string): string {
 }
 
 /**
+ * A flag and its value. A value that starts with `-` takes `=`, or the parser reads it as a flag.
+ * The parser can give a number or a list; the check of the value comes later and says what is wrong.
+ */
+function flagWords(flag: string, value: string): string[] {
+  const text = String(value);
+  return text.startsWith('-') ? [`${flag}=${shellWord(text)}`] : [flag, shellWord(text)];
+}
+
+/**
  * The command that removes the fixed entries: the same root, `--config`, `--source`, `--baseline`
  * and `--prepare` as this run.
  * A `baseline` key in the config needs nothing, because the config names the file.
@@ -45,21 +55,27 @@ function shellWord(value: string): string {
 export function updateCommand(root: string | undefined, flags: StrictFlags): string {
   const words = ['layerscope', 'check'];
   if (root !== undefined) {
-    words.push(shellWord(root));
+    // A root after `--` can start with `-`; `./` keeps the parser from reading it as a flag.
+    words.push(root.startsWith('-') ? `./${shellWord(root)}` : shellWord(root));
   }
   if (flags.config !== undefined) {
-    words.push('--config', shellWord(flags.config));
+    words.push(...flagWords('--config', flags.config));
   }
   if (flags.source !== undefined && flags.source !== 'auto') {
-    words.push('--source', shellWord(flags.source));
+    words.push(...flagWords('--source', flags.source));
   }
   if (flags.baseline !== undefined) {
-    words.push('--baseline', shellWord(flags.baseline));
+    words.push(...flagWords('--baseline', flags.baseline));
   }
   if (flags.prepare === true) {
     words.push('--prepare');
   }
   return [...words, '--update-baseline'].join(' ');
+}
+
+/** `--strict-baseline` and the command that removes the fixed entries, for the report. */
+export function baselineRun(root: string | undefined, flags: StrictFlags): BaselineRun {
+  return { strict: flags.strictBaseline === true, command: updateCommand(root, flags) };
 }
 
 export interface StrictOutcome {
