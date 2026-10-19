@@ -134,7 +134,10 @@ The suggestions and their counts are made for the findings that `check` shows on
     layerscope does not read an `export * from` a package or an alias, or one whose file unimport
     does not find, such as `./y.js` for `y.ts`. Such a file can export any name. This applies to the
     moved file and to the files in the other layers. Then the move conflicts with each auto-import
-    of the other layers.
+    of the other layers. layerscope reads only the default dirs of each layer. It does not read the
+    dirs that a layer adds with `imports.dirs` or `components`. So a move can give a file the same
+    name as a file in such a dir of another layer, or put a file in a dir that another layer scans.
+    Nuxt then uses only one of the two files.
   - Nuxt finds the file in the target (see below).
 
   If several layers qualify, the one with the shortest `allow` list wins. After all moves are
@@ -351,6 +354,9 @@ Limits:
   registry is written again.
 - Plugins, server middleware and Nitro plugins are not reported, because Nuxt and Nitro use all of
   them.
+- Server routes are not reported. When two layers have a server route with the same path, method
+  and env (a `.dev` or `.prod` suffix), Nitro uses the route of the layer with the higher priority.
+  It drops the other route with no message.
 
 Without the registry, the rule reports nothing and prints the note of the shadowed-\* rules.
 
@@ -417,8 +423,9 @@ also wins over a file in the source dir of a layer.
 
 Limits:
 
-- Only the auto-imports of the app are checked. Server utils (`server/utils`) are not. The scan
-  of `shared/utils` by Nitro is not checked either.
+- Only the auto-imports of the app are checked. Server utils (`server/utils`) are not. When two
+  layers export the same name there, Nitro keeps one and prints a warning. The scan of
+  `shared/utils` by Nitro is not checked either.
 - Type exports are not reported.
 - Two files of the same layer with the same auto-import name are not reported.
 - An auto-import in a file that no layer owns is not reported.
