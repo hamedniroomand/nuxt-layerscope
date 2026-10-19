@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.11.1
+
+### Patch Changes
+
+- [#239](https://github.com/hamedniroomand/nuxt-layerscope/pull/239) [`98eb05a`](https://github.com/hamedniroomand/nuxt-layerscope/commit/98eb05a39cc3571a2bb03d3ea1d5eaf779678ac3) - `check` with file arguments, `--staged`, `--changed` or `--since` and no source file to check now reads the config and the baseline, and exits `2` when it cannot read them. Before, it exited `0` without reading them in the text and github formats, and the json, sarif and gitlab formats gave an empty report for any error, for example a syntax error in the config or a damaged baseline. A missing or old `.nuxt` still gives exit `0`; in the json, sarif and gitlab formats the report is empty and has a note.
+
+- [#238](https://github.com/hamedniroomand/nuxt-layerscope/pull/238) [`04eb8ea`](https://github.com/hamedniroomand/nuxt-layerscope/commit/04eb8ea336bd5206f1148b56ebabbc8f7f2c7e66) - `fix` rewrites an `import()` in a template at the position that the template compiler gives, not at the first match of its text. Before, a string such as `"import('./a')"` before the real `import('./a')` got the rewrite, and the real import kept the old path. When the quotes of the path are an HTML character reference, such as `&quot;`, `fix` now stops and tells you to use `'` or `"` as the quote. An `import()` that layerscope cannot place exactly in a template expression, for example when the same expression has an HTML character reference such as `&amp;&amp;`, is not rewritten now (before, it often was): `fix` stops and says how to change the template.
+
 ## 0.11.0
 
 ### Minor Changes
