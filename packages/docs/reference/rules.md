@@ -153,20 +153,21 @@ The suggestions and their counts are made for the findings that `check` shows on
 
   The file lands in the same source dir of the target: `srcDir`, `serverDir` or `sharedDir`. A file
   that is in none of these dirs gets no move. For a file that is used as an auto-import, layerscope
-  assumes the default dirs of Nuxt: `composables/` and `utils/` in `srcDir`, `utils/` in
-  `serverDir`, and `utils/` and `types/` in `sharedDir`. Nuxt reads only the script files at the top
-  level of the dirs in `srcDir` and `sharedDir`. It does not read sub dirs, so a file at
-  `composables/cart/useCart.ts` or `composables/cart/index.ts` gets no move. Nitro reads
-  `server/utils` at any depth. layerscope moves a file there only to the top level or to the `index`
-  file of a sub dir. A file that is used as a component must be in `components/`. A target that sets
-  `imports.dirs` to a list that is not empty, or turns `imports.scan` off, is not a target for a
-  script file (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.mts`, `.cjs` or `.cts`). This is also true
-  when only explicit imports use the file, and for a `.tsx` or `.jsx` file that is used as a
-  component. Such a layer can scan the dir that the file goes to, and the names of the file can then
-  conflict with other auto-imports. layerscope reads only whether a layer changes these settings, so
-  a layer that turns `imports.scan` off gets the same check. A target that sets `components` is not
-  a target for a component file. layerscope does not know what such a layer scans. A file that is
-  used as a component also gets no move when the layer that owns it sets `components`.
+  assumes the default dirs of Nuxt: `composables/` and `utils/` in `srcDir` (also `types/` on Nuxt
+  4.6 and later), `utils/` in `serverDir`, and `utils/` and `types/` in `sharedDir`. Nuxt reads only
+  the script files at the top level of the dirs in `srcDir` and `sharedDir`. It does not read sub
+  dirs, so a file at `composables/cart/useCart.ts` or `composables/cart/index.ts` gets no move.
+  Nitro reads `server/utils` at any depth. layerscope moves a file there only to the top level or to
+  the `index` file of a sub dir. A file that is used as a component must be in `components/`. A
+  target that sets `imports.dirs` to a list that is not empty, or turns `imports.scan` off, is not a
+  target for a script file (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.mts`, `.cjs` or `.cts`). This is
+  also true when only explicit imports use the file, and for a `.tsx` or `.jsx` file that is used as
+  a component. Such a layer can scan the dir that the file goes to, and the names of the file can
+  then conflict with other auto-imports. layerscope reads only whether a layer changes these
+  settings, so a layer that turns `imports.scan` off gets the same check. A target that sets
+  `components` is not a target for a component file. layerscope does not know what such a layer
+  scans. A file that is used as a component also gets no move when the layer that owns it sets
+  `components`.
 
 - **allow** the dependency, when that creates no cycle. When the use needs only some names, the
   entry is scoped: `{ layer: 'web', only: ['useCart'] }`. See [`allow`](./config#allow).

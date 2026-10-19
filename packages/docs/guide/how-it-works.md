@@ -67,10 +67,10 @@ layerscope stops with exit code `2` when they are clearly stale:
   missing there), or
 - an auto-import file exists that is not in the registry. An example is a composable that
   overrides one of a lower layer. The registry lists the dirs that Nuxt and Nitro scan for
-  auto-imports: `composables/`, `utils/`, `shared/utils`, `shared/types`, `server/utils` and the
-  `imports.dirs` of each layer. A dir in `node_modules` is not checked. A dir that you add in
-  `nuxt.config` is checked after the next `nuxi prepare`. The `types` source does not check
-  auto-import dirs.
+  auto-imports: `composables/`, `utils/`, `shared/utils`, `shared/types`, `server/utils`, `types/`
+  in `srcDir` on Nuxt 4.6 and later, and the `imports.dirs` of each layer. A dir in `node_modules`
+  is not checked. A dir that you add in `nuxt.config` is checked after the next `nuxi prepare`. The
+  `types` source does not check auto-import dirs.
 
 With the registry, the check skips a new file that Nuxt ignores (`ignore`, `ignorePrefix` or
 `.nuxtignore`) in a component dir and in an auto-import dir of the app. It does not skip such a

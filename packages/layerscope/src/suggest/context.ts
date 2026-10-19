@@ -1,5 +1,6 @@
 import type { Baseline } from '#src/baseline/index.ts';
 import { allowedLayers } from '#src/config/allow.ts';
+import { nuxtScansSrcTypes } from '#src/nuxt/kit.ts';
 import { isBelowRoot, isPackageLayer } from '#src/nuxt/package-layer.ts';
 import { isAllowed } from '#src/rules/layer-boundary.ts';
 import type { Edge, Finding, Layer, LayerscopeConfig } from '#src/types.ts';
@@ -36,6 +37,8 @@ export interface Context {
   blocked: Set<string>;
   /** The names that each layer has in the dirs that Nuxt scans, read once. */
   names: Map<string, LayerNames>;
+  /** The Nuxt of the project scans `types` in `srcDir` for auto-imports. */
+  srcTypes: boolean;
   /** Findings by `from\0to` layer pair. */
   findingsFor: Map<string, number>;
   /** Boundary findings by layer pair, to see which names a scoped entry would list. */
@@ -130,6 +133,7 @@ export function createContext(
     cycles: null,
     blocked: new Set(),
     names: new Map(),
+    srcTypes: nuxtScansSrcTypes(rootDir),
     findingsAt: clearedByMove(findings),
     findingsFor: count(findings, finding =>
       finding.toLayer === null ? null : pairKey(finding.fromLayer, finding.toLayer),
