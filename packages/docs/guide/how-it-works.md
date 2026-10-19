@@ -77,6 +77,11 @@ With the registry, the check skips a new file that Nuxt ignores (`ignore`, `igno
 file in an auto-import dir of Nitro, such as `server/utils` and `shared/utils`, because Nitro
 auto-imports it.
 
+Without the registry (the `types` source, also when `auto` falls back to it), the check also skips
+such a file in the default `components/` dirs. It reads the ignore rules with the `@nuxt/kit` of
+the project. When the project has no `@nuxt/kit`, or the kit cannot give the rules, the check has
+no ignore rules.
+
 layerscope does not check a dir that does not exist (or that has a file in its path). That dir has
 no new files. layerscope stops with exit code `2` when it cannot open a dir, for example because it
 has no read access. It cannot look for new files in that dir. It also stops when it cannot reach a

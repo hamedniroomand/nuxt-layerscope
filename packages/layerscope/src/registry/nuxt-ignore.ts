@@ -2,11 +2,14 @@ import ignore from 'ignore';
 import type { Options } from 'ignore';
 import { relative } from 'pathe';
 
-/** The ignore rules of Nuxt, as the module reads them from `@nuxt/kit`. */
+/** The ignore rules of Nuxt, as the module or the CLI reads them from `@nuxt/kit`. */
 export interface NuxtIgnore {
   /** `nuxt.options.rootDir`. */
   rootDir: string;
-  /** The `root` of each layer from `getLayerDirectories()`, with the trailing slash of kit. */
+  /**
+   * The root of each layer, with a trailing slash. The module takes them from
+   * `getLayerDirectories()`. The CLI uses the real path of each layer.
+   */
   roots: string[];
   /** The result of `resolveIgnorePatterns()`: `ignore`, `ignorePrefix` and the root `.nuxtignore`. */
   patterns: string[];

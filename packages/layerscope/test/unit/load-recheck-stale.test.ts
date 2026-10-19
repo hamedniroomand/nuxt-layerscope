@@ -8,10 +8,17 @@ import type { Environment } from '#src/analyze/environment.ts';
 import { assertSymbolsFresh, loadEnvironment } from '#src/analyze/environment.ts';
 import { loadProject } from '#src/analyze/load.ts';
 
+const isNuxtIgnored = vi.hoisted(() => (): boolean => true);
+
 vi.mock('#src/analyze/environment.ts', () => ({
   loadEnvironment: vi.fn(async () => {
     await Promise.resolve();
-    return { env: { table: {} }, layers: [], registry: null } as unknown as Environment;
+    return {
+      env: { table: {} },
+      layers: [],
+      registry: null,
+      isNuxtIgnored,
+    } as unknown as Environment;
   }),
   assertSymbolsFresh: vi.fn(async () => {
     await Promise.resolve();
@@ -38,6 +45,7 @@ describe('loadProject with a cached environment', () => {
     await loadTwice(true);
     expect(loadEnvironment).toHaveBeenCalledTimes(1);
     expect(assertSymbolsFresh).toHaveBeenCalledTimes(1);
+    expect(assertSymbolsFresh).toHaveBeenCalledWith({}, [], null, isNuxtIgnored);
   });
 
   it('does not run the stale check on a cache hit without recheckStale (the DevTools tab)', async () => {
