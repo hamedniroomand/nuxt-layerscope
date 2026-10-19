@@ -131,6 +131,11 @@ describe('recordShadowedFiles', () => {
     });
   });
 
+  it('gives nothing before Nuxt resolves the layouts and the middleware of the app', async () => {
+    const nuxt = { apps: { default: {} } } as unknown as Nuxt;
+    expect(await recordShadowedFiles(nuxt, path => path)).toEqual({ layouts: [], middleware: [] });
+  });
+
   it('gives nothing before Nuxt adds the app', async () => {
     const nuxt = { apps: {} } as unknown as Nuxt;
     expect(await recordShadowedFiles(nuxt, path => path)).toEqual({ layouts: [], middleware: [] });

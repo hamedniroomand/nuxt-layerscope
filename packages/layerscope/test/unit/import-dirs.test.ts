@@ -31,6 +31,8 @@ function resolveToThisFile(): void {
 function fakeNuxt(): Nuxt {
   return {
     _version: '0.0.0',
+    // Nuxt adds the app when the build starts. Without it, the module records no layouts.
+    apps: {},
     options: {
       _layers: [],
       // `hasNuxtModule()` of kit reads both lists.

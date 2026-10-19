@@ -98,7 +98,12 @@ export async function recordShadowedFiles(
   if (!Object.hasOwn(nuxt.apps, 'default')) {
     return { layouts: [], middleware: [] };
   }
-  const app = nuxt.apps.default;
+  // `createApp()` of Nuxt gives an app without layouts and middleware, and the first
+  // `resolveApp()` adds them. Without them, the module records nothing.
+  const app: Partial<typeof nuxt.apps.default> = nuxt.apps.default;
+  if (app.layouts === undefined || app.middleware === undefined) {
+    return { layouts: [], middleware: [] };
+  }
   const extensions = nuxt.options.extensions.join(',');
   const [layoutFiles, middlewareFiles] = await Promise.all([
     scanLayers(nuxt, dirs => dirs.appLayouts, `**/*{${extensions}}`),

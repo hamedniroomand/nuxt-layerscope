@@ -70,6 +70,8 @@ function fakeNuxt(base: string): Pick<CollectProject, 'nuxt' | 'call'> {
   const hooks = new Map<string, Handler[]>();
   const nuxt = {
     _version: '0.0.0',
+    // Nuxt adds the app when the build starts. Without it, the module records no layouts.
+    apps: {},
     // `rootDir` finds the unimport of Nuxt, so it is the fixture.
     options: {
       _layers: [],
