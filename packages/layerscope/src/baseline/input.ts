@@ -85,11 +85,6 @@ export function assertBaselineName(name: unknown): void {
   }
 }
 
-export function cannotWrite(file: string, error: unknown): LayerscopeError {
-  const { code } = error as NodeJS.ErrnoException;
-  return new LayerscopeError(`Cannot write ${file} (${code ?? (error as Error).message}).`);
-}
-
 export function cannotRead(file: string, error: unknown): LayerscopeError {
   const { code } = error as NodeJS.ErrnoException;
   return new LayerscopeError(

@@ -62,7 +62,7 @@ that exist today. Each allowed edge is printed, with its reference count and an 
 reports how many references could not be resolved, where they cluster, and how many parts of files
 layerscope could not read. This tells you how much layerscope can see. With `--baseline`, the
 remaining findings are accepted so the first CI run is green. It never overwrites a config without
-`--force`.
+`--force`. `init` makes the folder of the config file when it does not exist.
 
 The generated map records what is, not what is intended. Delete the lines for dependencies you
 consider mistakes and run `layerscope check`: each deleted line becomes a finding you can fix or

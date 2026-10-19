@@ -1,16 +1,13 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
-
-import { dirname, relative } from 'pathe';
+import { relative } from 'pathe';
 
 import { isRuleName } from '#src/config/rules.ts';
 import { LayerscopeError } from '#src/errors.ts';
 import type { AnalyzeResult, BaselineEntry, BaselineResult, Finding } from '#src/types.ts';
-import { parseJson } from '#src/utils/fs.ts';
+import { parseJson, writeTextFile } from '#src/utils/fs.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
 import {
   BASELINE_VERSION,
-  cannotWrite,
   checkVersion,
   FILE_ADVICE,
   hasBadCount,
@@ -98,26 +95,9 @@ interface Diff {
   fixed: BaselineEntry[];
 }
 
-/**
- * Makes the folder of the file when it does not exist. The folder is made only after a write fails
- * with `ENOENT`, because `mkdirSync` fails at a drive or UNC root on Windows, where the file itself
- * can be written.
- */
+/** Makes the folder of the file when it does not exist. */
 export function writeBaseline(file: string, baseline: Baseline): void {
-  const text = `${JSON.stringify(baseline, null, 2)}\n`;
-  try {
-    try {
-      writeFileSync(file, text);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-        throw error;
-      }
-      mkdirSync(dirname(file), { recursive: true });
-      writeFileSync(file, text);
-    }
-  } catch (error) {
-    throw cannotWrite(file, error);
-  }
+  writeTextFile(file, `${JSON.stringify(baseline, null, 2)}\n`);
 }
 
 function isEntry(value: unknown): value is BaselineEntry {

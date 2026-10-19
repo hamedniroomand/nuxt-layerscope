@@ -1,9 +1,9 @@
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 
 import { dirname, join, relative, resolve } from 'pathe';
 
 import { analyze } from '#src/analyze/index.ts';
-import { baselineName, baselinePath, createBaseline, writeBaseline } from '#src/baseline/index.ts';
+import { baselineName, baselinePath, createBaseline } from '#src/baseline/index.ts';
 import {
   analysisConfig,
   assertNoNuxtConfigLayers,
@@ -13,6 +13,7 @@ import {
   propose,
   readOldConfig,
   renderConfig,
+  writeInitFiles,
 } from '#src/init/index.ts';
 import { REGISTRY_FILE } from '#src/registry/schema.ts';
 import { formatInit } from '#src/report/init.ts';
@@ -87,11 +88,9 @@ export async function init(root: string | undefined, flags: InitFlags): Promise<
   const proposal = propose(result);
   const layers = result.layers.map(layer => layer.name);
   const source = renderConfig(layers, proposal.edges, buildDir, kept);
+  const baseline = flags.baseline === true ? createBaseline(proposal.remaining, rootDir) : null;
   if (write) {
-    writeFileSync(configFile, source);
-    if (flags.baseline === true) {
-      writeBaseline(baselineFile, createBaseline(proposal.remaining, rootDir));
-    }
+    writeInitFiles(configFile, source, baselineFile, baseline);
   }
   process.stdout.write(
     formatInit(result, proposal, {
