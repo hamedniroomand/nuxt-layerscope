@@ -74,8 +74,9 @@ Check the following:
   `.jsx` or `.tsx` file. Then the message says that the name is a component. In the app context, use
   it in a template or import it from `#components`. Server and shared code cannot use a component.
 - **Is it auto-imported at all?** Nuxt reads only the files at the top level of `composables/` and
-  `utils/`. A file in a sub dir, such as `composables/cart/useCart.ts` or `composables/cart/index.ts`,
-  is not scanned by default. Configure [`imports.dirs`](https://nuxt.com/docs/guide/directory-structure/composables#how-files-are-scanned)
+  `utils/` (also `types/` on Nuxt 4.6 and later). A file in a sub dir, such as
+  `composables/cart/useCart.ts` or `composables/cart/index.ts`, is not scanned by default. Configure
+  [`imports.dirs`](https://nuxt.com/docs/guide/directory-structure/composables#how-files-are-scanned)
   in Nuxt, run `nuxi prepare`, and layerscope follows.
 
 To silence the rule entirely, set `'unresolved-reference': 'off'`.

@@ -66,6 +66,28 @@ function findPackageDir(from: string, name: string): string | null {
   }
 }
 
+/**
+ * Whether the Nuxt of the project scans `types` in `srcDir` for auto-imports, as Nuxt 4.6 and
+ * later do. `false` when no `nuxt` package is found, or its package.json has no string `version`
+ * that starts with a major and a minor number. A package.json that is not an object or not JSON
+ * throws.
+ */
+export function nuxtScansSrcTypes(rootDir: string): boolean {
+  const dir = findPackageDir(rootDir, 'nuxt');
+  if (dir === null) {
+    return false;
+  }
+  const { version } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
+    version?: unknown;
+  };
+  const match = typeof version === 'string' ? /^(\d+)\.(\d+)\./u.exec(version) : null;
+  if (match === null) {
+    return false;
+  }
+  const [major, minor] = [Number(match[1]), Number(match[2])];
+  return major > 4 || (major === 4 && minor >= 6);
+}
+
 function packageEntry(dir: string): string {
   const pkg = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8')) as {
     exports?: Record<string, unknown>;

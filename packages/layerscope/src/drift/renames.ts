@@ -33,7 +33,8 @@ function followed(
       oldOwner !== null &&
       newOwner !== null &&
       oldOwner.name !== newOwner.name &&
-      destinationOf(oldFile, oldOwner, newOwner, []) === newFile;
+      // Without uses, the auto-import dirs are not read.
+      destinationOf(oldFile, oldOwner, newOwner, [], false) === newFile;
     if (score >= SCORE || fixMove) {
       result.set(to, from);
     }

@@ -42,6 +42,7 @@ export function destinationOf(
   owner: Layer,
   target: Layer,
   uses: Edge[],
+  srcTypes: boolean,
 ): string | null {
   const found = DIR_KINDS.map(kind => ({ kind, dir: owner[kind] }))
     .filter(({ dir }) => file.startsWith(`${dir}/`))
@@ -53,7 +54,7 @@ export function destinationOf(
   const inside = relative(found.dir, file);
   if (
     uses.some(edge => usesAutoImport(edge)) &&
-    (target.defaultImports === false || !isAutoImported(found.kind, inside))
+    (target.defaultImports === false || !isAutoImported(found.kind, inside, srcTypes))
   ) {
     return null;
   }
@@ -69,7 +70,7 @@ export function destinationOf(
 function namesOf(context: Context, layer: Layer): LayerNames {
   let names = context.names.get(layer.name);
   if (names === undefined) {
-    names = namesOfLayer(layer);
+    names = namesOfLayer(layer, context.srcTypes);
     context.names.set(layer.name, names);
   }
   return names;
@@ -125,7 +126,7 @@ function moveTargets(context: Context, file: string, owner: Layer, uses: Edge[])
   const dependencies = context.edgesFrom.get(file) ?? [];
   const targets: MoveTarget[] = [];
   for (const layer of context.layers) {
-    const moved = destinationOf(file, owner, layer, uses);
+    const moved = destinationOf(file, owner, layer, uses, context.srcTypes);
     if (layer.name === owner.name || !isMoveTarget(layer, context.rootDir) || moved === null) {
       continue;
     }
