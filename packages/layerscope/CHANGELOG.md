@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.12.0
+
+### Minor Changes
+
+- [#256](https://github.com/hamedniroomand/nuxt-layerscope/pull/256) [`51a7c93`](https://github.com/hamedniroomand/nuxt-layerscope/commit/51a7c93ee51e9b4d7bb14a626a47ab2076475b9e) - Report overridden auto-imports with the new shadowed-auto-import rule (warn by default). Run "nuxi prepare" after the update to write the registry again.
+
+- [#246](https://github.com/hamedniroomand/nuxt-layerscope/pull/246) [`6d8f722`](https://github.com/hamedniroomand/nuxt-layerscope/commit/6d8f72215d8448472def8b10bba4999218400533) - Report overridden pages with the new shadowed-page rule (warn by default). Run "nuxi prepare" after the update to write the registry again.
+
+### Patch Changes
+
+- [#253](https://github.com/hamedniroomand/nuxt-layerscope/pull/253) [`ec77545`](https://github.com/hamedniroomand/nuxt-layerscope/commit/ec77545e3b02367b9b7ef37639aa1a1fb34778f8) - The GitHub Action now shows an error when the nuxt-layerscope CLI is too old for an option that the action gives to it. The error says to update nuxt-layerscope in the project, or to change the `version` input. The CI guide now advises `strict-baseline`.
+
+- [#251](https://github.com/hamedniroomand/nuxt-layerscope/pull/251) [`866c769`](https://github.com/hamedniroomand/nuxt-layerscope/commit/866c769d5eeecdcb32c3da074db9a940e36a6562) - `check --update-baseline`, `init --baseline` and the DevTools tab now make the folder of the baseline file when it does not exist. When layerscope cannot make the folder or write the file, the error names the file and the reason, for example `Cannot write /app/ci/layerscope-baseline.json (EACCES).`
+
+- [#258](https://github.com/hamedniroomand/nuxt-layerscope/pull/258) [`5286c08`](https://github.com/hamedniroomand/nuxt-layerscope/commit/5286c0881cf53b924760745c70668deafbd8aede) - The DevTools tab now shows the result of the new config when the config changes while a check runs. An ignore, a remove or an undo after a file or config change now shows a full new run. An ignore or a remove no longer writes to the baseline file of the old config when the config changed during a run: the tab asks you to try again. The tab also shows a change in the list of fixed baseline entries when nothing else changes.
+
+- [#252](https://github.com/hamedniroomand/nuxt-layerscope/pull/252) [`f041ee5`](https://github.com/hamedniroomand/nuxt-layerscope/commit/f041ee50c9211c2ec8de2a9195f7f9bf96ffe4e8) - `drift` now follows a moved file that has a relative import through a symbolic link, when the link and its target did not move. Before, `drift` made the path to the real file, so the accepted finding counted as added and fixed. Now `drift` keeps the path through the link, for example `../a/x.v2` for a link to `a/foo.ts`, or `../a/lib.v2/useCart` for a link to a directory.
+
+- [#254](https://github.com/hamedniroomand/nuxt-layerscope/pull/254) [`4ae60fe`](https://github.com/hamedniroomand/nuxt-layerscope/commit/4ae60fe651fac8c13bff4768193077de3a25c140) - `init` now makes the folder of the config file when it does not exist. When `init` cannot write the config file, the error names the file and the reason. When `init --baseline` cannot write the baseline, the config is already written. The error says so and tells you to run the same command again with `--force`.
+
+- [#245](https://github.com/hamedniroomand/nuxt-layerscope/pull/245) [`6a2ff02`](https://github.com/hamedniroomand/nuxt-layerscope/commit/6a2ff02f9a8daf7b22ef5c0babd1a1aa1d5ab4c1) - `init --force` now keeps the `expose`, `path` and `source` keys of each old layer, and uses them in its analysis. So the baseline also has the findings that `expose` causes. When a layer in the old config has one of these keys and `init` cannot find that layer, `init` stops and writes nothing. Remove or fix that entry, and run `init` again. An old layer entry that has only `allow` is not kept.
+
+- [#244](https://github.com/hamedniroomand/nuxt-layerscope/pull/244) [`8a50fc4`](https://github.com/hamedniroomand/nuxt-layerscope/commit/8a50fc462d1c014a9403022852fa891753281ea8) - layerscope no longer suggests a move of a script file (`.ts`, `.tsx`, `.js`, `.jsx`, `.mjs`, `.mts`, `.cjs` or `.cts`) into a layer that sets `imports.dirs` to a list that is not empty, or turns `imports.scan` off. Such a layer can scan the dir that the file goes to, also when only explicit imports use the file, and Nuxt then uses only one of two auto-imports with the same name. Before, only a file that was used as an auto-import got this check.
+
+- [#257](https://github.com/hamedniroomand/nuxt-layerscope/pull/257) [`e82dbbf`](https://github.com/hamedniroomand/nuxt-layerscope/commit/e82dbbf0a1bda57612fb8c326b453837b0529884) - layerscope no longer suggests a move of a file when a layer other than the owner and the target has an auto-import or a component with the same name, in the dirs that Nuxt scans by default. Nuxt then uses only one of the files, for most dirs the one of the layer that comes first. So after the move, the file of that other layer could take the name, and the code that uses the name would get another file. layerscope does not compare the layer order, so such a layer stops the move also when the target comes first. One `export * from` a package in an auto-import dir of any layer now stops every move of a file with auto-import names.
+
 ## 0.11.1
 
 ### Patch Changes

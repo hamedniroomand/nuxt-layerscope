@@ -17,6 +17,6 @@
     "vue": "^3.5.43"
   },
   "devDependencies": {
-    "nuxt-layerscope": "^0.11.1"
+    "nuxt-layerscope": "^0.12.0"
   }
 }
