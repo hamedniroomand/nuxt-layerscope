@@ -99,10 +99,10 @@ has write permissions or secrets.
 2. otherwise `node_modules/.bin/layerscope` at the repository root (monorepos),
 3. otherwise `npx nuxt-layerscope@<version>`.
 
-The action runs `check --summary`, which needs `nuxt-layerscope` 0.8.0 or later. The version that
-the project installs and the `version` input must be 0.8.0 or later. An older version stops the
-check step with exit code 2. With `strict-baseline: true` or `fail-on-growth: true`, both versions
-must be 0.10.0 or later.
+The action runs `check --summary`, which needs `nuxt-layerscope` 0.8.0 or later. With
+`strict-baseline: true` or `fail-on-growth: true`, it needs 0.10.0 or later. This applies to the
+version that the project installs and to the `version` input. An older version stops the step with
+exit code 2. The action then adds an error to the run that says what to update.
 
 Installing `nuxt-layerscope` in the project keeps CI and local runs on the same version, and
 the [Nuxt module](../guide/nuxt-module) and the CLI in step.
