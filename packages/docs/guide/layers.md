@@ -75,13 +75,16 @@ that root owns the files. Paths are compared after resolving symlinks, so pnpm's
 - An import of a layer by its package name (the `name` in the `package.json` at its root), or of a
   path in it, is checked like any other import. This applies to `import` and `require()`, and to
   every layer that has a `name`: npm, workspace and local layers, and the root layer. layerscope
-  resolves the import from the importing file, as Node does. When the `package.json` has
-  `exports`, only the paths that `exports` gives a file for resolve. An `import` uses the `import`
+  resolves the import from the importing file, as Node does. When the `package.json` has `exports`,
+  only the paths that `exports` gives a file for resolve. layerscope looks up the target of
+  `exports` or `main` as Vite does: it adds an extension, maps `.js` to `.ts` and tries `index`
+  files. A path that `exports` sets to `null` does not resolve. An `import` uses the `import`
   condition of `exports`. A `require()` uses the `require` condition and also the `import`
-  condition, as Nitro and the SSR build of Nuxt do. Without `exports`, layerscope
-  looks up the path in the layer root, as it does for a relative path. If the importing file finds
-  a copy of the package outside the layer, the import is external. A path that does not resolve is
-  reported by [`unresolved-reference`](../reference/rules#unresolved-reference).
+  condition, as Nitro and the SSR build of Nuxt do. Without `exports`, an import of the package name
+  uses `main`, then the layer root. Any other path is looked up in the layer root, as for a relative
+  path. If the importing file finds a copy of the package outside the layer, the import is external.
+  A path that does not resolve is reported by
+  [`unresolved-reference`](../reference/rules#unresolved-reference).
 
 ## Which files are checked
 

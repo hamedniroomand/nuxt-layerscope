@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'pathe';
 
 import { analyze } from '#src/analyze/index.ts';
+import type { LayerPackages } from '#src/resolve/layer-package.ts';
 import type { AnalyzeResult, Edge } from '#src/types.ts';
 
 export const UI_STORE = 'node_modules/.pnpm/@acme+ui-layer@1.0.0/node_modules/@acme/ui-layer';
@@ -88,6 +89,14 @@ export function project(files: Record<string, string> = {}): string {
   link(root, UI_STORE, 'node_modules/@acme/ui-layer');
   link(root, KIT, 'node_modules/@acme/kit');
   return root;
+}
+
+/** The layer packages of the project, as layerPackageNames gives them. */
+export function packagesOf(root: string): LayerPackages {
+  return new Map([
+    ['@acme/ui-layer', { name: 'ui', root: join(root, UI_STORE) }],
+    ['@acme/kit', { name: 'kit', root: join(root, KIT) }],
+  ]);
 }
 
 export const LAYERS = {

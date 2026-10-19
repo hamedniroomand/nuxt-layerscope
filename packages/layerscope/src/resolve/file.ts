@@ -6,9 +6,6 @@ const EXTENSIONS = ['.ts', '.tsx', '.mts', '.js', '.mjs', '.jsx', '.vue', '.json
 // Tried last, so an import that resolved before the CommonJS files were scanned still does.
 const COMMONJS_EXTENSIONS = ['.cts', '.cjs'];
 
-/** The extensions that the lookup adds to a path, in the order it tries them. */
-export const LOOKUP_EXTENSIONS = [...EXTENSIONS, ...COMMONJS_EXTENSIONS];
-
 function withTsExtension(path: string): string | null {
   const jsExt = /\.([cm]?)js$/u.exec(path);
   if (!jsExt) {
