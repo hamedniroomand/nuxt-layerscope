@@ -1,6 +1,8 @@
-import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { mkdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 
 import { basename, dirname, isAbsolute, join, normalize, resolve } from 'pathe';
+
+import { LayerscopeError } from '#src/errors.ts';
 
 /** A path that is gone (ENOENT), or that has a file in its path (ENOTDIR). */
 export function isGone(code: string | undefined): boolean {
@@ -95,4 +97,30 @@ export function rootPrefix(rootDir: string): string {
 /** A dir that is not the project root and not inside it. Both paths are real paths. */
 export function isOutsideDir(dir: string, rootDir: string): boolean {
   return dir !== rootDir && !dir.startsWith(rootPrefix(rootDir));
+}
+
+export function cannotWrite(file: string, error: unknown): LayerscopeError {
+  const { code } = error as NodeJS.ErrnoException;
+  return new LayerscopeError(`Cannot write ${file} (${code ?? (error as Error).message}).`);
+}
+
+/**
+ * Makes the folder of the file when it does not exist. The folder is made only after a write fails
+ * with `ENOENT`, because `mkdirSync` fails at a drive or UNC root on Windows, where the file itself
+ * can be written.
+ */
+export function writeTextFile(file: string, text: string): void {
+  try {
+    try {
+      writeFileSync(file, text);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+        throw error;
+      }
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, text);
+    }
+  } catch (error) {
+    throw cannotWrite(file, error);
+  }
 }

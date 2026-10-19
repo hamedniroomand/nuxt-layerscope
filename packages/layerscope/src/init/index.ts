@@ -10,6 +10,7 @@ export { DEFAULT_BUILD_DIR, initBuildDir } from './build-dir.ts';
 export { analysisConfig, readOldConfig } from './old-config.ts';
 export type { OldConfig } from './old-config.ts';
 export { renderConfig } from './render.ts';
+export { writeInitFiles } from './write.ts';
 export type { AllowedEdge, Cluster, PresetFit, Proposal, Readiness } from './types.ts';
 
 /** Expects a result analyzed without an `allow` map, so the edges are what exists today. */

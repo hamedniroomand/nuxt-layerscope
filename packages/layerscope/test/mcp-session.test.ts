@@ -71,7 +71,7 @@ describe('read-only', () => {
 
   it('has no write to the file system in the server or the tools', () => {
     const write =
-      /\b(writeFile|writeFileSync|appendFile|appendFileSync|rm|rmSync|unlink|unlinkSync|rename|renameSync|mkdir|mkdirSync|copyFile|cpSync|createWriteStream)\b/u;
+      /\b(writeFile|writeFileSync|writeTextFile|appendFile|appendFileSync|rm|rmSync|unlink|unlinkSync|rename|renameSync|mkdir|mkdirSync|copyFile|cpSync|createWriteStream)\b/u;
     for (const file of files) {
       expect(readFileSync(file, 'utf8'), file).not.toMatch(write);
     }
