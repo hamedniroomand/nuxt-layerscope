@@ -122,11 +122,11 @@ A file outside the root has a path that starts with `../`.
 
 ## Options
 
-| Option              | Description                                                                                                                                                                                                                                                       |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--baseline <file>` | Baseline path, relative to the root. Default: the `baseline` key of the config, else `layerscope-baseline.json`.                                                                                                                                                  |
-| `--update-baseline` | Write every current finding (errors and warnings) and exit `0`.                                                                                                                                                                                                   |
-| `--strict-baseline` | Fail when the baseline has fixed entries. With `--staged`, `--changed`, `--since` or file arguments, only the entries of the selected files count. With the `.d.ts` source, `shadowed-component` entries do not count. Not with `--watch` or `--update-baseline`. |
+| Option              | Description                                                                                                                                                                                                                                                            |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--baseline <file>` | Baseline path, relative to the root. Default: the `baseline` key of the config, else `layerscope-baseline.json`.                                                                                                                                                       |
+| `--update-baseline` | Write every current finding (errors and warnings) and exit `0`.                                                                                                                                                                                                        |
+| `--strict-baseline` | Fail when the baseline has fixed entries. With `--staged`, `--changed`, `--since` or file arguments, only the entries of the selected files count. With the `.d.ts` source, entries of the `shadowed-*` rules do not count. Not with `--watch` or `--update-baseline`. |
 
 Set the [`baseline`](../reference/config#baseline) key in the config to use another file in
 `check`, `fix`, `drift`, `mcp`, the DevTools tab and the GitHub Action. `init --baseline` always

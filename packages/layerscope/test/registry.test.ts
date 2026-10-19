@@ -32,9 +32,11 @@ describe.each([
     );
   });
 
-  it('says that shadowed-component needs the registry', async () => {
+  it('says that the shadowed-* rules need the registry', async () => {
     const [registry, types] = await Promise.all([fromRegistry, fromTypes]);
     expect(registry.notes).toEqual([]);
-    expect(types.notes).toEqual([expect.stringContaining('shadowed-component needs')]);
+    expect(types.notes).toEqual([
+      expect.stringContaining('The shadowed-* rules need the registry'),
+    ]);
   });
 });

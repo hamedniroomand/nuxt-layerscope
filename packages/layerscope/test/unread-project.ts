@@ -44,6 +44,8 @@ export function project(config = ''): string {
       },
     ],
     shadowedComponents: [],
+    shadowedLayouts: [],
+    shadowedMiddleware: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),

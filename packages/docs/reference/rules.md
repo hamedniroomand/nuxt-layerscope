@@ -283,5 +283,65 @@ component is not. With the `.d.ts` fallback Nuxt lists only the winning componen
 reports nothing and prints a note on stderr:
 
 ```text
-layerscope: note: shadowed-component needs the full component registry: add "nuxt-layerscope" to "modules" in nuxt.config. …
+layerscope: note: The shadowed-* rules need the registry of the Nuxt module, and this run has no registry, so these rules reported nothing. …
 ```
+
+## `shadowed-layout`
+
+- Default: `warn`
+- Needs the [Nuxt module](../guide/nuxt-module)
+
+Two layers have a layout with the same name, and Nuxt uses only one of them. layerscope reports
+the one that Nuxt does not use:
+
+```text
+layers/base/app/layouts/default.vue
+  1:1     warn   Layout "default" of layer "base" is overridden by layer "root"  shadowed-layout
+                 default → app/layouts/default.vue
+```
+
+An override is often on purpose. Once it is on purpose, accept it with a
+[baseline](../guide/baseline) or turn the rule off.
+
+Limits:
+
+- Only files that have the same path (without the extension) in the layouts dir of each layer are
+  reported. `admin/default.vue` and `AdminDefault.vue` in two layers (both are named
+  `admin-default`) are not reported.
+- Two files in the same layer are not reported.
+- A layout or a middleware in a file that no layer owns is not reported.
+- A file that is added after the last `nuxi prepare` or dev write is not reported until the
+  registry is written again.
+
+Without the registry, the rule reports nothing and prints the note of the shadowed-\* rules.
+
+## `shadowed-middleware`
+
+- Default: `warn`
+- Needs the [Nuxt module](../guide/nuxt-module)
+
+Two layers have a route middleware with the same name, and Nuxt uses only one of them. layerscope
+reports the one that Nuxt does not use:
+
+```text
+layers/base/app/middleware/auth.ts
+  1:1     warn   Middleware "auth" of layer "base" is overridden by layer "root"  shadowed-middleware
+                 auth → app/middleware/auth.ts
+```
+
+An override is often on purpose. Once it is on purpose, accept it with a
+[baseline](../guide/baseline) or turn the rule off.
+
+Limits:
+
+- Only files that have the same name in the middleware dir of each layer are reported. `Auth.ts`
+  and `auth.ts` in two layers (both are named `auth`) are not reported.
+- Two files in the same layer are not reported.
+- A layout or a middleware in a file that no layer owns is not reported.
+- `middleware/<name>/index.ts` is not used by Nuxt and is not reported.
+- A file that is added after the last `nuxi prepare` or dev write is not reported until the
+  registry is written again.
+- Plugins, server middleware and Nitro plugins are not reported, because Nuxt and Nitro use all of
+  them.
+
+Without the registry, the rule reports nothing and prints the note of the shadowed-\* rules.

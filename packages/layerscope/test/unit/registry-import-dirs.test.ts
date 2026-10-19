@@ -37,6 +37,8 @@ function buildDirWith(extra: Record<string, unknown>): string {
       componentDirs: [],
       nuxtIgnore: noNuxtIgnore(),
       nuxtContent: false,
+      shadowedLayouts: [],
+      shadowedMiddleware: [],
       imports: { app: [], server: [], shared: [] },
       ...extra,
     }),
@@ -99,6 +101,30 @@ describe('readRegistry and the component dirs', () => {
   ])('marks the registry as stale when componentDirs %s', (_name, extra) => {
     expect(readRegistry(buildDirWith({ importDirs: [], ...extra })).kind).toBe('stale');
   });
+});
+
+const SHADOWED = { name: 'default', file: '/p/a/default.vue', shadowedBy: '/p/b/default.vue' };
+
+describe('readRegistry and the shadowed layouts and middleware', () => {
+  it.each(['shadowedLayouts', 'shadowedMiddleware'])('reads a good %s list', field => {
+    expect(readRegistry(buildDirWith({ importDirs: [], [field]: [SHADOWED] })).kind).toBe('ok');
+  });
+
+  it.each(['shadowedLayouts', 'shadowedMiddleware'])(
+    'marks the registry as stale when %s is missing or has a bad entry',
+    field => {
+      for (const value of [
+        undefined,
+        {},
+        [null],
+        [{ ...SHADOWED, name: 1 }],
+        [{ ...SHADOWED, file: undefined }],
+        [{ ...SHADOWED, shadowedBy: [] }],
+      ]) {
+        expect(readRegistry(buildDirWith({ importDirs: [], [field]: value })).kind).toBe('stale');
+      }
+    },
+  );
 });
 
 const RULES = noNuxtIgnore();

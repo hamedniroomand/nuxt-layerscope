@@ -1,4 +1,4 @@
-import { REGISTRY_ONLY_RULES, ruleSeverity } from '#src/config/rules.ts';
+import { REGISTRY_ONLY_RULES, ruleSeverity, SHADOWED_NEEDS_REGISTRY } from '#src/config/rules.ts';
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
 import type { Registry } from '#src/registry/schema.ts';
 import { addSuggestions } from '#src/suggest/index.ts';
@@ -8,7 +8,7 @@ import { yieldTurn } from '#src/utils/yield.ts';
 import { compareByPosition } from './compare.ts';
 import { cycleFindings } from './layer-cycle.ts';
 import { edgeFindings } from './layer-rules.ts';
-import { SHADOWED_NEEDS_REGISTRY, shadowedFindings } from './shadowed-component.ts';
+import { shadowedFileFindings, shadowedFindings } from './shadowed.ts';
 
 export interface RuleInput {
   edges: Edge[];
@@ -39,6 +39,7 @@ export async function runRules(
     ...edgeFindings(input.edges, config, input.layers),
     ...cycleFindings(input.edges, config),
     ...(registry === null ? [] : shadowedFindings(registry, input.ownerOf, config)),
+    ...(registry === null ? [] : shadowedFileFindings(registry, input.ownerOf, config)),
   ].toSorted(compareByPosition);
   // The rules and the suggestions each get a task of their own.
   await yieldTurn();

@@ -3,7 +3,7 @@ exit 1
   "version": 1,
   "source": "types",
   "notes": [
-    "shadowed-component needs the full component registry: add \"nuxt-layerscope\" to \"modules\" in nuxt.config. The generated .d.ts files list only the winning component, so the rule reported nothing."
+    "The shadowed-* rules need the registry of the Nuxt module, and this run has no registry, so these rules reported nothing. If \"nuxt-layerscope\" is not in \"modules\" in nuxt.config, add it. Then run \"nuxi prepare\"."
   ],
   "layers": [
     {

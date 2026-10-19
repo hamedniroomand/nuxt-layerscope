@@ -20,13 +20,13 @@ layerscope works without the module by reading the types Nuxt generates (`.nuxt/
 Nuxt 3 they can differ in the shared context (see the "Shared context on Nuxt 3" row below). The
 module is better in three ways:
 
-|                                                               | With the module                                                              | Without it                                                |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------- |
-| Source                                                        | Nuxt's own hooks                                                             | generated `.d.ts` files, whose format is not a public API |
-| Overridden components                                         | every scanned component, including the ones a higher-priority layer replaces | only the winner                                           |
-| [`shadowed-component`](../reference/rules#shadowed-component) | reported                                                                     | not available (layerscope says so)                        |
-| Stale check                                                   | every component and auto-import dir Nuxt scanned, custom dirs included       | only the default `components/` dirs                       |
-| Shared context on Nuxt 3                                      | as Nuxt resolves it                                                          | derived from app and server imports                       |
+|                                                             | With the module                                                              | Without it                                                |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Source                                                      | Nuxt's own hooks                                                             | generated `.d.ts` files, whose format is not a public API |
+| Overridden components                                       | every scanned component, including the ones a higher-priority layer replaces | only the winner                                           |
+| [`shadowed-*` rules](../reference/rules#shadowed-component) | reported                                                                     | not available (layerscope says so)                        |
+| Stale check                                                 | every component and auto-import dir Nuxt scanned, custom dirs included       | only the default `components/` dirs                       |
+| Shared context on Nuxt 3                                    | as Nuxt resolves it                                                          | derived from app and server imports                       |
 
 ## When it runs
 

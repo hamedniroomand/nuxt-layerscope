@@ -26,6 +26,8 @@ export function createProject(): { dir: string; registryFile: string; consumer: 
     ],
     components: [],
     shadowedComponents: [],
+    shadowedLayouts: [],
+    shadowedMiddleware: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),

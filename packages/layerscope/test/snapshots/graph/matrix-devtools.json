@@ -5,7 +5,7 @@
       "name": "base",
       "root": "layers/base",
       "allow": [],
-      "files": 4,
+      "files": 7,
       "refsIn": 6,
       "refsOut": 0
     },
@@ -32,7 +32,7 @@
       "name": "root",
       "root": ".",
       "allow": null,
-      "files": 1,
+      "files": 4,
       "refsIn": 0,
       "refsOut": 1
     },

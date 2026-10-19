@@ -19,6 +19,9 @@ const DESCRIPTIONS: Record<RuleName, string> = {
   'unresolved-reference':
     'A reference cannot be resolved: an unknown identifier, component or import, a dynamic component, a file that cannot be parsed, or code that layerscope cannot read.',
   'shadowed-component': 'A component is replaced by a component of the same name in another layer.',
+  'shadowed-layout': 'A layout is replaced by a layout of the same name in another layer.',
+  'shadowed-middleware':
+    'A route middleware is replaced by a middleware of the same name in another layer.',
 };
 
 const RULES = Object.keys(DEFAULT_SEVERITY) as RuleName[];

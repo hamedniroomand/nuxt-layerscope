@@ -80,11 +80,11 @@ describe('layerscope check --source and --verbose', () => {
     expect(output.stderr()).toMatch(/^layerscope: symbols from the registry \(.*registry\.json\)/u);
   });
 
-  it('notes that shadowed-component needs the registry with the .d.ts fallback', async () => {
+  it('notes that the shadowed-* rules need the registry with the .d.ts fallback', async () => {
     const output = captureOutput();
     expect(await run(checkArgv('--source', 'types', '--verbose'))).toBe(EXIT_VIOLATIONS);
     expect(output.stderr()).toContain('symbols from the generated .d.ts files');
-    expect(output.stderr()).toContain('layerscope: note: shadowed-component needs');
+    expect(output.stderr()).toContain('layerscope: note: The shadowed-* rules need the registry');
     expect(output.stdout()).toContain('✖ 7 problems (5 errors, 2 warnings)');
   });
 

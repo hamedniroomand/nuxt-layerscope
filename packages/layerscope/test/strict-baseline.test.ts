@@ -141,6 +141,14 @@ describe('check --strict-baseline, which entries count', () => {
     expect(result.out).toContain('::notice');
   });
 
+  it('does not count a shadowed-layout entry with --source types', async () => {
+    const root = projectWith([
+      { rule: 'shadowed-layout', file: GONE, symbol: 'default', toLayer: 'a' },
+    ]);
+    const result = await check(['--source', 'types', '--strict-baseline'], root);
+    expect(result.code).toBe(EXIT_CLEAN);
+  });
+
   it('passes with no baseline file', async () => {
     const result = await check(['--strict-baseline'], gitProject().root);
     expect(result.code).toBe(EXIT_CLEAN);

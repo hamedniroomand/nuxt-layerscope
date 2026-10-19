@@ -1,7 +1,6 @@
 import { isAbsolute, resolve } from 'pathe';
 
 import type { ProjectConfig } from '#src/config/effective.ts';
-import type { NuxtOptions } from '#src/nuxt/kit.ts';
 import { layersForModule } from '#src/nuxt/layers.ts';
 import type {
   ComponentMode,
@@ -10,6 +9,7 @@ import type {
   RegistryComponentDir,
   RegistryImportDir,
   ShadowedComponent,
+  ShadowedFile,
 } from '#src/registry/schema.ts';
 import { REGISTRY_VERSION } from '#src/registry/schema.ts';
 import { packageVersion } from '#src/version.ts';
@@ -19,6 +19,7 @@ import { ImportDirRecorder, mergeImportDirs } from './import-dirs.ts';
 import { NitroImports, activeImports, registryImports, resolveAlias } from './imports.ts';
 import type { Component, ComponentsDir, Nitro, Nuxt, Unimport, UnimportImport } from './nuxt.ts';
 import { onNitroInit, readNuxtIgnore, usesNuxtContent } from './nuxt.ts';
+import { recordShadowedFiles } from './shadowed-files.ts';
 
 const SERVER_PLACEHOLDER = '/components/server-placeholder';
 
@@ -31,6 +32,8 @@ interface AppPart {
   componentDirs: RegistryComponentDir[];
   components: RegistryComponent[];
   shadowedComponents: ShadowedComponent[];
+  shadowedLayouts: ShadowedFile[];
+  shadowedMiddleware: ShadowedFile[];
   /** Not resolved yet: the shared imports compare the raw `from` with the server imports. */
   imports: UnimportImport[];
   importDirs: RegistryImportDir[] | null;
@@ -148,7 +151,10 @@ export class RegistryCollector {
     // From the project's own kit, as the CLI does. The fields that layerscope reads are the same in
     // the schema type and in its own subset type.
     const { options } = this.nuxt;
-    const layers = await layersForModule(rootDir, options as unknown as NuxtOptions);
+    const layers = await layersForModule(
+      rootDir,
+      options as unknown as Parameters<typeof layersForModule>[1],
+    );
     return {
       version: REGISTRY_VERSION,
       generator: {
@@ -159,6 +165,8 @@ export class RegistryCollector {
       layers,
       components: app.components,
       shadowedComponents: app.shadowedComponents,
+      shadowedLayouts: app.shadowedLayouts,
+      shadowedMiddleware: app.shadowedMiddleware,
       componentDirs: app.componentDirs,
       importDirs,
       nuxtIgnore: readNuxtIgnore(this.nuxt),
@@ -179,16 +187,19 @@ export class RegistryCollector {
     }
     // Cleared before the reads: a scan during them sets it again for the next collect.
     this.appScanned = false;
-    const [componentDirs, imports, importDirs] = await Promise.all([
+    const [componentDirs, imports, importDirs, shadowedFiles] = await Promise.all([
       this.componentDirs(),
       activeImports(this.appImports),
       this.importDirs.recordApp(this.nuxt.options.rootDir),
+      recordShadowedFiles(this.nuxt, path => this.toFile(path)),
     ]);
     const components = this.components();
     this.app = {
       componentDirs,
       components,
       shadowedComponents: this.shadowed(components),
+      shadowedLayouts: shadowedFiles.layouts,
+      shadowedMiddleware: shadowedFiles.middleware,
       imports,
       importDirs,
     };

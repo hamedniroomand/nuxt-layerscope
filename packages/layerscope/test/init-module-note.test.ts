@@ -13,7 +13,7 @@ import { NUXT4_ROOT } from '#test/fixtures.ts';
 function noteFor(root: string, registry = join(root, '.nuxt/layerscope/registry.json')): string {
   const folder = relative(process.cwd(), root);
   const where = folder === '' ? 'run' : `in ${folder}, run`;
-  return `layerscope found no data from its Nuxt module (${relative(process.cwd(), registry)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, ${where} \`npx nuxi module add nuxt-layerscope --dev\` (or remove \`enabled: false\` from its \`layerscope\` options), then run \`npx nuxi prepare\`. Then run layerscope again.`;
+  return `layerscope found no data from its Nuxt module (${relative(process.cwd(), registry)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-* note). To use the module, ${where} \`npx nuxi module add nuxt-layerscope --dev\` (or remove \`enabled: false\` from its \`layerscope\` options), then run \`npx nuxi prepare\`. Then run layerscope again.`;
 }
 const NOTE_START = 'layerscope found no data from its Nuxt module';
 

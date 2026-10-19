@@ -40,8 +40,9 @@ npx layerscope check                 # or: npx layerscope check --prepare
 
 The module records what Nuxt resolves during `nuxi prepare`, `dev` and `build` into
 `.nuxt/layerscope/registry.json`. Without it, layerscope falls back to the generated `.d.ts`
-files, which gives the same boundary findings but cannot see overridden components (see
-[`shadowed-component`](#rules)). `npx nuxt-layerscope check` works without installing anything.
+files, which gives the same boundary findings but cannot see overridden components, layouts or
+route middleware (see [`shadowed-component`](#rules)). `npx nuxt-layerscope check` works without
+installing anything.
 Set `layerscope: { enabled: false }` in `nuxt.config` to turn the module off.
 
 | Option              | Description                                                                                                          |
@@ -284,6 +285,9 @@ module records them on `nuxi prepare`, `dev` and `build`; use one place or the o
   uses the higher-priority one. The overridden component is reported with both paths, so
   accidental overrides are visible. Needs the module; with the `.d.ts` fallback the rule reports
   nothing and says so on stderr.
+- `shadowed-layout` and `shadowed-middleware` (warnings): two layers have a layout or a route
+  middleware with the same name, and Nuxt uses only one of them. The file that Nuxt does not use
+  is reported. Needs the module, as `shadowed-component` does.
 
 ## How it works
 
