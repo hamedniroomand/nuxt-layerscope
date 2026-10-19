@@ -1,16 +1,18 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 
 import { findExports, findTypeExports } from 'mlly';
-import { dirname, join, parse, relative } from 'pathe';
+import { dirname, join, parse, relative, resolve } from 'pathe';
 
-import { resolveFile } from '#src/resolve/file.ts';
 import type { Layer } from '#src/types.ts';
+import { isFile } from '#src/utils/fs.ts';
 
 const SCRIPT = /\.(?:ts|js|mjs|mts)$/u;
 const COMPONENT = /\.(?:vue|jsx|tsx)$/u;
 const INDEX = /^index\.(?:ts|js|mjs|mts)$/u;
 /** The file kinds that unimport reads in a dir that Nuxt scans for auto-imports. */
 const SCANNED = /\.(?:mts|cts|ts|tsx|mjs|cjs|js|jsx)$/u;
+// `FileExtensionLookup` of unimport 6.5, in its order.
+const STAR_EXTENSIONS = ['mts', 'cts', 'ts', 'tsx', 'mjs', 'cjs', 'js', 'jsx'];
 
 /** The dirs that Nuxt scans for auto-imports by default, in each source dir of a layer. */
 export const AUTO_IMPORT_DIRS = {
@@ -69,10 +71,28 @@ export interface FileNames {
   names: string[];
   /**
    * True when the file has an `export * from` without a name whose module is not read: a package,
-   * an alias or a path that does not resolve. It also comes up from a file that the file
-   * re-exports with a relative `export * from`.
+   * an alias, or a path whose file unimport does not find. It also comes up from a file that the
+   * file re-exports with a relative `export * from`.
    */
   unknown: boolean;
+}
+
+/**
+ * The file of a relative `export * from`, found as unimport 6.5 finds it: `x.<ext>` and then
+ * `x/index.<ext>` for each extension in its order, and then the path as written. `null` when this
+ * lookup finds nothing, and the file then counts as unknown. unimport then tries a resolve from the
+ * cwd, which layerscope does not copy; unknown is the safe side.
+ */
+function starFile(path: string): string | null {
+  for (const ext of STAR_EXTENSIONS) {
+    const file = [`${path}.${ext}`, join(path, `index.${ext}`)].find(candidate =>
+      isFile(candidate),
+    );
+    if (file !== undefined) {
+      return file;
+    }
+  }
+  return isFile(path) ? path : null;
 }
 
 /**
@@ -93,7 +113,7 @@ export function exportedNames(file: string, seen = new Set<string>()): FileNames
   for (const entry of [...findExports(source), ...findTypeExports(source)]) {
     if (entry.type === 'star' && entry.name === undefined) {
       const spec = entry.specifier ?? '';
-      const inner = spec.startsWith('.') ? resolveFile(join(dirname(file), spec)) : null;
+      const inner = spec.startsWith('.') ? starFile(resolve(dirname(file), spec)) : null;
       const nested = inner === null ? { names: [], unknown: true } : exportedNames(inner, seen);
       names.push(...nested.names);
       unknown ||= nested.unknown;
@@ -139,8 +159,8 @@ function filesUnder(dir: string, pattern: RegExp): string[] {
 export interface LayerNames {
   imports: Map<string, string>;
   /**
-   * True when a file in the dirs has an `export * from` a package, an alias or a path that does not
-   * resolve. Its names are not read.
+   * True when a file in the dirs has an `export * from` a package, an alias, or a path whose file
+   * unimport does not find. Its names are not read.
    */
   unknownImports: boolean;
   components: Map<string, string>;

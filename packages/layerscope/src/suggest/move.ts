@@ -67,8 +67,9 @@ export function destinationOf(
 /**
  * Whether a name of the moved file is already in the target, in another file. Then the file
  * would be a second one with that name, and Nuxt would use one of them. The names are the ones
- * in the dirs that Nuxt scans by default. A file with an `export * from` a package, an alias or a
- * path that does not resolve can export any name, so it conflicts with any name on the other side.
+ * in the dirs that Nuxt scans by default. A file with an `export * from` a package, an alias, or a
+ * path whose file unimport does not find can export any name, so it conflicts with any name on the
+ * other side.
  */
 function hasNameConflict(context: Context, file: string, target: Layer, dest: string): boolean {
   let names = context.names.get(target.name);
@@ -86,12 +87,17 @@ function hasNameConflict(context: Context, file: string, target: Layer, dest: st
       dest.startsWith(`${join(target[kind], dir)}/`),
     ),
   );
+  // Outside the auto-import dirs the names do not matter, so the file is not read.
+  if (!sources) {
+    return clash;
+  }
   const moved = exportedNames(file);
-  const conflict =
+  return (
+    clash ||
     moved.names.some(name => names.imports.has(name)) ||
     (moved.unknown && (names.imports.size > 0 || names.unknownImports)) ||
-    (names.unknownImports && moved.names.length > 0);
-  return clash || (sources && conflict);
+    (names.unknownImports && moved.names.length > 0)
+  );
 }
 
 function moveTargets(context: Context, file: string, owner: Layer, uses: Edge[]): MoveTarget[] {
