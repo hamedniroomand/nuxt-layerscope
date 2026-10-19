@@ -80,7 +80,9 @@
             "layer-cycle",
             "layer-internal",
             "unresolved-reference",
-            "shadowed-component"
+            "shadowed-component",
+            "shadowed-layout",
+            "shadowed-middleware"
           ]
         },
         "severity": { "enum": ["error", "warn"] },
@@ -193,7 +195,9 @@
             "layer-cycle",
             "layer-internal",
             "unresolved-reference",
-            "shadowed-component"
+            "shadowed-component",
+            "shadowed-layout",
+            "shadowed-middleware"
           ]
         },
         "file": { "type": "string" },

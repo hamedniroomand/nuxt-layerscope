@@ -64,6 +64,26 @@ exit 1
               "defaultConfiguration": {
                 "level": "warning"
               }
+            },
+            {
+              "id": "shadowed-layout",
+              "shortDescription": {
+                "text": "A layout is replaced by a layout of the same name in another layer."
+              },
+              "helpUri": "https://layerscope.kitdev.space/reference/rules#shadowed-layout",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
+            },
+            {
+              "id": "shadowed-middleware",
+              "shortDescription": {
+                "text": "A route middleware is replaced by a middleware of the same name in another layer."
+              },
+              "helpUri": "https://layerscope.kitdev.space/reference/rules#shadowed-middleware",
+              "defaultConfiguration": {
+                "level": "warning"
+              }
             }
           ]
         }

@@ -98,6 +98,8 @@ export async function writeOutsideRegistry(
     layers: await layersForModule(project.root, options),
     components: [],
     shadowedComponents: [],
+    shadowedLayouts: [],
+    shadowedMiddleware: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),

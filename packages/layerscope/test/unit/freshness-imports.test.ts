@@ -30,6 +30,8 @@ function registryWith(
     layers: [],
     components: [],
     shadowedComponents: [],
+    shadowedLayouts: [],
+    shadowedMiddleware: [],
     componentDirs: [],
     importDirs,
     nuxtIgnore,

@@ -1,4 +1,6 @@
 warn shadowed-component npm:app/components/BaseCard.vue:1:1 BaseCard (npm) → theme:app/components/BaseCard.vue
+warn shadowed-layout base:app/layouts/default.vue:1:1 default (base) → root:app/layouts/default.vue
+warn shadowed-middleware base:app/middleware/auth.ts:1:1 auth (base) → root:app/middleware/auth.ts
 error layer-boundary shop:app/components/ShopPanel.vue:3:15 usePrice (shop) → npm:app/composables/usePrice.ts
 error layer-boundary shop:app/components/ShopPanel.vue:4:14 useRemoteFlag (shop) → remote:app/composables/useRemoteFlag.ts
 error layer-boundary shop:app/components/ShopPanel.vue:8:3 BaseCard (shop) → theme:app/components/BaseCard.vue

@@ -2,6 +2,7 @@ import { join, relative } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
 import { analyze } from '#src/analyze/index.ts';
+import { REGISTRY_ONLY_RULES } from '#src/config/rules.ts';
 import { readRegistry } from '#src/registry/read.ts';
 import type { AnalyzeResult, Finding } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
@@ -44,7 +45,7 @@ describe.each([
     await expect(snapshot(result)).toMatchFileSnapshot(`snapshots/findings/${name}.txt`);
   });
 
-  it('are the same from the .d.ts fallback, except for shadowed and island components', async () => {
+  it('are the same from the .d.ts fallback, except for the shadowed-* rules and island components', async () => {
     const [registry, types] = await Promise.all([
       analyze({ rootDir: root, source: 'registry' }),
       analyze({ rootDir: root, source: 'types' }),
@@ -55,7 +56,7 @@ describe.each([
     const hasIsland = registry.findings.some(f => islands.has(f.symbol));
     const comparable = (f: Finding): Finding => (hasIsland ? { ...f, suggestion: undefined } : f);
     const expected = registry.findings.filter(
-      f => f.rule !== 'shadowed-component' && !islands.has(f.symbol),
+      f => !REGISTRY_ONLY_RULES.includes(f.rule) && !islands.has(f.symbol),
     );
     expect(types.findings.map(f => comparable(f))).toEqual(expected.map(f => comparable(f)));
   });

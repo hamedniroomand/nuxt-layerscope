@@ -7,7 +7,9 @@ export type RuleName =
   | 'layer-cycle'
   | 'layer-internal'
   | 'unresolved-reference'
-  | 'shadowed-component';
+  | 'shadowed-component'
+  | 'shadowed-layout'
+  | 'shadowed-middleware';
 
 export type PresetName = 'layered' | 'stacked' | 'features';
 

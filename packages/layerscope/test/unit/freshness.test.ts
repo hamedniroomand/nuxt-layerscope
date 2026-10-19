@@ -26,6 +26,8 @@ function registryWith(componentDirs: RegistryComponentDir[]): Registry {
     layers: [],
     components: [],
     shadowedComponents: [],
+    shadowedLayouts: [],
+    shadowedMiddleware: [],
     componentDirs,
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),

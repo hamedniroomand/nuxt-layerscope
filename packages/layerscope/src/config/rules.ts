@@ -6,13 +6,23 @@ export const DEFAULT_SEVERITY: Record<RuleName, Severity> = {
   'layer-internal': 'error',
   'unresolved-reference': 'warn',
   'shadowed-component': 'warn',
+  'shadowed-layout': 'warn',
+  'shadowed-middleware': 'warn',
 };
 
 /**
  * The rules that read data that only the registry of the Nuxt module has. With the `.d.ts`
  * source, they report nothing.
  */
-export const REGISTRY_ONLY_RULES: readonly RuleName[] = ['shadowed-component'];
+export const REGISTRY_ONLY_RULES: readonly RuleName[] = [
+  'shadowed-component',
+  'shadowed-layout',
+  'shadowed-middleware',
+];
+
+/** Shown when a registry-only rule is on and the run has no registry. */
+export const SHADOWED_NEEDS_REGISTRY =
+  'The shadowed-* rules need the registry of the Nuxt module, and this run has no registry, so these rules reported nothing. If "nuxt-layerscope" is not in "modules" in nuxt.config, add it. Then run "nuxi prepare".';
 
 /** Accepted in config for forward compatibility; not implemented yet. */
 export const RESERVED_RULES = new Set(['unused-symbol']);

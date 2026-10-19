@@ -28,6 +28,8 @@ function emptyRegistry(): Registry {
     layers: [],
     components: [],
     shadowedComponents: [],
+    shadowedLayouts: [],
+    shadowedMiddleware: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),

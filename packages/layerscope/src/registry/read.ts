@@ -64,6 +64,24 @@ function isComponent(entry: unknown): boolean {
   );
 }
 
+/** The check of a stored shadowed layout or middleware: the type of each field. */
+function isShadowedFiles(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.every(entry => {
+      if (typeof entry !== 'object' || entry === null) {
+        return false;
+      }
+      const record = entry as Record<string, unknown>;
+      return (
+        typeof record.name === 'string' &&
+        typeof record.file === 'string' &&
+        typeof record.shadowedBy === 'string'
+      );
+    })
+  );
+}
+
 /** The check of a stored component dir: the type of each field, as for an auto-import dir. */
 function isComponentDir(entry: unknown): boolean {
   if (typeof entry !== 'object' || entry === null) {
@@ -79,30 +97,26 @@ function isComponentDir(entry: unknown): boolean {
   );
 }
 
-export function readRegistry(buildDir: string): RegistryRead {
-  const file = join(buildDir, REGISTRY_FILE);
-  if (!existsSync(file)) {
-    return { kind: 'missing', file };
-  }
-  const registry = readJson(file) as { version?: unknown };
-  if (registry.version !== REGISTRY_VERSION) {
-    return { kind: 'incompatible', file, version: registry.version };
-  }
-  const { layers } = registry as { layers?: unknown };
-  // The file is stale when it lacks a field that this release needs: `modulesDir` or `publicDir`
-  // of a layer (layerscope would scan the Nuxt modules and public dirs), `importDirs` and
-  // `nuxtIgnore` (the stale check of new files), or `global` of a component and `nuxtContent`
-  // (the "possibly used" marks of `unused`). The file can also be damaged, for example a bad
-  // entry in `componentDirs`. Its layers are not used, but its `config` is kept: the `layerscope`
-  // options of `nuxt.config` are only stored there.
-  const { components, componentDirs, importDirs, nuxtIgnore, nuxtContent } = registry as {
-    components?: unknown;
-    componentDirs?: unknown;
-    importDirs?: unknown;
-    nuxtIgnore?: unknown;
-    nuxtContent?: unknown;
-  };
-  const complete =
+/**
+ * Whether the file has each field that this release needs, with the right type: `modulesDir` or
+ * `publicDir` of a layer (layerscope would scan the Nuxt modules and public dirs), `importDirs`
+ * and `nuxtIgnore` (the stale check of new files), `global` of a component and `nuxtContent` (the
+ * "possibly used" marks of `unused`), and `shadowedLayouts` and `shadowedMiddleware` (the shadowed
+ * rules). A file without one is stale, or damaged, for example with a bad entry in
+ * `componentDirs`.
+ */
+function isComplete(registry: Record<string, unknown>): boolean {
+  const {
+    layers,
+    components,
+    componentDirs,
+    importDirs,
+    nuxtIgnore,
+    nuxtContent,
+    shadowedLayouts,
+    shadowedMiddleware,
+  } = registry;
+  return (
     Array.isArray(layers) &&
     layers.every(
       (layer: Record<string, unknown> | null) =>
@@ -113,12 +127,28 @@ export function readRegistry(buildDir: string): RegistryRead {
     Array.isArray(components) &&
     components.every(entry => isComponent(entry)) &&
     typeof nuxtContent === 'boolean' &&
+    isShadowedFiles(shadowedLayouts) &&
+    isShadowedFiles(shadowedMiddleware) &&
     isNuxtIgnore(nuxtIgnore) &&
     (importDirs === null ||
-      (Array.isArray(importDirs) && importDirs.every(entry => isImportDir(entry))));
+      (Array.isArray(importDirs) && importDirs.every(entry => isImportDir(entry))))
+  );
+}
+
+export function readRegistry(buildDir: string): RegistryRead {
+  const file = join(buildDir, REGISTRY_FILE);
+  if (!existsSync(file)) {
+    return { kind: 'missing', file };
+  }
+  const registry = readJson(file) as { version?: unknown };
+  if (registry.version !== REGISTRY_VERSION) {
+    return { kind: 'incompatible', file, version: registry.version };
+  }
+  // The layers of a stale file are not used, but its `config` is kept: the `layerscope` options of
+  // `nuxt.config` are only stored there.
   const config = recordedOptions((registry as { config?: unknown }).config, file);
   return {
-    kind: complete ? 'ok' : 'stale',
+    kind: isComplete(registry as Record<string, unknown>) ? 'ok' : 'stale',
     file,
     registry: { ...(registry as Registry), config },
   };

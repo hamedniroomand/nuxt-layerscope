@@ -54,7 +54,7 @@ export function moduleNote(result: AnalyzeResult, flags: InitFlags): string[] {
   const root = relative(currentDir(), result.rootDir);
   const where = root === '' ? 'run' : `in ${root}, run`;
   return [
-    `layerscope found no data from its Nuxt module (${relative(currentDir(), registryFile)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-component note). To use the module, ${where} \`npx nuxi module add nuxt-layerscope --dev\` (or remove \`enabled: false\` from its \`layerscope\` options), then run \`npx nuxi prepare\`. Then run layerscope again.`,
+    `layerscope found no data from its Nuxt module (${relative(currentDir(), registryFile)}), so it reads symbols from the types that Nuxt generates. Some checks need the module (see the shadowed-* note). To use the module, ${where} \`npx nuxi module add nuxt-layerscope --dev\` (or remove \`enabled: false\` from its \`layerscope\` options), then run \`npx nuxi prepare\`. Then run layerscope again.`,
   ];
 }
 

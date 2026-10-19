@@ -95,6 +95,8 @@ export function makeRegistry(
       global: false,
       priority: 0,
     })),
+    shadowedLayouts: [],
+    shadowedMiddleware: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),

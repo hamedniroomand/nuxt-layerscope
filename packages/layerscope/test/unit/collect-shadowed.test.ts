@@ -10,6 +10,8 @@ function fakeNuxt(): { nuxt: Nuxt; call: (name: string, ...args: unknown[]) => P
   const hooks = new Map<string, Handler[]>();
   const nuxt = {
     _version: '0.0.0',
+    // Nuxt adds the app when the build starts. Without it, the module records no layouts.
+    apps: {},
     options: {
       _layers: [],
       // `hasNuxtModule()` of kit reads both lists.

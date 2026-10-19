@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vite-plus/test';
 
+import { SHADOWED_NEEDS_REGISTRY } from '#src/config/rules.ts';
 import { compareByPosition } from '#src/rules/compare.ts';
 import { runRules } from '#src/rules/index.ts';
-import { SHADOWED_NEEDS_REGISTRY } from '#src/rules/shadowed-component.ts';
 import { makeEdge, makeFinding } from '#test/factories.ts';
 
 const noOwner = (): null => null;
+
+const SHADOWED_OFF = {
+  'shadowed-component': 'off',
+  'shadowed-layout': 'off',
+  'shadowed-middleware': 'off',
+} as const;
 
 describe('compareByPosition', () => {
   it('orders by file, line, column, rule and symbol', () => {
@@ -41,12 +47,12 @@ describe('runRules', () => {
       layers: [],
       rootDir: '/',
       ownerOf: noOwner,
-      config: { ...config, rules: { 'shadowed-component': 'off' } },
+      config: { ...config, rules: SHADOWED_OFF },
     });
     expect(findings.map(f => f.rule)).toEqual(['unresolved-reference', 'layer-boundary']);
   });
 
-  it('notes that shadowed-component could not run without a registry', async () => {
+  it('notes that the shadowed-* rules could not run without a registry', async () => {
     const input = {
       edges: [],
       unresolved: [],
@@ -57,7 +63,10 @@ describe('runRules', () => {
       config,
     };
     expect((await runRules(input)).notes).toEqual([SHADOWED_NEEDS_REGISTRY]);
-    const off = { ...config, rules: { 'shadowed-component': 'off' as const } };
+    const off = { ...config, rules: SHADOWED_OFF };
     expect((await runRules({ ...input, config: off })).notes).toEqual([]);
+    // One registry-only rule that is on is enough for the note.
+    const one = { ...config, rules: { ...SHADOWED_OFF, 'shadowed-layout': 'warn' as const } };
+    expect((await runRules({ ...input, config: one })).notes).toEqual([SHADOWED_NEEDS_REGISTRY]);
   });
 });
