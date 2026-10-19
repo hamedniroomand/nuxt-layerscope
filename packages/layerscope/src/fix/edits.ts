@@ -42,12 +42,22 @@ export function rewrite(
     const quote = text.charAt(offset);
     const end = offset + 1 + update.specifier.length;
     const next = update.updated ?? '';
+    // A quote in a template attribute, as Vue reads it: `:x="import(&quot;./a&quot;)"`.
+    if (quote === '&') {
+      return {
+        update,
+        reason: `uses an HTML character reference, such as &quot;, as the quote of "${update.specifier}". Use ' or " as the quote, then run the command again.`,
+      };
+    }
     if (
       !QUOTES.has(quote) ||
       !text.startsWith(update.specifier, offset + 1) ||
       text.charAt(end) !== quote
     ) {
-      return { update, reason: `does not have "${update.specifier}" now. Run the command again.` };
+      return {
+        update,
+        reason: `does not have "${update.specifier}" at the place that layerscope found. If the file changed, run the command again. If not, layerscope cannot find the exact place of this import() in the template, for example when the same expression has an HTML character reference. Move the import() into a function in <script setup>, then run the command again.`,
+      };
     }
     if (UNSAFE.test(next) || next.includes(quote) || (quote === '`' && next.includes('${'))) {
       return {

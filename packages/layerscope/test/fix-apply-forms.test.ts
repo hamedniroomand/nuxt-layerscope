@@ -34,6 +34,10 @@ const FORMS: Record<string, [file: string, text: string]> = {
     'layers/admin/app/pages/f.vue',
     '<template>\n  <div />\n</template>\n\n<script setup lang="ts">\nimport {\n  useCart,\n} from \'%\';\nuseCart();\n</script>\n',
   ],
+  'an import() in a template on its own line': [
+    'layers/admin/app/pages/f.vue',
+    '<template>\n  <button @click="() => import(\n    \'%\'\n  )" />\n</template>\n',
+  ],
   'a file with CRLF line ends': [
     'layers/admin/app/utils/f.ts',
     "import { useCart } from '%';\r\nexport const a = useCart;\r\n",
@@ -59,5 +63,18 @@ describe('fix --apply writes the specifier in each form of an import', () => {
     vi.restoreAllMocks();
     silence();
     expect(await run(checkArgs(root))).toBe(EXIT_CLEAN);
+  });
+});
+
+describe('fix --apply and an import() in a template', () => {
+  it('rewrites the import, not a string before it with the same text', async () => {
+    const root = cartProject([WEB, SHARED, ADMIN, SHOP]);
+    const file = 'layers/admin/app/pages/f.vue';
+    const text = `<template>\n  <p>{{ "import('${OLD}')" }}</p>\n  <button @click="() => import('%')" />\n</template>\n`;
+    write(root, file, text.replaceAll('%', OLD));
+    commitAll(root);
+    silence();
+    expect(await run(applyArgs(root))).toBe(EXIT_CLEAN);
+    expect(read(root, file)).toBe(text.replaceAll('%', NEW));
   });
 });

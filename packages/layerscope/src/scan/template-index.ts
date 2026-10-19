@@ -13,8 +13,11 @@ export interface TemplateElement {
 
 export interface TemplateIndex {
   elements: TemplateElement[];
-  /** `[start, end]` offsets of template expressions. */
-  expressions: [number, number][];
+  /**
+   * `[start, end, content]` of template expressions. `content` is the text that Vue reads, with each
+   * HTML character reference decoded.
+   */
+  expressions: [number, number, string][];
 }
 
 /** The subset of compiler-core's template AST this module reads. */
@@ -36,6 +39,10 @@ const ELEMENT = 1;
 const INTERPOLATION = 5;
 const ATTRIBUTE = 6;
 const DIRECTIVE = 7;
+
+function textOf(node: VueAstNode): string {
+  return typeof node.content === 'string' ? node.content : '';
+}
 
 function isBind(prop: VueAstNode, arg: string): boolean {
   return prop.name === 'bind' && prop.arg?.content === arg;
@@ -78,7 +85,7 @@ function indexElement(node: VueAstNode, index: TemplateIndex): void {
       dynamicIs ||= isBind(prop, 'is');
       for (const part of [prop.exp, prop.arg]) {
         if (part !== undefined) {
-          index.expressions.push([part.loc.start.offset, part.loc.end.offset]);
+          index.expressions.push([part.loc.start.offset, part.loc.end.offset, textOf(part)]);
         }
       }
     }
@@ -100,7 +107,8 @@ export function indexTemplate(root: VueAstNode): TemplateIndex {
       indexElement(node, index);
     }
     if (node.type === INTERPOLATION && typeof node.content === 'object') {
-      index.expressions.push([node.content.loc.start.offset, node.content.loc.end.offset]);
+      const { loc } = node.content;
+      index.expressions.push([loc.start.offset, loc.end.offset, textOf(node.content)]);
     }
     for (const child of node.children ?? []) {
       visit(child);
