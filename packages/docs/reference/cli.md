@@ -142,9 +142,11 @@ hook.
   `2` with a hint and does not guess. Fetch the base branch (`actions/checkout` with
   `fetch-depth: 0`), or pass `--since <ref>`.
 - **Skipped files.** A selected file that is not a source file of a layer (outside the project, in
-  no layer, ignored) is skipped, and a note on stderr counts them. Nothing selected exits `0` at
-  once with a short message, before the project loads; `--format json`, `sarif` and `gitlab` still
-  print a valid, empty report.
+  no layer, ignored) is skipped, and a note on stderr counts them. When nothing is selected, `check`
+  prints a short message and reads the config and the baseline. It exits `2` when it cannot read
+  them. Otherwise it exits `0`. It does not check the project, and it does not need `.nuxt`. With
+  `--format json`, `sarif` or `gitlab`, it prints a valid report with no findings. When the project
+  cannot be read, the report also has a note that says why.
 - **The baseline** applies. A fixed baseline entry is reported only for a selected file, because a
   check of some files cannot tell whether the entries of other files are fixed. A `layer-cycle` entry
   is never reported as fixed in such a run, because it is not tied to one file.

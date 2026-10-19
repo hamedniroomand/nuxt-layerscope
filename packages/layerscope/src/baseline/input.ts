@@ -64,6 +64,20 @@ export function baselinePath(rootDir: string, name: string): string {
   return resolve(rootDir, name);
 }
 
+/**
+ * The baseline file of a run, or `undefined` for none: `true` is the file of the config, or the
+ * default; `false` is none; a string is the file that the option names. See `AnalyzeOptions.baseline`.
+ */
+export function baselineFileOf(
+  option: string | boolean | undefined,
+  config: LayerscopeConfig,
+  rootDir: string,
+): string | undefined {
+  const name =
+    option === true ? baselineName(undefined, config) : option === false ? undefined : option;
+  return name === undefined ? undefined : baselinePath(rootDir, name);
+}
+
 /** The check for the public API: it must not name a command line flag. */
 export function assertBaselineName(name: unknown): void {
   if (typeof name !== 'string' || name === '') {
