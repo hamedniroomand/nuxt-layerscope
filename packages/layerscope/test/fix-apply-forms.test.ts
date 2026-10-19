@@ -15,8 +15,9 @@ const FORMS: Record<string, [file: string, text: string]> = {
     'layers/admin/app/utils/f.ts',
     "import {\n  useCart,\n  // a comment\n} from '%';\nexport const a = useCart;\n",
   ],
-  'a re-export': ['layers/admin/app/utils/f.ts', "export { useCart } from '%';\n"],
-  'an export of everything': ['layers/admin/app/utils/f.ts', "export * from '%';\n"],
+  // Not in an auto-import dir: there, the re-export would give admin the name useCart too.
+  'a re-export': ['layers/admin/app/lib/f.ts', "export { useCart } from '%';\n"],
+  'an export of everything': ['layers/admin/app/lib/f.ts', "export * from '%';\n"],
   'a dynamic import': ['layers/admin/app/utils/f.ts', "export const load = () => import('%');\n"],
   'a dynamic import with a template string': [
     'layers/admin/app/utils/f.ts',
