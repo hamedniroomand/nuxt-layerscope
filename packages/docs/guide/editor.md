@@ -150,7 +150,8 @@ layerscope check --watch
 
 - A change to one file analyzes that file again. Adding or deleting a file analyzes all files
   again, because it can change what an import resolves to. A change to a config file or to the
-  generated files in `.nuxt` also gives a full run.
+  generated files in `.nuxt` also gives a full run. When you change `buildDir`, restart
+  `check --watch`.
 - It does not run `nuxi prepare` for you. After you add or delete a component or an auto-import
   file, run `nuxi prepare`. If a new file is missing from the generated files, or the generated
   files name a file that is gone, each run stops with an error that names that file. The watch
