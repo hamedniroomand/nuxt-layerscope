@@ -10,7 +10,7 @@ const SCRIPT = /\.(?:ts|js|mjs|mts)$/u;
 const COMPONENT = /\.(?:vue|jsx|tsx)$/u;
 const INDEX = /^index\.(?:ts|js|mjs|mts)$/u;
 /** The file kinds that unimport reads in a dir that Nuxt scans for auto-imports. */
-const SCANNED = /\.(?:mts|cts|ts|tsx|mjs|cjs|js|jsx)$/u;
+export const SCANNED = /\.(?:mts|cts|ts|tsx|mjs|cjs|js|jsx)$/u;
 // `FileExtensionLookup` of unimport 6.5, in its order.
 const STAR_EXTENSIONS = ['mts', 'cts', 'ts', 'tsx', 'mjs', 'cjs', 'js', 'jsx'];
 

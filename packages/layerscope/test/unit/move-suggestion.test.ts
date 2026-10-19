@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test';
 
 import { addSuggestions } from '#src/suggest/index.ts';
-import type { Edge, Finding, LayerscopeConfig } from '#src/types.ts';
+import type { Edge, Finding, Layer, LayerscopeConfig, Suggestion } from '#src/types.ts';
 import { makeEdge, makeFinding, makeLayer } from '#test/factories.ts';
 
 const layers = ['admin', 'shop', 'web', 'shared'].map(name => makeLayer(name, `/app/${name}`));
@@ -34,6 +34,22 @@ const finding = (fromLayer: string, overrides: Partial<Finding> = {}): Finding =
     file: `/app/${fromLayer}/a.ts`,
     ...overrides,
   });
+
+/** The suggestion for a file in `web` that `admin` and `shop` use with an explicit import. */
+async function importSuggestion(file: string, target: Layer[]): Promise<Suggestion | undefined> {
+  const edge = (fromLayer: string): Edge =>
+    makeEdge({ ...use(fromLayer), kind: 'import', symbol: 'cart', to: file });
+  const found = (fromLayer: string): Finding =>
+    finding(fromLayer, { symbol: 'cart', target: file });
+  const [first] = await addSuggestions(
+    [found('admin'), found('shop')],
+    [edge('admin'), edge('shop')],
+    target,
+    config,
+    '/app',
+  );
+  return first.suggestion;
+}
 
 describe('the message of a move', () => {
   it('says which layers may depend on the target, without a count that mixes the owner in', async () => {
@@ -148,5 +164,20 @@ describe('a target with its own import dirs', () => {
     expect(first.suggestion?.action).not.toBe('move');
     const [normal] = await addSuggestions(findings, edges, layers, config, '/app');
     expect(normal.suggestion?.action).toBe('move');
+  });
+
+  it('is not a target for a script file that only explicit imports use', async () => {
+    const own = layers.map(layer =>
+      layer.name === 'shared' ? { ...layer, defaultImports: false } : layer,
+    );
+    // `stores` can be one of the auto-import dirs of the target, so the names could conflict.
+    expect((await importSuggestion('/app/web/stores/cart.ts', own))?.action).not.toBe('move');
+    expect((await importSuggestion('/app/web/stores/cart.ts', layers))?.file).toBe(
+      '/app/shared/stores/cart.ts',
+    );
+    // Nuxt does not read the exports of a component file in an auto-import dir.
+    expect((await importSuggestion('/app/web/stores/Cart.vue', own))?.file).toBe(
+      '/app/shared/stores/Cart.vue',
+    );
   });
 });
