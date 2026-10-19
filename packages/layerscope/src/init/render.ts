@@ -1,7 +1,9 @@
 import { LayerscopeError } from '#src/errors.ts';
+import type { LayerRule } from '#src/types.ts';
 import { plural } from '#src/utils/strings.ts';
 
 import { DEFAULT_BUILD_DIR } from './build-dir.ts';
+import { keptLayers } from './old-config.ts';
 import type { OldConfig } from './old-config.ts';
 import type { AllowedEdge } from './types.ts';
 
@@ -24,22 +26,6 @@ function oneLine(text: string): string {
 
 function property(name: string): string {
   return /^[A-Za-z_$][\w$]*$/u.test(name) ? name : quote(name);
-}
-
-function layerLines(layer: string, edges: AllowedEdge[]): string[] {
-  if (edges.length === 0) {
-    return [`    ${property(layer)}: { allow: [] },`];
-  }
-  return [
-    `    ${property(layer)}: {`,
-    '      allow: [',
-    ...edges.map(
-      edge =>
-        `        ${quote(edge.to)}, // ${plural(edge.count, 'reference')}, e.g. ${oneLine(edge.example)}`,
-    ),
-    '      ],',
-    '    },',
-  ];
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -82,6 +68,34 @@ export function renderValue(value: unknown, path: string, file: string, indent =
   );
 }
 
+/** The kept keys of the layer come first, then the `allow` list of the edges that exist today. */
+function layerLines(
+  layer: string,
+  edges: AllowedEdge[],
+  keys: LayerRule | undefined,
+  file: string,
+): string[] {
+  const kept = Object.entries(keys ?? {}).map(
+    ([key, value]) =>
+      `      ${key}: ${renderValue(value, `layers.${layer}.${key}`, file, '      ')},`,
+  );
+  if (edges.length === 0 && kept.length === 0) {
+    return [`    ${property(layer)}: { allow: [] },`];
+  }
+  const allow =
+    edges.length === 0
+      ? ['      allow: [],']
+      : [
+          '      allow: [',
+          ...edges.map(
+            edge =>
+              `        ${quote(edge.to)}, // ${plural(edge.count, 'reference')}, e.g. ${oneLine(edge.example)}`,
+          ),
+          '      ],',
+        ];
+  return [`    ${property(layer)}: {`, ...kept, ...allow, '    },'];
+}
+
 /** The keys of the old config that `init` does not write itself, in their order. */
 function keptLines(kept: OldConfig | undefined): string[] {
   if (kept === undefined) {
@@ -95,6 +109,7 @@ function keptLines(kept: OldConfig | undefined): string[] {
 /**
  * `buildDir` is written only when it is not `.nuxt`, so `check` reads the same directory. `kept` is
  * the old config: its keys other than `layers` and `buildDir` come first, with the same values.
+ * Each layer in `layers` keeps its old `expose`, `path` and `source`.
  */
 export function renderConfig(
   layers: string[],
@@ -102,6 +117,7 @@ export function renderConfig(
   buildDir = DEFAULT_BUILD_DIR,
   kept?: OldConfig,
 ): string {
+  const keptRules = keptLayers(kept);
   return [
     "import { defineConfig } from 'nuxt-layerscope';",
     '',
@@ -114,6 +130,8 @@ export function renderConfig(
       layerLines(
         layer,
         edges.filter(edge => edge.from === layer),
+        keptRules.get(layer),
+        kept?.file ?? '',
       ),
     ),
     '  },',

@@ -34,7 +34,7 @@ describe('init --force and the keys of the old config', () => {
     });
     const { code, stderr } = await init(root, '--force');
     expect(code).toBe(EXIT_CLEAN);
-    expect(stderr).not.toContain('expose, path and source');
+    expect(stderr).not.toContain('gone');
     const { layers, ...rest } = await loadConfig(root, 'layerscope.config.mjs');
     expect(rest).toEqual(KEPT);
     expect(Object.keys(layers ?? {})).not.toContain('gone');
@@ -48,18 +48,6 @@ describe('init --force and the keys of the old config', () => {
     expect(code).toBe(EXIT_CLEAN);
     expect(stdout).toContain("  baseline: 'ci/base.json',");
     expect(read(root, 'layerscope.config.mjs')).toBe(old);
-  });
-
-  it('says that the expose, path and source keys of the layers are not kept', async () => {
-    const root = project({
-      files: [['layerscope.config.mjs', configWith({ root: { expose: ['useA'] } })]],
-    });
-    const { code, stderr } = await init(root, '--force');
-    expect(code).toBe(EXIT_CLEAN);
-    expect(stderr).toContain(
-      'The new config does not keep the expose, path and source keys of the layers in ',
-    );
-    expect(stderr).toContain('layerscope.config.mjs. Add them again by hand.');
   });
 });
 
@@ -146,6 +134,50 @@ describe('init --force, its analysis and its baseline', () => {
     expect(layers?.admin).toBeDefined();
     expect(layers?.root).toEqual({ allow: [] });
   });
+});
+
+/** The admin layer has a file that its `expose` list does not name, and root uses that file. */
+const HIDDEN: [string, string][] = [
+  ['nuxt.config.ts', "export default defineNuxtConfig({ extends: ['./layers/admin'] });\n"],
+  ['layers/admin/nuxt.config.ts', 'export default defineNuxtConfig({});\n'],
+  ['layers/admin/app/utils/hidden.ts', 'export const useHidden = () => 1;\n'],
+  [
+    'app/utils/uses-hidden.ts',
+    "import { useHidden } from '../../layers/admin/app/utils/hidden';\nexport const x = useHidden;\n",
+  ],
+];
+
+describe('init --force and the expose, path and source keys of the layers', () => {
+  it('keeps them for a layer that path names, and uses them in the analysis and the baseline', async () => {
+    const old =
+      "export default { layers: { back: { path: 'layers/admin', expose: ['useAdmin'] }, gone: { allow: [] } } };\n";
+    const root = project({ files: [...HIDDEN, ['layerscope.config.mjs', old]] });
+    const { code, stderr } = await init(root, '--force', '--baseline');
+    expect(code).toBe(EXIT_CLEAN);
+    expect(stderr).not.toContain('gone');
+    const { layers } = await loadConfig(root, 'layerscope.config.mjs');
+    expect(Object.keys(layers ?? {}).toSorted()).toEqual(['back', 'root']);
+    expect(layers?.back).toEqual({ expose: ['useAdmin'], path: 'layers/admin', allow: [] });
+    expect(read(root, 'layerscope-baseline.json')).toContain('"layer-internal"');
+    expect(await cli('check', root, '--strict-baseline')).toBe(EXIT_CLEAN);
+  });
+
+  it.each([
+    ['expose', "{ expose: ['useA'] }", 'Unknown layer "gone" in config. Known layers: '],
+    ['path', "{ path: 'layers/none' }", 'layers.gone.path: no Nuxt layer at '],
+    ['source', "{ source: 'github:org/none' }", 'layers.gone.source: no layer cloned from '],
+  ])(
+    'stops, and writes nothing, when it does not find a layer that has %s',
+    async (_key, rule, message) => {
+      const old = `export default { layers: { gone: ${rule} } };\n`;
+      const root = project({ files: [...HIDDEN, ['layerscope.config.mjs', old]] });
+      const { code, stderr } = await init(root, '--force', '--baseline');
+      expect(code).toBe(EXIT_ERROR);
+      expect(stderr).toContain(message);
+      expect(read(root, 'layerscope.config.mjs')).toBe(old);
+      expect(existsSync(join(root, 'layerscope-baseline.json'))).toBe(false);
+    },
+  );
 });
 
 describe('renderValue', () => {

@@ -11,7 +11,9 @@ import type { AnalyzeResult } from '#src/types.ts';
 import { currentDir } from '#src/utils/fs.ts';
 
 function alreadyExists(file: string, isConfig: boolean): LayerscopeError {
-  const keys = isConfig ? ' --force keeps its keys other than layers.' : '';
+  const keys = isConfig
+    ? ' --force keeps its keys, and the expose, path and source of each layer.'
+    : '';
   return new LayerscopeError(
     `${relative(currentDir(), file)} already exists. To keep it, run with --dry-run and copy what you need. To write it again, run with --force.${keys}`,
   );

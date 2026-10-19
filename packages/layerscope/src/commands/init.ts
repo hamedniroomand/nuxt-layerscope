@@ -116,7 +116,7 @@ export function registerInit(cli: Cli): void {
       .option('--baseline', 'Also write a baseline for the findings the config still reports')
       .option(
         '--force',
-        'Replace an existing config or baseline. A new config keeps the old keys other than layers',
+        'Replace an existing config or baseline. A new config keeps the old keys, and the expose, path and source of each layer',
       )
       .option('--dry-run', 'Print the proposal and write nothing'),
   ).action(init);

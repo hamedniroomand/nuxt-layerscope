@@ -60,7 +60,7 @@ describe('init with a layerscope.config.mjs', () => {
     const { code, stderr } = await init(root);
     expect(code).toBe(EXIT_ERROR);
     expect(stderr).toContain(
-      `${shown(root, 'layerscope.config.mjs')} already exists. To keep it, run with --dry-run and copy what you need. To write it again, run with --force. --force keeps its keys other than layers.`,
+      `${shown(root, 'layerscope.config.mjs')} already exists. To keep it, run with --dry-run and copy what you need. To write it again, run with --force. --force keeps its keys, and the expose, path and source of each layer.`,
     );
   });
 

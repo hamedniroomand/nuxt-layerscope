@@ -40,21 +40,26 @@ for the usual shape: shared code in root, and feature layers that use only root.
 under such a preset, so it fits only when root uses no other layer. When a plain preset
 fits, `init` suggests it, because it is stricter.
 
-| Option            | Default               | Description                                                                                                                                   |
-| ----------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `--config <file>` | `layerscope.config.*` | Where to write the config, relative to the root. By default, the existing config file, or `layerscope.config.ts` when there is none           |
-| `--baseline`      |                       | Also write a baseline with the findings still reported: the file that the `baseline` key of the config names, else `layerscope-baseline.json` |
-| `--force`         |                       | Replace the existing config file or baseline. The new config keeps the keys of the old one, except `layers`                                   |
-| `--dry-run`       |                       | Print the proposal and write nothing                                                                                                          |
+| Option            | Default               | Description                                                                                                                                                                                  |
+| ----------------- | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--config <file>` | `layerscope.config.*` | Where to write the config, relative to the root. By default, the existing config file, or `layerscope.config.ts` when there is none                                                          |
+| `--baseline`      |                       | Also write a baseline with the findings still reported: the file that the `baseline` key of the config names, else `layerscope-baseline.json`                                                |
+| `--force`         |                       | Replace the existing config file or baseline. The new config keeps the keys of the old one, and the `expose`, `path` and `source` of each layer. It writes a new `allow` list for each layer |
+| `--dry-run`       |                       | Print the proposal and write nothing                                                                                                                                                         |
 
 Also takes `--prepare`, `--source` and `--verbose`. Without `--force`, `init` exits `2` when a
 config already exists, or a baseline with `--baseline`.
 
-With `--force`, `init` writes a new `layers` map. It keeps the other keys of the old config, such as
-`baseline`, `rules` and `ignore`. It keeps their values, not the comments or the code that made
-them. A value that is not plain data, such as a function or a RegExp, stops `init --force` with an
-error. Remove that key, then run init again. The old `layers` map is replaced, also its `expose`,
-`path` and `source` keys. When the old config does not load, `init` replaces it and prints a note.
+With `--force`, `init` writes a new `allow` list for each layer. It keeps the other keys of the old
+config, such as `baseline`, `rules` and `ignore`. It keeps their values, not the comments or the
+code that made them. A value that is not plain data, such as a function or a RegExp, stops
+`init --force` with an error. Remove that key, then run init again. `init` keeps the `expose`,
+`path` and `source` keys of each old layer that has them. `init` uses these keys in its analysis. So
+it names the layers as `check` does. The baseline has the findings that `expose` causes. When a
+layer in the old config has one of these keys and `init` cannot find that layer, `init` stops and
+writes nothing. Remove or fix that entry, and run `init` again. An old layer entry that has none of
+these keys, for example one that has only `allow`, is not kept. When the old config does not load,
+`init` replaces it and prints a note.
 
 With `--force`, `init` replaces the config file that exists, whatever its name. Without `--config`,
 it does not write a second config.
@@ -66,8 +71,8 @@ is not `.nuxt`, the new config sets `buildDir`, so `check` reads the same place.
 `init` also exits `2` when the `layerscope` key of `nuxt.config` sets options, and it names the keys.
 It reads the data that Nuxt recorded in the build directory. After you move the keys to `layerscope.config.ts`
 and remove the key, run `layerscope init --prepare --dry-run` and copy the layers and edges you
-need. `init --force --prepare` keeps the keys that you moved, except `layers`, which it writes
-again.
+need. `init --force --prepare` keeps the keys that you moved, and the `expose`, `path` and `source`
+of each layer. It writes a new `allow` list for each layer.
 
 With `--source auto` (the default), `init` prints a note on stderr after the summary when it finds
 no registry file in Nuxt's build directory (by default `.nuxt/layerscope/registry.json`). The module
