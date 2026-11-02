@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.2
+
+### Patch Changes
+
+- [`7fff46d`](https://github.com/hamedniroomand/nuxt-layerscope/commit/7fff46d16bc3b76db3718768d1be780c441ccf12) - `fix --apply` now moves a file into a new directory with git 2.56 and later. Before, it stopped with "destination directory does not exist".
+
 ## 0.12.1
 
 ### Patch Changes
