@@ -164,8 +164,13 @@ export function gitMoveProblem(
     return null;
   } catch (error) {
     const { stderr } = error as { stderr?: unknown };
-    return typeof stderr === 'string' && stderr.includes('sparse-checkout')
-      ? { sparse: true, line: 'the target is outside the sparse checkout.' }
+    if (typeof stderr === 'string' && stderr.includes('sparse-checkout')) {
+      return { sparse: true, line: 'the target is outside the sparse checkout.' };
+    }
+    // Git 2.56 and later ask for the target dir even with `-n`. The apply step makes the dir
+    // before the real `git mv`, so a missing dir is not a refusal.
+    return typeof stderr === 'string' && stderr.includes('destination directory does not exist')
+      ? null
       : { sparse: false, line: firstLine(error) };
   }
 }
