@@ -281,7 +281,8 @@ kbd {
   flex: none;
 }
 
-.VPSidebarItem .text {
+/* VitePress wraps the item text in a <bdi>, so the icon and the title sit in that element. */
+.VPSidebarItem .text > bdi {
   display: flex;
   align-items: flex-start;
 }
