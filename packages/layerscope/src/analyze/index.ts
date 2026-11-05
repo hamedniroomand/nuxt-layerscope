@@ -1,7 +1,7 @@
 import { applyBaselineFile, assertBaselineName, baselineFileOf } from '#src/baseline/index.ts';
 import { compareByPosition } from '#src/rules/compare.ts';
 import { runRules } from '#src/rules/index.ts';
-import { withRootNotes, withSuggestions } from '#src/suggest/index.ts';
+import { scannedDirs, withRootNotes, withSuggestions } from '#src/suggest/index.ts';
 import type { AnalyzeResult, LayerscopeConfig, SourceOption } from '#src/types.ts';
 
 import { analyzeProject, fileLists } from './cache.ts';
@@ -68,11 +68,13 @@ type EnvironmentFields = 'source' | 'sourceFile' | 'recordedFile';
  */
 function fromEnvironment(
   environment: Awaited<ReturnType<typeof loadProject>>,
-): Pick<AnalyzeResult, EnvironmentFields | 'globalComponentFiles' | 'nuxtContent'> {
+): Pick<AnalyzeResult, EnvironmentFields | 'globalComponentFiles' | 'nuxtContent' | 'scanned'> {
+  const scanned = scannedDirs(environment.registry);
   return {
     source: environment.source,
     sourceFile: environment.sourceFile,
     recordedFile: environment.recordedFile,
+    ...(scanned === undefined ? {} : { scanned }),
     ...runtimeComponents(
       environment.registry,
       environment.env.table.components,

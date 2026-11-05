@@ -203,8 +203,22 @@ export interface UnreadFile {
   reason: string;
 }
 
+/** What the registry recorded of the scans of Nuxt and Nitro. The move suggestions read it. */
+export interface ScannedDirs {
+  /** Each dir that Nuxt or Nitro scans for auto-imports, with the files that the scan matched. */
+  importDirs: { dir: string; files: string[] }[];
+  /** Each component that Nuxt found, the shadowed ones too. */
+  components: { name: string; file: string }[];
+}
+
 export interface AnalyzeResult {
   rootDir: string;
+  /**
+   * The dirs and the components of the registry. Missing without the registry: the move
+   * suggestions then read only the default dirs of Nuxt. When the module could not read the dirs,
+   * `importDirs` is empty and the components are still there.
+   */
+  scanned?: ScannedDirs;
   /** Layers whose `allow` the preset gave, because the config gave them none. */
   presetLayers?: string[];
   /** The project options as the config set them, before a preset adds its own `layers`. */

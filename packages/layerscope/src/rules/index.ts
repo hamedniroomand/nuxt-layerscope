@@ -1,7 +1,7 @@
 import { REGISTRY_ONLY_RULES, ruleSeverity, SHADOWED_NEEDS_REGISTRY } from '#src/config/rules.ts';
 import type { OwnerLookup } from '#src/nuxt/owner.ts';
 import type { Registry } from '#src/registry/schema.ts';
-import { addSuggestions } from '#src/suggest/index.ts';
+import { addSuggestions, scannedDirs } from '#src/suggest/index.ts';
 import type { Edge, Finding, Layer, LayerscopeConfig } from '#src/types.ts';
 import { yieldTurn } from '#src/utils/yield.ts';
 
@@ -53,6 +53,8 @@ export async function runRules(
           config,
           input.rootDir,
           input.presetLayers,
+          null,
+          scannedDirs(input.registry),
         );
   return { findings, notes };
 }

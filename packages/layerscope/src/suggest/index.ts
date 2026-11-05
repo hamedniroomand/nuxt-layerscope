@@ -5,6 +5,7 @@ import type {
   Finding,
   Layer,
   LayerscopeConfig,
+  ScannedDirs,
   Suggestion,
 } from '#src/types.ts';
 import { createYielder } from '#src/utils/yield.ts';
@@ -107,7 +108,8 @@ async function suggestAll(context: Context, findings: Finding[]): Promise<Findin
  * batches. Give it the findings that `check` shows, so the counts agree with them. The moves are
  * checked together, and the ones that would break `check` are dropped. The findings of a dropped
  * move get the suggestion that is not a move, and the other suggestions stay as they are.
- * `baseline` is what the baseline accepts: a cycle that it accepts is not new.
+ * `baseline` is what the baseline accepts: a cycle that it accepts is not new. `scanned` is what
+ * the registry recorded of the scans of Nuxt: the moves test names against it.
  */
 export async function addSuggestions(
   findings: Finding[],
@@ -117,8 +119,17 @@ export async function addSuggestions(
   rootDir: string,
   presetLayers: string[] = [],
   baseline: Baseline | null = null,
+  scanned?: ScannedDirs,
 ): Promise<Finding[]> {
-  const context = createContext(findings, edges, layers, config, rootDir, presetLayers);
+  const context = createContext(
+    findings,
+    edges,
+    layers,
+    config,
+    rootDir,
+    presetLayers,
+    scanned ?? null,
+  );
   context.baseline = baseline;
   const result = await suggestAll(context, findings);
   const dropped = droppedMoves(context, result);
@@ -148,6 +159,7 @@ export async function withSuggestions(result: AnalyzeResult): Promise<AnalyzeRes
     result.rootDir,
     result.presetLayers,
     result.baseline === undefined ? null : acceptedBy(result.baseline, result.rootDir),
+    result.scanned,
   );
   return {
     ...result,
@@ -159,3 +171,4 @@ export async function withSuggestions(result: AnalyzeResult): Promise<AnalyzeRes
 }
 
 export { rootAllowNotes, withRootNotes } from './root-hint.ts';
+export { scannedDirs } from './names.ts';

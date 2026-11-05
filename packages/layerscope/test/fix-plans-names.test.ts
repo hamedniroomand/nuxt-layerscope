@@ -1,11 +1,16 @@
 import { join } from 'pathe';
 import { describe, expect, it } from 'vite-plus/test';
 
+import { layerFromPath } from '#src/nuxt/layer-factory.ts';
+import type { Registry, RegistryImportDir } from '#src/registry/schema.ts';
+import { makeRegistry } from '#test/factories.ts';
+
 import {
   LAYERS,
   autoImportProject,
   cartProject,
   declareCart,
+  empty,
   page,
   plan,
   write,
@@ -186,5 +191,90 @@ describe('the server utils of the target', () => {
       'export const useCart = () => 2;\n',
     );
     expect(await movedTo(root, path)).toBeUndefined();
+  });
+});
+
+const EXTRA = "extra: { path: 'layers/extra', allow: [] }";
+
+/** A registry of the module for the layers under `layers/`, with the given auto-import dirs. */
+function writeRegistry(
+  root: string,
+  names: string[],
+  dirs: Pick<RegistryImportDir, 'dir' | 'files'>[],
+  overrides: Partial<Registry> = {},
+): void {
+  const registry: Registry = {
+    ...makeRegistry(),
+    layers: names.map(name => layerFromPath(name, join(root, 'layers', name))),
+    importDirs: dirs.map(entry => ({ ...entry, globs: [entry.dir], scanner: 'nuxt' })),
+    ...overrides,
+  };
+  write(root, '.nuxt/layerscope/registry.json', JSON.stringify(registry));
+}
+
+const NAMES = ['web', 'shared', 'admin', 'shop'];
+const BUTTON = {
+  name: 'BaseButton',
+  mode: 'all',
+  island: false,
+  global: false,
+  priority: 0,
+} as const;
+
+/** A project where admin and shop use the component `BaseButton` of web, through the registry. */
+function buttonProject(): { root: string; web: string } {
+  const root = cartProject([...LAYERS, EXTRA]);
+  const web = join(root, 'layers/web/app/components/BaseButton.vue');
+  write(root, 'layers/web/app/components/BaseButton.vue', '<template><button /></template>\n');
+  const template = '<template><BaseButton /></template>\n';
+  write(root, 'layers/admin/app/pages/admin.vue', template);
+  write(root, 'layers/shop/app/pages/shop.vue', template);
+  writeRegistry(root, [...NAMES, 'extra'], [], { components: [{ ...BUTTON, file: web }] });
+  return { root, web };
+}
+
+describe('the dirs of the registry', () => {
+  it('checks a destination in a dir that a layer adds with `imports.dirs`', async () => {
+    // `stores` is scanned by no default. The target has the name in its `utils` dir.
+    const root = empty(LAYERS.join(',\n'));
+    const path = 'layers/web/app/stores/cart.ts';
+    write(root, path, 'export const useCart = () => 1;\n');
+    const importCart = "import { useCart } from '../../../web/app/stores/cart';";
+    write(root, 'layers/admin/app/pages/admin.vue', page(importCart, 'useCart();'));
+    write(root, 'layers/shop/app/pages/shop.vue', page(importCart, 'useCart();'));
+    write(root, 'layers/shared/app/utils/cart.ts', 'export const useCart = () => 2;\n');
+    writeRegistry(root, NAMES, []);
+    expect(await plan(root)).toHaveLength(1);
+    writeRegistry(root, NAMES, [{ dir: join(root, 'layers/shared/app/stores'), files: [] }]);
+    expect(await plan(root)).toEqual([]);
+    // A dir given as a glob is matched by its path before the glob.
+    writeRegistry(root, NAMES, [{ dir: join(root, 'layers/shared/app/**/stores'), files: [] }]);
+    expect(await plan(root)).toEqual([]);
+  });
+
+  it('reads the names in a dir that a third layer adds with `imports.dirs`', async () => {
+    const root = cartProject([...LAYERS, EXTRA]);
+    const file = join(root, 'layers/extra/app/stores/cart.ts');
+    write(root, 'layers/extra/app/stores/cart.ts', 'export const useCart = () => 3;\n');
+    writeRegistry(root, [...NAMES, 'extra'], []);
+    expect(await plan(root)).toHaveLength(1);
+    writeRegistry(
+      root,
+      [...NAMES, 'extra'],
+      [{ dir: join(root, 'layers/extra/app/stores'), files: [file] }],
+    );
+    expect(await plan(root)).toEqual([]);
+  });
+
+  it('reads the components that a third layer has in a dir of `components`', async () => {
+    const { root, web } = buttonProject();
+    expect(await plan(root)).toHaveLength(1);
+    const extra = join(root, 'layers/extra/app/widgets/BaseButton.vue');
+    write(root, 'layers/extra/app/widgets/BaseButton.vue', '<template><i /></template>\n');
+    writeRegistry(root, [...NAMES, 'extra'], [], {
+      components: [{ ...BUTTON, file: web }],
+      shadowedComponents: [{ ...BUTTON, file: extra, shadowedBy: web }],
+    });
+    expect(await plan(root)).toEqual([]);
   });
 });
