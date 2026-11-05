@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.12.3
+
+### Patch Changes
+
+- [#272](https://github.com/hamedniroomand/nuxt-layerscope/pull/272) [`bc1b213`](https://github.com/hamedniroomand/nuxt-layerscope/commit/bc1b2134c671add96946c37b8df7af550bb04a2b) - With the registry, the move suggestions now read the names in the auto-import and component dirs that each layer adds with `imports.dirs` or `components`, and check a move whose destination is in such a dir. Before, a move could give a file the same name as a file in such a dir of another layer.
+
 ## 0.12.2
 
 ### Patch Changes
