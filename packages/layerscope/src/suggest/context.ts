@@ -1,11 +1,14 @@
 import type { Baseline } from '#src/baseline/index.ts';
 import { allowedLayers } from '#src/config/allow.ts';
 import { nuxtScansSrcTypes } from '#src/nuxt/kit.ts';
+import type { OwnerLookup } from '#src/nuxt/owner.ts';
+import { createOwnerLookup } from '#src/nuxt/owner.ts';
 import { isBelowRoot, isPackageLayer } from '#src/nuxt/package-layer.ts';
 import { isAllowed } from '#src/rules/layer-boundary.ts';
-import type { Edge, Finding, Layer, LayerscopeConfig } from '#src/types.ts';
+import type { Edge, Finding, Layer, LayerscopeConfig, ScannedDirs } from '#src/types.ts';
 
 import type { LayerNames } from './names.ts';
+import { withRealPaths } from './names.ts';
 
 /** Lookups for suggestions, indexed once so each finding costs no scan of every edge. */
 export interface Context {
@@ -37,6 +40,9 @@ export interface Context {
   blocked: Set<string>;
   /** The names that each layer has in the dirs that Nuxt scans, read once. */
   names: Map<string, LayerNames>;
+  /** The dirs and components of the registry; `null` without the registry. */
+  scanned: ScannedDirs | null;
+  ownerOf: OwnerLookup;
   /** The Nuxt of the project scans `types` in `srcDir` for auto-imports. */
   srcTypes: boolean;
   /** Findings by `from\0to` layer pair. */
@@ -111,6 +117,7 @@ export function createContext(
   config: LayerscopeConfig,
   rootDir: string,
   presetLayers: string[] = [],
+  scanned: ScannedDirs | null = null,
 ): Context {
   const seen = new Map<string, Set<string>>();
   for (const { fromLayer, toLayer } of edges) {
@@ -133,6 +140,8 @@ export function createContext(
     cycles: null,
     blocked: new Set(),
     names: new Map(),
+    scanned: scanned === null ? null : withRealPaths(scanned),
+    ownerOf: createOwnerLookup(layers),
     srcTypes: nuxtScansSrcTypes(rootDir),
     findingsAt: clearedByMove(findings),
     findingsFor: count(findings, finding =>

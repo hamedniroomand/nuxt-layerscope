@@ -134,10 +134,13 @@ The suggestions and their counts are made for the findings that `check` shows on
     layerscope does not read an `export * from` a package or an alias, or one whose file unimport
     does not find, such as `./y.js` for `y.ts`. Such a file can export any name. This applies to the
     moved file and to the files in the other layers. Then the move conflicts with each auto-import
-    of the other layers. layerscope reads only the default dirs of each layer. It does not read the
-    dirs that a layer adds with `imports.dirs` or `components`. So a move can give a file the same
-    name as a file in such a dir of another layer, or put a file in a dir that another layer scans.
-    Nuxt then uses only one of the two files.
+    of the other layers. With the registry, layerscope also reads the dirs that a layer adds with
+    `imports.dirs`, and the components that Nuxt found in the dirs of `components`. A move whose
+    destination is in such a dir gets the same check. A dir outside every layer is not read.
+    Without the registry, layerscope reads only
+    the default dirs of each layer. So a move can then give a file the same name as a file in such
+    a dir of another layer, or put a file in a dir that another layer scans. Nuxt then uses only
+    one of the two files.
   - Nuxt finds the file in the target (see below).
 
   If several layers qualify, the one with the shortest `allow` list wins. After all moves are

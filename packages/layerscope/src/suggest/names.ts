@@ -3,8 +3,9 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { findExports, findTypeExports } from 'mlly';
 import { dirname, join, parse, relative, resolve } from 'pathe';
 
-import type { Layer } from '#src/types.ts';
-import { isFile } from '#src/utils/fs.ts';
+import type { Registry } from '#src/registry/schema.ts';
+import type { Layer, ScannedDirs } from '#src/types.ts';
+import { isFile, realPath } from '#src/utils/fs.ts';
 
 const SCRIPT = /\.(?:ts|js|mjs|mts)$/u;
 const COMPONENT = /\.(?:vue|jsx|tsx)$/u;
@@ -171,28 +172,86 @@ export interface LayerNames {
   components: Map<string, string>;
 }
 
-/** The auto-imports and components that a layer has in the dirs that Nuxt scans by default. */
-export function namesOfLayer(layer: Layer, srcTypes: boolean): LayerNames {
+/**
+ * What the registry recorded. `undefined` without the registry. When the module could not read the
+ * auto-import dirs, only the components are there.
+ */
+export function scannedDirs(registry: Registry | null): ScannedDirs | undefined {
+  if (registry === null) {
+    return undefined;
+  }
+  return {
+    importDirs: (registry.importDirs ?? []).map(({ dir, files }) => ({ dir, files })),
+    components: [...registry.components, ...registry.shadowedComponents].map(({ name, file }) => ({
+      name,
+      file,
+    })),
+  };
+}
+
+/** The path of a scan dir before its first glob character, and the rest. */
+export function splitGlob(dir: string): [head: string, rest: string] {
+  const at = dir.search(/[*?[{]/u);
+  return at < 0 ? [dir, ''] : [dir.slice(0, at), dir.slice(at)];
+}
+
+/** The real path of a scan dir. A glob keeps its glob part, and its path part gets the real path. */
+function realDir(dir: string): string {
+  const [head, rest] = splitGlob(dir);
+  if (rest === '') {
+    return realPath(head);
+  }
+  const base = head.endsWith('/') ? head.slice(0, -1) : dirname(head);
+  return `${realPath(base)}${head.slice(base.length)}${rest}`;
+}
+
+/** The scans with real paths, as the layer dirs have them. Done once for the suggestions. */
+export function withRealPaths(scanned: ScannedDirs): ScannedDirs {
+  return {
+    importDirs: scanned.importDirs.map(({ dir, files }) => ({
+      dir: realDir(dir),
+      files: files.map(file => realPath(file)),
+    })),
+    components: scanned.components.map(({ name, file }) => ({ name, file: realPath(file) })),
+  };
+}
+
+/** The part of the registry scans that one layer holds. */
+export interface LayerScan {
+  /** The files in the auto-import dirs. */
+  files: string[];
+  components: { name: string; file: string }[];
+}
+
+/**
+ * The auto-imports and components that a layer has in the dirs that Nuxt scans by default, and in
+ * `scan`, the dirs that the registry recorded for it. A name in both counts once.
+ */
+export function namesOfLayer(layer: Layer, srcTypes: boolean, scan?: LayerScan): LayerNames {
   const imports = new Map<string, string>();
   let unknownImports = false;
+  const files = [...(scan?.files ?? [])];
   for (const [kind, dirs] of Object.entries(autoImportDirs(srcTypes)) as [DirKind, string[]][]) {
     for (const dir of dirs) {
       // Nitro reads `server/utils` at any depth. Nuxt reads only the top level of the other dirs.
       const root = join(layer[kind], dir);
-      const files = kind === 'serverDir' ? filesUnder(root, SCANNED) : scriptFiles(root);
-      for (const file of files) {
-        const exported = exportedNames(file);
-        unknownImports ||= exported.unknown;
-        for (const name of exported.names) {
-          imports.set(name, file);
-        }
-      }
+      files.push(...(kind === 'serverDir' ? filesUnder(root, SCANNED) : scriptFiles(root)));
+    }
+  }
+  for (const file of new Set(files)) {
+    const exported = exportedNames(file);
+    unknownImports ||= exported.unknown;
+    for (const name of exported.names) {
+      imports.set(name, file);
     }
   }
   const components = new Map<string, string>();
   const root = join(layer.srcDir, 'components');
   for (const file of filesUnder(root, COMPONENT)) {
     components.set(componentName(relative(root, file)), file);
+  }
+  for (const { name, file } of scan?.components ?? []) {
+    components.set(name, file);
   }
   return { imports, unknownImports, components };
 }

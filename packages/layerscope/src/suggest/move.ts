@@ -8,8 +8,15 @@ import { compareStrings, plural } from '#src/utils/strings.ts';
 
 import type { Context } from './context.ts';
 import { isMoveTarget, permits } from './context.ts';
-import type { DirKind, LayerNames } from './names.ts';
-import { componentName, exportedNames, isAutoImported, namesOfLayer, SCANNED } from './names.ts';
+import type { DirKind, LayerNames, LayerScan } from './names.ts';
+import {
+  componentName,
+  exportedNames,
+  isAutoImported,
+  namesOfLayer,
+  SCANNED,
+  splitGlob,
+} from './names.ts';
 
 const DIR_KINDS: DirKind[] = ['srcDir', 'serverDir', 'sharedDir'];
 
@@ -67,13 +74,45 @@ export function destinationOf(
   return join(target[found.kind], inside);
 }
 
+/**
+ * The files and components of the registry scans that the layer holds. A file outside every
+ * layer, for example one that a Nuxt module adds, is not read: a move between layers does not
+ * change which file wins against it.
+ */
+function scanOfLayer(context: Context, layer: Layer): LayerScan | undefined {
+  const { scanned } = context;
+  if (scanned === null) {
+    return undefined;
+  }
+  const held = (file: string): boolean => context.ownerOf(file)?.name === layer.name;
+  return {
+    files: scanned.importDirs.flatMap(entry => entry.files).filter(file => held(file)),
+    components: scanned.components.filter(component => held(component.file)),
+  };
+}
+
 function namesOf(context: Context, layer: Layer): LayerNames {
   let names = context.names.get(layer.name);
   if (names === undefined) {
-    names = namesOfLayer(layer, context.srcTypes);
+    names = namesOfLayer(layer, context.srcTypes, scanOfLayer(context, layer));
     context.names.set(layer.name, names);
   }
   return names;
+}
+
+/**
+ * Whether the destination is a script file in a dir of the registry scans. A dir given as a glob
+ * is matched by its path before the first glob character.
+ */
+// shortcut: a dir that Nuxt reads at the top level also matches a sub dir. That only compares more names. Match the globs when it blocks a wanted move.
+function isScanned(context: Context, dest: string): boolean {
+  return (
+    SCANNED.test(dest) &&
+    (context.scanned?.importDirs ?? []).some(({ dir }) => {
+      const [head, rest] = splitGlob(dir);
+      return rest === '' ? dest.startsWith(`${dir}/`) : dest.startsWith(head);
+    })
+  );
 }
 
 /**
@@ -82,8 +121,10 @@ function namesOf(context: Context, layer: Layer): LayerNames {
  * the two files conflict. In a third layer, Nuxt then uses only one of the files, for most dirs the
  * one of the layer that comes first, so after the move the file of the third layer could take the
  * name. layerscope does not compare the layer order. The names are the ones in the dirs that Nuxt
- * scans by default. A file with an `export * from` a package, an alias, or a path whose file
- * unimport does not find can export any name, so it conflicts with any name in the other layers.
+ * scans by default, and in the dirs that the registry recorded, when there is one. A destination
+ * in a recorded dir gets the check too. A file with an `export * from` a package, an alias, or a
+ * path whose file unimport does not find can export any name, so it conflicts with any name in
+ * the other layers.
  */
 function hasNameConflict(
   context: Context,
@@ -99,11 +140,12 @@ function hasNameConflict(
       ? componentName(relative(components, dest))
       : null;
   const clash = name !== null && others.some(layer => namesOf(context, layer).components.has(name));
-  const sources = DIR_KINDS.some(kind =>
-    (['composables', 'utils', 'types'] as const).some(dir =>
-      dest.startsWith(`${join(target[kind], dir)}/`),
-    ),
-  );
+  const sources =
+    DIR_KINDS.some(kind =>
+      (['composables', 'utils', 'types'] as const).some(dir =>
+        dest.startsWith(`${join(target[kind], dir)}/`),
+      ),
+    ) || isScanned(context, dest);
   // Outside the auto-import dirs the names do not matter, so the file is not read.
   if (!sources) {
     return clash;
