@@ -217,7 +217,7 @@ importers:
         version: 3.5.44(typescript@6.0.3)
     devDependencies:
       nuxt-layerscope:
-        specifier: ^0.12.2
+        specifier: ^0.12.3
         version: link:../../packages/layerscope
 
   packages/devtools-client:
