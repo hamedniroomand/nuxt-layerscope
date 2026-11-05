@@ -214,8 +214,9 @@ export interface ScannedDirs {
 export interface AnalyzeResult {
   rootDir: string;
   /**
-   * The dirs and the components of the registry. Missing without the registry, or when the module
-   * could not read the dirs: the move suggestions then read only the default dirs of Nuxt.
+   * The dirs and the components of the registry. Missing without the registry: the move
+   * suggestions then read only the default dirs of Nuxt. When the module could not read the dirs,
+   * `importDirs` is empty and the components are still there.
    */
   scanned?: ScannedDirs;
   /** Layers whose `allow` the preset gave, because the config gave them none. */
