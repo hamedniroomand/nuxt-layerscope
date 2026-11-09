@@ -42,6 +42,19 @@ export default defineConfig({
       ['link', { rel: 'canonical', href: url }],
       ['meta', { property: 'og:url', content: url }],
     );
+    // Google reads the site name in search results mainly from WebSite data on the home page.
+    if (pageData.relativePath === 'index.md') {
+      (pageData.frontmatter.head as unknown[]).push([
+        'script',
+        { type: 'application/ld+json' },
+        JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'WebSite',
+          name: TITLE,
+          url: SITE,
+        }),
+      ]);
+    }
   },
 
   buildEnd({ outDir }) {
