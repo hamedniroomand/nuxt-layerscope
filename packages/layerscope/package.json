@@ -70,7 +70,7 @@
     "@vue/compiler-sfc": "^3.5.44",
     "@vue/shared": "3.5.44",
     "cac": "^7.1.0",
-    "chokidar": "^5.0.0",
+    "chokidar": "^6.0.0",
     "globals": "^17.13.0",
     "h3": "^1.15.11",
     "ignore": "^7.0.14",
