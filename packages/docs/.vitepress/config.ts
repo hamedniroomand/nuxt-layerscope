@@ -27,6 +27,7 @@ export default defineConfig({
   base: BASE,
   cleanUrls: true,
   lastUpdated: true,
+  srcExclude: ['scripts/**'],
   sitemap: { hostname: SITE },
 
   transformPageData(pageData) {
