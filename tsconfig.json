@@ -4,7 +4,9 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "allowImportingTsExtensions": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    // Type-check imports of the package against its source. The types in a local `dist` declare `layerscope` again.
+    "paths": { "nuxt-layerscope": ["./packages/layerscope/src/index.ts"] }
   },
   "exclude": ["**/node_modules", "**/.project", "**/.nuxt", "**/.output", "**/dist"]
 }
