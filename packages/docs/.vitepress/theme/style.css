@@ -1,7 +1,7 @@
 /*
- * Brand: Nuxt green into cyan, zinc neutrals, Geist and Geist Mono. The logo in public/logo.svg
- * and public/og-image.png use the same two colors. Green is the only accent; cyan is only for
- * the logo gradient and soft background light.
+ * Brand: indigo on an ink base, Bricolage Grotesque for headings, Geist and Geist Mono for text
+ * and code. Each sample layer (shared, auth, shop, admin) has one fixed color on every page.
+ * --ls-green and --ls-cyan keep their names from the first theme: they are the two glow colors.
  *
  * Shape rule: controls have an 8px radius, panels (code, cards, tables) have 12px, the hero
  * frame has 16px.
@@ -12,34 +12,40 @@
   --vp-font-family-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', monospace;
   --vp-layout-max-width: 1440px;
 
-  --ls-green: #00dc82;
-  --ls-cyan: #22d3ee;
+  --ls-green: #6c61ff;
+  --ls-cyan: #2fd4c0;
+  --ls-font-display: 'Bricolage Grotesque', var(--vp-font-family-base);
+  --ls-layer-shared: #008f5f;
+  --ls-layer-auth: #1577b8;
+  --ls-layer-shop: #9a3fd0;
+  --ls-layer-admin: #a86a00;
+  --ls-violation: #d42a41;
   --ls-radius: 12px;
   --ls-radius-control: 8px;
   --ls-radius-frame: 16px;
   --ls-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --ls-shadow-control: 0 1px 2px rgb(16 24 22 / 0.06), 0 0 0 1px rgb(16 24 22 / 0.04);
-  --ls-shadow-panel: 0 1px 2px rgb(9 30 25 / 0.04), 0 8px 24px -12px rgb(9 30 25 / 0.1);
-  --ls-shadow-lift: 0 2px 4px rgb(9 30 25 / 0.04), 0 18px 40px -16px rgb(9 50 35 / 0.22);
+  --ls-shadow-panel: 0 1px 2px rgb(20 18 60 / 0.04), 0 8px 24px -12px rgb(20 18 60 / 0.1);
+  --ls-shadow-lift: 0 2px 4px rgb(20 18 60 / 0.04), 0 18px 40px -16px rgb(40 30 110 / 0.22);
   --ls-shadow-frame:
-    0 1px 0 rgb(255 255 255 / 0.6) inset, 0 40px 80px -32px rgb(9 50 35 / 0.32),
-    0 12px 24px -12px rgb(9 30 25 / 0.12);
+    0 1px 0 rgb(255 255 255 / 0.6) inset, 0 40px 80px -32px rgb(40 30 110 / 0.32),
+    0 12px 24px -12px rgb(20 18 60 / 0.12);
 
-  --vp-c-bg: #fcfcfc;
-  --vp-c-bg-alt: #f6f7f7;
-  --vp-c-bg-soft: #f1f3f3;
+  --vp-c-bg: #f8f7fc;
+  --vp-c-bg-alt: #f2f0f9;
+  --vp-c-bg-soft: #eceaf5;
   --vp-c-bg-elv: #ffffff;
-  --vp-c-text-1: #121414;
-  --vp-c-text-2: #3d4245;
-  --vp-c-text-3: #6b7176;
-  --vp-c-divider: #e6e8e9;
-  --vp-c-border: #d8dcde;
-  --vp-c-gutter: #eceeee;
+  --vp-c-text-1: #17162b;
+  --vp-c-text-2: #44435c;
+  --vp-c-text-3: #6b6a85;
+  --vp-c-divider: #e4e2f0;
+  --vp-c-border: #d3d1e5;
+  --vp-c-gutter: #eae8f4;
 
-  --vp-c-brand-1: #007a46;
-  --vp-c-brand-2: #006b3d;
-  --vp-c-brand-3: #00c775;
-  --vp-c-brand-soft: rgb(0 200 120 / 10%);
+  --vp-c-brand-1: #4a3fe0;
+  --vp-c-brand-2: #3a30c4;
+  --vp-c-brand-3: #5b50f0;
+  --vp-c-brand-soft: rgb(91 80 240 / 10%);
 
   --vp-c-tip-1: var(--vp-c-brand-1);
   --vp-c-tip-2: var(--vp-c-brand-2);
@@ -58,45 +64,51 @@
   --vp-local-search-highlight-text: var(--vp-c-brand-1);
 
   --vp-button-brand-border: transparent;
-  --vp-button-brand-text: #03140c;
+  --vp-button-brand-text: #ffffff;
   --vp-button-brand-bg: var(--ls-green);
   --vp-button-brand-hover-border: transparent;
-  --vp-button-brand-hover-text: #03140c;
-  --vp-button-brand-hover-bg: #1ee895;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-bg: #7b71ff;
   --vp-button-brand-active-border: transparent;
-  --vp-button-brand-active-text: #03140c;
-  --vp-button-brand-active-bg: #00c775;
+  --vp-button-brand-active-text: #ffffff;
+  --vp-button-brand-active-bg: #5b50f0;
 }
 
 .dark {
   --ls-shadow-control: 0 0 0 1px rgb(255 255 255 / 0.06), 0 1px 2px rgb(0 0 0 / 0.4);
   --ls-shadow-panel: 0 0 0 1px rgb(255 255 255 / 0.02), 0 12px 32px -16px rgb(0 0 0 / 0.6);
-  --ls-shadow-lift: 0 0 0 1px rgb(52 232 160 / 0.08), 0 20px 48px -20px rgb(0 0 0 / 0.8);
+  --ls-shadow-lift: 0 0 0 1px rgb(169 164 255 / 0.08), 0 20px 48px -20px rgb(0 0 0 / 0.8);
   --ls-shadow-frame:
     0 1px 0 rgb(255 255 255 / 0.06) inset, 0 40px 100px -30px rgb(0 0 0 / 0.9),
     0 0 0 1px rgb(255 255 255 / 0.02);
 
-  --vp-c-bg: #0b0d0e;
-  --vp-c-bg-alt: #0e1112;
-  --vp-c-bg-soft: #151a1b;
-  --vp-c-bg-elv: #121617;
-  --vp-c-text-1: #eef0f0;
-  --vp-c-text-2: #c4c9cb;
-  --vp-c-text-3: #8c9397;
-  --vp-c-divider: #1f2527;
-  --vp-c-border: #2b3235;
-  --vp-c-gutter: #1f2527;
+  --ls-layer-shared: #2fe0a0;
+  --ls-layer-auth: #4fb8f5;
+  --ls-layer-shop: #d48bff;
+  --ls-layer-admin: #f5b740;
+  --ls-violation: #ff6b7d;
 
-  --vp-c-brand-1: #3ee6a3;
-  --vp-c-brand-2: #72eebd;
-  --vp-c-brand-3: #00dc82;
-  --vp-c-brand-soft: rgb(0 220 130 / 12%);
+  --vp-c-bg: #0f1024;
+  --vp-c-bg-alt: #13142c;
+  --vp-c-bg-soft: #1b1c3c;
+  --vp-c-bg-elv: #161733;
+  --vp-c-text-1: #eeeefb;
+  --vp-c-text-2: #c3c3dc;
+  --vp-c-text-3: #9090b0;
+  --vp-c-divider: #24254a;
+  --vp-c-border: #32335e;
+  --vp-c-gutter: #24254a;
+
+  --vp-c-brand-1: #a9a4ff;
+  --vp-c-brand-2: #c3bfff;
+  --vp-c-brand-3: #6c61ff;
+  --vp-c-brand-soft: rgb(108 97 255 / 12%);
 
   --vp-code-block-bg: var(--vp-c-bg-elv);
 }
 
 ::selection {
-  background: rgb(0 220 130 / 26%);
+  background: rgb(108 97 255 / 26%);
 }
 
 html {
@@ -832,15 +844,15 @@ kbd {
 
 .ls-button-brand {
   background: var(--ls-green);
-  color: #03140c;
+  color: #ffffff;
   box-shadow:
     0 1px 0 rgb(255 255 255 / 0.35) inset,
-    0 1px 2px rgb(0 80 45 / 0.25),
-    0 8px 20px -8px rgb(0 200 120 / 0.55);
+    0 1px 2px rgb(30 20 110 / 0.25),
+    0 8px 20px -8px rgb(91 80 240 / 0.55);
 }
 
 .ls-button-brand:hover {
-  background: #1ee895;
+  background: #7b71ff;
 }
 
 .ls-button-alt {
@@ -1574,7 +1586,7 @@ kbd {
   font-size: 18px;
 }
 
-/* The brand tone: green light from one corner and the layer pattern of the logo. */
+/* The brand tone: brand light from one corner and the layer pattern of the logo. */
 .ls-card-brand {
   border-color: color-mix(in srgb, var(--vp-c-brand-1) 24%, var(--vp-c-divider));
   background:

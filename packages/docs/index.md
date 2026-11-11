@@ -6,53 +6,21 @@ titleTemplate: false
 tagline: Split a Nuxt app into layers and keep them apart. layerscope resolves every auto-import, component and server util the way Nuxt does, and fails CI when a layer uses one it may not.
 
 intro:
-  title: A linter for Nuxt layer boundaries, auto-imports included.
-  tagline: layerscope resolves auto-imports, components and server utils the way Nuxt does, and fails CI when a layer crosses a boundary.
+  title: See the dependencies that nobody imports.
+  tagline: layerscope is a linter for Nuxt layer boundaries. It resolves auto-imports, components and server utils the way Nuxt does, and fails CI when a layer crosses a boundary.
   command: npx nuxi module add nuxt-layerscope --dev
   action:
     text: Get started
     link: /guide/getting-started
 ---
 
-<div class="ls-split">
-<div class="ls-split-text">
+## Change a rule and see the result
 
-## The dependencies nobody imports
+This config says which layers each layer may use. The sample app has seven references between
+its layers, and none of them is an `import` statement. Change the config, and the check runs again.
+[Read why import-based tools do not see these references](/guide/what-is-layerscope).
 
-In a Nuxt layer, most dependencies never appear as an `import`. The admin layer here uses a
-composable and a component from the web layer, and nothing in the file says so. Tools that read
-import statements see a clean file.
-
-layerscope sees both. [Read why this matters](/guide/what-is-layerscope).
-
-</div>
-<div class="ls-split-code">
-
-```vue [layers/admin/app/components/AdminPanel.vue]
-<script setup lang="ts">
-  const cart = useCart(); // from layers/web
-</script>
-
-<template>
-  <CartSummary :cart="cart" />
-  <!-- also from layers/web -->
-</template>
-```
-
-```text [npx layerscope check]
-layers/admin/app/components/AdminPanel.vue
-  2:16    error  Auto-import "useCart" crosses from layer "admin" into "web"  layer-boundary
-                 useCart → layers/web/app/composables/useCart.ts
-                 allowed for "admin": shared, auth
-  6:3     error  Component <CartSummary> crosses from layer "admin" into "web"  layer-boundary
-                 CartSummary → layers/web/app/components/CartSummary.vue
-                 allowed for "admin": shared, auth
-
-✖ 2 problems (2 errors, 0 warnings)
-```
-
-</div>
-</div>
+<BoundaryBoard />
 
 ## What it checks
 

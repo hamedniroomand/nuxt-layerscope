@@ -5,6 +5,7 @@
   import { icon } from '#theme/icons.ts';
 
   import CopyCommand from './CopyCommand.vue';
+  import ScopeLens from './ScopeLens.vue';
 
   interface Intro {
     title: string;
@@ -42,24 +43,6 @@
       </div>
     </div>
 
-    <figure class="ls-hero-shot">
-      <div class="ls-hero-frame">
-        <!-- This image is the largest paint of the page, so it does not load lazily. -->
-        <img
-          class="ls-shot-light"
-          :src="withBase('/devtools/hero-light.webp')"
-          alt="The Graph view of the Layerscope DevTools tab: five layers from root to base, three violations that run back from right to left, and the ui to shop edge selected with useCart in the side panel."
-          width="1600"
-          height="611"
-        />
-        <img
-          class="ls-shot-dark"
-          :src="withBase('/devtools/hero-dark.webp')"
-          alt="The Graph view of the Layerscope DevTools tab: five layers from root to base, three violations that run back from right to left, and the ui to shop edge selected with useCart in the side panel."
-          width="1600"
-          height="611"
-        />
-      </div>
-    </figure>
+    <ScopeLens class="ls-hero-shot" />
   </section>
 </template>
