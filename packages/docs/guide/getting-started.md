@@ -104,6 +104,11 @@ export default defineConfig({
 
 :::
 
+Try it here before you write your own. The board applies the `layer-boundary` rule to a sample
+app with these four layers:
+
+<BoundaryBoard />
+
 - A layer in `layers/<name>` is called `<name>`, and the project itself is `root`. Layers from
   `extends`, npm and git are covered in [Layers](./layers#layer-names).
 - Dependencies inside a layer, and on npm packages that are not layers, are always allowed.

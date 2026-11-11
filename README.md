@@ -9,10 +9,10 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/nuxt-layerscope"><img src="https://img.shields.io/npm/v/nuxt-layerscope?color=00dc82&label=npm" alt="npm version"></a>
-  <a href="https://www.npmjs.com/package/nuxt-layerscope"><img src="https://img.shields.io/npm/dm/nuxt-layerscope?color=00dc82&label=downloads" alt="npm downloads"></a>
-  <a href="https://www.npmjs.com/package/nuxt-layerscope"><img src="https://img.shields.io/node/v/nuxt-layerscope?color=00dc82&label=node" alt="Node version"></a>
-  <a href="https://www.npmjs.com/package/nuxt-layerscope"><img src="https://img.shields.io/npm/types/nuxt-layerscope?color=00dc82&label=types" alt="TypeScript types"></a>
+  <a href="https://www.npmjs.com/package/nuxt-layerscope"><img src="https://img.shields.io/npm/v/nuxt-layerscope?color=6c61ff&label=npm" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/nuxt-layerscope"><img src="https://img.shields.io/npm/dm/nuxt-layerscope?color=6c61ff&label=downloads" alt="npm downloads"></a>
+  <a href="https://www.npmjs.com/package/nuxt-layerscope"><img src="https://img.shields.io/node/v/nuxt-layerscope?color=6c61ff&label=node" alt="Node version"></a>
+  <a href="https://www.npmjs.com/package/nuxt-layerscope"><img src="https://img.shields.io/npm/types/nuxt-layerscope?color=6c61ff&label=types" alt="TypeScript types"></a>
   <a href="https://layerscope.kitdev.space/guide/nuxt-module"><img src="https://img.shields.io/badge/Nuxt-module-00dc82" alt="Nuxt module"></a>
   <a href="https://github.com/hamedniroomand/nuxt-layerscope/actions/workflows/ci.yml"><img src="https://github.com/hamedniroomand/nuxt-layerscope/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://codecov.io/gh/hamedniroomand/nuxt-layerscope"><img src="https://codecov.io/gh/hamedniroomand/nuxt-layerscope/graph/badge.svg" alt="coverage"></a>

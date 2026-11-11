@@ -1,5 +1,6 @@
 import type { App } from 'vue';
 
+import BoundaryBoard from './components/BoundaryBoard.vue';
 import Card from './components/Card.vue';
 import CardGroup from './components/CardGroup.vue';
 import DevToolsTour from './components/DevToolsTour.vue';
@@ -11,6 +12,7 @@ import Steps from './components/Steps.vue';
 
 /** The components that Markdown pages use without an import. */
 export function registerComponents(app: App): void {
+  app.component('BoundaryBoard', BoundaryBoard);
   app.component('Card', Card);
   app.component('CardGroup', CardGroup);
   app.component('DevToolsTour', DevToolsTour);

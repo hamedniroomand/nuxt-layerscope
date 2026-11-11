@@ -81,11 +81,11 @@ export default defineConfig({
       'link',
       {
         rel: 'stylesheet',
-        href: 'https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap',
+        href: 'https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap',
       },
     ],
     ['link', { rel: 'icon', type: 'image/svg+xml', href: `${BASE}logo.svg` }],
-    ['meta', { name: 'theme-color', content: '#00dc82' }],
+    ['meta', { name: 'theme-color', content: '#5b50f0' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:site_name', content: TITLE }],
     ['meta', { property: 'og:title', content: 'layerscope · Linter for Nuxt layer boundaries' }],
@@ -137,15 +137,21 @@ export default defineConfig({
         }
         const html = fence(tokens, index, options, env, self);
         const title = (token.meta as { title?: string } | null)?.title;
-        return title === undefined
-          ? html
-          : html
-              .replace(/^<div class="language-/u, '<div class="ls-titled language-')
-              // Escape the title, and v-pre stops Vue from reading `{{ }}` in it as a template.
-              .replace(
-                /<span class="lang">.*?<\/span>/u,
-                () => `<span class="lang" v-pre>${md.utils.escapeHtml(title)}</span>`,
-              );
+        if (title === undefined) {
+          return html;
+        }
+        // A file in a sample layer takes the color of that layer.
+        const layer = /layers\/(shared|auth|shop|admin)\//u.exec(title)?.[1];
+        const attribute = layer === undefined ? '' : ` data-layer="${layer}"`;
+        return (
+          html
+            .replace(/^<div class="language-/u, `<div${attribute} class="ls-titled language-`)
+            // Escape the title, and v-pre stops Vue from reading `{{ }}` in it as a template.
+            .replace(
+              /<span class="lang">.*?<\/span>/u,
+              () => `<span class="lang" v-pre>${md.utils.escapeHtml(title)}</span>`,
+            )
+        );
       };
     },
   },

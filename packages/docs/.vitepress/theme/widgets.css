@@ -1,0 +1,418 @@
+/* Headings use the display face. Body text and code keep Geist. */
+.vp-doc :is(h1, h2, h3),
+.ls-hero-title,
+.VPNavBarTitle .title {
+  font-family: var(--ls-font-display);
+  font-variation-settings: 'opsz' 48;
+}
+
+.vp-doc h1,
+.ls-hero-title {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* One color for each sample layer, on every page. */
+[data-layer='shared'] {
+  --layer: var(--ls-layer-shared);
+}
+
+[data-layer='auth'] {
+  --layer: var(--ls-layer-auth);
+}
+
+[data-layer='shop'] {
+  --layer: var(--ls-layer-shop);
+}
+
+[data-layer='admin'] {
+  --layer: var(--ls-layer-admin);
+}
+
+.ls-layer-dot {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-right: 8px;
+  border-radius: 3px;
+  background: var(--layer, var(--vp-c-text-3));
+  transform: rotate(45deg);
+}
+
+/* The file glyph of a code title takes the color of the layer that owns the file. */
+.vp-doc div.ls-titled[data-layer] > span.lang::before {
+  background: var(--layer);
+  opacity: 1;
+}
+
+/* Home hero: the text on the left, the lens on the right. */
+.ls-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 48px;
+  align-items: center;
+  padding-bottom: 24px;
+}
+
+@media (width >= 1040px) {
+  .ls-hero {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    padding-top: 96px;
+  }
+}
+
+.ls-hero-title {
+  font-size: clamp(38px, 4.6vw, 60px);
+}
+
+/* Scope lens */
+
+.ls-lens.ls-hero-shot {
+  margin: 0;
+}
+
+.ls-lens {
+  --x: 46%;
+  --y: 30%;
+  --r: 104px;
+  margin: 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--ls-radius-frame);
+  background: var(--vp-c-bg-elv);
+  box-shadow: var(--ls-shadow-frame);
+  overflow: hidden;
+}
+
+.ls-lens-bar,
+.ls-board-bar {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0 14px 0 16px;
+  border-bottom: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-alt);
+  color: var(--vp-c-text-2);
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+}
+
+.ls-lens-file,
+.ls-board-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ls-lens-toggle,
+.ls-board-reset {
+  flex: none;
+  margin-left: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--vp-c-border);
+  border-radius: var(--ls-radius-control);
+  background: var(--vp-c-bg-elv);
+  color: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-base);
+  font-size: 12px;
+  font-weight: 500;
+  transition: border-color 140ms ease;
+}
+
+.ls-lens-toggle:hover,
+.ls-board-reset:hover {
+  border-color: var(--vp-c-brand-1);
+}
+
+.ls-lens-stage {
+  position: relative;
+  cursor: crosshair;
+  touch-action: pan-y;
+}
+
+.ls-lens .ls-lens-code {
+  margin: 0;
+  padding: 26px 16px 20px;
+  overflow: hidden;
+  background: transparent;
+  color: var(--vp-c-text-1);
+  font-family: var(--vp-font-family-mono);
+  font-size: clamp(10.5px, 0.6vw + 6.5px, 13.5px);
+  line-height: 2.6;
+  white-space: pre;
+}
+
+.ls-lens .ls-lens-code code {
+  padding: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.ls-lens-dim {
+  color: var(--vp-c-text-3);
+}
+
+/* The lens always shows the dark view, in the light theme too: it is the instrument. */
+.ls-lens .ls-lens-xray {
+  --ls-layer-shared: #2fe0a0;
+  --ls-layer-auth: #4fb8f5;
+  --ls-layer-shop: #d48bff;
+  --ls-violation: #ff6b7d;
+  position: absolute;
+  inset: 0;
+  background: #0b0c1f;
+  color: #8f90b3;
+  clip-path: circle(var(--r) at var(--x) var(--y));
+  pointer-events: none;
+}
+
+.ls-lens.is-open .ls-lens-xray {
+  clip-path: none;
+}
+
+.ls-lens-xray .ls-lens-dim {
+  color: #55567a;
+}
+
+.ls-lens-xray .ls-lens-line.is-cross {
+  background: linear-gradient(90deg, rgb(255 107 125 / 0.16), transparent 70%);
+  box-shadow: inset 2px 0 var(--ls-violation);
+}
+
+.ls-lens-line {
+  display: block;
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+
+.ls-lens-dep {
+  position: relative;
+  color: var(--layer);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+}
+
+.ls-lens-dep.is-cross {
+  text-decoration-color: var(--ls-violation);
+  text-decoration-style: wavy;
+}
+
+.ls-lens-from {
+  position: absolute;
+  bottom: calc(100% - 3px);
+  left: 0;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--layer);
+  color: #0b0c1f;
+  font-size: 0.74em;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.ls-lens-dep.is-cross .ls-lens-from {
+  background: var(--ls-violation);
+}
+
+.ls-lens-ring {
+  position: absolute;
+  top: var(--y);
+  left: var(--x);
+  width: calc(var(--r) * 2);
+  height: calc(var(--r) * 2);
+  border: 1.5px solid var(--vp-c-brand-3);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 5px rgb(108 97 255 / 0.16),
+    0 12px 32px -8px rgb(20 18 60 / 0.5);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.ls-lens.is-open .ls-lens-ring {
+  display: none;
+}
+
+.ls-lens-caption {
+  padding: 12px 16px;
+  border-top: 1px solid var(--vp-c-divider);
+  color: var(--vp-c-text-2);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+/* Boundary board */
+
+.ls-board {
+  display: grid;
+  gap: 16px;
+  margin: 28px 0;
+}
+
+.VPHomeContent .ls-board {
+  margin-top: 36px;
+}
+
+@media (width >= 960px) {
+  .VPHomeContent .ls-board {
+    grid-template-columns: minmax(0, 468px) minmax(0, 1fr);
+  }
+}
+
+.ls-board-pane {
+  min-width: 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--ls-radius);
+  background: var(--vp-c-bg-elv);
+  box-shadow: var(--ls-shadow-panel);
+  overflow: hidden;
+}
+
+.ls-board-config {
+  display: grid;
+  gap: 2px;
+  padding: 16px;
+  overflow-x: auto;
+  font-family: var(--vp-font-family-mono);
+  font-size: 13px;
+  line-height: 2;
+  white-space: nowrap;
+}
+
+.ls-board-code {
+  color: var(--vp-c-text-3);
+}
+
+.ls-board-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 1.6em;
+}
+
+.ls-board-key {
+  display: inline-flex;
+  align-items: center;
+  min-width: 6.2em;
+  color: var(--layer, var(--vp-c-text-1));
+  font-weight: 600;
+}
+
+/* On a phone the layer name goes on its own line, so the three names stay in view. */
+@media (width < 520px) {
+  .ls-board-config {
+    font-size: 12px;
+  }
+
+  .ls-board-row {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding-left: 0.8em;
+  }
+
+  .ls-board-row .ls-board-chip {
+    padding: 0 4px;
+  }
+
+  .ls-board-key {
+    flex-basis: 100%;
+  }
+}
+
+.ls-board-chip {
+  padding: 0 7px;
+  border: 1px dashed var(--vp-c-border);
+  border-radius: 6px;
+  color: var(--vp-c-text-3);
+  font: inherit;
+  line-height: 1.7;
+  text-decoration: line-through;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms var(--ls-ease);
+}
+
+.ls-board-chip:hover {
+  border-color: var(--layer);
+  color: var(--layer);
+}
+
+.ls-board-chip:active {
+  transform: scale(0.94);
+}
+
+.ls-board-chip[aria-pressed='true'] {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--layer) 50%, transparent);
+  background: color-mix(in srgb, var(--layer) 13%, transparent);
+  color: var(--layer);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ls-board .ls-board-hint {
+  margin: 0;
+  padding: 10px 16px 14px;
+  color: var(--vp-c-text-3);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ls-board .ls-board-output {
+  min-height: 15em;
+  margin: 0;
+  padding: 16px;
+  overflow-x: auto;
+  background: transparent;
+  font-family: var(--vp-font-family-mono);
+  font-size: 12px;
+  line-height: 1.75;
+}
+
+.ls-board .ls-board-output code {
+  padding: 0;
+  background: none;
+  color: var(--vp-c-text-1);
+  font: inherit;
+}
+
+.ls-board-line.is-file {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ls-board-line.is-dim {
+  color: var(--vp-c-text-3);
+}
+
+.ls-board-line.is-fail {
+  color: var(--ls-violation);
+  font-weight: 600;
+}
+
+.ls-board-line.is-ok {
+  color: var(--ls-layer-shared);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The output prints line by line after each change, as a terminal does. */
+  .ls-board-line {
+    animation: ls-print 260ms var(--ls-ease) calc(var(--i) * 28ms) both;
+  }
+}
+
+@keyframes ls-print {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+}

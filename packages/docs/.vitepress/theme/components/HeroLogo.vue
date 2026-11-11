@@ -15,17 +15,17 @@
         y2="34"
         gradientUnits="userSpaceOnUse"
       >
-        <stop stop-color="#00DC82" />
+        <stop stop-color="#6c61ff" />
         <stop
           offset="1"
-          stop-color="#22D3EE"
+          stop-color="#2fd4c0"
         />
       </linearGradient>
     </defs>
     <g class="ls-hero-layer ls-hero-layer-1">
       <path
         d="M6 44 32 58 58 44"
-        stroke="#00DC82"
+        stroke="#6c61ff"
         stroke-width="5"
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -35,7 +35,7 @@
     <g class="ls-hero-layer ls-hero-layer-2">
       <path
         d="M6 32 32 46 58 32"
-        stroke="#00DC82"
+        stroke="#6c61ff"
         stroke-width="5"
         stroke-linecap="round"
         stroke-linejoin="round"
