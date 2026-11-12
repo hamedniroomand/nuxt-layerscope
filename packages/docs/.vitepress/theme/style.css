@@ -993,9 +993,11 @@ kbd {
 .ls-hero-title {
   margin: 0;
   color: var(--vp-c-text-1);
-  font-size: clamp(38px, 5.4vw, 66px);
-  font-weight: 650;
-  letter-spacing: -0.045em;
+  font-family: var(--ls-font-display);
+  font-size: clamp(38px, 4.6vw, 60px);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 48;
+  letter-spacing: -0.03em;
   line-height: 1.02;
   text-wrap: balance;
 }
@@ -1015,42 +1017,6 @@ kbd {
   align-items: center;
   gap: 12px;
   margin-top: 32px;
-}
-
-.ls-hero-shot {
-  position: relative;
-  margin: 64px 0 0;
-}
-
-/* Soft brand light under the frame, so the capture sits on the page and not on top of it. */
-.ls-hero-shot::before {
-  content: '';
-  position: absolute;
-  inset: 10% 6% -8%;
-  z-index: -1;
-  border-radius: 50%;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--ls-green) 22%, transparent),
-    transparent
-  );
-  filter: blur(40px);
-}
-
-.ls-hero-frame {
-  padding: 6px;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: var(--ls-radius-frame);
-  background: color-mix(in srgb, var(--vp-c-bg-elv) 70%, transparent);
-  box-shadow: var(--ls-shadow-frame);
-  backdrop-filter: blur(8px);
-}
-
-.ls-hero-frame img {
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 11px;
 }
 
 /* The page content moves in a little after the hero: hierarchy, the hero is read first. The
@@ -1111,72 +1077,11 @@ kbd {
   font-size: 16.5px;
 }
 
-.VPHomeContent.vp-doc .ls-split {
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-  gap: 56px;
-  align-items: start;
-  margin-top: 120px;
-}
-
-.VPHomeContent.vp-doc .ls-split h2 {
-  margin-top: 0;
-}
-
-.VPHomeContent.vp-doc .ls-split-text {
-  position: sticky;
-  top: calc(var(--vp-nav-height) + 40px);
-}
-
-.VPHomeContent.vp-doc .ls-split-text p {
-  color: var(--vp-c-text-2);
-  font-size: 16.5px;
-}
-
-.VPHomeContent.vp-doc .ls-split-code div[class*='language-']:first-child {
-  margin-top: 0;
-}
-
-.VPHomeContent.vp-doc .ls-split-code pre {
-  font-size: 13px;
-}
-
-/* The output block reads as a terminal: same surface in both themes. */
-.VPHomeContent.vp-doc .ls-split-code div.language-text {
-  --vp-c-divider: #1f2527;
-  background: #0b0d0e;
-}
-
-.VPHomeContent.vp-doc .ls-split-code div.language-text code,
-.VPHomeContent.vp-doc .ls-split-code div.language-text code span {
-  color: var(--shiki-dark, #c4c9cb) !important;
-}
-
-.VPHomeContent.vp-doc .ls-split-code div.language-text > span.lang {
-  background: #121617;
-  color: #8c9397;
-}
-
-.VPHomeContent.vp-doc .ls-split-code div.language-text > button.copy {
-  border-color: #2b3235;
-  background-color: #121617;
-}
-
 .VPHomeContent.vp-doc .ls-mermaid {
   margin-top: 32px;
 }
 
 @media (width <= 960px) {
-  .VPHomeContent.vp-doc .ls-split {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
-    margin-top: 88px;
-  }
-
-  .VPHomeContent.vp-doc .ls-split-text {
-    position: static;
-  }
-
   .VPHomeContent.vp-doc h2 {
     margin-top: 88px;
   }
@@ -1198,31 +1103,6 @@ kbd {
 
   .ls-command {
     width: 100%;
-  }
-
-  .ls-hero-shot {
-    margin-top: 40px;
-    margin-right: -16px;
-  }
-
-  /* On a phone the full capture is too small to read, so show the left part of it larger. */
-  .ls-hero-frame {
-    border-right: 0;
-    border-radius: 12px 0 0 12px;
-  }
-
-  .ls-hero-frame img {
-    width: auto;
-    height: 260px;
-    max-width: none;
-    border-right: 0;
-    border-radius: 8px 0 0 8px;
-    object-fit: cover;
-    object-position: left center;
-  }
-
-  .ls-hero-frame {
-    overflow: hidden;
   }
 
   .VPHomeContent.vp-doc {

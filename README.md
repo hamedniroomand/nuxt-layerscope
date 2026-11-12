@@ -17,8 +17,8 @@
   <a href="https://github.com/hamedniroomand/nuxt-layerscope/actions/workflows/ci.yml"><img src="https://github.com/hamedniroomand/nuxt-layerscope/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://codecov.io/gh/hamedniroomand/nuxt-layerscope"><img src="https://codecov.io/gh/hamedniroomand/nuxt-layerscope/graph/badge.svg" alt="coverage"></a>
   <a href="https://scorecard.dev/viewer/?uri=github.com/hamedniroomand/nuxt-layerscope"><img src="https://api.securityscorecards.dev/projects/github.com/hamedniroomand/nuxt-layerscope/badge" alt="OpenSSF Scorecard"></a>
-  <a href="./LICENSE"><img src="https://img.shields.io/github/license/hamedniroomand/nuxt-layerscope?color=22d3ee" alt="MIT license"></a>
-  <a href="https://layerscope.kitdev.space/"><img src="https://img.shields.io/badge/docs-layerscope-00dc82" alt="Documentation"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/github/license/hamedniroomand/nuxt-layerscope?color=2fd4c0" alt="MIT license"></a>
+  <a href="https://layerscope.kitdev.space/"><img src="https://img.shields.io/badge/docs-layerscope-6c61ff" alt="Documentation"></a>
 </p>
 
 <p align="center">
