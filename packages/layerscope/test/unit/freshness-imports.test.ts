@@ -34,6 +34,8 @@ function registryWith(
     shadowedMiddleware: [],
     shadowedPages: [],
     shadowedImports: [],
+    layouts: [],
+    middleware: [],
     componentDirs: [],
     importDirs,
     nuxtIgnore,

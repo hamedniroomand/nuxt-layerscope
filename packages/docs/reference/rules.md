@@ -23,14 +23,15 @@ layers/admin/app/components/AdminPanel.vue
 
 These kinds of dependency are checked:
 
-| Kind                     | Example                                                                                                                                            |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Auto-imported composable | `useCart()` in a script or <code v-pre>{{ formatPrice(total) }}</code> in a template                                                               |
-| Component                | `<CartSummary>`, `<cart-summary>`, `<LazyCartSummary>`, `resolveComponent('cart-summary')`, `h(CartSummary)`, `<CartSummary />` in JSX (see below) |
-| Nitro server util        | `getCartStore()` in `server/api/*.ts`                                                                                                              |
-| Shared util              | `formatMoney()` from another layer's `shared/utils`                                                                                                |
-| Explicit import          | `import { useCart } from '#layers/web/app/composables/useCart'`, `~/…`, relative paths, `@acme/ui-layer/app/composables/useAcme`                   |
-| Virtual module import    | `import { useCart } from '#imports'`, `import { CartSummary } from '#components'`                                                                  |
+| Kind                      | Example                                                                                                                                            |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Auto-imported composable  | `useCart()` in a script or <code v-pre>{{ formatPrice(total) }}</code> in a template                                                               |
+| Component                 | `<CartSummary>`, `<cart-summary>`, `<LazyCartSummary>`, `resolveComponent('cart-summary')`, `h(CartSummary)`, `<CartSummary />` in JSX (see below) |
+| Nitro server util         | `getCartStore()` in `server/api/*.ts`                                                                                                              |
+| Shared util               | `formatMoney()` from another layer's `shared/utils`                                                                                                |
+| Explicit import           | `import { useCart } from '#layers/web/app/composables/useCart'`, `~/…`, relative paths, `@acme/ui-layer/app/composables/useAcme`                   |
+| Virtual module import     | `import { useCart } from '#imports'`, `import { CartSummary } from '#components'`                                                                  |
+| Layout or middleware name | `definePageMeta({ layout: 'shop', middleware: ['auth'] })`, `setPageLayout('shop')` (see below)                                                    |
 
 `<NuxtIsland name="X">` is a use of the island component `X`. layerscope sees it only with the
 registry, because the `.d.ts` files do not list island components.
@@ -93,12 +94,38 @@ A type-only import (`import type { A } from '...'`) counts as an explicit import
 [`typeImports`](./config#typeimports) is `'ignore'`. Then it makes no dependency and no rule
 reports it.
 
-A use of a layout or of route middleware by its name is not checked:
-`definePageMeta({ layout: 'shop', middleware: ['shop-only'] })`, `<NuxtLayout name="shop">` and
-`setPageLayout('shop')`. Global middleware (`middleware/*.global.ts`) runs on every route, so each
-page uses it with no reference in the code. A use by URL is not checked either, for example
-`navigateTo('/shop')` or `$fetch('/api/cart')` to a page or a server route of another layer. In
-these cases, a layer can use a layer that it may not use, and no rule reports it.
+A file can use a layout or a route middleware by its name. layerscope reads the name when it is
+fixed (a string literal, or a template literal with no `${}`) in these places:
+
+- `layout` in `definePageMeta()`, also in the form `layout: { name: 'shop' }`. Nuxt 4.5 and later
+  accept this form, and layerscope reads it with each Nuxt version.
+- `middleware` in `definePageMeta()`: one name, or each name in a list. A function in the list is
+  not a name.
+- The first argument of `setPageLayout()` in a script. It must be the auto-import of Nuxt, or an
+  import from `#imports`, `#app` or `nuxt/app`.
+
+The dependency goes to the file that Nuxt uses for the name. When two layers have a layout or a
+middleware with the same name, Nuxt uses the file of the layer that comes first. layerscope reads
+these files from the registry only, because the `.d.ts` files give the names but not the files.
+Without the registry, these names are not checked. layerscope reads `definePageMeta()` in each
+checked file, not only in a page.
+
+These uses are not checked:
+
+- A name that is not fixed, such as a variable or a `ref()`.
+- A name that Nuxt has no layout or middleware for, for example a middleware that a plugin adds
+  with `addRouteMiddleware()`.
+- A name in a file of the `server/` dir.
+- `<NuxtLayout name="shop">`, and `setPageLayout('shop')` in a template.
+- The `default` layout, which Nuxt uses when a page names no layout.
+- `appLayout` and `appMiddleware` in route rules: `routeRules` in `nuxt.config`, or
+  `defineRouteRules()`.
+- Global middleware (`middleware/*.global.ts`). It runs on every route, so each page uses it with
+  no reference in the code.
+- A use by URL, for example `navigateTo('/shop')` or `$fetch('/api/cart')` to a page or a server
+  route of another layer.
+
+In these cases, a layer can use a layer that it may not use, and no rule reports it.
 
 To fix a finding, either move the symbol to a layer both may use (often `shared`), or allow the
 dependency if it is intended.
@@ -170,7 +197,9 @@ The suggestions and their counts are made for the findings that `check` shows on
   settings, so a layer that turns `imports.scan` off gets the same check. A target that sets
   `components` is not a target for a component file. layerscope does not know what such a layer
   scans. A file that is used as a component also gets no move when the layer that owns it sets
-  `components`.
+  `components`. A layout or a route middleware that a file uses by its name gets no move. Nuxt
+  uses the file of the layer that comes first for a name, and layerscope does not compare these
+  names across the layers.
 
 - **allow** the dependency, when that creates no cycle. When the use needs only some names, the
   entry is scoped: `{ layer: 'web', only: ['useCart'] }`. See [`allow`](./config#allow).

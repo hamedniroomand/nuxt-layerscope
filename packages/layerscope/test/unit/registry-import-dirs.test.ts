@@ -41,6 +41,8 @@ function buildDirWith(extra: Record<string, unknown>): string {
       shadowedMiddleware: [],
       shadowedPages: [],
       shadowedImports: [],
+      layouts: [],
+      middleware: [],
       imports: { app: [], server: [], shared: [] },
       ...extra,
     }),
@@ -125,6 +127,29 @@ describe('readRegistry and the shadowed layouts and middleware', () => {
         [{ ...SHADOWED, name: 1 }],
         [{ ...SHADOWED, file: undefined }],
         [{ ...SHADOWED, shadowedBy: [] }],
+      ]) {
+        expect(readRegistry(buildDirWith({ importDirs: [], [field]: value })).kind).toBe('stale');
+      }
+    },
+  );
+});
+
+const NAMED = { name: 'shop', file: '/p/b/layouts/shop.vue' };
+
+describe('readRegistry and the layouts and middleware that a page can name', () => {
+  it.each(['layouts', 'middleware'])('reads a good %s list', field => {
+    expect(readRegistry(buildDirWith({ importDirs: [], [field]: [NAMED] })).kind).toBe('ok');
+  });
+
+  it.each(['layouts', 'middleware'])(
+    'marks the registry as stale when %s is missing or has a bad entry',
+    field => {
+      for (const value of [
+        undefined,
+        {},
+        [null],
+        [{ ...NAMED, name: 1 }],
+        [{ ...NAMED, file: undefined }],
       ]) {
         expect(readRegistry(buildDirWith({ importDirs: [], [field]: value })).kind).toBe('stale');
       }

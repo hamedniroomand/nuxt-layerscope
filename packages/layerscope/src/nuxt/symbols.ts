@@ -27,6 +27,12 @@ export type ComponentMap = Map<string, SymbolTarget[]>;
 export interface SymbolTable {
   imports: Record<Context, SymbolMap>;
   components: ComponentMap;
+  /**
+   * The file of each layout name, and of each named route middleware. Only the registry has them:
+   * the generated `.d.ts` files give the names but not the files.
+   */
+  layouts?: SymbolMap;
+  middleware?: SymbolMap;
 }
 
 // `  const useCart: typeof import('../../layers/web/app/composables/useCart').useCart`

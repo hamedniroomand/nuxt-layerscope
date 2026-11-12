@@ -1,4 +1,4 @@
-import { componentName, edgeName } from '#src/rules/exposure.ts';
+import { componentName, edgeName, isNameEntry } from '#src/rules/exposure.ts';
 import type { Edge } from '#src/types.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
@@ -14,7 +14,8 @@ export function isExplicitImport(edge: Edge): boolean {
 
 /**
  * The names a use stands for in an `only` or `expose` list, or `null` when a list of names does
- * not fit: an explicit import with a default, a namespace or no named import needs a glob.
+ * not fit: an explicit import with a default, a namespace or no named import needs a glob. So
+ * does a name that the list would read as a glob, such as the middleware name `2fa`.
  */
 export function namesOfEdge(edge: Edge): string[] | null {
   if (isExplicitImport(edge)) {
@@ -23,11 +24,11 @@ export function namesOfEdge(edge: Edge): string[] | null {
     return named.length > 0 && named.length === all.length ? named : null;
   }
   const name = edgeName(edge);
-  return [
+  const listed =
     edge.kind === 'component' || edge.symbol.startsWith('#components:')
       ? componentName(name)
-      : name,
-  ];
+      : name;
+  return isNameEntry(listed) ? [listed] : null;
 }
 
 /**

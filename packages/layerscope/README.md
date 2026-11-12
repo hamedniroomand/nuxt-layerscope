@@ -40,8 +40,9 @@ npx layerscope check                 # or: npx layerscope check --prepare
 
 The module records what Nuxt resolves during `nuxi prepare`, `dev` and `build` into
 `.nuxt/layerscope/registry.json`. Without it, layerscope falls back to the generated `.d.ts`
-files, which gives the same boundary findings but cannot see overridden components, layouts,
-route middleware, pages or auto-imports (see [`shadowed-component`](#rules)).
+files, which gives the same boundary findings in most projects. But the fallback cannot see
+overridden components, layouts, route middleware, pages or auto-imports (see
+[`shadowed-component`](#rules)), or the files of the layouts and route middleware that code names.
 `npx nuxt-layerscope check` works without installing anything.
 Set `layerscope: { enabled: false }` in `nuxt.config` to turn the module off.
 
@@ -142,7 +143,8 @@ writes the list of the findings (up to 200) and then the drift report to the job
 
 Lists every file that uses a symbol, where the symbol resolves to and the layer path each use
 crosses. It accepts auto-imports, component names (`BaseButton`, `base-button` and
-`LazyBaseButton` are the same component) and import specifiers.
+`LazyBaseButton` are the same component), import specifiers, and layout and route middleware
+names.
 
 ```text
 $ npx layerscope why useCart
@@ -276,7 +278,8 @@ module records them on `nuxi prepare`, `dev` and `build`; use one place or the o
 - `layer-boundary`: a file depends on a layer its own layer does not `allow`. This covers
   auto-imported composables and utils, components (including `Lazy*`), Nitro server utils and
   explicit imports (`#layers/...`, `~/...`, relative paths and the package name of a layer, for
-  example `@acme/ui-layer/app/composables/useAcme`).
+  example `@acme/ui-layer/app/composables/useAcme`). With the module, it also covers a layout or a
+  route middleware that a file names in `definePageMeta()` or `setPageLayout()`.
 - `layer-cycle` (off by default): layers depend on each other in a loop. The finding names the
   whole chain. Turn it on once a baseline holds the cycles you have today.
 - `unresolved-reference`: something could not be resolved, so layerscope will not call it safe.

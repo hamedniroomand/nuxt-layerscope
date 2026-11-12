@@ -7,8 +7,8 @@ export const whyTool: Tool = {
   name: 'why',
   title: 'Find every use of a symbol',
   description:
-    'Every use of an auto-import, component or import, the file and layer that owns it, whether ' +
-    'its layer exposes it, and whether each use is allowed.',
+    'Every use of an auto-import, component, import, layout or route middleware, the file and ' +
+    'layer that owns it, whether its layer exposes it, and whether each use is allowed.',
   inputSchema: {
     type: 'object',
     additionalProperties: false,
@@ -16,7 +16,8 @@ export const whyTool: Tool = {
     properties: {
       symbol: {
         type: 'string',
-        description: 'An auto-import or component name; Lazy and kebab-case spellings work.',
+        description:
+          'An auto-import, component, layout or route middleware name; Lazy and kebab-case spellings work for a component.',
       },
     },
   },

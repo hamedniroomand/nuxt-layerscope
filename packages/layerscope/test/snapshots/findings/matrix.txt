@@ -12,4 +12,6 @@ error layer-boundary shop:app/components/ShopPanel.vue:11:5 Clock (shop) → the
 error layer-boundary shop:app/components/ShopPanel.vue:12:5 Pair (shop) → theme:app/components/Pair.client.vue
 error layer-boundary shop:app/components/ShopPanel.vue:13:5 NpmBadge (shop) → npm:app/components/NpmBadge.vue
 error layer-boundary shop:app/components/ShopPanel.vue:14:5 Weather (shop) → theme:app/components/islands/Weather.vue
+error layer-boundary shop:app/pages/checkout.vue:2:26 panel (shop) → theme:app/layouts/panel.vue
+error layer-boundary shop:app/pages/checkout.vue:2:48 guard (shop) → theme:app/middleware/guard.ts
 warn shadowed-auto-import root:shared/utils/formatDate.ts:1:1 formatDate (root) → base:shared/utils/formatDate.ts

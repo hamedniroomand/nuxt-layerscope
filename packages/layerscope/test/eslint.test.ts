@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vite-plus/test';
 import vueParser from 'vue-eslint-parser';
 
 import plugin from '#src/eslint/index.ts';
-import { NUXT4_ROOT } from '#test/fixtures.ts';
+import { MATRIX_ROOT, NUXT4_ROOT } from '#test/fixtures.ts';
 
 const linter = new Linter({ configType: 'flat' });
 
@@ -72,6 +72,16 @@ describe('eslint plugin', () => {
     );
     expect(messages.map(message => message.message)).toEqual([
       expect.stringContaining('Run "nuxi prepare"'),
+    ]);
+  });
+});
+
+describe('eslint plugin and the names in definePageMeta', () => {
+  it('reports a layout and a middleware that a page names in another layer', () => {
+    const messages = lint(join(MATRIX_ROOT, 'layers/shop/app/pages/checkout.vue'));
+    expect(messages).toEqual([
+      expect.stringMatching(/^2:26 layerscope\/layer-boundary Layout "panel" crosses/u),
+      expect.stringMatching(/^2:48 layerscope\/layer-boundary Middleware "guard" crosses/u),
     ]);
   });
 });

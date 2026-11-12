@@ -163,7 +163,7 @@
         </p>
         <details
           v-for="symbol in panel.edge.value.symbols"
-          :key="symbol.symbol"
+          :key="`${symbol.kind}:${symbol.symbol}`"
           class="symbol"
         >
           <summary>
