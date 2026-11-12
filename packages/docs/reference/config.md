@@ -238,17 +238,18 @@ suggests the strictest preset that allows every dependency that exists today.
 
 - Type: `Record<string, 'off' | 'warn' | 'error'>`
 
-| Rule                                                   | Default |
-| ------------------------------------------------------ | ------- |
-| [`layer-boundary`](./rules#layer-boundary)             | `error` |
-| [`layer-cycle`](./rules#layer-cycle)                   | `off`   |
-| [`layer-internal`](./rules#layer-internal)             | `error` |
-| [`unresolved-reference`](./rules#unresolved-reference) | `warn`  |
-| [`shadowed-component`](./rules#shadowed-component)     | `warn`  |
-| [`shadowed-layout`](./rules#shadowed-layout)           | `warn`  |
-| [`shadowed-middleware`](./rules#shadowed-middleware)   | `warn`  |
-| [`shadowed-page`](./rules#shadowed-page)               | `warn`  |
-| [`shadowed-auto-import`](./rules#shadowed-auto-import) | `warn`  |
+| Rule                                                     | Default |
+| -------------------------------------------------------- | ------- |
+| [`layer-boundary`](./rules#layer-boundary)               | `error` |
+| [`layer-cycle`](./rules#layer-cycle)                     | `off`   |
+| [`layer-internal`](./rules#layer-internal)               | `error` |
+| [`unresolved-reference`](./rules#unresolved-reference)   | `warn`  |
+| [`shadowed-component`](./rules#shadowed-component)       | `warn`  |
+| [`shadowed-layout`](./rules#shadowed-layout)             | `warn`  |
+| [`shadowed-middleware`](./rules#shadowed-middleware)     | `warn`  |
+| [`shadowed-page`](./rules#shadowed-page)                 | `warn`  |
+| [`shadowed-server-route`](./rules#shadowed-server-route) | `warn`  |
+| [`shadowed-auto-import`](./rules#shadowed-auto-import)   | `warn`  |
 
 `error` findings fail the check (exit `1`), `warn` findings are reported only, `off` disables
 the rule. An unknown rule name is a config error.

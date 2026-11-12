@@ -84,6 +84,7 @@
             "shadowed-layout",
             "shadowed-middleware",
             "shadowed-page",
+            "shadowed-server-route",
             "shadowed-auto-import"
           ]
         },
@@ -93,7 +94,7 @@
         "column": { "type": "integer", "minimum": 1 },
         "symbol": {
           "type": "string",
-          "description": "Identifier, component name, import specifier, a layer-cycle chain, or the name or path of an overridden file."
+          "description": "Identifier, component name, import specifier, a layer-cycle chain, the name or path of an overridden file, or the route of an overridden server route file (for example `GET /api/hello`)."
         },
         "fromLayer": { "type": "string", "description": "The layer the file belongs to." },
         "toLayer": {
@@ -201,6 +202,7 @@
             "shadowed-layout",
             "shadowed-middleware",
             "shadowed-page",
+            "shadowed-server-route",
             "shadowed-auto-import"
           ]
         },

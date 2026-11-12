@@ -1,11 +1,12 @@
 import { getLayerDirectories, resolveFiles, runWithNuxtContext } from '@nuxt/kit';
-import { extname, relative } from 'pathe';
+import { extname, relative, resolve } from 'pathe';
+import { glob } from 'tinyglobby';
 
 import type { ShadowedFile, ShadowedPage } from '#src/registry/schema.ts';
 import { realPath } from '#src/utils/fs.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
-import type { Nuxt } from './nuxt.ts';
+import type { Nitro, NitroHandler, Nuxt } from './nuxt.ts';
 
 /** A file that the scan of a dir of a layer found. */
 export interface LayerFile {
@@ -191,4 +192,65 @@ export async function recordShadowedFiles(
     middleware: shadowedFiles(middlewareFiles, middleware),
     pages: pageEntries,
   };
+}
+
+/** The glob of Nitro's scan of a route dir: `GLOB_SCAN_PATTERN` of nitropack. */
+const NITRO_SCAN_PATTERN = '**/*.{js,mjs,cjs,ts,mts,cts,tsx,jsx}';
+
+/** The name of a route dir of Nitro. Nitro also uses the default for an empty name. */
+function orDefault(name: string | undefined, fallback: string): string {
+  return name === undefined || name === '' ? fallback : name;
+}
+
+/** The route, with the method and the env only when the name of the file sets them. */
+function routeName(handler: NitroHandler): string {
+  const method = handler.method === undefined ? '' : `${handler.method.toUpperCase()} `;
+  const env = handler.env === undefined ? '' : ` (${handler.env})`;
+  return `${method}${handler.route ?? ''}${env}`;
+}
+
+/**
+ * The server routes that a file with the same path in the server dir of another layer replaces.
+ * Nitro keeps only the routes that it uses in `scannedHandlers`, so the module scans the route dirs
+ * of each server dir again, with the glob and the ignore rules of Nitro. The same path in the same
+ * route dir gives the same route, method and env, so Nitro uses only one of the two files. The
+ * module does not pick that file: it is the file in `scannedHandlers`.
+ */
+export async function shadowedServerRoutes(nitro: Nitro | null): Promise<ShadowedFile[]> {
+  const scanDirs = nitro?.options.scanDirs;
+  const handlers = nitro?.scannedHandlers;
+  if (nitro === null || scanDirs === undefined || handlers === undefined) {
+    return [];
+  }
+  const { options } = nitro;
+  const patterns = [orDefault(options.apiDir, 'api'), orDefault(options.routesDir, 'routes')].map(
+    dir => `${dir}/${NITRO_SCAN_PATTERN}`,
+  );
+  const found = await Promise.all(
+    scanDirs.map(async cwd => {
+      // Nitro scans with globby. Without `expandDirectories`, tinyglobby matches as globby does,
+      // with one difference: tinyglobby also applies an ignore pattern that starts with `../`, and
+      // globby does not. That can only remove a file from this scan, so a finding can be missed,
+      // but no false finding is added.
+      const files = await glob(patterns, {
+        cwd,
+        dot: true,
+        ignore: options.ignore ?? [],
+        absolute: true,
+        expandDirectories: false,
+      });
+      return files;
+    }),
+  );
+  // `shadowedFiles()` compares the paths as strings, so both lists get the same form.
+  const scanned = found.flatMap((files, layer) =>
+    files.map(file => {
+      const path = resolve(file);
+      return { layer, file: path, key: keyOf(resolve(scanDirs[layer] ?? ''), path) };
+    }),
+  );
+  const winners = handlers
+    .filter(handler => handler.middleware !== true && handler.route !== undefined)
+    .map(handler => ({ name: routeName(handler), file: resolve(handler.handler) }));
+  return shadowedFiles(scanned, winners);
 }

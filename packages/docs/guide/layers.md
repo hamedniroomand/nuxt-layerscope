@@ -182,7 +182,8 @@ override each other, which one wins depends on your Nuxt version. The
 [`shadowed-component`](../reference/rules#shadowed-component),
 [`shadowed-layout`](../reference/rules#shadowed-layout),
 [`shadowed-middleware`](../reference/rules#shadowed-middleware),
-[`shadowed-page`](../reference/rules#shadowed-page) and
+[`shadowed-page`](../reference/rules#shadowed-page),
+[`shadowed-server-route`](../reference/rules#shadowed-server-route) and
 [`shadowed-auto-import`](../reference/rules#shadowed-auto-import) rules make such overrides
 visible.
 :::

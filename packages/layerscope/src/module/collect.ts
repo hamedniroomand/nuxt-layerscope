@@ -26,7 +26,7 @@ import {
 } from './imports.ts';
 import type { Component, ComponentsDir, Nitro, Nuxt, Unimport, UnimportImport } from './nuxt.ts';
 import { onNitroInit, readNuxtIgnore, usesNuxtContent } from './nuxt.ts';
-import { recordShadowedFiles } from './shadowed-files.ts';
+import { recordShadowedFiles, shadowedServerRoutes } from './shadowed-files.ts';
 
 const SERVER_PLACEHOLDER = '/components/server-placeholder';
 
@@ -148,11 +148,16 @@ export class RegistryCollector {
    */
   public async collect(): Promise<Registry> {
     const { rootDir } = this.nuxt.options;
-    const [app, nitroDirs, server] = await Promise.all([
+    const [app, nitroDirs, server, serverRoutes] = await Promise.all([
       this.appPart(),
       this.importDirs.recordNitro(rootDir, this.nitro),
       this.nitroImports.read(this.nitro?.unimport, this.nuxt.options.rootDir),
+      shadowedServerRoutes(this.nitro),
     ]);
+    // Only after the read. Nitro scans its import dirs before `nitro:init`, and Nuxt can sort the
+    // dirs in `nitro:init` (4.6.2 does). The entries get the order of the sorted dirs, and so the
+    // real winner, from the scan of the read.
+    const serverImports = await this.shadowedServerImports(server.context);
     const importDirs =
       app.importDirs === null || nitroDirs === null
         ? null
@@ -178,11 +183,13 @@ export class RegistryCollector {
       shadowedMiddleware: app.shadowedMiddleware,
       shadowedPages: app.shadowedPages,
       shadowedImports: app.shadowedImports,
+      shadowedServerRoutes: serverRoutes,
+      shadowedServerImports: serverImports,
       componentDirs: app.componentDirs,
       importDirs,
       nuxtIgnore: readNuxtIgnore(this.nuxt),
       nuxtContent: usesNuxtContent(this.nuxt),
-      imports: this.imports(app.imports, server),
+      imports: this.imports(app.imports, server.imports),
       ...(Object.keys(this.config).length > 0 ? { config: this.config } : {}),
     };
   }
@@ -222,8 +229,24 @@ export class RegistryCollector {
     return this.app;
   }
 
-  private toFile(path: string): string {
-    const file = resolveAlias(path, this.nuxt.options.alias);
+  /**
+   * The server auto-imports that Nitro does not use. Only a file in a server dir is kept: Nitro
+   * also scans `shared/utils`, where the app can use another file than Nitro.
+   */
+  private async shadowedServerImports(context: Unimport | undefined): Promise<ShadowedFile[]> {
+    const dirs = (this.nitro?.options.scanDirs ?? []).map(dir => `${resolve(dir)}/`);
+    const aliases = this.serverAliases();
+    const shadowed = await shadowedImports(context ?? null, path => this.toFile(path, aliases));
+    return shadowed.filter(entry => dirs.some(dir => entry.file.startsWith(dir)));
+  }
+
+  /** The aliases of Nitro: the aliases of Nuxt, and the aliases that Nitro adds or changes. */
+  private serverAliases(): Record<string, string> {
+    return { ...this.nuxt.options.alias, ...this.nitro?.options.alias };
+  }
+
+  private toFile(path: string, aliases: Record<string, string> = this.nuxt.options.alias): string {
+    const file = resolveAlias(path, aliases);
     return isAbsolute(file) ? resolve(file) : file;
   }
 
@@ -262,10 +285,6 @@ export class RegistryCollector {
   }
 
   private imports(app: UnimportImport[], server: UnimportImport[]): Registry['imports'] {
-    const nuxtAliases = this.nuxt.options.alias;
-    return registryImports(app, server, nuxtAliases, {
-      ...nuxtAliases,
-      ...this.nitro?.options.alias,
-    });
+    return registryImports(app, server, this.nuxt.options.alias, this.serverAliases());
   }
 }

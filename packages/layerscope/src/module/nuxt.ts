@@ -46,12 +46,29 @@ export interface Unimport {
   };
 }
 
+/** A file of Nitro's scan of the route dirs and the middleware dir. */
+export interface NitroHandler {
+  handler: string;
+  route?: string;
+  method?: string;
+  env?: string;
+  middleware?: boolean;
+}
+
 export interface Nitro {
   unimport?: Unimport;
+  /** The routes and the server middleware that Nitro uses: its scan after its dedupe. */
+  scannedHandlers?: NitroHandler[];
   options: {
     alias?: Record<string, string>;
     /** Nitro gives this object to unimport, so its dirs and scan options are the real ones. */
     imports?: false | { dirs?: ScanDir[]; dirsScanOptions?: ScanOptions };
+    /** The server dirs that Nitro scans, in the order of its scan: the server dir of each layer. */
+    scanDirs?: string[];
+    apiDir?: string;
+    routesDir?: string;
+    /** The globs that Nitro's scan of the server dirs ignores, relative to each dir. */
+    ignore?: string[];
   };
 }
 

@@ -22,7 +22,7 @@ export interface RealUnimport {
 type CreateUnimport = (options: { dirs: string[]; imports?: UnimportImport[] }) => RealUnimport;
 
 /** The `createUnimport` of the unimport that the Nuxt of the fixture uses. */
-async function createUnimport(): Promise<CreateUnimport> {
+export async function createUnimport(): Promise<CreateUnimport> {
   const loaded = await loadUnimport(NUXT4_ROOT);
   if (loaded.kind === 'failed') {
     throw new Error(loaded.cause);

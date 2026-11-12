@@ -12,6 +12,7 @@ const SHADOWED_OFF = {
   'shadowed-layout': 'off',
   'shadowed-middleware': 'off',
   'shadowed-page': 'off',
+  'shadowed-server-route': 'off',
   'shadowed-auto-import': 'off',
 } as const;
 
