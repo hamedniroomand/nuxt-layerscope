@@ -113,7 +113,12 @@
 
   const lines = computed<Line[]>(() => {
     const out: Line[] = [];
-    for (const [file, group] of Map.groupBy(findings.value, finding => finding.file)) {
+    // Map.groupBy is not in Safari before 17.4, so group the findings here.
+    const groups = new Map<string, Reference[]>();
+    for (const finding of findings.value) {
+      groups.set(finding.file, [...(groups.get(finding.file) ?? []), finding]);
+    }
+    for (const [file, group] of groups) {
       out.push({ text: file, kind: 'file' });
       for (const finding of group) {
         const allowed = allow[finding.from];
@@ -208,8 +213,14 @@
         class="ls-board-line"
         :class="count === 0 ? 'is-ok' : 'is-fail'"
         :style="{ '--i': lines.length }"
-        role="status"
       >{{ summary }}</span></code></pre>
+      <!-- The output above starts again after each change, so the live region is out of it. -->
+      <p
+        class="visually-hidden"
+        role="status"
+      >
+        {{ summary }}
+      </p>
     </div>
   </div>
 </template>
