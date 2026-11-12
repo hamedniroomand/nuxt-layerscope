@@ -1,7 +1,7 @@
 import { getLayerDirectories, resolveFiles, runWithNuxtContext } from '@nuxt/kit';
 import { extname, relative } from 'pathe';
 
-import type { ShadowedFile, ShadowedPage } from '#src/registry/schema.ts';
+import type { NamedFile, ShadowedFile, ShadowedPage } from '#src/registry/schema.ts';
 import { realPath } from '#src/utils/fs.ts';
 import { compareStrings } from '#src/utils/strings.ts';
 
@@ -14,12 +14,6 @@ export interface LayerFile {
   file: string;
   /** The path relative to the dir of the layer, without the extension. */
   key: string;
-}
-
-/** A file that Nuxt uses, with the name that Nuxt gives it. */
-export interface NamedFile {
-  name: string;
-  file: string;
 }
 
 type LayerDirs = ReturnType<typeof getLayerDirectories>[number];
@@ -151,6 +145,56 @@ async function shadowedPages(
   }));
 }
 
+type ResolvedApp = Partial<NuxtApp> & Pick<NuxtApp, 'layouts' | 'middleware'>;
+
+/** The app of Nuxt, when Nuxt gave it its layouts and its middleware; else `null`. */
+function resolvedApp(nuxt: Nuxt): ResolvedApp | null {
+  // Nuxt adds the app when the build starts.
+  if (!Object.hasOwn(nuxt.apps, 'default')) {
+    return null;
+  }
+  // `createApp()` of Nuxt gives an app without layouts and middleware, and the first
+  // `resolveApp()` adds them. Without them, the module records nothing.
+  const app: Partial<NuxtApp> = nuxt.apps.default;
+  return app.layouts === undefined || app.middleware === undefined ? null : (app as ResolvedApp);
+}
+
+function layoutsOf(app: ResolvedApp, toFile: (path: string) => string): NamedFile[] {
+  return Object.values(app.layouts).map(layout => ({
+    name: layout.name,
+    file: toFile(layout.file),
+  }));
+}
+
+function middlewareOf(
+  middleware: NuxtApp['middleware'],
+  toFile: (path: string) => string,
+): NamedFile[] {
+  return middleware.map(entry => ({ name: entry.name, file: toFile(entry.path) }));
+}
+
+/**
+ * The layouts and the named route middleware that Nuxt uses, each with its name. Nuxt keeps one
+ * file for each name. A page cannot name a global middleware: Nuxt does not add it to the named
+ * middleware, so it is not in the list.
+ */
+export function recordNamedFiles(
+  nuxt: Nuxt,
+  toFile: (path: string) => string,
+): { layouts: NamedFile[]; middleware: NamedFile[] } {
+  const app = resolvedApp(nuxt);
+  if (app === null) {
+    return { layouts: [], middleware: [] };
+  }
+  return {
+    layouts: layoutsOf(app, toFile),
+    middleware: middlewareOf(
+      app.middleware.filter(entry => entry.global !== true),
+      toFile,
+    ),
+  };
+}
+
 /**
  * The layouts, the route middleware and the pages that a file of the same name in another layer
  * replaces. Nuxt keeps only the winners in `nuxt.apps.default`, so the module scans the dirs again
@@ -160,16 +204,9 @@ export async function recordShadowedFiles(
   nuxt: Nuxt,
   toFile: (path: string) => string,
 ): Promise<{ layouts: ShadowedFile[]; middleware: ShadowedFile[]; pages: ShadowedPage[] }> {
-  const none = { layouts: [], middleware: [], pages: [] };
-  // Nuxt adds the app when the build starts.
-  if (!Object.hasOwn(nuxt.apps, 'default')) {
-    return none;
-  }
-  // `createApp()` of Nuxt gives an app without layouts and middleware, and the first
-  // `resolveApp()` adds them. Without them, the module records nothing.
-  const app: Partial<NuxtApp> = nuxt.apps.default;
-  if (app.layouts === undefined || app.middleware === undefined) {
-    return none;
+  const app = resolvedApp(nuxt);
+  if (app === null) {
+    return { layouts: [], middleware: [], pages: [] };
   }
   const extensions = nuxt.options.extensions.join(',');
   // The app has no pages when the pages of Nuxt are off, or before Nuxt resolves them.
@@ -181,14 +218,10 @@ export async function recordShadowedFiles(
     scanLayers(nuxt, dirs => dirs.appMiddleware, `*{${extensions}}`),
     pages,
   ]);
-  const layouts = Object.values(app.layouts).map(layout => ({
-    name: layout.name,
-    file: toFile(layout.file),
-  }));
-  const middleware = app.middleware.map(entry => ({ name: entry.name, file: toFile(entry.path) }));
   return {
-    layouts: shadowedFiles(layoutFiles, layouts),
-    middleware: shadowedFiles(middlewareFiles, middleware),
+    layouts: shadowedFiles(layoutFiles, layoutsOf(app, toFile)),
+    // A global middleware also takes its name, so it is a winner too.
+    middleware: shadowedFiles(middlewareFiles, middlewareOf(app.middleware, toFile)),
     pages: pageEntries,
   };
 }

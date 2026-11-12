@@ -143,8 +143,10 @@ data that this release needs, run `nuxi prepare` to write it again.
 After an upgrade, `check` can report new findings for code that it did not read before. For example,
 `check` reads an `import()` in a template. An `import()` with a fixed path can give a
 `layer-boundary` or `layer-internal` error. An `import()` with a path that is not a fixed string
-gives a "Could not read import()" finding of `unresolved-reference`. Fix the code, or accept the
-findings with `layerscope check --update-baseline`.
+gives a "Could not read import()" finding of `unresolved-reference`. `check` also reads the layout
+and route middleware names in `definePageMeta()` and `setPageLayout()`. A file that names a layout
+or a middleware of a layer that it may not use gives a `layer-boundary` or `layer-internal` error.
+Fix the code, or accept the findings with `layerscope check --update-baseline`.
 
 ## "Unknown option" in the GitHub Action
 

@@ -45,18 +45,24 @@ describe.each([
     await expect(snapshot(result)).toMatchFileSnapshot(`snapshots/findings/${name}.txt`);
   });
 
-  it('are the same from the .d.ts fallback, except for the shadowed-* rules and island components', async () => {
+  it('are the same from the .d.ts fallback, except for the shadowed-* rules, island components and layout and middleware names', async () => {
     const [registry, types] = await Promise.all([
       analyze({ rootDir: root, source: 'registry' }),
       analyze({ rootDir: root, source: 'types' }),
     ]);
     // The .d.ts files do not list island components, so only the registry finds a use in
-    // `<NuxtIsland name>`. Its suggestions count that use, so they are not compared then.
+    // `<NuxtIsland name>`. They do not give the file of a layout or a middleware either, so only
+    // the registry finds a use by such a name. The suggestions count these uses, so they are not
+    // compared then.
     const islands = islandNames(root);
-    const hasIsland = registry.findings.some(f => islands.has(f.symbol));
-    const comparable = (f: Finding): Finding => (hasIsland ? { ...f, suggestion: undefined } : f);
+    const registryUse = (f: Finding): boolean =>
+      !REGISTRY_ONLY_RULES.includes(f.rule) &&
+      (islands.has(f.symbol) || /^(?:Layout|Middleware) "/u.test(f.message));
+    const hasRegistryUse = registry.findings.some(f => registryUse(f));
+    const comparable = (f: Finding): Finding =>
+      hasRegistryUse ? { ...f, suggestion: undefined } : f;
     const expected = registry.findings.filter(
-      f => !REGISTRY_ONLY_RULES.includes(f.rule) && !islands.has(f.symbol),
+      f => !REGISTRY_ONLY_RULES.includes(f.rule) && !registryUse(f),
     );
     expect(types.findings.map(f => comparable(f))).toEqual(expected.map(f => comparable(f)));
   });
@@ -138,6 +144,24 @@ describe('a component name with files in two layers of the matrix fixture', () =
       ]);
     },
   );
+});
+
+describe('the layout and middleware names of the matrix fixture', () => {
+  // A page of `shop`, which may use only `base`, names the layout `panel` and the middleware
+  // `guard` of `theme`, and gives an inline middleware function.
+  it('checks a name in definePageMeta against the file that Nuxt uses for it', async () => {
+    const { edges, findings } = await analyze({ rootDir: MATRIX_ROOT, source: 'registry' });
+    const named = edges.filter(e => e.kind === 'layout' || e.kind === 'middleware');
+    expect(named.map(e => [e.kind, e.symbol, relative(MATRIX_ROOT, e.to ?? '')])).toEqual([
+      ['layout', 'panel', 'layers/theme/app/layouts/panel.vue'],
+      ['middleware', 'guard', 'layers/theme/app/middleware/guard.ts'],
+    ]);
+    const page = findings.filter(f => f.file.endsWith('/checkout.vue'));
+    expect(page.map(f => f.message)).toEqual([
+      'Layout "panel" crosses from layer "shop" into "theme"',
+      'Middleware "guard" crosses from layer "shop" into "theme"',
+    ]);
+  });
 });
 
 describe('the overridden pages of the matrix fixture', () => {

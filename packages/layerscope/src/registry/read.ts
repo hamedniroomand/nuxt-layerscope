@@ -7,7 +7,7 @@ import type { ComponentMap, SymbolMap, SymbolTable } from '#src/nuxt/symbols.ts'
 import { addComponent, targetOf } from '#src/nuxt/symbols.ts';
 import { readJson } from '#src/utils/fs.ts';
 
-import type { Registry, RegistryImport } from './schema.ts';
+import type { NamedFile, Registry, RegistryImport } from './schema.ts';
 import { REGISTRY_FILE, REGISTRY_VERSION } from './schema.ts';
 
 export type RegistryRead =
@@ -105,17 +105,34 @@ function isComponentDir(entry: unknown): boolean {
   );
 }
 
+/** The check of a stored layout or named middleware: the type of each field. */
+function isNamedFiles(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      entry =>
+        typeof entry === 'object' &&
+        entry !== null &&
+        typeof (entry as Record<string, unknown>).name === 'string' &&
+        typeof (entry as Record<string, unknown>).file === 'string',
+    )
+  );
+}
+
 /**
  * Whether the file has each field that this release needs, with the right type: `modulesDir` or
  * `publicDir` of a layer (layerscope would scan the Nuxt modules and public dirs), `importDirs`
  * and `nuxtIgnore` (the stale check of new files), `global` of a component and `nuxtContent` (the
  * "possibly used" marks of `unused`), and `shadowedLayouts`, `shadowedMiddleware`,
- * `shadowedPages` and `shadowedImports` (the shadowed rules). A file without one is stale, or
- * damaged, for example with a bad entry in `componentDirs`.
+ * `shadowedPages` and `shadowedImports` (the shadowed rules), and `layouts` and `middleware` (the
+ * uses of a layout or a middleware by its name). A file without one is stale, or damaged, for
+ * example with a bad entry in `componentDirs`.
  */
 function isComplete(registry: Record<string, unknown>): boolean {
   const {
     layers,
+    layouts,
+    middleware,
     components,
     componentDirs,
     importDirs,
@@ -137,6 +154,8 @@ function isComplete(registry: Record<string, unknown>): boolean {
     Array.isArray(components) &&
     components.every(entry => isComponent(entry)) &&
     typeof nuxtContent === 'boolean' &&
+    isNamedFiles(layouts) &&
+    isNamedFiles(middleware) &&
     isShadowedFiles(shadowedLayouts) &&
     isShadowedFiles(shadowedMiddleware) &&
     isShadowedPages(shadowedPages) &&
@@ -170,6 +189,10 @@ function importMap(imports: RegistryImport[], buildDir: string): SymbolMap {
   return new Map(imports.map(entry => [entry.name, targetOf(entry.from, buildDir)]));
 }
 
+function namedMap(entries: NamedFile[], buildDir: string): SymbolMap {
+  return new Map(entries.map(entry => [entry.name, targetOf(entry.file, buildDir)]));
+}
+
 /** The files of the global components, as the symbol table has them. */
 export function globalComponentFiles(registry: Registry, buildDir: string): string[] {
   return registry.components
@@ -193,5 +216,7 @@ export function tableFromRegistry(registry: Registry, buildDir: string): SymbolT
       shared: importMap(registry.imports.shared, buildDir),
     },
     components: new Map([...components, ...lazy]),
+    layouts: namedMap(registry.layouts, buildDir),
+    middleware: namedMap(registry.middleware, buildDir),
   };
 }

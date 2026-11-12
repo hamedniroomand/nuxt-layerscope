@@ -24,6 +24,13 @@ export interface FileScan {
    * the generated .d.ts files do not list island components.
    */
   islands: Named[];
+  /**
+   * The layout names that are fixed strings: `layout` in `definePageMeta()`, also in its object
+   * form `{ name }`, and the first argument of `setPageLayout()`.
+   */
+  layouts: Named[];
+  /** The route middleware names in `middleware` of `definePageMeta()` that are fixed strings. */
+  middleware: Named[];
   /** Offsets of `<component :is>` bound to a runtime value. */
   dynamicComponents: number[];
   /**
@@ -88,6 +95,8 @@ export function emptyScan(): FileScan {
     renderArgs: [],
     jsxTags: [],
     islands: [],
+    layouts: [],
+    middleware: [],
     dynamicComponents: [],
     quietDynamicComponents: [],
     imports: [],

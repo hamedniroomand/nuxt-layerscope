@@ -4,11 +4,18 @@ import type { AllowEntry, Edge, Finding, Layer, LayerscopeConfig } from '#src/ty
 
 import { coversEdge } from './exposure.ts';
 
+const KIND_LABELS = {
+  'auto-import': 'Auto-import',
+  import: 'Import',
+  layout: 'Layout',
+  middleware: 'Middleware',
+} as const;
+
 export function describeEdge(edge: Edge): string {
   if (edge.kind === 'component') {
     return `Component <${edge.symbol}>`;
   }
-  return edge.kind === 'import' ? `Import "${edge.symbol}"` : `Auto-import "${edge.symbol}"`;
+  return `${KIND_LABELS[edge.kind]} "${edge.symbol}"`;
 }
 
 function rootOf(layers: Layer[], name: string | null): string | undefined {

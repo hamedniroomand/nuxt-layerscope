@@ -59,6 +59,20 @@ describe('graph payload', () => {
   });
 });
 
+describe('the references behind an edge, by name', () => {
+  it('gives a layout and a middleware with the same name a group each', () => {
+    const edges = [
+      makeEdge({ kind: 'layout', symbol: 'auth', to: '/app/layers/shop/layouts/auth.vue' }),
+      makeEdge({ kind: 'middleware', symbol: 'auth', to: '/app/layers/shop/middleware/auth.ts' }),
+    ];
+    const view = edgeView(makeResult({ edges }), 'web', 'shop');
+    expect(view.symbols.map(symbol => [symbol.symbol, symbol.kind, symbol.count])).toEqual([
+      ['auth', 'layout', 1],
+      ['auth', 'middleware', 1],
+    ]);
+  });
+});
+
 describe('edge and node detail', () => {
   it('groups the references behind an edge by symbol, heaviest first', () => {
     const view = edgeView(result(), 'web', 'shop');

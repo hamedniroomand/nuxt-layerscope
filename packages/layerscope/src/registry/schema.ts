@@ -42,6 +42,13 @@ export interface ShadowedFile {
   shadowedBy: string;
 }
 
+/** A layout or a named route middleware that Nuxt uses, with its name. */
+export interface NamedFile {
+  name: string;
+  /** Absolute path once aliases are resolved, or a bare module specifier. */
+  file: string;
+}
+
 /** A page that lost to a page with the same path in the pages dir of another layer. */
 export interface ShadowedPage extends ShadowedFile {
   /** The path of the file relative to the pages dir, without the extension. */
@@ -102,6 +109,10 @@ export interface Registry {
   /** The project uses Nuxt Content, which can render any component by its name from a content file. */
   nuxtContent: boolean;
   imports: Record<Context, RegistryImport[]>;
+  /** The layouts that Nuxt uses. Code uses a layout by its name. */
+  layouts: NamedFile[];
+  /** The named route middleware that Nuxt uses. A page cannot use global middleware by its name. */
+  middleware: NamedFile[];
   /** The `layerscope` key of `nuxt.config`, when it sets layers or rules. Added in 0.1.0. */
   config?: ProjectConfig;
 }

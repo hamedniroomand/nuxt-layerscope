@@ -171,6 +171,8 @@ function symbolFilesOf(symbols: SymbolTable): string[] {
   const targets = [
     ...[...symbols.components.values()].flat(),
     ...Object.values(symbols.imports).flatMap(map => Array.from(map.values())),
+    ...(symbols.layouts?.values() ?? []),
+    ...(symbols.middleware?.values() ?? []),
   ];
   for (const { file } of targets) {
     if (file !== null) {

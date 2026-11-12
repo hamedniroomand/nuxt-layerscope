@@ -43,14 +43,15 @@ export interface Layer {
   defaultImports?: boolean;
 }
 
-export type ReferenceKind = 'auto-import' | 'component' | 'import';
+/** `layout` and `middleware`: a name in `definePageMeta()` or `setPageLayout()`. */
+export type ReferenceKind = 'auto-import' | 'component' | 'import' | 'layout' | 'middleware';
 
 export interface Reference {
   file: string;
   line: number;
   column: number;
   kind: ReferenceKind;
-  /** Identifier, component name or import specifier. */
+  /** Identifier, component name, import specifier, or layout or route middleware name. */
   symbol: string;
 }
 
@@ -236,7 +237,10 @@ export interface AnalyzeResult {
   findings: Finding[];
   /** Things the user should know about the run, such as rules that could not run. */
   notes: string[];
-  /** Every auto-import and component Nuxt registered, by context. */
+  /**
+   * Every auto-import and component Nuxt registered, by context. With the registry, also the
+   * layouts and the named route middleware.
+   */
   symbols: SymbolTable;
   /**
    * Files rendering a component chosen at runtime (`<component :is>`, `<NuxtIsland :name>`,

@@ -106,7 +106,7 @@ Finding fields:
 | `rule`                   | `layer-boundary`, `layer-cycle`, `layer-internal`, `unresolved-reference`, `shadowed-component`, `shadowed-layout`, `shadowed-middleware`, `shadowed-page` or `shadowed-auto-import`                                                                                                                                                                                                           |
 | `severity`               | `error` or `warn`                                                                                                                                                                                                                                                                                                                                                                              |
 | `file`, `line`, `column` | Where the reference is; 1-based                                                                                                                                                                                                                                                                                                                                                                |
-| `symbol`                 | Identifier, component name or import specifier, or the name or path of an overridden file                                                                                                                                                                                                                                                                                                      |
+| `symbol`                 | Identifier, component name, import specifier, or layout or route middleware name, or the name or path of an overridden file                                                                                                                                                                                                                                                                    |
 | `fromLayer`              | Layer of the file                                                                                                                                                                                                                                                                                                                                                                              |
 | `toLayer`                | Layer the symbol resolves to, or `null` for packages and unresolved references, and for a shadowed rule when the winner is in no layer                                                                                                                                                                                                                                                         |
 | `target`                 | File the symbol resolves to, when known                                                                                                                                                                                                                                                                                                                                                        |
@@ -209,9 +209,10 @@ layerscope check --format gitlab > gl-code-quality-report.json
 }
 ```
 
-`kind` is `auto-import`, `component` or `import`; `status` is `same-layer`, `external`,
-`unrestricted`, `allowed`, `not-allowed` or `not-exposed`. Each target also has `exposure`: `exposed`
-or `internal` when its layer sets [`expose`](./config#expose), and `all` when it does not.
+`kind` is `auto-import`, `component`, `import`, `layout` or `middleware`; `status` is
+`same-layer`, `external`, `unrestricted`, `allowed`, `not-allowed` or `not-exposed`. Each target
+also has `exposure`: `exposed` or `internal` when its layer sets [`expose`](./config#expose), and
+`all` when it does not.
 
 ## `unused` output
 
