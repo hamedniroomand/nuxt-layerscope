@@ -248,3 +248,48 @@ describe('shadowedFileFindings and the auto-imports', () => {
     );
   });
 });
+
+describe('shadowedFileFindings and the server routes', () => {
+  it('reports a server route that a file of another layer replaces', () => {
+    const { root, lookup } = layers([
+      'base/server/api/hello.get.ts',
+      'app/server/api/hello.get.ts',
+    ]);
+    const entry = entryOf(root, 'GET /api/hello', 'server/api/hello.get.ts');
+    expect(
+      shadowedFileFindings(registryWith({ shadowedServerRoutes: [entry] }), lookup, {}),
+    ).toMatchObject([
+      {
+        rule: 'shadowed-server-route',
+        severity: 'warn',
+        symbol: 'GET /api/hello',
+        message: 'Server route "GET /api/hello" of layer "base" is overridden by layer "app"',
+      },
+    ]);
+  });
+
+  it('reports nothing when the rule is off', () => {
+    const { root, lookup } = layers(['base/server/api/a.ts', 'app/server/api/a.ts']);
+    const registry = registryWith({
+      shadowedServerRoutes: [entryOf(root, '/api/a', 'server/api/a.ts')],
+    });
+    const config = { rules: { 'shadowed-server-route': 'off' as const } };
+    expect(shadowedFileFindings(registry, lookup, config)).toEqual([]);
+  });
+});
+
+describe('shadowedFileFindings and the server auto-imports', () => {
+  it('reports a server util that a file of another layer replaces', () => {
+    const { root, lookup } = layers(['base/server/utils/db.ts', 'app/server/utils/db.ts']);
+    const entry = entryOf(root, 'useDb', 'server/utils/db.ts');
+    expect(
+      shadowedFileFindings(registryWith({ shadowedServerImports: [entry] }), lookup, {}),
+    ).toMatchObject([
+      {
+        rule: 'shadowed-auto-import',
+        symbol: 'useDb',
+        message: 'Server auto-import "useDb" of layer "base" is overridden by layer "app"',
+      },
+    ]);
+  });
+});

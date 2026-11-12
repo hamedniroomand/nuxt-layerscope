@@ -357,10 +357,7 @@ Limits:
 - A file that is added after the last `nuxi prepare` or dev write is not reported until the
   registry is written again.
 - Plugins, server middleware and Nitro plugins are not reported, because Nuxt and Nitro use all of
-  them.
-- Server routes are not reported. When two layers have a server route with the same path, method
-  and env (a `.dev` or `.prod` suffix), Nitro uses the route of the layer with the higher priority.
-  It drops the other route with no message.
+  them. For server routes, see [`shadowed-server-route`](#shadowed-server-route).
 
 Without the registry, the rule reports nothing and prints the note of the shadowed-\* rules.
 
@@ -401,13 +398,53 @@ Limits:
 
 Without the registry, the rule reports nothing and prints the note of the shadowed-\* rules.
 
+## `shadowed-server-route`
+
+- Default: `warn`
+- Needs the [Nuxt module](../guide/nuxt-module)
+
+Two layers have a route file with the same path in the server dir, for example
+`server/api/hello.get.ts`, and Nitro uses only one of them. layerscope reports the file that Nitro
+does not use:
+
+```text
+layers/base/server/api/hello.get.ts
+  1:1     warn   Server route "GET /api/hello" of layer "base" is overridden by layer "root"  shadowed-server-route
+                 GET /api/hello → server/api/hello.get.ts
+```
+
+The name in the message is the route of the file. The name starts with the method when the file
+name has one (`hello.get.ts`), and ends with the env when the file name has one (`hello.dev.ts`
+gives `/api/hello (dev)`). Nitro keeps one file for each route, method and env. It drops the other
+files with no message.
+
+An override is often on purpose. Once it is on purpose, accept it with a
+[baseline](../guide/baseline) or turn the rule off.
+
+Limits:
+
+- Only files that have the same path (without the extension) in the server dir of each layer are
+  reported. Two files with other paths that give the same route are not reported, for example
+  `api/foo.ts` and `api/foo/index.ts`, or `api/foo.ts` and `routes/api/foo.ts`. Nitro scans `api/`
+  before `routes/`, so in the second example the file of the lower layer can win.
+- Two files in the same layer are not reported.
+- A route file that no layer owns is not reported.
+- A route that a module or the `handlers` option of Nitro adds is not reported.
+- Server middleware and Nitro plugins are not reported, because Nitro uses all of them.
+- A file that is added after the last `nuxi prepare` or dev write is not reported until the
+  registry is written again. The stale check does not find a new route file. Under `nuxi dev`, the
+  module can write the registry before Nitro scans a new route file. Then a new file that replaces
+  the route of another layer can stay unreported until the next write.
+
+Without the registry, the rule reports nothing and prints the note of the shadowed-\* rules.
+
 ## `shadowed-auto-import`
 
 - Default: `warn`
 - Needs the [Nuxt module](../guide/nuxt-module)
 
-Two files give an auto-import with the same name, and Nuxt uses only one of them. layerscope
-reports each file that Nuxt does not use:
+Two files give an auto-import with the same name, and Nuxt or Nitro uses only one of them.
+layerscope reports each file that Nuxt or Nitro does not use:
 
 ```text
 layers/base/app/composables/useTheme.ts
@@ -415,28 +452,42 @@ layers/base/app/composables/useTheme.ts
                  useTheme → app/composables/useTheme.ts
 ```
 
+The rule also checks the auto-imports of Nitro from the server dir of each layer, for example
+`server/utils`. Then the message starts with `Server auto-import`:
+
+```text
+layers/base/server/utils/db.ts
+  1:1     warn   Server auto-import "useDb" of layer "base" is overridden by layer "root"  shadowed-auto-import
+                 useDb → server/utils/db.ts
+```
+
 An override is often on purpose. Once it is on purpose, accept it with a
 [baseline](../guide/baseline) or turn the rule off.
 
-Nuxt uses the auto-import with the highest priority. A file in the source dir of a layer gets the
-priority of its layer, so the higher layer wins. A file outside every source dir, for example in
-`shared/utils` in Nuxt 4, gets a higher priority than any layer file. It wins over the files of all
-layers, also over a file of a higher layer. Nuxt prints `Duplicated imports` only when two files
-have the same priority. Then the file of the lower layer wins. A built-in auto-import of Nuxt usually
-also wins over a file in the source dir of a layer.
+In the app, Nuxt uses the auto-import with the highest priority. A file in the source dir of a
+layer gets the priority of its layer, so the higher layer wins. A file outside every source dir, for
+example in `shared/utils` in Nuxt 4, gets a higher priority than any layer file. It wins over the
+files of all layers, also over a file of a higher layer. Nuxt prints `Duplicated imports` only when
+two files have the same priority. Then the file of the lower layer wins. A built-in auto-import of
+Nuxt usually also wins over a file in the source dir of a layer.
+
+Nitro gives no priority to a layer. When two files export the same name, Nitro uses the file that
+it scans last, and prints `Duplicated imports`. The order depends on the Nuxt release. For example,
+Nuxt 4.6.2 gives Nitro the dirs of the higher layer last, so the file of the higher layer wins.
+Nuxt 4.5.2 gives them first, so the file of the lower layer wins.
 
 Limits:
 
-- Only the auto-imports of the app are checked. Server utils (`server/utils`) are not. When two
-  layers export the same name there, Nitro keeps one and prints a warning. The scan of
-  `shared/utils` by Nitro is not checked either.
+- Of the auto-imports of Nitro, only the files in the server dir of a layer are checked. The scan
+  of `shared/utils` by Nitro is not checked, because there Nitro and the app can use different
+  files.
 - Type exports are not reported.
 - Two files of the same layer with the same auto-import name are not reported.
 - An auto-import in a file that no layer owns is not reported.
 - An auto-import that comes from a package, or from a module in `node_modules`, is not reported
   when it loses.
-- When the winner is in no layer (for example a built-in auto-import of Nuxt), the message names
-  the file or the import path of the winner instead of a layer.
+- When the winner is in no layer (for example a built-in auto-import of Nuxt or Nitro), the
+  message names the file or the import path of the winner instead of a layer.
 - A file that re-exports the same function from another layer (`export { useX } from ...`) makes
   the other file look overridden, and it is reported.
 - A file that is added after the last `nuxi prepare` or dev write is not reported until the

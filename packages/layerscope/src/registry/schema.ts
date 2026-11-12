@@ -30,11 +30,15 @@ export interface ShadowedComponent extends RegistryComponent {
 }
 
 /**
- * A layout, a route middleware or an auto-import that lost to a file of the same name in another
- * layer (an auto-import: to any auto-import of the same name). A page adds `routes`.
+ * A layout, a route middleware, a server route or an auto-import that lost to a file of the same
+ * name in another layer (an auto-import: to any auto-import of the same name). A page adds
+ * `routes`.
  */
 export interface ShadowedFile {
-  /** The name that Nuxt gives the layout, the middleware or the auto-import. */
+  /**
+   * The name that Nuxt gives the layout, the middleware or the auto-import. For a server route, the
+   * route, with the method and the env when the name of the file sets them: `GET /api/hello (dev)`.
+   */
   name: string;
   /** Absolute path of the file that Nuxt does not use. */
   file: string;
@@ -90,7 +94,12 @@ export interface Registry {
   shadowedLayouts: ShadowedFile[];
   shadowedMiddleware: ShadowedFile[];
   shadowedPages: ShadowedPage[];
+  /** The auto-imports of the app that Nuxt does not use. */
   shadowedImports: ShadowedFile[];
+  /** The route files that Nitro does not use, because the same path in another layer wins. */
+  shadowedServerRoutes: ShadowedFile[];
+  /** The auto-imports of Nitro from a file in a server dir that Nitro does not use. */
+  shadowedServerImports: ShadowedFile[];
   componentDirs: RegistryComponentDir[];
   /**
    * Every dir that Nuxt or Nitro scans for auto-imports, for the stale check. `null` when the

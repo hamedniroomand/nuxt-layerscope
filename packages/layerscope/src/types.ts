@@ -11,6 +11,7 @@ export type RuleName =
   | 'shadowed-layout'
   | 'shadowed-middleware'
   | 'shadowed-page'
+  | 'shadowed-server-route'
   | 'shadowed-auto-import';
 
 export type PresetName = 'layered' | 'stacked' | 'features';

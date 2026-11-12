@@ -41,6 +41,8 @@ function buildDirWith(extra: Record<string, unknown>): string {
       shadowedMiddleware: [],
       shadowedPages: [],
       shadowedImports: [],
+      shadowedServerRoutes: [],
+      shadowedServerImports: [],
       imports: { app: [], server: [], shared: [] },
       ...extra,
     }),
@@ -107,15 +109,20 @@ describe('readRegistry and the component dirs', () => {
 
 const SHADOWED = { name: 'default', file: '/p/a/default.vue', shadowedBy: '/p/b/default.vue' };
 
-describe('readRegistry and the shadowed layouts and middleware', () => {
-  it.each(['shadowedLayouts', 'shadowedMiddleware', 'shadowedImports'])(
-    'reads a good %s list',
-    field => {
-      expect(readRegistry(buildDirWith({ importDirs: [], [field]: [SHADOWED] })).kind).toBe('ok');
-    },
-  );
+const SHADOWED_LISTS = [
+  'shadowedLayouts',
+  'shadowedMiddleware',
+  'shadowedImports',
+  'shadowedServerRoutes',
+  'shadowedServerImports',
+];
 
-  it.each(['shadowedLayouts', 'shadowedMiddleware', 'shadowedImports'])(
+describe('readRegistry and the lists of shadowed files', () => {
+  it.each(SHADOWED_LISTS)('reads a good %s list', field => {
+    expect(readRegistry(buildDirWith({ importDirs: [], [field]: [SHADOWED] })).kind).toBe('ok');
+  });
+
+  it.each(SHADOWED_LISTS)(
     'marks the registry as stale when %s is missing or has a bad entry',
     field => {
       for (const value of [

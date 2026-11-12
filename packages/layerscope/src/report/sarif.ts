@@ -24,6 +24,8 @@ const DESCRIPTIONS: Record<RuleName, string> = {
     'A route middleware is replaced by a middleware of the same name in another layer.',
   'shadowed-page':
     'A page is replaced by a page with the same path in the pages dir of another layer.',
+  'shadowed-server-route':
+    'A server route is replaced by a route file with the same path in the server dir of another layer.',
   'shadowed-auto-import':
     'An auto-import is replaced by an auto-import of the same name from another file or package.',
 };

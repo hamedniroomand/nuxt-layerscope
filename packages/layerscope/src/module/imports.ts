@@ -131,17 +131,17 @@ export function registryImports(
 }
 
 /**
- * Nitro's auto-imports without the dynamic entries whose file is in `gone`, or `null` when this
- * unimport does not give what it needs. A filter on `getImports()` is not enough: it is already
- * deduped, so a stale entry can hide a live entry of the same name. So a new instance of unimport
- * gets the same options, the static imports and the other dynamic imports, and its
+ * A copy of Nitro's unimport without the dynamic entries whose file is in `gone`, or `null` when
+ * this unimport does not give what it needs. A filter on `getImports()` is not enough: it is
+ * already deduped, so a stale entry can hide a live entry of the same name. So a new instance of
+ * unimport gets the same options, the static imports and the other dynamic imports, and its
  * `getImports()` dedupes them in the real way. Nitro's own instance does not change.
  */
-export async function importsWithout(
+export async function unimportWithout(
   context: Unimport,
   gone: Set<string>,
   rootDir: string,
-): Promise<UnimportImport[] | null> {
+): Promise<Unimport | null> {
   const state = context.getInternalContext?.();
   const loaded = await loadUnimport(rootDir);
   const create = loaded.kind === 'ok' ? loaded.unimport.createUnimport : undefined;
@@ -160,8 +160,7 @@ export async function importsWithout(
     // Nitro already warned about the same names.
     warn: () => null,
   });
-  const imports = await activeImports(copy);
-  return imports;
+  return copy;
 }
 
 /**
@@ -179,6 +178,13 @@ async function scanNitroDirs(context: Unimport | undefined): Promise<UnimportImp
   }
   const scanned = await context.scanImportsFromDir();
   return scanned;
+}
+
+/** Nitro's auto-imports, and the unimport instance that gives them. */
+export interface NitroRead {
+  imports: UnimportImport[];
+  /** Nitro's own instance, or a copy without the stale entries. */
+  context: Unimport | undefined;
 }
 
 /**
@@ -216,20 +222,23 @@ export class NitroImports {
     await this.firstScan;
   }
 
-  public async read(context: Unimport | undefined, rootDir: string): Promise<UnimportImport[]> {
+  public async read(context: Unimport | undefined, rootDir: string): Promise<NitroRead> {
     await this.firstScan;
     const scanned = await scanNitroDirs(context);
     const imports = await activeImports(context);
     if (context === undefined || scanned === null) {
-      return imports;
+      return { imports, context };
     }
     const gone = this.goneFiles(scanned);
     if (gone.size === 0) {
-      return imports;
+      return { imports, context };
     }
     // Without the parts that it needs, the stale entries stay, and the stale check reports them.
-    const rebuilt = await importsWithout(context, gone, rootDir);
-    return rebuilt ?? imports;
+    const rebuilt = await unimportWithout(context, gone, rootDir);
+    if (rebuilt === null) {
+      return { imports, context };
+    }
+    return { imports: await activeImports(rebuilt), context: rebuilt };
   }
 
   /** Adds the files of a scan to the history. */
