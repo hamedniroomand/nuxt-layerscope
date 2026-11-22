@@ -99,6 +99,8 @@ export function makeRegistry(
     shadowedMiddleware: [],
     shadowedPages: [],
     shadowedImports: [],
+    shadowedServerRoutes: [],
+    shadowedServerImports: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),

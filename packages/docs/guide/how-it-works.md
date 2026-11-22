@@ -129,8 +129,9 @@ The rules look at the edges and the registry:
 - [`shadowed-component`](../reference/rules#shadowed-component) reports overridden components.
 - [`shadowed-layout`](../reference/rules#shadowed-layout),
   [`shadowed-middleware`](../reference/rules#shadowed-middleware),
-  [`shadowed-page`](../reference/rules#shadowed-page) and
+  [`shadowed-page`](../reference/rules#shadowed-page),
+  [`shadowed-server-route`](../reference/rules#shadowed-server-route) and
   [`shadowed-auto-import`](../reference/rules#shadowed-auto-import) report overridden layouts,
-  route middleware, pages and auto-imports.
+  route middleware, pages, server routes and auto-imports.
 
 Findings are sorted by file, line, column, rule and symbol, so reports are deterministic.

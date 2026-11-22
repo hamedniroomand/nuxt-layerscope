@@ -64,7 +64,7 @@ function isComponent(entry: unknown): boolean {
   );
 }
 
-/** The check of a stored shadowed layout or middleware: the type of each field. */
+/** The check of a stored list of shadowed files: the type of each field. */
 function isShadowedFiles(value: unknown): boolean {
   return (
     Array.isArray(value) &&
@@ -110,8 +110,9 @@ function isComponentDir(entry: unknown): boolean {
  * `publicDir` of a layer (layerscope would scan the Nuxt modules and public dirs), `importDirs`
  * and `nuxtIgnore` (the stale check of new files), `global` of a component and `nuxtContent` (the
  * "possibly used" marks of `unused`), and `shadowedLayouts`, `shadowedMiddleware`,
- * `shadowedPages` and `shadowedImports` (the shadowed rules). A file without one is stale, or
- * damaged, for example with a bad entry in `componentDirs`.
+ * `shadowedPages`, `shadowedImports`, `shadowedServerRoutes` and `shadowedServerImports` (the
+ * shadowed rules). A file without one is stale, or damaged, for example with a bad entry in
+ * `componentDirs`.
  */
 function isComplete(registry: Record<string, unknown>): boolean {
   const {
@@ -125,6 +126,8 @@ function isComplete(registry: Record<string, unknown>): boolean {
     shadowedMiddleware,
     shadowedPages,
     shadowedImports,
+    shadowedServerRoutes,
+    shadowedServerImports,
   } = registry;
   return (
     Array.isArray(layers) &&
@@ -141,6 +144,8 @@ function isComplete(registry: Record<string, unknown>): boolean {
     isShadowedFiles(shadowedMiddleware) &&
     isShadowedPages(shadowedPages) &&
     isShadowedFiles(shadowedImports) &&
+    isShadowedFiles(shadowedServerRoutes) &&
+    isShadowedFiles(shadowedServerImports) &&
     isNuxtIgnore(nuxtIgnore) &&
     (importDirs === null ||
       (Array.isArray(importDirs) && importDirs.every(entry => isImportDir(entry))))

@@ -30,6 +30,8 @@ export function createProject(): { dir: string; registryFile: string; consumer: 
     shadowedMiddleware: [],
     shadowedPages: [],
     shadowedImports: [],
+    shadowedServerRoutes: [],
+    shadowedServerImports: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),

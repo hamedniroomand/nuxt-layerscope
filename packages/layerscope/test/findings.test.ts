@@ -171,3 +171,21 @@ describe('the overridden auto-imports of the matrix fixture', () => {
     ]);
   });
 });
+
+describe('the overridden server files of the matrix fixture', () => {
+  // The root and `base` have a route file, a server middleware and a Nitro plugin with the same
+  // path. Nitro uses both middleware files and both plugins.
+  it('reports the route that Nitro does not use, and no middleware or plugin', async () => {
+    const { findings } = await analyze({ rootDir: MATRIX_ROOT, source: 'registry' });
+    const server = findings.filter(
+      f => f.rule.startsWith('shadowed-') && relative(MATRIX_ROOT, f.file).includes('server/'),
+    );
+    expect(server.map(f => [relative(MATRIX_ROOT, f.file), f.rule, f.message])).toEqual([
+      [
+        'layers/base/server/api/ping.get.ts',
+        'shadowed-server-route',
+        'Server route "GET /api/ping" of layer "base" is overridden by layer "root"',
+      ],
+    ]);
+  });
+});
