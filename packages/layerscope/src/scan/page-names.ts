@@ -6,7 +6,7 @@ import type { VisitContext } from './script-visitors.ts';
 import type { Named } from './types.ts';
 
 /** The modules that export the `setPageLayout` of Nuxt. */
-const NUXT_MODULES = new Set(['#imports', '#app', 'nuxt/app']);
+const NUXT_MODULES = new Set(['#imports', '#app', '#app/composables/router', 'nuxt/app']);
 
 /** The value without the wrappers that Nuxt also removes: `('x')`, `'x' as const` and the like. */
 function unwrap(node: Node | null | undefined): Node | null | undefined {

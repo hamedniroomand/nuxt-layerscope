@@ -83,10 +83,13 @@ describe('the name in setPageLayout', () => {
     ]);
   });
 
-  it.each(['#imports', '#app', 'nuxt/app'])('reads it when it is imported from %s', from => {
-    const source = `import { setPageLayout } from '${from}';\nsetPageLayout('wide');`;
-    expect(names(source, '/app/middleware/a.ts').layouts).toEqual(['wide']);
-  });
+  it.each(['#imports', '#app', '#app/composables/router', 'nuxt/app'])(
+    'reads it when it is imported from %s',
+    from => {
+      const source = `import { setPageLayout } from '${from}';\nsetPageLayout('wide');`;
+      expect(names(source, '/app/middleware/a.ts').layouts).toEqual(['wide']);
+    },
+  );
 
   it('skips a local function or an import from another module with that name', () => {
     const local = "function setPageLayout(name: string) {}\nsetPageLayout('wide');";

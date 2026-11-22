@@ -102,7 +102,7 @@ fixed (a string literal, or a template literal with no `${}`) in these places:
 - `middleware` in `definePageMeta()`: one name, or each name in a list. A function in the list is
   not a name.
 - The first argument of `setPageLayout()` in a script. It must be the auto-import of Nuxt, or an
-  import from `#imports`, `#app` or `nuxt/app`.
+  import from `#imports`, `#app`, `#app/composables/router` or `nuxt/app`.
 
 The dependency goes to the file that Nuxt uses for the name. When two layers have a layout or a
 middleware with the same name, Nuxt uses the file of the layer that comes first. layerscope reads
