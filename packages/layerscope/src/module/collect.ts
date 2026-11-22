@@ -4,6 +4,7 @@ import type { ProjectConfig } from '#src/config/effective.ts';
 import { layersForModule } from '#src/nuxt/layers.ts';
 import type {
   ComponentMode,
+  NamedFile,
   Registry,
   RegistryComponent,
   RegistryComponentDir,
@@ -26,7 +27,7 @@ import {
 } from './imports.ts';
 import type { Component, ComponentsDir, Nitro, Nuxt, Unimport, UnimportImport } from './nuxt.ts';
 import { onNitroInit, readNuxtIgnore, usesNuxtContent } from './nuxt.ts';
-import { recordShadowedFiles, shadowedServerRoutes } from './shadowed-files.ts';
+import { recordNamedFiles, recordShadowedFiles, shadowedServerRoutes } from './shadowed-files.ts';
 
 const SERVER_PLACEHOLDER = '/components/server-placeholder';
 
@@ -46,6 +47,8 @@ interface AppPart {
   /** Not resolved yet: the shared imports compare the raw `from` with the server imports. */
   imports: UnimportImport[];
   importDirs: RegistryImportDir[] | null;
+  layouts: NamedFile[];
+  middleware: NamedFile[];
 }
 
 /**
@@ -190,6 +193,8 @@ export class RegistryCollector {
       nuxtIgnore: readNuxtIgnore(this.nuxt),
       nuxtContent: usesNuxtContent(this.nuxt),
       imports: this.imports(app.imports, server.imports),
+      layouts: app.layouts,
+      middleware: app.middleware,
       ...(Object.keys(this.config).length > 0 ? { config: this.config } : {}),
     };
   }
@@ -225,6 +230,7 @@ export class RegistryCollector {
       shadowedImports: overriddenImports,
       imports,
       importDirs,
+      ...recordNamedFiles(this.nuxt, toFile),
     };
     return this.app;
   }

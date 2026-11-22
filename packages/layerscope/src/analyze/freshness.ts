@@ -18,6 +18,8 @@ function allTargets(table: SymbolTable): SymbolTarget[] {
   return [
     ...[...table.components.values()].flat(),
     ...Object.values(table.imports).flatMap(map => Array.from(map.values())),
+    ...(table.layouts?.values() ?? []),
+    ...(table.middleware?.values() ?? []),
   ];
 }
 

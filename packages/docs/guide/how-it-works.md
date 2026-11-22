@@ -49,10 +49,11 @@ It comes from one of two sources:
 | `registry` | `.nuxt/layerscope/registry.json`, written by the Nuxt module from Nuxt's hooks                                                                                 |
 | `types`    | `.nuxt/components.d.ts` (or `.nuxt/types/components.d.ts`), `.nuxt/types/imports.d.ts`, `.nuxt/types/nitro-imports.d.ts` and `.nuxt/types/shared-imports.d.ts` |
 
-By default the registry is used when it exists. Both produce the same boundary findings; the
-registry also knows overridden components. On Nuxt 3, which writes no `shared-imports.d.ts`, the
-`types` source gives shared code the imports that app and server have in common, which is the
-rule Nuxt 4 uses.
+By default the registry is used when it exists. Both produce the same boundary findings, except
+for island components and the layouts and route middleware that code names: only the registry
+gives their files. The registry also knows overridden components. On Nuxt 3, which writes no
+`shared-imports.d.ts`, the `types` source gives shared code the imports that app and server have
+in common, which is the rule Nuxt 4 uses.
 
 ## 3. Freshness
 
@@ -114,6 +115,9 @@ Every source file of every checked layer is parsed:
   resolves to the file in that layer. When the `package.json` of the layer has `exports`, only the
   paths that `exports` gives a file for resolve. Other packages are not resolved: they are
   external. `#imports` and `#components` are resolved by name through the symbol table.
+- **Layout and middleware names** that a file gives as fixed strings in `definePageMeta()` and
+  `setPageLayout()` resolve to the file that Nuxt uses for the name. Only the registry gives these
+  files. See [`layer-boundary`](../reference/rules#layer-boundary).
 
 Each reference becomes an **edge**: from a file and its layer to a target file and its layer, or
 to a package. Only the first use of a symbol in a file is kept for each target.

@@ -34,6 +34,8 @@ function emptyRegistry(): Registry {
     shadowedImports: [],
     shadowedServerRoutes: [],
     shadowedServerImports: [],
+    layouts: [],
+    middleware: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),

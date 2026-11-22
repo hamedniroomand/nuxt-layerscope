@@ -104,6 +104,8 @@ export async function writeOutsideRegistry(
     shadowedImports: [],
     shadowedServerRoutes: [],
     shadowedServerImports: [],
+    layouts: [],
+    middleware: [],
     componentDirs: [],
     importDirs: [],
     nuxtIgnore: noNuxtIgnore(),

@@ -11,6 +11,11 @@ export interface ImportTarget {
   external: string | null;
 }
 
+/** The target of an edge to the file of a symbol. */
+export function edgeTarget({ file, module }: SymbolTarget): ImportTarget {
+  return { to: file, external: module };
+}
+
 export type ImportOutcome =
   | { resolved: true; symbol: string; target: ImportTarget; names?: string[] }
   | { resolved: false; message: string };

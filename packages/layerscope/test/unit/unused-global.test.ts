@@ -5,7 +5,7 @@ import { blindSpotLines, formatUnused } from '#src/report/unused.ts';
 import type { AnalyzeResult } from '#src/types.ts';
 import { findBlindSpots } from '#src/unused/blind-spots.ts';
 import { findUnused } from '#src/unused/index.ts';
-import { makeResult } from '#test/factories.ts';
+import { makeEdge, makeResult } from '#test/factories.ts';
 
 const BANNER = '/app/components/Banner.vue';
 const CARD = '/app/components/Card.vue';
@@ -63,5 +63,12 @@ describe('unused and Nuxt Content (#119)', () => {
     const run = result();
     expect(blindSpotLines(findBlindSpots(run))).not.toContain(CONTENT_LINE);
     expect((await unusedView(run)).possiblyUsed).toBe(false);
+  });
+});
+
+describe('unused and a file that a page uses by its layout name', () => {
+  it('counts each symbol of the file as used', () => {
+    const edges = [makeEdge({ kind: 'layout', symbol: 'banner', to: BANNER, toLayer: 'web' })];
+    expect(findUnused(result({ edges })).map(symbol => symbol.name)).toEqual(['Card']);
   });
 });

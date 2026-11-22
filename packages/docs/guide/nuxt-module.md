@@ -25,6 +25,7 @@ module is better in three ways:
 | Source                                                      | Nuxt's own hooks                                                             | generated `.d.ts` files, whose format is not a public API |
 | Overridden components                                       | every scanned component, including the ones a higher-priority layer replaces | only the winner                                           |
 | [`shadowed-*` rules](../reference/rules#shadowed-component) | reported                                                                     | not available (layerscope says so)                        |
+| Layouts and route middleware that code names                | checked                                                                      | not checked                                               |
 | Stale check                                                 | every component and auto-import dir Nuxt scanned, custom dirs included       | only the default `components/` dirs                       |
 | Shared context on Nuxt 3                                    | as Nuxt resolves it                                                          | derived from app and server imports                       |
 

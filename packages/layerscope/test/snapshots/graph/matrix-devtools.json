@@ -43,9 +43,9 @@
       "allow": [
         "base"
       ],
-      "files": 3,
+      "files": 4,
       "refsIn": 1,
-      "refsOut": 14
+      "refsOut": 16
     },
     {
       "id": "theme",
@@ -54,8 +54,8 @@
       "allow": [
         "base"
       ],
-      "files": 5,
-      "refsIn": 5,
+      "files": 7,
+      "refsIn": 7,
       "refsOut": 0
     }
   ],
@@ -95,9 +95,9 @@
     {
       "from": "shop",
       "to": "theme",
-      "count": 5,
+      "count": 7,
       "status": "not-allowed",
-      "violations": 5,
+      "violations": 7,
       "severity": "error"
     }
   ],
@@ -133,9 +133,9 @@
     {
       "from": "shop",
       "to": "theme",
-      "count": 5,
+      "count": 7,
       "status": "not-allowed",
-      "violations": 5
+      "violations": 7
     }
   ],
   "layout": {

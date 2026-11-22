@@ -36,7 +36,10 @@ function matches(edge: Edge, query: string): boolean {
   return isComponent && componentName(name) === componentName(query);
 }
 
-/** Every use of a symbol (auto-import, component or import specifier), in report order. */
+/**
+ * Every use of a symbol (auto-import, component, import specifier, or layout or route middleware
+ * name), in report order.
+ */
 export function findUses(
   result: AnalyzeResult,
   query: string,

@@ -54,7 +54,10 @@ interface AnalyzeResult {
   edges: Edge[];
   findings: Finding[];
   notes: string[];
-  /** Every auto-import and component Nuxt registered, per context. */
+  /**
+   * Every auto-import and component Nuxt registered, per context. With the registry, also the
+   * layouts and the named route middleware.
+   */
   symbols: SymbolTable;
   /** The edges of the extra files, with `extraFiles`. Only `findUnused` reads them. */
   extraEdges: Edge[];

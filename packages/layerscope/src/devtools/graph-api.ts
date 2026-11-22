@@ -117,7 +117,10 @@ export function edgeView(result: AnalyzeResult, from: string, to: string): EdgeV
   const symbols = new Map<string, EdgeView['symbols'][number]>();
   for (const edge of shown) {
     const name = edgeName(edge);
-    const group = symbols.get(name) ?? { symbol: name, kind: edge.kind, count: 0, rows: [] };
+    // A layout or a route middleware can have the name of another symbol, so it has its own group.
+    const key =
+      edge.kind === 'layout' || edge.kind === 'middleware' ? `${edge.kind}\0${name}` : name;
+    const group = symbols.get(key) ?? { symbol: name, kind: edge.kind, count: 0, rows: [] };
     group.count += 1;
     group.rows.push({
       file: relative(result.rootDir, edge.file),
@@ -126,7 +129,7 @@ export function edgeView(result: AnalyzeResult, from: string, to: string): EdgeV
       column: edge.column,
       status: graphStatus(edge, result.config, result.layers),
     });
-    symbols.set(name, group);
+    symbols.set(key, group);
   }
   const statuses = new Set(uses.map(edge => graphStatus(edge, result.config, result.layers)));
   return {

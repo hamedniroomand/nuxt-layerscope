@@ -20,6 +20,8 @@ const REGISTRY = {
   shadowedImports: [],
   shadowedServerRoutes: [],
   shadowedServerImports: [],
+  layouts: [],
+  middleware: [],
   componentDirs: [],
   importDirs: [],
   nuxtIgnore: noNuxtIgnore(),

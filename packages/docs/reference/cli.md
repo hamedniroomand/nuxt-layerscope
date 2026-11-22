@@ -294,7 +294,8 @@ layerscope why <symbol> [root] [options]
 ```
 
 `symbol` is an auto-import (`useCart`), a component (`BaseButton`, `base-button`,
-`LazyBaseButton`) or an import specifier (`#layers/web/app/composables/useCart`). See
+`LazyBaseButton`), an import specifier (`#layers/web/app/composables/useCart`), or a layout or
+route middleware name (`shop`). See
 [Explore dependencies](../guide/explore#trace-a-symbol-with-why).
 
 | Option              | Default               | Description                        |

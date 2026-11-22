@@ -15,7 +15,8 @@ import { lineColumn } from '#src/utils/position.ts';
 
 import { CONTEXTS, contextOf } from './files.ts';
 import type { ImportEnv, ImportOutcome, ImportTarget } from './import-refs.ts';
-import { isIgnored, lookupAutoImports, outcomesOf } from './import-refs.ts';
+import { edgeTarget, isIgnored, lookupAutoImports, outcomesOf } from './import-refs.ts';
+import { pageNameUses } from './page-names.ts';
 import { GLOBALS_HINT, unresolvedName } from './unresolved-messages.ts';
 
 /** The files whose `h(CartSummary)` and JSX tags Nuxt changes to the component: its loader reads no others. */
@@ -86,6 +87,9 @@ export class FileAnalysis {
     }
     this.addIdentifiers(scan);
     this.addComponents(scan);
+    for (const use of pageNameUses(scan, this.env.table, this.context)) {
+      this.addEdge(use.kind, use.name, use.offset, use.target);
+    }
     this.addImports(scan);
     return this;
   }
@@ -97,14 +101,7 @@ export class FileAnalysis {
     type = false,
   ): void {
     for (const target of targets) {
-      this.addEdge(
-        'auto-import',
-        name,
-        offset,
-        { to: target.file, external: target.module },
-        undefined,
-        type,
-      );
+      this.addEdge('auto-import', name, offset, edgeTarget(target), undefined, type);
     }
   }
 

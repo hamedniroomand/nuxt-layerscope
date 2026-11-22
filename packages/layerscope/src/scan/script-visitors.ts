@@ -4,6 +4,7 @@ import { isReferenceIdentifier, walk } from 'oxc-walker';
 
 import { fixedPath, importedName, reexportedName, requiredNames, stringLiteral } from './ast.ts';
 import { recordComponentCall, recordJsxTag } from './component-calls.ts';
+import { recordPageNames } from './page-names.ts';
 import type { FileScan, ImportRef, OffsetMapper, Unread } from './types.ts';
 
 export interface VisitContext {
@@ -263,6 +264,7 @@ export const scriptVisitors: Partial<Record<Node['type'], Visitor>> = {
       }
       return;
     }
+    recordPageNames(node.callee.name, arg, ctx);
     recordComponentCall(node.callee.name, arg, ctx);
   },
   JSXOpeningElement(node, _parent, ctx) {

@@ -42,7 +42,8 @@ function usesComponent(edge: Edge): boolean {
  * for a file that is used as a component. A target that sets `imports.dirs` or turns
  * `imports.scan` off is not used for a file that is used as an auto-import, and a target that sets
  * `components` is not used for a file that is used as a component. layerscope does not know the
- * dirs of these layers. `moveTargets` also skips a script file for such an `imports` target.
+ * dirs of these layers. `moveTargets` also skips a script file for such an `imports` target. A
+ * file that code uses by its layout or middleware name gets `null` too.
  */
 export function destinationOf(
   file: string,
@@ -56,6 +57,12 @@ export function destinationOf(
     .toSorted((a, b) => b.dir.length - a.dir.length)
     .at(0);
   if (found === undefined) {
+    return null;
+  }
+  // Nuxt uses the layout or the route middleware of a name from the layer with the highest
+  // priority that has it. layerscope does not compare these names across the layers, so a file
+  // that code uses by such a name does not move.
+  if (uses.some(edge => edge.kind === 'layout' || edge.kind === 'middleware')) {
     return null;
   }
   const inside = relative(found.dir, file);

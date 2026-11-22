@@ -165,7 +165,10 @@ Entries of `expose` and `only` are names or globs.
   component by its PascalCase name, without a `Lazy` prefix: `CartSummary` also covers
   `<LazyCartSummary>` and `<cart-summary>`. For an explicit import it matches each name that the
   statement imports (`import { useCart } from '...'`). For a default or a namespace import it
-  matches the file name without its extension, as Nuxt names a composable.
+  matches the file name without its extension, as Nuxt names a composable. It also matches a
+  layout or a route middleware by its name, such as `shop` in `definePageMeta({ layout: 'shop' })`.
+  A name must start with a letter, `_` or `$`. For a name such as the middleware `2fa`, use a glob
+  of its file, such as `app/middleware/2fa.ts`.
 - A **glob** is anything else, such as `app/composables/cart/**`. It matches the path of the file
   in the layer, relative to the layer root, with forward slashes. `*` and `?` stay inside one
   folder, `**` crosses folders, and every other character is literal. A file outside the layer

@@ -7,6 +7,11 @@ import { pascalCase } from '#src/utils/strings.ts';
 /** A name is an identifier; everything else in an `expose` or `only` list is a path glob. */
 const NAME = /^[A-Za-z_$][\w$-]*$/u;
 
+/** Whether an `expose` or `only` entry is a name. Any other entry is a path glob. */
+export function isNameEntry(entry: string): boolean {
+  return NAME.test(entry);
+}
+
 /** `#imports:useCart` and `#components:BaseButton`: a name, not a specifier. */
 const VIRTUAL = /^#(?:imports|components):/u;
 

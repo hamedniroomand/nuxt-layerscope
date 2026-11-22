@@ -5,7 +5,11 @@ import { join } from 'pathe';
 import { afterEach, describe, expect, it } from 'vite-plus/test';
 
 import type { Nuxt } from '#src/module/nuxt.ts';
-import { recordShadowedFiles, shadowedFiles } from '#src/module/shadowed-files.ts';
+import {
+  recordNamedFiles,
+  recordShadowedFiles,
+  shadowedFiles,
+} from '#src/module/shadowed-files.ts';
 import { shadowedNuxt, shadowedProject } from '#test/shadowed-project.ts';
 
 const created: string[] = [];
@@ -119,5 +123,32 @@ describe('recordShadowedFiles before Nuxt resolves the app', () => {
       middleware: [],
       pages: [],
     });
+  });
+});
+
+describe('recordNamedFiles', () => {
+  const app = {
+    layouts: { wide: { name: 'wide', file: '#layers/base/layouts/wide.vue' } },
+    middleware: [
+      { name: 'auth', path: '/p/app/middleware/auth.ts' },
+      { name: 'track', path: '/p/app/middleware/track.global.ts', global: true },
+    ],
+  };
+
+  it('gives the file that Nuxt uses for each layout and named middleware, with its aliases resolved', () => {
+    const nuxt = { apps: { default: app } } as unknown as Nuxt;
+    expect(recordNamedFiles(nuxt, path => path.replace('#layers', '/p/layers'))).toEqual({
+      layouts: [{ name: 'wide', file: '/p/layers/base/layouts/wide.vue' }],
+      // A page cannot name a global middleware.
+      middleware: [{ name: 'auth', file: '/p/app/middleware/auth.ts' }],
+    });
+  });
+
+  it('gives nothing before Nuxt resolves the layouts and the middleware of the app', () => {
+    const none = { layouts: [], middleware: [] };
+    expect(recordNamedFiles({ apps: {} } as unknown as Nuxt, path => path)).toEqual(none);
+    expect(recordNamedFiles({ apps: { default: {} } } as unknown as Nuxt, path => path)).toEqual(
+      none,
+    );
   });
 });

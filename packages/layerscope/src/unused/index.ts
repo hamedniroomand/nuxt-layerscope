@@ -29,7 +29,10 @@ export interface UnusedSymbol {
 const VIRTUAL_IMPORT = /^#(?:imports|components):(.+)$/u;
 
 interface Uses {
-  /** Imported explicitly: every export of the file counts as used. */
+  /**
+   * Imported explicitly, or used as a layout or a route middleware by its name: every export of
+   * the file counts as used.
+   */
   files: Set<string>;
   /** `file\0name` of auto-imports and components referenced by name. */
   symbols: Set<string>;
@@ -46,7 +49,11 @@ function collectUses(edges: Edge[]): Uses {
       continue;
     }
     const virtual = VIRTUAL_IMPORT.exec(edge.symbol);
-    if (edge.kind === 'import' && virtual === null) {
+    const wholeFile =
+      (edge.kind === 'import' && virtual === null) ||
+      edge.kind === 'layout' ||
+      edge.kind === 'middleware';
+    if (wholeFile) {
       uses.files.add(edge.to);
     } else {
       uses.symbols.add(symbolKey(edge.to, virtual?.[1] ?? edge.symbol));
