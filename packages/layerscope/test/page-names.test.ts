@@ -55,6 +55,8 @@ function project(files: Record<string, string>): string {
     shadowedMiddleware: [],
     shadowedPages: [],
     shadowedImports: [],
+    shadowedServerRoutes: [],
+    shadowedServerImports: [],
     layouts: named(NAMED.layouts),
     middleware: named(NAMED.middleware),
     componentDirs: [],

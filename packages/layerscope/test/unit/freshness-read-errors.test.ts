@@ -32,6 +32,8 @@ function emptyRegistry(): Registry {
     shadowedMiddleware: [],
     shadowedPages: [],
     shadowedImports: [],
+    shadowedServerRoutes: [],
+    shadowedServerImports: [],
     layouts: [],
     middleware: [],
     componentDirs: [],

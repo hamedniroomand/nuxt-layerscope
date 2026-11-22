@@ -146,7 +146,9 @@ After an upgrade, `check` can report new findings for code that it did not read 
 gives a "Could not read import()" finding of `unresolved-reference`. `check` also reads the layout
 and route middleware names in `definePageMeta()` and `setPageLayout()`. A file that names a layout
 or a middleware of a layer that it may not use gives a `layer-boundary` or `layer-internal` error.
-Fix the code, or accept the findings with `layerscope check --update-baseline`.
+A new rule can also give new findings. For example, `shadowed-server-route` reports a server route
+file that Nitro does not use, and `shadowed-auto-import` also reports a server util that Nitro does
+not use. Fix the code, or accept the findings with `layerscope check --update-baseline`.
 
 ## "Unknown option" in the GitHub Action
 

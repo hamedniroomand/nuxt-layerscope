@@ -18,6 +18,8 @@ const REGISTRY = {
   shadowedMiddleware: [],
   shadowedPages: [],
   shadowedImports: [],
+  shadowedServerRoutes: [],
+  shadowedServerImports: [],
   layouts: [],
   middleware: [],
   componentDirs: [],

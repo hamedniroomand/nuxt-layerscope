@@ -85,8 +85,8 @@ function kindFindings<T extends ShadowedFile>(
       return [];
     }
     const to = ownerOf(target);
-    // Two files of the same layer. Only auto-imports can give such a pair. It is not reported,
-    // because this is the safe side.
+    // Two files of the same layer. Auto-imports can give such a pair, and server routes when a
+    // module adds a second server dir in a layer. It is not reported, because this is the safe side.
     if (to?.name === from.name) {
       return [];
     }
@@ -115,8 +115,8 @@ function describePage(page: ShadowedPage): string {
 }
 
 /**
- * Layouts, route middleware, pages and auto-imports that a file of the same name in another layer
- * replaces.
+ * Layouts, route middleware, pages, server routes and auto-imports that a file of the same name in
+ * another layer replaces.
  */
 export function shadowedFileFindings(
   registry: Registry,
@@ -140,9 +140,23 @@ export function shadowedFileFindings(
     ),
     ...kindFindings(registry.shadowedPages, 'shadowed-page', describePage, ownerOf, config),
     ...kindFindings(
+      registry.shadowedServerRoutes,
+      'shadowed-server-route',
+      entry => `Server route "${entry.name}"`,
+      ownerOf,
+      config,
+    ),
+    ...kindFindings(
       registry.shadowedImports,
       'shadowed-auto-import',
       entry => `Auto-import "${entry.name}"`,
+      ownerOf,
+      config,
+    ),
+    ...kindFindings(
+      registry.shadowedServerImports,
+      'shadowed-auto-import',
+      entry => `Server auto-import "${entry.name}"`,
       ownerOf,
       config,
     ),
