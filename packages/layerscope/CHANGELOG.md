@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.0
+
+### Minor Changes
+
+- [#283](https://github.com/hamedniroomand/nuxt-layerscope/pull/283) [`35cc976`](https://github.com/hamedniroomand/nuxt-layerscope/commit/35cc976cf8cbbc4180005851ecaf94a5ec1a4f8e) - `layer-boundary`, `layer-internal` and the other rules that read dependencies now check a layout or a route middleware that a file names with a fixed string in `definePageMeta()` or `setPageLayout()`. The dependency goes to the file that Nuxt uses for the name. This needs the registry of the Nuxt module. Run "nuxi prepare" after the update to write the registry again.
+
+- [#282](https://github.com/hamedniroomand/nuxt-layerscope/pull/282) [`b61567b`](https://github.com/hamedniroomand/nuxt-layerscope/commit/b61567b4ae412f27be2862e7217af03bef207323) - Report overridden server routes with the new shadowed-server-route rule (warn by default), and report overridden server utils with the shadowed-auto-import rule. Run "nuxi prepare" after the update to write the registry again.
+
 ## 0.12.3
 
 ### Patch Changes
