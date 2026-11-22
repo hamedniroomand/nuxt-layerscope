@@ -1,13 +1,11 @@
 /* Headings use the display face. Body text and code keep Geist. */
 .vp-doc :is(h1, h2, h3),
-.ls-hero-title,
 .VPNavBarTitle .title {
   font-family: var(--ls-font-display);
   font-variation-settings: 'opsz' 48;
 }
 
-.vp-doc h1,
-.ls-hero-title {
+.vp-doc h1 {
   font-weight: 700;
   letter-spacing: -0.03em;
 }
@@ -62,15 +60,7 @@
   }
 }
 
-.ls-hero-title {
-  font-size: clamp(38px, 4.6vw, 60px);
-}
-
 /* Scope lens */
-
-.ls-lens.ls-hero-shot {
-  margin: 0;
-}
 
 .ls-lens {
   --x: 46%;
@@ -139,7 +129,7 @@
   background: transparent;
   color: var(--vp-c-text-1);
   font-family: var(--vp-font-family-mono);
-  font-size: clamp(10.5px, 0.6vw + 6.5px, 13.5px);
+  font-size: clamp(9.5px, 0.6vw + 6.5px, 13.5px);
   line-height: 2.6;
   white-space: pre;
 }

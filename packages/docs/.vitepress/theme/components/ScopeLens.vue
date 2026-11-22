@@ -36,6 +36,8 @@
   const root = ref<HTMLElement>();
   const open = ref(false);
   let frame = 0;
+  let moved = false;
+  let observer: IntersectionObserver | undefined;
 
   function place(x: number, y: number): void {
     root.value?.style.setProperty('--x', `${x}px`);
@@ -48,6 +50,7 @@
   }
 
   function follow(event: PointerEvent): void {
+    moved = true;
     stop();
     const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
     place(event.clientX - box.left, event.clientY - box.top);
@@ -67,11 +70,23 @@
   }
 
   onMounted(() => {
-    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      frame = requestAnimationFrame(sweep);
+    if (root.value === undefined || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
     }
+    // The sweep runs only while the lens is on the screen.
+    observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting === true && !moved && frame === 0) {
+        frame = requestAnimationFrame(sweep);
+      } else if (entry?.isIntersecting !== true) {
+        stop();
+      }
+    });
+    observer.observe(root.value);
   });
-  onBeforeUnmount(stop);
+  onBeforeUnmount(() => {
+    observer?.disconnect();
+    stop();
+  });
 </script>
 
 <template>
