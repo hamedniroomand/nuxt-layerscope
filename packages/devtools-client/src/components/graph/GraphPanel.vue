@@ -111,9 +111,7 @@
             <span class="num muted">{{ into.count }}</span>
           </li>
         </ul>
-        <h4>
-          Files <span class="num muted">{{ panel.node.value.total }}</span>
-        </h4>
+        <h4>Files <span class="num muted">{{ panel.node.value.total }}</span></h4>
         <ul class="list">
           <li
             v-for="file in panel.node.value.files"
